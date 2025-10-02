@@ -1,0 +1,1 @@
+# Main encoder class
