@@ -35,7 +35,20 @@ class IntentDetector:
                         trigger_word=token.text
                     ))
         
-        # Strategy 2: Look for multi-word expressions
+        # Strategy 2: Check first word as imperative
+        first_token = doc[0] if len(doc) > 0 else None
+        if first_token:
+            req_token = self.vocab.get_req_token(first_token.text.lower())
+            if req_token:
+                # Only add if not already detected
+                if not any(i.token == req_token for i in intents):
+                    intents.append(Intent(
+                        token=req_token,
+                        confidence=0.95,
+                        trigger_word=first_token.text
+                    ))
+
+        # Strategy 3: Look for multi-word expressions
         text_lower = text.lower()
         for token, synomyms in self.vocab.REQ_TOKENS.items():
             for synomym in synomyms:
