@@ -1,5 +1,8 @@
 # Indentify TARGET tokens
+import re
+from typing import Optional
 from spacy import Language
+from spacy.tokens import Doc, Token
 
 from src.core.vocabulary import Vocabulary
 from src.core._schemas import Target
@@ -11,6 +14,15 @@ class TargetExtractor:
     def __init__(self, nlp: Language) -> None:
         self.nlp = nlp
         self.vocab = Vocabulary()
+
+        self.technical_concepts = [
+            "quantum computing", "machine learning", "deep learning", "neural networks",
+            "blockchain", "cryptocurrency", "artificial intelligence", "ai", "llm", "openai",
+            "dns", "tcp", "http", "https", "api", "rest", "graphql", "cnn", "neural network",
+            "docker", "kubernetes", "microservices", "serverless", "generative ai",
+            "react", "vue", "angular", "node.js", "python", "javascript",
+            "sql", "nosql", "database", "cloud computing", "aws", "azure", "gcp"
+        ]
 
     def extract(self, text: str) -> list[Target]:
         """
@@ -47,6 +59,13 @@ class TargetExtractor:
                         attributes={}
                     ))
 
+        # Strategy 3: Detect CONCEPT targets (NEW!)
+        concept_target = self._detect_concept_target(text, doc)
+        if concept_target:
+            # Check if not already added
+            if not any(t.token == "CONCEPT" for t in targets):
+                targets.append(concept_target)
+
         # Strategy 3: Extract domain attributes
         return self._add_domain_attributes(targets, text)
     
@@ -77,3 +96,106 @@ class TargetExtractor:
                         break
         
         return targets
+    
+    def _detect_concept_target(self, text: str, doc: Doc) -> Optional[Target]:
+        """
+        Detect abstract concepts that need explanation
+        
+        Patterns detected:
+        1. "Explain X" or "Describe X" where X is the concept
+        2. Known technical terms in the text
+        3. "How X works" patterns
+        
+        Args:
+            text: Original prompt text
+            doc: spaCy Doc object
+            
+        Returns:
+            Target object with CONCEPT token, or None
+        """
+        text_lower = text.lower()
+        
+        # Pattern 1: "Explain/Describe [CONCEPT]"
+        # Look for explain/describe verbs and extract what follows
+        explanation_verbs = ["explain", "describe", "clarify", "elucidate", "tell"]
+        
+        for token in doc:
+            if token.lemma_ in explanation_verbs:
+                # Find the object of explanation (direct object)
+                for child in token.children:
+                    if child.dep_ in ["dobj", "attr", "pobj"]:
+                        # Get the full noun phrase
+                        concept_text = self._extract_noun_phrase(child)
+                        if concept_text:
+                            return Target(
+                                token="CONCEPT",
+                                attributes={"TOPIC": concept_text.upper().replace(" ", "_")}
+                            )
+        
+        # Pattern 2: "How [CONCEPT] works"     
+        how_works_pattern = r"how\s+([a-zA-Z\s]+?)\s+works?"
+        match = re.search(how_works_pattern, text_lower)
+        if match:
+            concept = match.group(1).strip()
+            return Target(
+                token="CONCEPT",
+                attributes={"TOPIC": concept.upper().replace(" ", "_")}
+            )
+        
+        # Pattern 3: Known technical terms
+        for term in self.technical_concepts:
+            if term in text_lower:
+                # Only trigger if it's the main subject, not just mentioned
+                # Check if it appears after explain/describe or in question context
+                if any(verb in text_lower for verb in ["explain", "describe", "what is", "how does"]):
+                    return Target(
+                        token="CONCEPT",
+                        attributes={"TOPIC": term.upper().replace(" ", "_")}
+                    )
+                
+        # Pattern 4: Question format "What is X?"
+        what_is_pattern = r"what\s+(?:is|are)\s+([a-zA-Z\s]+?)(?:\?|$|\s+to)"
+        match = re.search(what_is_pattern, text_lower)
+        if match:
+            concept = match.group(1).strip()
+            # Filter out common words
+            if len(concept.split()) <= 4 and concept not in ["this", "that", "it", "the"]:
+                return Target(
+                    token="CONCEPT",
+                    attributes={"TOPIC": concept.upper().replace(" ", "_")}
+                )
+        
+        return None
+    
+    def _extract_noun_phrase(self, token: Token) -> Optional[str]:
+        """
+        Extract full noun phrase from a token
+        
+        Args:
+            token: spaCy Token object
+            
+        Returns:
+            Full noun phrase as string
+        """
+        # Get all tokens in the subtree
+        phrase_tokens: list[Token] = []
+
+        def collect_tokens(tok: Token):
+            phrase_tokens.append(tok)
+            for child in tok.children:
+                if child.dep_ in ["compound", "amod", "nmod", "det"]:
+                    collect_tokens(child)
+
+        collect_tokens(token)
+
+        phrase_tokens.sort(key=lambda t: t.i)
+        phrase = " ".join([t.text for t in phrase_tokens])
+
+        phrase = phrase.strip()
+
+        # Filter generic words
+        generic_words = ["this", "that", "the", "a", "an", "it"]
+        if phrase.lower() in generic_words:
+            return None
+
+        return phrase if phrase else Nones

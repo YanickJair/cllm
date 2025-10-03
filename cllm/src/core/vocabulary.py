@@ -20,7 +20,7 @@ class Vocabulary:
         "SEARCH": ["search", "query", "lookup", "find", "look for"],
         "RANK": ["rank", "prioritize", "order", "sort by"],
         "PREDICT": ["predict", "forecast", "estimate", "project"],
-        "FORMAT": ["format", "structure", "organize"]
+        "FORMAT": ["format", "structure", "organize"],
     }
     
     # TARGET tokens with trigger words
@@ -28,7 +28,7 @@ class Vocabulary:
         "CODE": ["code", "script", "function", "program", "algorithm"],
         "TRANSCRIPT": ["transcript", "conversation log", "chat log", "dialogue"],
         "EMAIL": ["email", "e-mail", "message"],
-        "DOCUMENT": ["document", "text", "article", "paper", "file"],
+        "DOCUMENT": ["document", "text", "article", "paper", "file", "proposal", "documentation"],
         "DATA": ["data", "dataset", "csv", "spreadsheet", "table"],
         "TICKET": ["ticket", "issue", "request"],
         "COMPLAINT": ["complaint", "grievance"],
@@ -38,7 +38,8 @@ class Vocabulary:
         "CONVERSATION": ["conversation", "chat", "discussion"],
         "SPECIFICATION": ["specification", "spec", "requirements"],
         "CONCEPT": ["concept", "idea", "theory"],
-        "TEST": ["test", "unit test", "testing"]
+        "TEST": ["test", "unit test", "testing"],
+        "FRAMEWORK": ["framework", "frameworks", "library", "platform", "tool", "libraries", "library", "platform", "platforms"]
     }
     
     # Common extraction fields
