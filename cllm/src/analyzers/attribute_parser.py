@@ -3,7 +3,7 @@ from typing import Optional
 from spacy import Language
 
 from src.core.vocabulary import Vocabulary
-from src.core._schemas import ExtractionField, Context, OutputFormat
+from src.core import ExtractionField, Context, OutputFormat
 
 
 class AttributeParser:

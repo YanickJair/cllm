@@ -364,7 +364,8 @@ class EncoderTester:
                 'issues': result.issues,
                 'compression_ratio': result.compression_ratio,
                 'has_req': result.has_req,
-                'has_target': result.has_target
+                'has_target': result.has_target,
+                "metadata": result.metadata
             })
         
         with open(filename, 'w') as f:

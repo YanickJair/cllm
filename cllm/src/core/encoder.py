@@ -1,6 +1,8 @@
 # Main encoder class
+import re
 import spacy
 
+from src.core.vocabulary import Vocabulary
 from src.analyzers.attribute_parser import AttributeParser
 from src.analyzers.intent_detector import IntentDetector
 from src.analyzers.target_extractor import TargetExtractor
@@ -82,6 +84,8 @@ class CLLMEncoder:
 
         # Calculate compression ratio
         compression_ratio = round((1 - len(compressed) / len(prompt)) * 100, 1)
+        doc = self.nlp(prompt)
+        verbs = [token.lemma_ for token in doc if token.pos_ == "VERB"]
 
         if verbose:
             print(f"\n{'='*60}")
@@ -102,7 +106,19 @@ class CLLMEncoder:
                 "original_length": len(prompt),
                 "compressed_length": len(compressed),
                 "num_intents": len(intents),
-                "num_targets": len(targets)
+                "num_targets": len(targets),
+                "input_tokens": len(prompt.split()),
+                "output_tokens": len(compressed.split()),
+                "verbs": verbs,
+                "noun_chunks": [chunk.text for chunk in doc.noun_chunks],
+                "language": "en",
+                "has_numbers": bool(re.search(r'\d', prompt)),
+                "has_urls": bool(re.search(r'https?://', prompt)),
+                "has_code_indicators": any(
+                    word in prompt.lower() 
+                    for word in ['python', 'javascript', 'function', 'class']
+                ),
+                "unmatched_verbs": [v for v in verbs if not any(v in Vocabulary.REQ_TOKENS[i.token] for i in intents)]
             }
         )
     
