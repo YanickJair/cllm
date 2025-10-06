@@ -11,6 +11,13 @@ dependencies = [
     "wheel>=0.45.1",
 ]
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cllm*"]
+
+[tool.setuptools.package-dir]
+"" = "."
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]

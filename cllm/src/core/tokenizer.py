@@ -1,6 +1,6 @@
 # CLLM tokenizer
 from typing import Optional
-from src.core._schemas import Intent, Target, ExtractionField, Context, OutputFormat
+from src.core import Intent, Target, ExtractionField, Context, OutputFormat
 
 
 class CLLMTokenizer:

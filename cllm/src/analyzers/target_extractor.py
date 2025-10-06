@@ -4,8 +4,8 @@ from typing import Optional
 from spacy import Language
 from spacy.tokens import Doc, Token
 
+from src.core import Target
 from src.core.vocabulary import Vocabulary
-from src.core._schemas import Target
 
 
 class TargetExtractor:
@@ -17,9 +17,9 @@ class TargetExtractor:
 
         self.technical_concepts = [
             "quantum computing", "machine learning", "deep learning", "neural networks",
-            "blockchain", "cryptocurrency", "artificial intelligence", "ai", "llm", "openai",
-            "dns", "tcp", "http", "https", "api", "rest", "graphql", "cnn", "neural network",
-            "docker", "kubernetes", "microservices", "serverless", "generative ai",
+            "blockchain", "cryptocurrency", "artificial intelligence", "ai",
+            "dns", "tcp", "http", "https", "api", "rest", "graphql",
+            "docker", "kubernetes", "microservices", "serverless",
             "react", "vue", "angular", "node.js", "python", "javascript",
             "sql", "nosql", "database", "cloud computing", "aws", "azure", "gcp"
         ]
@@ -59,14 +59,32 @@ class TargetExtractor:
                         attributes={}
                     ))
 
-        # Strategy 3: Detect CONCEPT targets (NEW!)
+        # Strategy 3: Word-boundary matching (for plurals and compounds)
+        compound_targets = self._detect_compound_phrases(text)
+        for target in compound_targets:
+            if not any(t.token == target.token for t in targets):
+                targets.append(target)
+
+        # Strategy 4: "This X" pattern detection (NEW!)
+        this_target = self._detect_this_pattern(text, doc)
+        if this_target:
+            if not any(t.token == this_target.token for t in targets):
+                targets.append(this_target)
+
+        # Strategy 5: "For X" pattern detection (NEW!)
+        for_target = self._detect_for_pattern(text)
+        if for_target:
+            if not any(t.token == for_target.token for t in targets):
+                targets.append(for_target)
+
+        # Strategy 6: Detect CONCEPT targets (NEW!)
         concept_target = self._detect_concept_target(text, doc)
         if concept_target:
             # Check if not already added
             if not any(t.token == "CONCEPT" for t in targets):
                 targets.append(concept_target)
 
-        # Strategy 3: Extract domain attributes
+        # Strategy 7: Extract domain attributes
         return self._add_domain_attributes(targets, text)
     
     def _add_domain_attributes(self, targets: list[Target], text: str) -> list[Target]:
@@ -93,6 +111,13 @@ class TargetExtractor:
                 for lang in languages:
                     if lang in text_lower:
                         target.attributes["LANG"] = lang
+                        break
+            
+            if target.token == "TRANSCRIPT":
+                types = ["meeting", "call", "chat", "interview"]
+                for ttype in types:
+                    if ttype in text_lower:
+                        target.attributes["TYPE"] = ttype.upper()
                         break
         
         return targets
@@ -187,10 +212,8 @@ class TargetExtractor:
                     collect_tokens(child)
 
         collect_tokens(token)
-
         phrase_tokens.sort(key=lambda t: t.i)
         phrase = " ".join([t.text for t in phrase_tokens])
-
         phrase = phrase.strip()
 
         # Filter generic words
@@ -198,4 +221,80 @@ class TargetExtractor:
         if phrase.lower() in generic_words:
             return None
 
-        return phrase if phrase else Nones
+        return phrase if phrase else None
+    
+    def _detect_this_pattern(self, text: str, doc) -> Optional[Target]:
+        """
+        Detect "this X" patterns where X should be a target
+        
+        Example: "Check this API endpoint" → TARGET:ENDPOINT
+        """
+        # Pattern: "this [adjective]* [noun]"
+        text_lower = text.lower()
+        patterns = [
+            r'this\s+(\w+\s+)?(\w+)',  # "this [adj] noun"
+            r'this\s+(\w+)',            # "this noun"
+        ]
+
+        for pattern in patterns:
+            matches = re.finditer(pattern, text_lower)
+            for match in matches:
+                # Get the last captured group (the noun)
+                words = [g for g in match.groups() if g]
+                if not words:
+                    continue
+                
+                # Try each word as potential target
+                for match in matches:
+                    word = word.strip()
+                    target_token = self.vocab.get_target_token(word)
+                    if target_token:
+                        return Target(token=target_token, attributes={})
+        
+        return None
+    
+    def _detect_for_pattern(self, text: str) -> Optional[Target]:
+        """
+        Detect "for X" patterns
+        
+        Examples:
+        - "...for an eco-friendly water bottle" → DESCRIPTION implied
+        - "...for this business plan" → PLAN
+        """
+        import re
+        text_lower = text.lower()
+        
+        # Pattern: "for [article] [adjective]* [NOUN]"
+        pattern = r'for\s+(?:a|an|the|this)?\s*(?:\w+\s+)*?(\w+)'
+        matches = re.finditer(pattern, text_lower)
+        
+        for match in matches:
+            noun = match.group(1).strip()
+            target_token = self.vocab.get_target_token(noun)
+            if target_token:
+                return Target(token=target_token, attributes={})
+        
+        return None
+    
+    def _detect_compound_phrases(self, text: str) -> list[Target]:
+        """
+        Detect multi-word compound phrases that should be targets
+        
+        This catches phrases like:
+        - "support tickets" → TICKET
+        - "caching strategies" → STRATEGY
+        - "customer conversations" → CONVERSATION
+        """
+        targets = []
+        text_lower = text.lower()
+        
+        # For each target type, check ALL its synonyms (including multi-word)
+        for target_type, synonyms in self.vocab.TARGET_TOKENS.items():
+            for synonym in synonyms:
+                # Use word boundary matching
+                pattern = r'\b' + re.escape(synonym) + r'\b'
+                if re.search(pattern, text_lower):
+                    targets.append(Target(token=target_type, attributes={}))
+                    break  # Found this target, move to next type
+        
+        return targets

@@ -1,0 +1,91 @@
+{
+  "patterns": [
+    {
+      "id": "PTTN_993E5A37",
+      "pattern": "[REQ:EXTRACT] [TARGET:CONVERSATION:DOMAIN=SUPPORT] [TARGET:TRANSCRIPT:DOMAIN=SUPPORT:TYPE=CHAT] [TARGET:TICKET:DOMAIN=SUPPORT] [EXTRACT:ISSUE+SENTIMENT+NEXT_STEPS] [OUT:JSON]",
+      "frequency": 12,
+      "first_seen": "2025-10-06T15:02:23.109282",
+      "last_seen": "2025-10-06T15:06:52.303346",
+      "compression_gain": 5,
+      "domains": [
+        "customer_support",
+        "data_analysis"
+      ],
+      "examples": [
+        "Analyze this customer support chat transcript and extract the main issue, customer sentiment, and recommended next steps. Format as JSON."
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_7F466213",
+      "pattern": "[REQ:EXTRACT] [TARGET:DATA] [TARGET:DATA] [TARGET:PATTERN] [OUT:CSV]",
+      "frequency": 12,
+      "first_seen": "2025-10-06T15:02:23.109317",
+      "last_seen": "2025-10-06T15:06:52.303347",
+      "compression_gain": 4,
+      "domains": [
+        "data_analysis"
+      ],
+      "examples": [
+        "Analyze this sales data CSV and identify trends, outliers, and actionable insights."
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_C91318D5",
+      "pattern": "[REQ:EXTRACT] [TARGET:CODE:LANG=python] [TARGET:PAIN_POINTS] [EXTRACT:ISSUE+BUGS+SECURITY+PERFORMANCE]",
+      "frequency": 12,
+      "first_seen": "2025-10-06T15:02:23.109358",
+      "last_seen": "2025-10-06T15:06:52.303348",
+      "compression_gain": 3,
+      "domains": [
+        "code_analysis",
+        "data_analysis"
+      ],
+      "examples": [
+        "Analyze this Python code and identify any potential bugs, security vulnerabilities, or performance issues."
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_4D32EAB8",
+      "pattern": "[TARGET:EMAIL:DOMAIN=TECHNICAL] [TARGET:TICKET:DOMAIN=TECHNICAL] [CTX:TONE=TECHNICAL]",
+      "frequency": 18,
+      "first_seen": "2025-10-06T15:02:23.109372",
+      "last_seen": "2025-10-06T15:06:52.303348",
+      "compression_gain": 2,
+      "domains": [
+        "content_generation",
+        "customer_support"
+      ],
+      "examples": [
+        "Generate a follow-up email for a customer whose technical issue was resolved.",
+        "Write a follow-up message for an unresolved technical issue."
+      ],
+      "version": 1
+    }
+  ],
+  "stats": {
+    "total_patterns": 4,
+    "total_uses": 54,
+    "total_tokens_saved": 180,
+    "avg_compression_gain": 3.5,
+    "most_used_pattern": {
+      "id": "PTTN_4D32EAB8",
+      "pattern": "[TARGET:EMAIL:DOMAIN=TECHNICAL] [TARGET:TICKET:DOMAIN=TECHNICAL] [CTX:TONE=TECHNICAL]",
+      "frequency": 18,
+      "first_seen": "2025-10-06T15:02:23.109372",
+      "last_seen": "2025-10-06T15:06:52.303348",
+      "compression_gain": 2,
+      "domains": [
+        "content_generation",
+        "customer_support"
+      ],
+      "examples": [
+        "Generate a follow-up email for a customer whose technical issue was resolved.",
+        "Write a follow-up message for an unresolved technical issue."
+      ],
+      "version": 1
+    }
+  }
+}

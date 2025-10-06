@@ -2,8 +2,9 @@
 from typing import Optional
 from spacy import Language
 
+from src.core import Intent
 from src.core.vocabulary import Vocabulary
-from src.core._schemas import Intent
+
 
 class IntentDetector:
     def __init__(self, nlp: Language) -> None:
