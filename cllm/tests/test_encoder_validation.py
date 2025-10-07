@@ -46,6 +46,13 @@ def load_all_prompts() -> List[Dict]:
     
     return prompts
 
+def load_alpaca_prompts() -> list[dict]:
+    with open("data/raw/raw_set_of_instructions.json", "r") as f:
+        alpaca_prompts: dict = json.load(f)
+
+    p_size = int(len(alpaca_prompts) * 0.10)
+    return alpaca_prompts[:p_size]
+
 class ValidationRunner:
     """Runs comprehensive validation on 100+ prompts"""
     
@@ -291,7 +298,7 @@ def main():
     
     # Load prompts
     print("Loading 100 test prompts...")
-    prompts = load_all_prompts()
+    prompts = load_alpaca_prompts()
     print(f"✓ Loaded {len(prompts)} prompts")
     
     # Run validation

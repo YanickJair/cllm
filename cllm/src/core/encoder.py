@@ -49,7 +49,7 @@ class CLLMEncoder:
             print(f"{'='*60}")
 
         # Step 1: Detect intents
-        intents = self.intent_detector.detect(prompt)
+        intents = self.intent_detector.detect(text=prompt)
         if verbose:
             print(f"\n1. Intents detected: {[i.token for i in intents]}")
         
@@ -118,7 +118,7 @@ class CLLMEncoder:
                     word in prompt.lower() 
                     for word in ['python', 'javascript', 'function', 'class']
                 ),
-                "unmatched_verbs": [v for v in verbs if not any(v in Vocabulary.REQ_TOKENS[i.token] for i in intents)]
+                "unmatched_verbs": [v for v in verbs if not any(v in Vocabulary.REQ_TOKENS[i.token] for i in intents if i.token in Vocabulary.REQ_TOKENS)]
             }
         )
     
