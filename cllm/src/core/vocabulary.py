@@ -23,7 +23,7 @@ class Vocabulary:
         "GENERATE": [
             "generate", "create", "write", "draft", "compose", "produce",
             "build", "develop", "design", "craft", "author", "make up",
-            "name", "suggest"
+            "name", "suggest", "formulate", "form", "construct"
         ],
 
         # Summaries and condensing
@@ -34,20 +34,15 @@ class Vocabulary:
 
         # Content transformation
         "TRANSFORM": [
-            "convert", "transform", "change", "rewrite", "translate",
-            "turn into", "modify", "adapt", "adjust", "rephrase", "rework",
-            # NEW: Content modification (69+ occurrences)
-            "edit",  # "Edit this document"
-            "add",  # "Add X to Y"
+            "convert", "transform", "change", "rewrite", "translate", "complete",
+            "turn into", "modify", "adapt", "adjust", "rephrase", "rework", "rearrange",
+            "edit", "add", "paraphrase", "fill", "remove", "replace", "reverse",
         ],
 
         # Explanations and descriptions
         "EXPLAIN": [
             "explain", "describe", "clarify", "elaborate", "tell me about",
-            "detail", "expound", "illustrate",
-            # NEW: Conversational forms (40+ occurrences)
-            "tell",  # "Tell me about X"
-            "discuss",  # "Discuss the causes of..."
+            "detail", "expound", "illustrate", "express", "tell", "discuss", "define"
         ],
 
         # Comparisons
@@ -126,7 +121,7 @@ class Vocabulary:
         # Decision making
         "DETERMINE": [
             "determine", "decide", "assess", "evaluate", "figure out",
-            "conclude", "establish"
+            "conclude", "establish", "choose"
         ],
 
         # Routing and assignment

@@ -1,7 +1,7 @@
 import json
 
 # Load your results
-with open('validation_results_5K.json') as f:
+with open('validation_results_100.json') as f:
     results = json.load(f)
 
 # Filter PARTIAL prompts

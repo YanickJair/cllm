@@ -19,6 +19,7 @@ class Pattern:
     @property
     def ref_token(self) -> str:
         """Generate REF token for this pattern"""
+
         return f"[REF:{self.id}:v{self.version}]"
 
     @property
