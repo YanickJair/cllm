@@ -9,7 +9,8 @@ from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     PreTrainedModel,
-    PretrainedConfig
+    PretrainedConfig,
+    AutoConfig
 )
 import json
 from typing import Optional
@@ -32,6 +33,10 @@ class CLLMConfig(PretrainedConfig):
             **kwargs
     ):
         super().__init__(**kwargs)
+        # Load the base model's configuration to get the hidden_size
+        base_model_config = AutoConfig.from_pretrained(base_model_name, token=token)
+        self.hidden_size = base_model_config.hidden_size # Ensure CLLMConfig has hidden_size
+
         print("HF Token", token)
         self.base_model_name = base_model_name
         self.cllm_vocab_size = cllm_vocab_size
@@ -205,36 +210,38 @@ class CLLMModel(PreTrainedModel):
         print(f"   CLLM vocab size: {config.cllm_vocab_size}")
 
         # 1. Load base language model
-        self.base_model = AutoModelForCausalLM.from_pretrained(
+        self.wrapped_model = AutoModelForCausalLM.from_pretrained(
             config.base_model_name,
             torch_dtype=torch.float16,
-            device_map="auto",
+            device_map="cpu",
         )
-        self.base_tokenizer = AutoTokenizer.from_pretrained(
+        self.wrapped_tokenizer = AutoTokenizer.from_pretrained(
             config.base_model_name,
             token=config.token,
             load_in_8bit=True,
-            device_map="auto",
+            device_map="cpu",
         )
+        if self.wrapped_tokenizer.pad_token is None:
+            self.wrapped_tokenizer.pad_token = self.wrapped_tokenizer.eos_token
 
         # 2. Custom CLLM embedding layer
         self.cllm_embeddings = CLLMEmbedding(
             vocab_size=config.cllm_vocab_size,
             embedding_dim=config.cllm_embedding_dim
-        )
+        ).to(self.wrapped_model.dtype)
 
         # 3. Projection layer to match base model's embedding dimension
-        base_hidden_size = self.base_model.config.hidden_size
+        base_hidden_size = self.wrapped_model.config.hidden_size
         self.cllm_projection = nn.Linear(
             config.cllm_embedding_dim,
             base_hidden_size
-        )
+        ).to(self.wrapped_model.dtype)
 
         # 4. Optional hierarchical attention
         if config.use_hierarchical_attention:
             self.hierarchical_attention = HierarchicalAttention(
                 hidden_dim=base_hidden_size
-            )
+            ).to(self.wrapped_model.dtype)
 
         print(f"✅ CLLM Model initialized\n")
 
@@ -262,7 +269,7 @@ class CLLMModel(PreTrainedModel):
         cllm_embeddings = self.cllm_projection(cllm_embeddings)
 
         # 2. Process regular data with base tokenizer
-        data_tokens = self.base_tokenizer(
+        data_tokens = self.wrapped_tokenizer(
             data,
             return_tensors="pt",
             padding=True,
@@ -271,7 +278,7 @@ class CLLMModel(PreTrainedModel):
         )
 
         data_input_ids = data_tokens['input_ids'].to(device)
-        data_embeddings = self.base_model.get_input_embeddings()(data_input_ids)
+        data_embeddings = self.wrapped_model.get_input_embeddings()(data_input_ids)
 
         # 3. Concatenate CLLM instruction + data
         combined_embeddings = torch.cat([
@@ -306,7 +313,7 @@ class CLLMModel(PreTrainedModel):
             prepared = self.prepare_inputs(
                 cllm_instruction,
                 data,
-                device=self.base_model.device
+                device=self.wrapped_model.device
             )
             inputs_embeds = prepared['inputs_embeds']
             attention_mask = prepared['attention_mask']
@@ -353,7 +360,7 @@ class CLLMModel(PreTrainedModel):
 
         # Generate
         with torch.no_grad():
-            outputs = self.base_model.generate(
+            outputs = self.wrapped_model.generate(
                 inputs_embeds=prepared['inputs_embeds'],
                 attention_mask=prepared['attention_mask'],
                 max_new_tokens=max_new_tokens,
@@ -361,12 +368,18 @@ class CLLMModel(PreTrainedModel):
             )
 
         # Decode
-        generated_text = self.base_tokenizer.decode(
+        generated_text = self.wrapped_tokenizer.decode(
             outputs[0][prepared['inputs_embeds'].size(1):],
             skip_special_tokens=True
         )
 
         return generated_text
+
+    def get_input_embeddings(self):
+        return self.wrapped_model.get_input_embeddings()
+
+    def set_input_embeddings(self, value):
+        self.wrapped_model.set_input_embeddings(value)
 
     @classmethod
     def from_pretrained(cls, model_path: str, **kwargs):
@@ -403,7 +416,7 @@ def test_cllm_model():
 
     # Initialize config
     config = CLLMConfig(
-        base_model_name="mistralai/Mistral-7B-v0.1",  # Change to your model
+        base_model_name="microsoft/phi-2",  # Change to your model
         cllm_vocab_size=200,
         cllm_embedding_dim=768,
     )
