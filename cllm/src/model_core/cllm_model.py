@@ -28,14 +28,17 @@ class CLLMConfig(PretrainedConfig):
             cllm_embedding_dim: int = 768,
             use_hierarchical_attention: bool = True,
             compression_awareness: bool = True,
+            token: Optional[str] = None,
             **kwargs
     ):
         super().__init__(**kwargs)
+        print("HF Token", token)
         self.base_model_name = base_model_name
         self.cllm_vocab_size = cllm_vocab_size
         self.cllm_embedding_dim = cllm_embedding_dim
         self.use_hierarchical_attention = use_hierarchical_attention
         self.compression_awareness = compression_awareness
+        self.token = token
 
 
 class CLLMEmbedding(nn.Module):
@@ -62,7 +65,7 @@ class CLLMEmbedding(nn.Module):
     def _load_vocabulary(self):
         """Load CLLM token vocabulary"""
         try:
-            with open('cllm_token_vocab.json', 'r') as f:
+            with open('data/vocabulary/cllm_token_vocab.json', 'r') as f:
                 vocab = json.load(f)
 
             idx = 0
@@ -160,9 +163,9 @@ class HierarchicalAttention(nn.Module):
         self.fusion = nn.Linear(hidden_dim * 2, hidden_dim)
 
     def forward(
-            self,
-            hidden_states: torch.Tensor,
-            attention_mask: Optional[torch.Tensor] = None
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None
     ) -> torch.Tensor:
         """Apply hierarchical attention"""
 
@@ -205,9 +208,14 @@ class CLLMModel(PreTrainedModel):
         self.base_model = AutoModelForCausalLM.from_pretrained(
             config.base_model_name,
             torch_dtype=torch.float16,
-            device_map="auto"
+            device_map="auto",
         )
-        self.base_tokenizer = AutoTokenizer.from_pretrained(config.base_model_name)
+        self.base_tokenizer = AutoTokenizer.from_pretrained(
+            config.base_model_name,
+            token=config.token,
+            load_in_8bit=True,
+            device_map="auto",
+        )
 
         # 2. Custom CLLM embedding layer
         self.cllm_embeddings = CLLMEmbedding(
@@ -231,10 +239,10 @@ class CLLMModel(PreTrainedModel):
         print(f"✅ CLLM Model initialized\n")
 
     def prepare_inputs(
-            self,
-            cllm_instruction: str,
-            data: str,
-            device: torch.device
+        self,
+        cllm_instruction: str,
+        data: str,
+        device: torch.device
     ) -> dict[str, torch.Tensor]:
         """
         Prepare inputs combining CLLM instruction + regular text data
@@ -283,13 +291,13 @@ class CLLMModel(PreTrainedModel):
         }
 
     def forward(
-            self,
-            cllm_instruction: Optional[str] = None,
-            data: Optional[str] = None,
-            inputs_embeds: Optional[torch.Tensor] = None,
-            attention_mask: Optional[torch.Tensor] = None,
-            labels: Optional[torch.Tensor] = None,
-            **kwargs
+        self,
+        cllm_instruction: Optional[str] = None,
+        data: Optional[str] = None,
+        inputs_embeds: Optional[torch.Tensor] = None,
+        attention_mask: Optional[torch.Tensor] = None,
+        labels: Optional[torch.Tensor] = None,
+        **kwargs
     ):
         """Forward pass through CLLM model"""
 
@@ -395,9 +403,9 @@ def test_cllm_model():
 
     # Initialize config
     config = CLLMConfig(
-        base_model_name="meta-llama/Llama-2-7b-hf",  # Change to your model
+        base_model_name="mistralai/Mistral-7B-v0.1",  # Change to your model
         cllm_vocab_size=200,
-        cllm_embedding_dim=768
+        cllm_embedding_dim=768,
     )
 
     # Create model
