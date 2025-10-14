@@ -50,7 +50,7 @@ def load_alpaca_prompts() -> list[dict]:
     with open("data/raw/raw_set_of_instructions.json", "r") as f:
         alpaca_prompts: dict = json.load(f)
 
-    p_size = int(len(alpaca_prompts) * 0.10)
+    p_size = int(len(alpaca_prompts) * 0.20)
     return alpaca_prompts[:p_size]
 
 class ValidationRunner:
@@ -270,7 +270,7 @@ class ValidationRunner:
     
     def _export_results(self):
         """Export results to JSON"""
-        filename = "validation_results_100.json"
+        filename = "validation_results_5K.json"
         with open(filename, 'w') as f:
             json.dump(self.results, f, indent=2)
         print(f"\n✓ Full results exported to {filename}")
