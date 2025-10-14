@@ -12,7 +12,6 @@ class TargetExtractor:
     """
     Extracts target objects (TARGET tokens) from text
 
-    IMPROVEMENTS:
     - Fallback TARGET system for when nothing detected
     - Better question pattern detection
     - Imperative command handling
@@ -25,12 +24,156 @@ class TargetExtractor:
         self.vocab = Vocabulary()
 
         self.technical_concepts = [
-            "quantum computing", "machine learning", "deep learning", "neural networks",
-            "blockchain", "cryptocurrency", "artificial intelligence", "ai",
-            "dns", "tcp", "http", "https", "api", "rest", "graphql",
-            "docker", "kubernetes", "microservices", "serverless",
-            "react", "vue", "angular", "node.js", "python", "javascript",
-            "sql", "nosql", "database", "cloud computing", "aws", "azure", "gcp"
+            # Core Computer Science
+            "data structures", "algorithms", "computational complexity", "operating systems",
+            "virtual memory", "concurrency", "multithreading", "parallel computing",
+            "distributed systems", "load balancing", "event-driven architecture",
+
+            # Networking & Protocols
+            "ip", "udp", "icmp", "ssh", "ftp", "smtp", "snmp", "websockets", "vpn",
+            "cdn", "proxy servers", "firewalls", "nat", "bgp",
+
+            # Databases & Storage
+            "relational databases", "document databases", "graph databases", "time-series databases",
+            "indexing", "query optimization", "acid", "event sourcing", "data warehousing",
+            "etl", "data lakes", "caching", "redis", "elasticsearch",
+
+            # Software Development & Architecture
+            "object-oriented programming", "functional programming", "test-driven development",
+            "design patterns", "dependency injection", "continuous integration",
+            "continuous deployment", "version control", "git", "monolith", "microfrontends",
+            "domain-driven design", "clean architecture",
+
+            # Cloud & DevOps
+            "infrastructure as code", "terraform", "ansible", "jenkins", "cicd pipelines",
+            "monitoring", "observability", "logging", "prometheus", "grafana",
+            "load testing", "chaos engineering",
+
+            # AI / ML / Data Science
+            "reinforcement learning", "computer vision", "natural language processing",
+            "generative ai", "transformers", "autoencoders", "feature engineering",
+            "data preprocessing", "model deployment", "mlops", "vector databases",
+
+            # Security
+            "encryption", "hashing", "ssl", "tls", "oauth", "jwt", "zero trust architecture",
+            "penetration testing", "vulnerability scanning", "access control", "iam",
+
+            # Web & Frontend
+            "next.js", "svelte", "astro", "webassembly", "typescript", "tailwind css",
+            "progressive web apps", "responsive design", "web performance optimization",
+
+            # Backend & APIs
+            "grpc", "openapi", "soap", "rate limiting", "api gateway", "message queues",
+            "rabbitmq", "kafka", "event-driven systems", "background jobs", "webhooks",
+
+            # Cloud Platforms & Containers
+            "ecs", "eks", "lambda", "cloud run", "app engine", "cloudflare workers",
+            "service mesh", "istio", "helm", "container orchestration",
+
+            # Emerging & Advanced Tech
+            "edge computing", "fog computing", "5g", "iot", "ar", "vr", "xr",
+            "federated learning", "quantum encryption", "digital twins", "neuromorphic computing",
+
+            # Programming Languages & Tools
+            "go", "rust", "swift", "kotlin", "scala", "r", "bash", "c", "c++", "java",
+            "ruby", "php", "dart", "flutter", "swiftui",
+
+            # Analytics & Big Data
+            "big data", "hadoop", "spark", "kafka streams", "flink", "databricks",
+            "data pipelines", "real-time analytics", "business intelligence", "power bi", "tableau"
+        ]
+        self.cx_technical_concepts = [
+            # Core CX & Support Concepts
+            "customer experience", "customer journey", "customer satisfaction",
+            "customer retention", "customer loyalty", "customer lifetime value",
+            "net promoter score", "nps", "csat", "ces", "customer effort score",
+            "churn rate", "voice of the customer", "voc",
+
+            # Support Operations
+            "ticketing system", "helpdesk software", "sla", "first response time",
+            "average handle time", "aht", "first call resolution", "fcr",
+            "resolution time", "queue management", "escalation management",
+            "after call work", "acw", "wrap-up codes", "call disposition",
+            "call scripts", "knowledge base", "faq automation", "self-service portal",
+            "omnichannel support", "multichannel support", "call handling",
+            "inbound calls", "outbound calls", "call queue", "warm transfer",
+            "cold transfer", "call escalation", "ticket creation",
+
+            # Communication Channels
+            "voice support", "email support", "chat support", "live chat",
+            "social media support", "whatsapp support", "sms support",
+            "video support", "blended agents", "channel switching",
+            "co-browsing", "screen sharing",
+
+            # Tools & Platforms
+            "crm", "agent workspace", "unified agent desktop",
+            "zendesk", "freshdesk", "intercom", "salesforce service cloud",
+            "hubspot service hub", "helpscout", "genesys", "genesys cloud",
+            "twilio flex", "nice incontact", "five9", "avaya", "amazon connect",
+            "ccaas", "frontapp", "aircall", "qualtrics", "medallia",
+
+            # Automation & AI
+            "chatbots", "voicebots", "virtual assistants", "conversational ai",
+            "natural language processing", "nlp routing", "sentiment analysis",
+            "intent detection", "speech analytics", "voice recognition",
+            "predictive analytics", "ai routing", "automated responses",
+            "co-pilot ai", "agent assist ai", "automated workflows",
+            "rpa", "bot handoff", "queue prioritization", "call routing",
+            "skill-based routing", "emotion detection", "next best action",
+
+            # Data & Analytics
+            "customer data platform", "cdp", "crm integration", "data integration",
+            "real-time analytics", "dashboards", "reporting automation",
+            "cohort analysis", "text analytics", "journey analytics",
+            "feedback analytics", "customer segmentation",
+            "agent performance dashboard", "leaderboards", "kpi tracking",
+
+            # System Integration & APIs
+            "api integration", "webhooks", "bi tools integration", "single sign-on",
+            "sso", "oauth", "rest api", "graphql api", "workflow automation",
+            "ifttt", "zapier", "data synchronization", "real-time data fetch",
+
+            # UX / UI & Digital CX
+            "user experience", "user interface", "ux design", "ui design",
+            "personalization", "customer onboarding", "journey mapping",
+            "heatmaps", "a/b testing", "conversion optimization",
+            "behavioral analytics", "user feedback loops", "context-aware responses",
+
+            # Contact Center & Infrastructure
+            "contact center as a service", "ivr", "interactive voice response",
+            "auto dialer", "predictive dialer", "automatic call distributor",
+            "acd", "call recording", "screen recording", "call monitoring",
+            "live coaching", "speech-to-text", "cloud telephony", "call routing",
+            "ivr menu design", "real-time monitoring", "agent dashboards",
+            "softphone", "headset integration", "voip", "vpn connection",
+            "latency monitoring", "system uptime", "network quality metrics",
+            "call latency", "packet loss", "webrtc", "browser-based contact center",
+            "thin client environments",
+
+            # Security & Compliance
+            "gdpr", "ccpa", "data privacy", "pii masking", "data redaction",
+            "pci compliance", "security compliance", "access control",
+            "encryption", "audit logs", "role-based permissions",
+            "secure payment capture", "identity verification",
+            "call authentication", "voice biometrics", "knowledge-based authentication",
+            "session recording consent", "two-factor authentication",
+
+            # Agent Enablement & Training
+            "e-learning modules", "microlearning", "gamification", "coaching sessions",
+            "agent onboarding", "call simulations", "ai feedback", "training analytics",
+            "knowledge suggestions", "contextual knowledge surfacing",
+            "real-time assist prompts", "virtual training environments",
+
+            # Customer Data & Context
+            "customer profile", "interaction history", "case notes",
+            "customer sentiment", "customer intent", "journey orchestration",
+
+            # Emerging CX Tech
+            "proactive support", "predictive support", "hyper-personalization",
+            "contextual engagement", "customer digital twin", "emotion ai",
+            "real-time translation", "voice biometrics", "augmented reality support",
+            "self-healing systems", "recommendation engine", "agent sentiment tracking",
+            "real-time transcription", "automated note taking", "proactive engagement prompts"
         ]
 
     def extract(self, text: str, detected_req_tokens: list[str] = None) -> list[Target]:
@@ -110,29 +253,101 @@ class TargetExtractor:
         # Add domain attributes
         return self._add_domain_attributes(targets, text)
 
-    def _detect_imperative_target(self, text: str, req_tokens: list[str] = None) -> Optional[Target]:
+    @staticmethod
+    def _detect_imperative_target(text: str, req_tokens: list[str] = None) -> Optional[Target]:
         """
-        NEW: Detect targets for imperative commands at sentence start
+        Detect targets for imperative commands at sentence start
 
         Handles:
         - "List X" → ITEMS
         - "Name X" → ITEMS
         - "Calculate X" → RESULT
-        - "Generate X" → depends on X
-        - "Create X" → depends on X
+        - "Generate X" → depends on X and REQ context
+        - "Create X" → depends on X and REQ context
+        - CX domain targets: TICKET, TRANSCRIPT, EMAIL, COMPLAINT, etc.
 
         Args:
             text: Prompt text
             req_tokens: Already detected REQ tokens (helps determine target)
+
+        Returns:
+            Target object with appropriate token and attributes, or None
         """
         text_lower = text.lower().strip()
+        req_tokens = req_tokens or []
+
+        # Extract REQ action types for context-aware detection
+        req_actions = [req.split(':')[0] if ':' in req else req for req in req_tokens]
+
+        # ============================================================================
+        # CX DOMAIN DETECTION (Priority: Check before generic patterns)
+        # ============================================================================
+
+        # CX Pattern 1: Customer support keywords → TICKET/TRANSCRIPT/EMAIL
+        cx_keywords = {
+            'ticket': ('TICKET', ['support', 'issue', 'ticket', 'case', 'incident']),
+            'transcript': ('TRANSCRIPT', ['transcript', 'conversation', 'chat', 'dialogue', 'call', 'interaction']),
+            'email': ('EMAIL', ['email', 'message', 'correspondence']),
+            'complaint': ('COMPLAINT', ['complaint', 'escalation', 'grievance']),
+            'feedback': ('FEEDBACK', ['feedback', 'review', 'rating', 'survey']),
+            'query': ('QUERY', ['query', 'question', 'inquiry', 'request']),
+        }
+
+        for target_type, (target_token, keywords) in cx_keywords.items():
+            if any(kw in text_lower[:100] for kw in keywords):
+                # Determine domain attributes based on context
+                attributes = {}
+
+                # Domain detection
+                if any(word in text_lower for word in ['support', 'customer service', 'helpdesk']):
+                    attributes['DOMAIN'] = 'SUPPORT'
+                elif any(word in text_lower for word in ['sales', 'billing', 'payment']):
+                    attributes['DOMAIN'] = 'SALES'
+                elif any(word in text_lower for word in ['technical', 'tech', 'bug']):
+                    attributes['DOMAIN'] = 'TECHNICAL'
+
+                # Priority/Urgency detection
+                if any(word in text_lower for word in ['urgent', 'critical', 'asap', 'emergency']):
+                    attributes['PRIORITY'] = 'HIGH'
+                elif any(word in text_lower for word in ['low priority', 'minor', 'eventual']):
+                    attributes['PRIORITY'] = 'LOW'
+
+                return Target(token=target_token, attributes=attributes)
+
+        # CX Pattern 2: Response generation for customer interactions
+        if re.match(r'^(generate|create|write|draft|compose)\s+', text_lower):
+            # Check if it's a customer response
+            if any(word in text_lower[:80] for word in ['response', 'reply', 'answer', 'customer', 'client']):
+                attributes = {}
+
+                # Detect tone requirements (CTX attributes)
+                if any(word in text_lower for word in ['professional', 'formal']):
+                    attributes['TONE'] = 'PROFESSIONAL'
+                elif any(word in text_lower for word in ['empathetic', 'apologetic', 'sorry']):
+                    attributes['TONE'] = 'EMPATHETIC'
+                elif any(word in text_lower for word in ['casual', 'friendly']):
+                    attributes['TONE'] = 'CASUAL'
+
+                return Target(token='RESPONSE', attributes=attributes)
+
+        # ============================================================================
+        # GENERIC PATTERNS (Original functionality + enhancements)
+        # ============================================================================
 
         # Pattern 1: List/Name/Enumerate → ITEMS
         if re.match(r'^(list|name|enumerate|itemize)\s+', text_lower):
             # Check if it's listing specific things vs generating content
             if any(word in text_lower[:50] for word in
-                   ["benefits", "examples", "types", "reasons", "ways", "methods", "steps"]):
-                return Target(token="ITEMS", attributes={"TYPE": "LIST"})
+                   ["benefits", "examples", "types", "reasons", "ways", "methods", "steps", "items"]):
+                attributes = {}
+
+                # Detect if ordered list is implied
+                if any(word in text_lower for word in ['steps', 'process', 'sequence', 'order']):
+                    attributes['TYPE'] = 'ORDERED'
+                else:
+                    attributes['TYPE'] = 'LIST'
+
+                return Target(token="ITEMS", attributes=attributes)
             return Target(token="ITEMS", attributes={})
 
         # Pattern 2: Calculate/Compute → RESULT
@@ -140,34 +355,140 @@ class TargetExtractor:
             # Extract what's being calculated
             calc_match = re.search(r'^(?:calculate|compute|determine|find\s+the)\s+([\w\s]+?)(?:\.|$|\n|of)',
                                    text_lower)
+            attributes = {}
             if calc_match:
                 calc_type = calc_match.group(1).strip()
-                return Target(token="RESULT", attributes={"TYPE": calc_type.upper()})
-            return Target(token="RESULT", attributes={})
+                attributes['TYPE'] = calc_type.upper().replace(' ', '_')
 
-        # Pattern 3: Generate/Create/Write → context-dependent
-        if re.match(r'^(generate|create|write|draft|compose)\s+', text_lower):
-            # Look for specific content types
-            content_types = {
-                "story": "CONTENT",
-                "essay": "CONTENT",
-                "article": "CONTENT",
-                "email": "EMAIL",
-                "report": "REPORT",
-                "summary": "SUMMARY",
-                "list": "ITEMS",
-                "code": "CODE",
-                "script": "CODE",
-                "function": "CODE",
-                "description": "DESCRIPTION"
+            return Target(token="RESULT", attributes=attributes)
+
+        # Pattern 3: Extract/Identify → Use REQ context to determine target
+        if re.match(r'^(extract|identify|find)\s+', text_lower):
+            # Use REQ tokens to infer target type
+            if 'EXTRACT' in req_actions:
+                # Look for what's being extracted
+                extract_targets = {
+                    'issue': 'TICKET',
+                    'problem': 'TICKET',
+                    'sentiment': 'TRANSCRIPT',
+                    'intent': 'MESSAGE',
+                    'entities': 'DOCUMENT',
+                    'data': 'DATA',
+                    'information': 'DOCUMENT'
+                }
+
+                for keyword, target in extract_targets.items():
+                    if keyword in text_lower[:50]:
+                        return Target(token=target, attributes={})
+
+            # Default extraction target
+            return Target(token="DATA", attributes={})
+
+        # Pattern 4: Analyze → Context-dependent target detection
+        if re.match(r'^(analyze|review|examine|evaluate|assess)\s+', text_lower):
+            # Use REQ tokens and content to determine target
+            analysis_targets = {
+                'code': ('CODE', {}),
+                'script': ('CODE', {}),
+                'function': ('CODE', {}),
+                'conversation': ('TRANSCRIPT', {'DOMAIN': 'SUPPORT'}),
+                'transcript': ('TRANSCRIPT', {}),
+                'ticket': ('TICKET', {}),
+                'email': ('EMAIL', {}),
+                'document': ('DOCUMENT', {}),
+                'data': ('DATA', {}),
+                'sentiment': ('TRANSCRIPT', {}),
             }
 
-            for content_type, target in content_types.items():
-                if content_type in text_lower[:50]:
-                    return Target(token=target, attributes={})
+            for keyword, (target, attrs) in analysis_targets.items():
+                if keyword in text_lower[:60]:
+                    return Target(token=target, attributes=attrs)
 
-            # Default for creative generation
-            return Target(token="CONTENT", attributes={})
+            # Default to DOCUMENT for analysis
+            return Target(token="DOCUMENT", attributes={})
+
+        # Pattern 5: Generate/Create/Write → Enhanced context-dependent detection
+        if re.match(r'^(generate|create|write|draft|compose)\s+', text_lower):
+            # Enhanced content type detection with REQ context
+            content_types = {
+                # CX-specific
+                "response": ("RESPONSE", {}),
+                "reply": ("RESPONSE", {}),
+                "answer": ("RESPONSE", {}),
+
+                # Email/Communication
+                "email": ("EMAIL", {}),
+                "message": ("MESSAGE", {}),
+
+                # Documentation
+                "report": ("REPORT", {}),
+                "summary": ("SUMMARY", {}),
+                "documentation": ("DOCUMENT", {}),
+                "article": ("ARTICLE", {}),
+
+                # Creative content
+                "story": ("CONTENT", {'TYPE': 'NARRATIVE'}),
+                "essay": ("CONTENT", {'TYPE': 'ESSAY'}),
+                "blog": ("CONTENT", {'TYPE': 'BLOG'}),
+
+                # Technical
+                "code": ("CODE", {}),
+                "script": ("CODE", {}),
+                "function": ("CODE", {}),
+                "api": ("CODE", {'TYPE': 'API'}),
+
+                # Structured
+                "list": ("ITEMS", {}),
+                "table": ("DATA", {'FORMAT': 'TABLE'}),
+                "json": ("DATA", {'FORMAT': 'JSON'}),
+
+                # Other
+                "description": ("DESCRIPTION", {}),
+                "explanation": ("EXPLANATION", {}),
+            }
+
+            for content_type, (target, attrs) in content_types.items():
+                if content_type in text_lower[:60]:
+                    # Check for additional context from REQ tokens
+                    if 'GENERATE' in req_actions and target == 'CODE':
+                        # Look for language hints
+                        langs = ['python', 'javascript', 'java', 'c++', 'ruby', 'go', 'rust']
+                        for lang in langs:
+                            if lang in text_lower[:80]:
+                                attrs['LANG'] = lang.upper()
+                                break
+
+                    return Target(token=target, attributes=attrs)
+
+            # Default for creative generation based on REQ context
+            if 'GENERATE' in req_actions:
+                return Target(token="CONTENT", attributes={})
+
+        # Pattern 6: Compare/Rank → ITEMS or DATA
+        if re.match(r'^(compare|rank|order|sort)\s+', text_lower):
+            return Target(token="ITEMS", attributes={'TYPE': 'COMPARISON'})
+
+        # Pattern 7: Summarize/Condense → depends on subject
+        if re.match(r'^(summarize|condense|brief)\s+', text_lower):
+            # Check what's being summarized
+            if any(word in text_lower[:50] for word in ['conversation', 'transcript', 'chat']):
+                return Target(token="TRANSCRIPT", attributes={})
+            elif any(word in text_lower[:50] for word in ['document', 'article', 'report']):
+                return Target(token="DOCUMENT", attributes={})
+            else:
+                return Target(token="SUMMARY", attributes={})
+
+        # Pattern 8: Transform/Convert → RESULT with format attributes
+        if re.match(r'^(transform|convert|translate|rewrite)\s+', text_lower):
+            attributes = {}
+            # Detect source and target formats
+            formats = ['json', 'xml', 'csv', 'markdown', 'html', 'yaml']
+            for fmt in formats:
+                if fmt in text_lower[:80]:
+                    attributes['FORMAT'] = fmt.upper()
+                    break
+
+            return Target(token="RESULT", attributes=attributes)
 
         return None
 
