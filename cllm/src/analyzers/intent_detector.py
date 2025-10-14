@@ -58,7 +58,7 @@ class IntentDetector:
                 # Get REQ token with context-aware filtering
                 req_token = self.vocab.get_req_token(
                     token.lemma_,
-                    context=context,  # v2.1: Now filters "given", "following" correctly
+                    context=context,
                 )
                 if req_token and req_token not in seen:
                     intents.append(Intent(
@@ -84,7 +84,7 @@ class IntentDetector:
                         seen.add(token)
 
         # If NO intents detected so far, check if it's a question
-        # This handles the 168 prompts like "What is X?" with no verbs
+        # This handles prompts like "What is X?" with no verbs
         if not intents:
             question_req = self.vocab.get_question_req(text)
             if question_req:
@@ -95,7 +95,7 @@ class IntentDetector:
                 ))
                 seen.add(question_req)
 
-        # Remove duplicates, keep highest confidence
+        # Remove duplicates, keep the highest confidence
         unique_intents: dict[str, Intent] = {}
         for intent in intents:
             if intent.token not in unique_intents or intent.confidence > unique_intents[intent.token].confidence:
@@ -114,4 +114,4 @@ class IntentDetector:
         """
         if not intents:
             return None
-        return intents[0]  # Already sorted by confidence
+        return intents[0]

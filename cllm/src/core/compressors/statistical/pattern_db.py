@@ -14,7 +14,6 @@ class PatternDatabase:
 
     def load(self) -> None:
         """Load patterns from disk"""
-        print("Loading DB", self.db_path.exists())
         if self.db_path.exists():
             with open(self.db_path, 'r') as f:
                 data = json.load(f)
