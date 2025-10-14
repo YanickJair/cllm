@@ -18,7 +18,10 @@ class AttributeParser:
         found_fields = []
 
         # Look for extraction keywords
-        extraction_indicators = ["extract", "identify", "find", "get", "pull out", "check this", "look at this", "tell me what you think"]
+        extraction_indicators = [
+            "extract", "identify", "find", "get", "pull out", "check this", "look at this",
+            "tell me what you think", "return", "retrieve", "pick out", "locate"
+        ]
         has_extraction = any(indicator in text_lower for indicator in extraction_indicators)
 
         if not has_extraction:
