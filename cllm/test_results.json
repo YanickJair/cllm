@@ -1,0 +1,202 @@
+[
+  {
+    "prompt": "Analyze this customer support transcript and extract the main issue, sentiment, and action items. Format as JSON.",
+    "compressed": "[REQ:ANALYZE] [REQ:EXTRACT] [TARGET:TRANSCRIPT:DOMAIN=SUPPORT] [TARGET:TICKET:DOMAIN=SUPPORT] [EXTRACT:ISSUE+SENTIMENT] [OUT:JSON]",
+    "expected": "[REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=SUPPORT] [EXTRACT:ISSUE+SENTIMENT+ACTIONS] [OUT:JSON]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": -15.0,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Review this customer complaint about delayed shipping and draft a professional response.",
+    "compressed": "[REQ:ANALYZE] [REQ:GENERATE] [TARGET:COMPLAINT] [CTX:TONE=PROFESSIONAL]",
+    "expected": "[REQ:REVIEW] [REQ:GENERATE:TYPE=RESPONSE] [TARGET:COMPLAINT:ISSUE=SHIPPING_DELAY] [CTX:TONE=PROFESSIONAL]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": 19.3,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Classify this support ticket by urgency and category.",
+    "compressed": "[REQ:CLASSIFY] [TARGET:TICKET:DOMAIN=SUPPORT]",
+    "expected": "[REQ:CLASSIFY] [TARGET:TICKET] [EXTRACT:URGENCY+CATEGORY]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": 15.1,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Summarize this 30-minute customer call transcript briefly.",
+    "compressed": "[REQ:SUMMARIZE] [TARGET:TRANSCRIPT] [CTX:LENGTH=BRIEF]",
+    "expected": "[REQ:SUMMARIZE:BRIEF] [TARGET:TRANSCRIPT:TYPE=CALL:DURATION=30]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": 6.9,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Identify escalation triggers in this customer conversation.",
+    "compressed": "[REQ:EXTRACT] [TARGET:CONVERSATION]",
+    "expected": "[REQ:IDENTIFY] [TARGET:CONVERSATION] [EXTRACT:ESCALATION_TRIGGERS]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": 40.7,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Analyze this Python code and identify bugs, security issues, and performance problems.",
+    "compressed": "[REQ:ANALYZE] [REQ:EXTRACT] [TARGET:CODE:LANG=python] [EXTRACT:ISSUE+BUGS+SECURITY+PERFORMANCE]",
+    "expected": "[REQ:ANALYZE] [TARGET:CODE:LANG=PYTHON] [EXTRACT:BUGS+SECURITY+PERFORMANCE]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": -10.5,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Debug this JavaScript function that returns incorrect results.",
+    "compressed": "[REQ:DEBUG] [TARGET:CODE:LANG=javascript]",
+    "expected": "[REQ:DEBUG] [TARGET:CODE:LANG=JAVASCRIPT]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": 33.9,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Optimize this SQL query for better performance.",
+    "compressed": "[REQ:OPTIMIZE] [TARGET:QUERY] [TARGET:QUERY]",
+    "expected": "[REQ:OPTIMIZE:PERFORMANCE] [TARGET:QUERY:LANG=SQL]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": 6.4,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Review this code for style and readability issues.",
+    "compressed": "[REQ:ANALYZE] [TARGET:CODE]",
+    "expected": "[REQ:REVIEW] [TARGET:CODE] [EXTRACT:STYLE+READABILITY]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": 46.0,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Analyze this sales data CSV and identify trends and outliers.",
+    "compressed": "[REQ:ANALYZE] [REQ:EXTRACT] [TARGET:DATA] [TARGET:DATA] [OUT:CSV]",
+    "expected": "[REQ:ANALYZE] [TARGET:DATA:FORMAT=CSV:TYPE=SALES] [EXTRACT:TRENDS+OUTLIERS]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": -6.6,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Extract all dates and amounts from this financial report.",
+    "compressed": "[REQ:EXTRACT] [TARGET:REPORT] [EXTRACT:DATES+AMOUNTS]",
+    "expected": "[REQ:EXTRACT] [TARGET:REPORT:TYPE=FINANCIAL] [EXTRACT:DATES+AMOUNTS]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": 7.0,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Generate a professional email declining a job offer with gratitude.",
+    "compressed": "[REQ:GENERATE] [TARGET:EMAIL] [CTX:TONE=PROFESSIONAL]",
+    "expected": "[REQ:GENERATE:TYPE=EMAIL] [CTX:TONE=PROFESSIONAL] [CTX:INCLUDE=GRATITUDE]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": 20.9,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Write a brief summary of this article in plain text.",
+    "compressed": "[REQ:GENERATE] [TARGET:DOCUMENT] [TARGET:DOCUMENT] [CTX:LENGTH=BRIEF] [OUT:PLAIN]",
+    "expected": "[REQ:SUMMARIZE:BRIEF] [TARGET:ARTICLE] [OUT:PLAIN]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": -55.8,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Create a detailed technical specification for this API.",
+    "compressed": "[REQ:GENERATE] [TARGET:SPECIFICATION:DOMAIN=TECHNICAL] [CTX:TONE=TECHNICAL] [CTX:STYLE=DETAILED] [CTX:LENGTH=DETAILED]",
+    "expected": "[REQ:GENERATE] [TARGET:SPECIFICATION:TYPE=API] [CTX:STYLE=DETAILED+TECHNICAL]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": -114.5,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Explain quantum computing to a 10-year-old using simple analogies.",
+    "compressed": "[REQ:EXPLAIN] [TARGET:CONCEPT:TOPIC=QUANTUM_COMPUTING] [CTX:STYLE=SIMPLE]",
+    "expected": "[REQ:EXPLAIN:SIMPLE] [TARGET:CONCEPT:TOPIC=QUANTUM_COMPUTING] [CTX:AUDIENCE=CHILD:AGE=10] [CTX:METHOD=ANALOGIES]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": -10.6,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Describe how DNS works in technical detail.",
+    "compressed": "[REQ:EXPLAIN] [TARGET:CONCEPT:DOMAIN=TECHNICAL:TOPIC=DNS] [CTX:TONE=TECHNICAL]",
+    "expected": "[REQ:EXPLAIN:TECHNICAL] [TARGET:CONCEPT:TOPIC=DNS]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": -81.4,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Compare React and Vue.js frameworks and highlight their differences.",
+    "compressed": "[REQ:COMPARE] [TARGET:FRAMEWORK]",
+    "expected": "[REQ:COMPARE] [TARGET:FRAMEWORK:ITEMS=REACT,VUE] [EXTRACT:DIFFERENCES]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": 52.9,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Convert this meeting transcript into a structured action items list with owners.",
+    "compressed": "[REQ:TRANSFORM] [TARGET:TRANSCRIPT] [OUT:LIST]",
+    "expected": "[REQ:TRANSFORM] [TARGET:TRANSCRIPT:TYPE=MEETING] [EXTRACT:ACTION_ITEMS+OWNERS] [OUT:LIST:STRUCTURED]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": 42.5,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Translate this business proposal from English to Spanish.",
+    "compressed": "[REQ:TRANSFORM] [TARGET:DOCUMENT:DOMAIN=BUSINESS] [CTX:TONE=PROFESSIONAL]",
+    "expected": "[REQ:TRANSFORM:LANGUAGE] [TARGET:DOCUMENT:TYPE=PROPOSAL] [CTX:FROM=ENGLISH:TO=SPANISH]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": -28.1,
+    "has_req": true,
+    "has_target": true
+  },
+  {
+    "prompt": "Rewrite this technical documentation in a user-friendly tone.",
+    "compressed": "[REQ:TRANSFORM] [TARGET:DOCUMENT:DOMAIN=TECHNICAL] [CTX:TONE=CASUAL]",
+    "expected": "[REQ:TRANSFORM:STYLE] [TARGET:DOCUMENT:TYPE=TECHNICAL] [CTX:TONE=FRIENDLY:AUDIENCE=USER]",
+    "matches": true,
+    "issues": [],
+    "compression_ratio": -11.5,
+    "has_req": true,
+    "has_target": true
+  }
+]
