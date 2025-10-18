@@ -178,20 +178,19 @@ class TargetExtractor:
 
     def extract(self, text: str, detected_req_tokens: list[str] = None) -> list[Target]:
         """
-        Extract target objects from text with fallback system
-
+        Main extraction method - extracts TARGET tokens from text
+        
         Args:
             text: Input prompt text
-            detected_req_tokens: Optional list of REQ tokens already detected (helps with fallback)
-
+            detected_req_tokens: List of REQ tokens already detected
+            
         Returns:
-            List of detected Target objects (always at least 1 if fallback enabled)
+            List of Target objects with enhanced attributes
         """
         doc = self.nlp(text)
         targets: list[Target] = []
 
         # PRIORITY 1: Explicit pattern matching (highest confidence)
-        # These take precedence over everything else
         imperative_target = self._detect_imperative_target(text, detected_req_tokens)
         if imperative_target:
             return [imperative_target]
@@ -205,10 +204,8 @@ class TargetExtractor:
             if token.pos_ in ["NOUN", "PROPN"]:
                 target_token = self.vocab.get_target_token(token.text)
                 if target_token:
-                    targets.append(Target(
-                        token=target_token,
-                        attributes={}
-                    ))
+                    attributes = self._enhance_target_attributes(target_token, text, doc)
+                    targets.append(Target(token=target_token, attributes=attributes))
 
         # PRIORITY 3: Noun phrases
         for chunk in doc.noun_chunks:
@@ -216,24 +213,22 @@ class TargetExtractor:
             target_token = self.vocab.get_target_token(chunk_text)
             if target_token:
                 if not any(t.token == target_token for t in targets):
-                    targets.append(Target(
-                        token=target_token,
-                        attributes={}
-                    ))
+                    attributes = self._enhance_target_attributes(target_token, text, doc)
+                    targets.append(Target(token=target_token, attributes=attributes))
 
-        # PRIORITY 4: Compound phrases (multi-word matching)
-        compound_targets = self._detect_compound_phrases(text)
+        # PRIORITY 4: Compound phrases
+        compound_targets = self._detect_compound_phrases(text, doc)
         for target in compound_targets:
             if not any(t.token == target.token for t in targets):
                 targets.append(target)
 
         # PRIORITY 5: Pattern-based detection
-        this_target = self._detect_this_pattern(doc)
+        this_target = self._detect_this_pattern(doc, text)
         if this_target:
             if not any(t.token == this_target.token for t in targets):
                 targets.append(this_target)
 
-        for_target = self._detect_for_pattern(text)
+        for_target = self._detect_for_pattern(text, doc)
         if for_target:
             if not any(t.token == for_target.token for t in targets):
                 targets.append(for_target)
@@ -243,586 +238,549 @@ class TargetExtractor:
             if not any(t.token == "CONCEPT" for t in targets):
                 targets.append(concept_target)
 
-        # PRIORITY 6: Fallback system (NEW!)
-        # If NO targets found, provide intelligent fallback based on context
+        # PRIORITY 6: Fallback system
         if not targets:
-            fallback = self._get_fallback_target(text, doc, detected_req_tokens)
+            fallback = self._get_fallback_target(text, doc, detected_req_tokens or [])
             if fallback:
                 targets.append(fallback)
 
-        # Add domain attributes
+        # Add domain attributes to all targets
         return self._add_domain_attributes(targets, text)
 
-    @staticmethod
-    def _detect_imperative_target(text: str, req_tokens: list[str] = None) -> Optional[Target]:
+    # ============================================================================
+    # NEW V2.0: ENHANCED ATTRIBUTE EXTRACTION
+    # ============================================================================
+
+    def extract_topic_attribute(self, text: str, target_type: str, doc: Doc) -> Optional[str]:
         """
-        Detect targets for imperative commands at sentence start
-
-        Handles:
-        - "List X" → ITEMS
-        - "Name X" → ITEMS
-        - "Calculate X" → RESULT
-        - "Generate X" → depends on X and REQ context
-        - "Create X" → depends on X and REQ context
-        - CX domain targets: TICKET, TRANSCRIPT, EMAIL, COMPLAINT, etc.
-
-        Args:
-            text: Prompt text
-            req_tokens: Already detected REQ tokens (helps determine target)
-
+        Extract TOPIC attribute with high accuracy
+        
+        Examples:
+            "What are the three primary colors?" → "THREE_PRIMARY_COLORS"
+            "Explain the bubble sort algorithm" → "BUBBLE_SORT_ALGORITHM"
+            "How does photosynthesis work?" → "PHOTOSYNTHESIS"
+            "How can we reduce air pollution?" → "AIR_POLLUTION"
+        
         Returns:
-            Target object with appropriate token and attributes, or None
+            TOPIC string in UPPER_SNAKE_CASE or None
         """
-        text_lower = text.lower().strip()
-        req_tokens = req_tokens or []
-
-        # Extract REQ action types for context-aware detection
-        req_actions = [req.split(':')[0] if ':' in req else req for req in req_tokens]
-
-        # ============================================================================
-        # CX DOMAIN DETECTION (Priority: Check before generic patterns)
-        # ============================================================================
-
-        # CX Pattern 1: Customer support keywords → TICKET/TRANSCRIPT/EMAIL
-        cx_keywords = {
-            'ticket': ('TICKET', ['support', 'issue', 'ticket', 'case', 'incident']),
-            'transcript': ('TRANSCRIPT', ['transcript', 'conversation', 'chat', 'dialogue', 'call', 'interaction']),
-            'email': ('EMAIL', ['email', 'message', 'correspondence']),
-            'complaint': ('COMPLAINT', ['complaint', 'escalation', 'grievance']),
-            'feedback': ('FEEDBACK', ['feedback', 'review', 'rating', 'survey']),
-            'query': ('QUERY', ['query', 'question', 'inquiry', 'request']),
-        }
-
-        for target_type, (target_token, keywords) in cx_keywords.items():
-            if any(kw in text_lower[:100] for kw in keywords):
-                # Determine domain attributes based on context
-                attributes = {}
-
-                # Domain detection
-                if any(word in text_lower for word in ['support', 'customer service', 'helpdesk']):
-                    attributes['DOMAIN'] = 'SUPPORT'
-                elif any(word in text_lower for word in ['sales', 'billing', 'payment']):
-                    attributes['DOMAIN'] = 'SALES'
-                elif any(word in text_lower for word in ['technical', 'tech', 'bug']):
-                    attributes['DOMAIN'] = 'TECHNICAL'
-
-                # Priority/Urgency detection
-                if any(word in text_lower for word in ['urgent', 'critical', 'asap', 'emergency']):
-                    attributes['PRIORITY'] = 'HIGH'
-                elif any(word in text_lower for word in ['low priority', 'minor', 'eventual']):
-                    attributes['PRIORITY'] = 'LOW'
-
-                return Target(token=target_token, attributes=attributes)
-
-        # CX Pattern 2: Response generation for customer interactions
-        if re.match(r'^(generate|create|write|draft|compose)\s+', text_lower):
-            # Check if it's a customer response
-            if any(word in text_lower[:80] for word in ['response', 'reply', 'answer', 'customer', 'client']):
-                attributes = {}
-
-                # Detect tone requirements (CTX attributes)
-                if any(word in text_lower for word in ['professional', 'formal']):
-                    attributes['TONE'] = 'PROFESSIONAL'
-                elif any(word in text_lower for word in ['empathetic', 'apologetic', 'sorry']):
-                    attributes['TONE'] = 'EMPATHETIC'
-                elif any(word in text_lower for word in ['casual', 'friendly']):
-                    attributes['TONE'] = 'CASUAL'
-
-                return Target(token='RESPONSE', attributes=attributes)
-
-        # ============================================================================
-        # GENERIC PATTERNS (Original functionality + enhancements)
-        # ============================================================================
-
-        # Pattern 1: List/Name/Enumerate → ITEMS
-        if re.match(r'^(list|name|enumerate|itemize)\s+', text_lower):
-            # Check if it's listing specific things vs generating content
-            if any(word in text_lower[:50] for word in
-                   ["benefits", "examples", "types", "reasons", "ways", "methods", "steps", "items"]):
-                attributes = {}
-
-                # Detect if ordered list is implied
-                if any(word in text_lower for word in ['steps', 'process', 'sequence', 'order']):
-                    attributes['TYPE'] = 'ORDERED'
-                else:
-                    attributes['TYPE'] = 'LIST'
-
-                return Target(token="ITEMS", attributes=attributes)
-            return Target(token="ITEMS", attributes={})
-
-        # Pattern 2: Calculate/Compute → RESULT
-        if re.match(r'^(calculate|compute|determine|find\s+the)\s+', text_lower):
-            # Extract what's being calculated
-            calc_match = re.search(r'^(?:calculate|compute|determine|find\s+the)\s+([\w\s]+?)(?:\.|$|\n|of)',
-                                   text_lower)
-            attributes = {}
-            if calc_match:
-                calc_type = calc_match.group(1).strip()
-                attributes['TYPE'] = calc_type.upper().replace(' ', '_')
-
-            return Target(token="RESULT", attributes=attributes)
-
-        # Pattern 3: Extract/Identify → Use REQ context to determine target
-        if re.match(r'^(extract|identify|find)\s+', text_lower):
-            # Use REQ tokens to infer target type
-            if 'EXTRACT' in req_actions:
-                # Look for what's being extracted
-                extract_targets = {
-                    'issue': 'TICKET',
-                    'problem': 'TICKET',
-                    'sentiment': 'TRANSCRIPT',
-                    'intent': 'MESSAGE',
-                    'entities': 'DOCUMENT',
-                    'data': 'DATA',
-                    'information': 'DOCUMENT'
-                }
-
-                for keyword, target in extract_targets.items():
-                    if keyword in text_lower[:50]:
-                        return Target(token=target, attributes={})
-
-            # Default extraction target
-            return Target(token="DATA", attributes={})
-
-        # Pattern 4: Analyze → Context-dependent target detection
-        if re.match(r'^(analyze|review|examine|evaluate|assess)\s+', text_lower):
-            # Use REQ tokens and content to determine target
-            analysis_targets = {
-                'code': ('CODE', {}),
-                'script': ('CODE', {}),
-                'function': ('CODE', {}),
-                'conversation': ('TRANSCRIPT', {'DOMAIN': 'SUPPORT'}),
-                'transcript': ('TRANSCRIPT', {}),
-                'ticket': ('TICKET', {}),
-                'email': ('EMAIL', {}),
-                'document': ('DOCUMENT', {}),
-                'data': ('DATA', {}),
-                'sentiment': ('TRANSCRIPT', {}),
-            }
-
-            for keyword, (target, attrs) in analysis_targets.items():
-                if keyword in text_lower[:60]:
-                    return Target(token=target, attributes=attrs)
-
-            # Default to DOCUMENT for analysis
-            return Target(token="DOCUMENT", attributes={})
-
-        # Pattern 5: Generate/Create/Write → Enhanced context-dependent detection
-        if re.match(r'^(generate|create|write|draft|compose)\s+', text_lower):
-            # Enhanced content type detection with REQ context
-            content_types = {
-                # CX-specific
-                "response": ("RESPONSE", {}),
-                "reply": ("RESPONSE", {}),
-                "answer": ("RESPONSE", {}),
-
-                # Email/Communication
-                "email": ("EMAIL", {}),
-                "message": ("MESSAGE", {}),
-
-                # Documentation
-                "report": ("REPORT", {}),
-                "summary": ("SUMMARY", {}),
-                "documentation": ("DOCUMENT", {}),
-                "article": ("ARTICLE", {}),
-
-                # Creative content
-                "story": ("CONTENT", {'TYPE': 'NARRATIVE'}),
-                "essay": ("CONTENT", {'TYPE': 'ESSAY'}),
-                "blog": ("CONTENT", {'TYPE': 'BLOG'}),
-
-                # Technical
-                "code": ("CODE", {}),
-                "script": ("CODE", {}),
-                "function": ("CODE", {}),
-                "api": ("CODE", {'TYPE': 'API'}),
-
-                # Structured
-                "list": ("ITEMS", {}),
-                "table": ("DATA", {'FORMAT': 'TABLE'}),
-                "json": ("DATA", {'FORMAT': 'JSON'}),
-
-                # Other
-                "description": ("DESCRIPTION", {}),
-                "explanation": ("EXPLANATION", {}),
-            }
-
-            for content_type, (target, attrs) in content_types.items():
-                if content_type in text_lower[:60]:
-                    # Check for additional context from REQ tokens
-                    if 'GENERATE' in req_actions and target == 'CODE':
-                        # Look for language hints
-                        langs = ['python', 'javascript', 'java', 'c++', 'ruby', 'go', 'rust']
-                        for lang in langs:
-                            if lang in text_lower[:80]:
-                                attrs['LANG'] = lang.upper()
-                                break
-
-                    return Target(token=target, attributes=attrs)
-
-            # Default for creative generation based on REQ context
-            if 'GENERATE' in req_actions:
-                return Target(token="CONTENT", attributes={})
-
-        # Pattern 6: Compare/Rank → ITEMS or DATA
-        if re.match(r'^(compare|rank|order|sort)\s+', text_lower):
-            return Target(token="ITEMS", attributes={'TYPE': 'COMPARISON'})
-
-        # Pattern 7: Summarize/Condense → depends on subject
-        if re.match(r'^(summarize|condense|brief)\s+', text_lower):
-            # Check what's being summarized
-            if any(word in text_lower[:50] for word in ['conversation', 'transcript', 'chat']):
-                return Target(token="TRANSCRIPT", attributes={})
-            elif any(word in text_lower[:50] for word in ['document', 'article', 'report']):
-                return Target(token="DOCUMENT", attributes={})
-            else:
-                return Target(token="SUMMARY", attributes={})
-
-        # Pattern 8: Transform/Convert → RESULT with format attributes
-        if re.match(r'^(transform|convert|translate|rewrite)\s+', text_lower):
-            attributes = {}
-            # Detect source and target formats
-            formats = ['json', 'xml', 'csv', 'markdown', 'html', 'yaml']
-            for fmt in formats:
-                if fmt in text_lower[:80]:
-                    attributes['FORMAT'] = fmt.upper()
-                    break
-
-            return Target(token="RESULT", attributes=attributes)
-
+        text_lower = text.lower()
+        
+        # Strategy 1: Question patterns (highest priority)
+        question_patterns = [
+            r'what (?:is|are) (?:the |an? )?([\w\s\'-]+)\??',
+            r'who (?:is|are|was|were) (?:the )?([\w\s\'-]+)\??',
+            r'where (?:is|are|can) ([\w\s\'-]+)',
+            r'when (?:is|are|was|were|did) ([\w\s\'-]+)',
+            r'why (?:is|are|does|do) ([\w\s\'-]+)',
+            r'how (?:does|do|can|is|are|could|should|would) ([\w\s\'-]+)',
+        ]
+        
+        for pattern in question_patterns:
+            match = re.search(pattern, text_lower)
+            if match:
+                topic = match.group(1).strip()
+                # Clean up
+                topic = self._clean_topic(topic)
+                if topic:
+                    return topic.replace(' ', '_').replace("'", '').upper()
+        
+        # Strategy 2: "Explain/Describe X" patterns
+        explain_patterns = [
+            r'(?:explain|describe|clarify|detail|elaborate on|tell me about) (?:the |an? )?([\w\s\'-]+)',
+            r'(?:definition|meaning) of ([\w\s\'-]+)',
+        ]
+        
+        for pattern in explain_patterns:
+            match = re.search(pattern, text_lower)
+            if match:
+                topic = match.group(1).strip()
+                topic = self._clean_topic(topic)
+                if topic:
+                    return topic.replace(' ', '_').replace("'", '').upper()
+        
+        # Strategy 3: "X of Y" patterns for concepts
+        if target_type == 'CONCEPT':
+            of_pattern = r'(?:concept|idea|notion|principle|theory) of ([\w\s\'-]+)'
+            match = re.search(of_pattern, text_lower)
+            if match:
+                topic = match.group(1).strip()
+                topic = self._clean_topic(topic)
+                if topic:
+                    return topic.replace(' ', '_').replace("'", '').upper()
+        
+        # Strategy 4: For procedures, extract the action/process
+        if target_type == 'PROCEDURE':
+            how_pattern = r'how (?:to|can I|do I|does|can we|do we) ([\w\s\'-]+)'
+            match = re.search(how_pattern, text_lower)
+            if match:
+                topic = match.group(1).strip()
+                topic = self._clean_topic(topic)
+                if topic:
+                    return topic.replace(' ', '_').replace("'", '').upper()
+        
+        # Strategy 5: Meaningful noun chunks (last resort)
+        for chunk in doc.noun_chunks:
+            chunk_text = chunk.text.lower()
+            # Filter out generic/demonstrative words
+            if chunk_text in ['it', 'this', 'that', 'these', 'those', 'the following', 
+                             'a', 'an', 'the', 'something', 'anything']:
+                continue
+            if len(chunk_text) > 3:
+                topic = self._clean_topic(chunk_text)
+                if topic:
+                    return topic.replace(' ', '_').replace("'", '').upper()
+        
         return None
+
+    def _clean_topic(self, topic: str) -> Optional[str]:
+        """
+        Clean up extracted topic by removing pronouns, verbs, and filler words
+        
+        Examples:
+            "we reduce air pollution" → "air pollution"
+            "I can fix this bug" → "bug"
+            "you calculate the area" → "area"
+        
+        Returns:
+            Cleaned topic string or None if nothing remains
+        """
+        # Remove common pronouns at start
+        topic = re.sub(r'^(i|we|you|they|he|she|it|us|our|your|their)\s+', '', topic, flags=re.IGNORECASE)
+        
+        # Remove auxiliary/modal verbs at start
+        topic = re.sub(r'^(can|could|should|would|will|shall|may|might|must)\s+', '', topic, flags=re.IGNORECASE)
+        
+        # Remove common action verbs that are redundant with REQ tokens
+        # These verbs are already captured in REQ, so remove from TOPIC
+        action_verbs = [
+            'reduce', 'increase', 'improve', 'optimize', 'enhance',
+            'fix', 'solve', 'resolve', 'debug', 'repair',
+            'create', 'generate', 'build', 'make', 'produce',
+            'analyze', 'examine', 'review', 'evaluate', 'assess',
+            'explain', 'describe', 'clarify', 'define',
+            'calculate', 'compute', 'determine', 'find',
+            'compare', 'contrast', 'differentiate',
+            'classify', 'categorize', 'sort', 'organize',
+        ]
+        
+        for verb in action_verbs:
+            # Remove verb at start: "reduce air pollution" → "air pollution"
+            topic = re.sub(rf'^{verb}\s+', '', topic, flags=re.IGNORECASE)
+            # Remove verb + article: "reduce the pollution" → "pollution"
+            topic = re.sub(rf'^{verb}\s+(the|a|an)\s+', '', topic, flags=re.IGNORECASE)
+        
+        # Remove trailing prepositions
+        topic = re.sub(r'\s+(of|in|for|with|about|from|to|at|on|by)$', '', topic)
+        return topic
+
+    def detect_subject_attribute(self, text: str) -> Optional[str]:
+        """
+        Detect SUBJECT attribute for specific content types
+        
+        Examples:
+            "three verbs" → "VERB"
+            "five tips" → "TIP"
+            "bubble sort algorithm" → "ALGORITHM"
+            "examples of recursion" → "EXAMPLE"
+        
+        Returns:
+            SUBJECT string like "VERB", "TIP", etc. or None
+        """
+        text_lower = text.lower()
+        
+        # Subject patterns (order matters - specific before general)
+        SUBJECT_PATTERNS = [
+            # Grammar elements
+            (r'\bverb[s]?\b', 'VERB'),
+            (r'\bnoun[s]?\b', 'NOUN'),
+            (r'\badjective[s]?\b', 'ADJECTIVE'),
+            (r'\badverb[s]?\b', 'ADVERB'),
+            (r'\bpronoun[s]?\b', 'PRONOUN'),
+            (r'\bpreposition[s]?\b', 'PREPOSITION'),
+            (r'\bconjunction[s]?\b', 'CONJUNCTION'),
+            
+            # Content types (specific)
+            (r'\btip[s]?\b', 'TIP'),
+            (r'\b(?:suggestion|recommendation)[s]?\b', 'TIP'),
+            (r'\bmethod[s]?\b', 'METHOD'),
+            (r'\btechnique[s]?\b', 'TECHNIQUE'),
+            (r'\bstrateg(?:y|ies)\b', 'STRATEGY'),
+            (r'\bapproach(?:es)?\b', 'APPROACH'),
+            (r'\bpractice[s]?\b', 'PRACTICE'),
+            
+            # Technical subjects
+            (r'\balgorithm[s]?\b', 'ALGORITHM'),
+            (r'\bfunction[s]?\b', 'FUNCTION'),
+            (r'\bformula[s]?\b', 'FORMULA'),
+            (r'\bequation[s]?\b', 'EQUATION'),
+            (r'\btheorem[s]?\b', 'THEOREM'),
+            (r'\bproof[s]?\b', 'PROOF'),
+            
+            # Lists and collections
+            (r'\bexample[s]?\b', 'EXAMPLE'),
+            (r'\bidea[s]?\b', 'IDEA'),
+            (r'\bway[s]?\b', 'METHOD'),
+            (r'\bstep[s]?\b', 'STEP'),
+            (r'\bfactor[s]?\b', 'FACTOR'),
+            (r'\breason[s]?\b', 'REASON'),
+            (r'\bbenefit[s]?\b', 'BENEFIT'),
+            (r'\badvantage[s]?\b', 'ADVANTAGE'),
+            (r'\bdisadvantage[s]?\b', 'DISADVANTAGE'),
+            (r'\bfeature[s]?\b', 'FEATURE'),
+            (r'\bcharacteristic[s]?\b', 'CHARACTERISTIC'),
+            
+            # Business/Analysis
+            (r'\bmetric[s]?\b', 'METRIC'),
+            (r'\bindicator[s]?\b', 'INDICATOR'),
+            (r'\binsight[s]?\b', 'INSIGHT'),
+            (r'\bfinding[s]?\b', 'FINDING'),
+        ]
+        
+        for pattern, subject in SUBJECT_PATTERNS:
+            if re.search(pattern, text_lower):
+                return subject
+        
+        return None
+
+    def _enhance_target_attributes(self, target_token: str, text: str, doc: Doc) -> dict:
+        """
+        Central method to enhance Target attributes with TOPIC and SUBJECT
+        
+        This is the MAIN integration point - call this whenever creating a Target
+        
+        Args:
+            target_token: The target type (e.g., "CONCEPT", "CONTENT", "ITEMS")
+            text: Original prompt text
+            doc: spaCy Doc object
+            
+        Returns:
+            Dictionary of attributes including TOPIC, SUBJECT, DOMAIN, LANG
+        """
+        attributes = {}
+        
+        # Add TOPIC for applicable targets
+        if target_token in ['CONCEPT', 'PROCEDURE', 'ANSWER', 'FACT']:
+            topic = self.extract_topic_attribute(text, target_token, doc)
+            if topic:
+                attributes['TOPIC'] = topic
+        
+        # Add SUBJECT for applicable targets
+        if target_token in ['CONTENT', 'ITEMS', 'ANSWER', 'DOCUMENT']:
+            subject = self.detect_subject_attribute(text)
+            if subject:
+                attributes['SUBJECT'] = subject
+        
+        # Add TYPE for RESULT targets
+        if target_token == 'RESULT':
+            type_match = re.search(r'(?:calculate|compute|find) (?:the )?([\w\s]+)', 
+                                 text.lower())
+            if type_match:
+                result_type = type_match.group(1).strip()
+                attributes['TYPE'] = result_type.replace(' ', '_').upper()
+        
+        # Keep existing domain detection
+        domain = self._detect_domain(text)
+        if domain:
+            attributes['DOMAIN'] = domain
+        
+        # Keep existing language detection
+        lang = self._detect_language(text)
+        if lang:
+            attributes['LANG'] = lang
+        
+        return attributes
+
+    def _detect_domain(self, text: str) -> Optional[str]:
+        """
+        Detect domain (SUPPORT, TECHNICAL, SALES) with context awareness
+        
+        Only triggers when domain keywords appear in relevant contexts
+        """
+        text_lower = text.lower()
+        
+        # Domain patterns with context
+        # Only match when we have strong indicators
+        
+        # SUPPORT domain - needs customer service context
+        support_patterns = [
+            r'\b(?:customer\s+)?support\s+(?:ticket|transcript|call|email|chat)',
+            r'\b(?:support|customer\s+service|helpdesk|service\s+desk)',
+            r'\bticket\b.*\b(?:customer|support|issue)',
+            r'\bcustomer\s+(?:support|service|complaint|inquiry)',
+        ]
+        
+        for pattern in support_patterns:
+            if re.search(pattern, text_lower):
+                return 'SUPPORT'
+        
+        # TECHNICAL domain - needs technical context
+        technical_patterns = [
+            r'\b(?:technical\s+)?(?:bug|debug|error|exception)',
+            r'\bcode\s+review\b',
+            r'\btechnical\s+(?:issue|problem|documentation)',
+            r'\bstack\s+trace\b',
+        ]
+        
+        for pattern in technical_patterns:
+            if re.search(pattern, text_lower):
+                return 'TECHNICAL'
+        
+        # SALES domain - needs sales/billing context
+        sales_patterns = [
+            r'\b(?:sales|billing|payment|invoice|pricing)',
+            r'\bpurchase\s+order\b',
+            r'\bquote\b.*\b(?:sales|price)',
+        ]
+        
+        for pattern in sales_patterns:
+            if re.search(pattern, text_lower):
+                return 'SALES'
+        
+        return None
+
+    def _detect_language(self, text: str) -> Optional[str]:
+        """
+        Detect programming language ONLY in code-related contexts
+        
+        Uses strict matching to avoid false positives on common English words
+        """
+        text_lower = text.lower()
+        
+        # CRITICAL: Only detect language if there's code-related context
+        code_indicators = [
+            'code', 'script', 'function', 'program', 'algorithm',
+            'snippet', 'file', 'implementation', 'syntax', 'debug',
+            'compile', 'runtime', 'library', 'framework', 'api',
+        ]
+        
+        # If no code context, don't detect language
+        if not any(indicator in text_lower for indicator in code_indicators):
+            return None
+        
+        # Language patterns with word boundaries to avoid false matches
+        # Format: (regex pattern, language name)
+        language_patterns = [
+            (r'\bpython\b', 'PYTHON'),
+            (r'\bdjango\b', 'PYTHON'),
+            (r'\bflask\b', 'PYTHON'),
+            (r'\bpandas\b', 'PYTHON'),
+            (r'\b\.py\b', 'PYTHON'),
+            
+            (r'\bjavascript\b', 'JAVASCRIPT'),
+            (r'\bnode\.?js\b', 'JAVASCRIPT'),
+            (r'\breact\b', 'JAVASCRIPT'),
+            (r'\bvue\b', 'JAVASCRIPT'),
+            (r'\bangular\b', 'JAVASCRIPT'),
+            (r'\b\.js\b', 'JAVASCRIPT'),  # ".js" file extension
+            
+            (r'\bjava\b(?!script)', 'JAVA'),  # "java" but not "javascript"
+            (r'\bspring\b', 'JAVA'),
+            (r'\bmaven\b', 'JAVA'),
+            
+            (r'\bc\+\+\b', 'CPP'),
+            (r'\bcpp\b', 'CPP'),
+            
+            (r'\bgolang\b', 'GO'),  # Only "golang", not "go"
+            (r'\bgo\s+(?:code|lang|program|script)', 'GO'),  # "go code", "go program"
+            
+            (r'\brust\b', 'RUST'),
+            
+            (r'\btypescript\b', 'TYPESCRIPT'),
+            (r'\b\.ts\b', 'TYPESCRIPT'),  # ".ts" file extension
+        ]
+        
+        for pattern, lang in language_patterns:
+            if re.search(pattern, text_lower):
+                return lang
+        
+        return None
+
+    # ============================================================================
+    # DETECTION METHODS (Enhanced with attribute extraction)
+    # ============================================================================
 
     def _detect_question_target(self, text: str, doc: Doc) -> Optional[Target]:
-        """
-        IMPROVED: Better question pattern detection with fallbacks
-
-        Patterns:
-        - "What is X?" → CONCEPT or DEFINITION
-        - "How to X?" → PROCEDURE
-        - "How does X work?" → CONCEPT
-        - "Why X?" → EXPLANATION
-        - "When/Where X?" → FACT
-        - "Who is X?" → PERSON (maps to CONCEPT with TYPE=PERSON)
-        """
-        text_lower = text.lower().strip()
-
-        # Pattern 1: "What is/are X?"
-        if text_lower.startswith(("what is", "what are", "what's")):
-            # Try to extract the subject
-            match = re.search(r'what\s+(?:is|are|\'s)\s+(.+?)(?:\?|$)', text_lower)
-            if match:
-                subject = match.group(1).strip()
-                # Remove common filler words
-                subject = re.sub(r'^(the|a|an)\s+', '', subject)
-
-                return Target(
-                    token="CONCEPT",
-                    attributes={"TOPIC": subject.upper().replace(" ", "_"), "TYPE": "DEFINITION"}
-                )
-            return Target(token="CONCEPT", attributes={"TYPE": "DEFINITION"})
-
-        # Pattern 2: "How to X?" or "How do I X?"
-        if text_lower.startswith(("how to", "how do i", "how can i", "how do you")):
-            match = re.search(r'how\s+(?:to|do\s+(?:i|you)|can\s+i)\s+(.+?)(?:\?|$)', text_lower)
-            if match:
-                action = match.group(1).strip()
-                return Target(
-                    token="PROCEDURE",
-                    attributes={"ACTION": action.upper().replace(" ", "_")}
-                )
-            return Target(token="PROCEDURE", attributes={})
-
-        # Pattern 3: "How does X work?"
-        if re.match(r'how\s+(?:does|do)\s+', text_lower):
-            match = re.search(r'how\s+(?:does|do)\s+(.+?)(?:\s+work|\?|$)', text_lower)
-            if match:
-                subject = match.group(1).strip()
-                return Target(
-                    token="CONCEPT",
-                    attributes={"TOPIC": subject.upper().replace(" ", "_"), "TYPE": "MECHANISM"}
-                )
-            return Target(token="CONCEPT", attributes={"TYPE": "MECHANISM"})
-
-        # Pattern 4: "Why X?"
-        if text_lower.startswith("why"):
-            return Target(token="EXPLANATION", attributes={})
-
-        # Pattern 5: "When X?" or "Where X?"
-        if text_lower.startswith(("when", "where")):
-            return Target(token="FACT", attributes={})
-
-        # Pattern 6: "Who is X?"
-        if text_lower.startswith(("who is", "who are", "who was", "who were")):
-            match = re.search(r'who\s+(?:is|are|was|were)\s+(.+?)(?:\?|$)', text_lower)
-            if match:
-                person = match.group(1).strip()
-                return Target(
-                    token="CONCEPT",
-                    attributes={"TOPIC": person.upper().replace(" ", "_"), "TYPE": "PERSON"}
-                )
-            return Target(token="CONCEPT", attributes={"TYPE": "PERSON"})
-
+        """Detect target for question patterns with enhanced attributes"""
+        if not text.strip().endswith('?'):
+            return None
+        
+        text_lower = text.lower()
+        
+        # Question word detection
+        if any(text_lower.startswith(q) for q in ['what', 'who', 'where', 'when', 'why', 'how']):
+            attributes = self._enhance_target_attributes("CONCEPT", text, doc)
+            return Target(token="CONCEPT", attributes=attributes)
+        
         return None
 
-    def _get_fallback_target(self, text: str, doc: Doc, req_tokens: list[str] = None) -> Optional[Target]:
-        """
-        NEW: Intelligent fallback when no target detected
-
-        Uses REQ tokens + text patterns to infer appropriate target
-
-        Args:
-            text: Prompt text
-            doc: spaCy doc
-            req_tokens: List of detected REQ tokens
-        """
-        text_lower = text.lower()
+    def _detect_imperative_target(self, text: str, req_tokens: list[str] = None) -> Optional[Target]:
+        """Detect targets for imperative commands with enhanced attributes"""
+        text_lower = text.lower().strip()
         req_tokens = req_tokens or []
+        req_actions = [req.split(':')[0] if ':' in req else req for req in req_tokens]
+        
+        doc = self.nlp(text)  # Create doc for attribute extraction
+        
+        # Pattern 1: List/Name/Enumerate → ITEMS
+        if re.match(r'^(list|name|enumerate|itemize)\s+', text_lower):
+            attributes = self._enhance_target_attributes("ITEMS", text, doc)
+            return Target(token="ITEMS", attributes=attributes)
+        
+        # Pattern 2: Calculate/Compute → RESULT
+        if re.match(r'^(calculate|compute|determine|find\s+the)\s+', text_lower):
+            attributes = self._enhance_target_attributes("RESULT", text, doc)
+            return Target(token="RESULT", attributes=attributes)
+        
+        # Pattern 3: Extract/Identify → DATA
+        if re.match(r'^(extract|identify|find)\s+', text_lower):
+            attributes = self._enhance_target_attributes("DATA", text, doc)
+            return Target(token="DATA", attributes=attributes)
+        
+        # Pattern 4: Analyze → depends on context
+        if re.match(r'^(analyze|review|examine|evaluate)\s+', text_lower):
+            # Look for specific targets
+            if 'code' in text_lower[:30]:
+                attributes = self._enhance_target_attributes("CODE", text, doc)
+                return Target(token="CODE", attributes=attributes)
+            elif 'data' in text_lower[:30]:
+                attributes = self._enhance_target_attributes("DATA", text, doc)
+                return Target(token="DATA", attributes=attributes)
+            else:
+                attributes = self._enhance_target_attributes("DOCUMENT", text, doc)
+                return Target(token="DOCUMENT", attributes=attributes)
+        
+        # Pattern 5: Generate/Create → CONTENT
+        if re.match(r'^(generate|create|write|draft)\s+', text_lower):
+            attributes = self._enhance_target_attributes("CONTENT", text, doc)
+            return Target(token="CONTENT", attributes=attributes)
+        
+        return None
 
-        # Strategy 1: Match by REQ token type
-        if "GENERATE" in req_tokens or "LIST" in req_tokens:
-            # Check if it's creative vs factual content
-            creative_indicators = ["story", "poem", "essay", "narrative", "creative", "fiction"]
-            if any(ind in text_lower for ind in creative_indicators):
-                return Target(token="CONTENT", attributes={})
-
-            # Check for list generation
-            list_indicators = ["list", "benefits", "examples", "reasons", "ways", "types", "methods"]
-            if any(ind in text_lower[:30] for ind in list_indicators):
-                return Target(token="ITEMS", attributes={})
-
-            return Target(token="CONTENT", attributes={})
-
-        if "CALCULATE" in req_tokens:
-            return Target(token="RESULT", attributes={})
-
-        if "ANALYZE" in req_tokens or "EVALUATE" in req_tokens:
-            # Look for what's being analyzed
-            analysis_targets = {
-                "code": "CODE",
-                "data": "DATA",
-                "document": "DOCUMENT",
-                "text": "DOCUMENT",
-                "performance": "METRICS",
-                "strategy": "STRATEGY"
-            }
-            for keyword, target in analysis_targets.items():
-                if keyword in text_lower:
-                    return Target(token=target, attributes={})
-
-            # Default: analyzing some content
-            return Target(token="CONTENT", attributes={})
-
-        if "EXPLAIN" in req_tokens or "DESCRIBE" in req_tokens:
-            return Target(token="CONCEPT", attributes={})
-
-        if "COMPARE" in req_tokens:
-            return Target(token="OPTIONS", attributes={})
-
-        if "EXTRACT" in req_tokens:
-            # Extracting information from something
-            return Target(token="DATA", attributes={})
-
-        if "TRANSFORM" in req_tokens:
-            # Transforming some content
-            return Target(token="CONTENT", attributes={})
-
-        if "CLASSIFY" in req_tokens:
-            return Target(token="ITEMS", attributes={"ACTION": "CLASSIFY"})
-
-        # Strategy 2: Pattern-based fallback
-        # Simple sentence structure: check for common patterns
-        if any(word in text_lower[:20] for word in ["list", "name", "enumerate"]):
-            return Target(token="ITEMS", attributes={})
-
-        if any(word in text_lower[:20] for word in ["explain", "describe", "tell"]):
-            return Target(token="CONCEPT", attributes={})
-
-        if any(word in text_lower[:20] for word in ["create", "write", "generate"]):
-            return Target(token="CONTENT", attributes={})
-
-        # Strategy 3: Question detection (if missed by question detector)
-        if text.strip().endswith("?"):
-            if text_lower.startswith("what"):
-                return Target(token="CONCEPT", attributes={})
-            if text_lower.startswith("how"):
-                return Target(token="PROCEDURE", attributes={})
-            # Generic question
-            return Target(token="ANSWER", attributes={})
-
-        # Strategy 4: Last resort - generic target based on text length
-        # Short prompts (< 10 words) are often simple questions/commands
-        word_count = len(text.split())
-        if word_count < 10:
-            return Target(token="ANSWER", attributes={})
-
-        # Longer prompts - assume they're about some content
-        return Target(token="CONTENT", attributes={})
-
-    def _add_domain_attributes(self, targets: list[Target], text: str) -> list[Target]:
-        """Add domain-specific attributes to targets"""
+    def _detect_compound_phrases(self, text: str, doc: Doc) -> list[Target]:
+        """Detect compound phrase targets with enhanced attributes"""
+        targets = []
         text_lower = text.lower()
-
-        domain_keywords = {
-            "SUPPORT": ["customer support", "customer service", "support ticket"],
-            "TECHNICAL": ["technical", "engineering", "development", "code review", "fix bug"],
-            "BUSINESS": ["business", "corporate", "enterprise"],
-            "MEDICAL": ["medical", "healthcare", "clinical"],
+        
+        # Multi-word target phrases
+        compound_phrases = {
+            "customer support": "TICKET",
+            "support ticket": "TICKET",
+            "email message": "EMAIL",
+            "chat transcript": "TRANSCRIPT",
+            "phone call": "CALL",
+            "source code": "CODE",
         }
-
-        for target in targets:
-            # Add domain if found
-            for domain, keywords in domain_keywords.items():
-                if any(kw in text_lower for kw in keywords):
-                    target.domain = domain
-                    break
-
-            # Add language attribute for CODE targets
-            if target.token == "CODE":
-                languages = ["python", "javascript", "java", "c++", "ruby", "go", "rust", "typescript"]
-                for lang in languages:
-                    if lang in text_lower:
-                        target.attributes["LANG"] = lang.upper()
-                        break
-
-            # Add type attribute for TRANSCRIPT targets
-            if target.token == "TRANSCRIPT":
-                types = ["meeting", "call", "chat", "interview"]
-                for ttype in types:
-                    if ttype in text_lower:
-                        target.attributes["TYPE"] = ttype.upper()
-                        break
-
+        
+        for phrase, target_token in compound_phrases.items():
+            if phrase in text_lower:
+                attributes = self._enhance_target_attributes(target_token, text, doc)
+                targets.append(Target(token=target_token, attributes=attributes))
+        
         return targets
 
-    def _detect_concept_target(self, text: str, doc: Doc) -> Optional[Target]:
-        """
-        Detect abstract concepts that need explanation
-
-        Patterns detected:
-        1. "Explain X" or "Describe X" where X is the concept
-        2. Known technical terms in the text
-        3. "How X works" patterns
-        """
-        text_lower = text.lower()
-
-        # Pattern 1: "Explain/Describe [CONCEPT]"
-        explanation_verbs = ["explain", "describe", "clarify", "elucidate", "tell"]
-
-        for token in doc:
-            if token.lemma_ in explanation_verbs:
-                # Find the object of explanation (direct object)
-                for child in token.children:
-                    if child.dep_ in ["dobj", "attr", "pobj"]:
-                        # Get the full noun phrase
-                        concept_text = self._extract_noun_phrase(child)
-                        if concept_text:
-                            return Target(
-                                token="CONCEPT",
-                                attributes={"TOPIC": concept_text.upper().replace(" ", "_")}
-                            )
-
-        # Pattern 2: "How [CONCEPT] works"
-        how_works_pattern = r"how\s+([a-zA-Z\s]+?)\s+works?"
-        match = re.search(how_works_pattern, text_lower)
-        if match:
-            concept = match.group(1).strip()
-            return Target(
-                token="CONCEPT",
-                attributes={"TOPIC": concept.upper().replace(" ", "_")}
-            )
-
-        # Pattern 3: Known technical terms
-        for term in self.technical_concepts:
-            if term in text_lower:
-                # Only trigger if it's the main subject
-                if any(verb in text_lower for verb in ["explain", "describe", "what is", "how does"]):
-                    return Target(
-                        token="CONCEPT",
-                        attributes={"TOPIC": term.upper().replace(" ", "_")}
-                    )
-
-        return None
-
-    def _extract_noun_phrase(self, token: Token) -> Optional[str]:
-        """Extract full noun phrase from a token"""
-        phrase_tokens: list[Token] = []
-
-        def collect_tokens(tok: Token):
-            phrase_tokens.append(tok)
-            for child in tok.children:
-                if child.dep_ in ["compound", "amod", "nmod", "det"]:
-                    collect_tokens(child)
-
-        collect_tokens(token)
-        phrase_tokens.sort(key=lambda t: t.i)
-        phrase = " ".join([t.text for t in phrase_tokens])
-        phrase = phrase.strip()
-
-        # Filter generic words
-        generic_words = ["this", "that", "the", "a", "an", "it"]
-        if phrase.lower() in generic_words:
-            return None
-
-        return phrase if phrase else None
-
-    def _detect_this_pattern(self, doc: Doc) -> Optional[Target]:
-        """
-        Detect "this X" patterns where X should be a target
-        Example: "Check this API endpoint" → TARGET:ENDPOINT
-        """
+    def _detect_this_pattern(self, doc: Doc, text: str) -> Optional[Target]:
+        """Detect 'this X' patterns with enhanced attributes"""
         for i, token in enumerate(doc):
             if token.text.lower() == "this" and i + 1 < len(doc):
-                # Look for the noun chunk after "this"
-                for chunk in doc.noun_chunks:
-                    if chunk.start > i:
-                        noun = chunk.root.text.lower()
-                        target_token = self.vocab.get_target_token(noun)
-                        if target_token:
-                            return Target(token=target_token, attributes={})
-                        break
-
-                # Fallback: check the next token if it's a noun
                 next_token = doc[i + 1]
                 if next_token.pos_ in ["NOUN", "PROPN"]:
                     target_token = self.vocab.get_target_token(next_token.text.lower())
                     if target_token:
-                        return Target(token=target_token, attributes={})
-
+                        attributes = self._enhance_target_attributes(target_token, text, doc)
+                        return Target(token=target_token, attributes=attributes)
         return None
 
-    def _detect_for_pattern(self, text: str) -> Optional[Target]:
-        """
-        Detect "for X" patterns
-        Examples:
-        - "...for an eco-friendly water bottle" → DESCRIPTION
-        - "...for this business plan" → PLAN
-        """
+    def _detect_for_pattern(self, text: str, doc: Doc) -> Optional[Target]:
+        """Detect 'for X' patterns with enhanced attributes"""
         text_lower = text.lower()
-
-        pattern = r'for\s+(?:a|an|the|this)?\s*(?:\w+\s+)*?(\w+)'
-        matches = re.finditer(pattern, text_lower)
-
-        for match in matches:
-            noun = match.group(1).strip()
-            target_token = self.vocab.get_target_token(noun)
-            if target_token:
-                return Target(token=target_token, attributes={})
-
+        
+        for_patterns = {
+            r'for\s+(?:a|an|the)?\s*(?:\w+\s+)*?business plan': 'PLAN',
+            r'for\s+(?:a|an|the)?\s*(?:\w+\s+)*?product': 'DESCRIPTION',
+            r'for\s+(?:a|an|the)?\s*(?:\w+\s+)*?report': 'REPORT',
+        }
+        
+        for pattern, target_token in for_patterns.items():
+            if re.search(pattern, text_lower):
+                attributes = self._enhance_target_attributes(target_token, text, doc)
+                return Target(token=target_token, attributes=attributes)
+        
         return None
 
-    def _detect_compound_phrases(self, text: str) -> list[Target]:
-        """
-        Detect multi-word compound phrases that should be targets
-        Examples: "support tickets", "caching strategies", "customer conversations"
-        """
-        targets = []
+    def _detect_concept_target(self, text: str, doc: Doc) -> Optional[Target]:
+        """Detect CONCEPT targets with enhanced TOPIC attribute"""
         text_lower = text.lower()
+        
+        # Pattern 1: "concept of X"
+        if "concept of" in text_lower:
+            attributes = self._enhance_target_attributes("CONCEPT", text, doc)
+            return Target(token="CONCEPT", attributes=attributes)
+        
+        # Pattern 2: Explanation requests
+        if any(verb in text_lower for verb in ["explain", "describe", "clarify", "define"]):
+            # Check if it's explaining a specific concept
+            if not any(target in text_lower for target in ["code", "data", "document"]):
+                attributes = self._enhance_target_attributes("CONCEPT", text, doc)
+                return Target(token="CONCEPT", attributes=attributes)
+        
+        # Pattern 3: Known technical concepts
+        for concept in self.technical_concepts:
+            if concept in text_lower:
+                attributes = self._enhance_target_attributes("CONCEPT", text, doc)
+                return Target(token="CONCEPT", attributes=attributes)
+        
+        return None
 
-        for target_type, synonyms in self.vocab.TARGET_TOKENS.items():
-            for synonym in synonyms:
-                pattern = r'\b' + re.escape(synonym) + r'\b'
-                if re.search(pattern, text_lower):
-                    targets.append(Target(token=target_type, attributes={}))
-                    break
+    def _get_fallback_target(self, text: str, doc: Doc, req_tokens: list[str]) -> Optional[Target]:
+        """Intelligent fallback based on REQ tokens with enhanced attributes"""
+        text_lower = text.lower()
+        
+        if "GENERATE" in req_tokens or "CREATE" in req_tokens:
+            # Check what's being generated
+            if any(word in text_lower for word in ["list", "items", "examples", "options"]):
+                attributes = self._enhance_target_attributes("ITEMS", text, doc)
+                return Target(token="ITEMS", attributes=attributes)
+            else:
+                attributes = self._enhance_target_attributes("CONTENT", text, doc)
+                return Target(token="CONTENT", attributes=attributes)
+        
+        if "EXPLAIN" in req_tokens or "DESCRIBE" in req_tokens:
+            attributes = self._enhance_target_attributes("CONCEPT", text, doc)
+            return Target(token="CONCEPT", attributes=attributes)
+        
+        if "ANALYZE" in req_tokens or "EVALUATE" in req_tokens:
+            attributes = self._enhance_target_attributes("DOCUMENT", text, doc)
+            return Target(token="DOCUMENT", attributes=attributes)
+        
+        if "EXTRACT" in req_tokens or "IDENTIFY" in req_tokens:
+            attributes = self._enhance_target_attributes("DATA", text, doc)
+            return Target(token="DATA", attributes=attributes)
+        
+        if "CALCULATE" in req_tokens or "COMPUTE" in req_tokens:
+            attributes = self._enhance_target_attributes("RESULT", text, doc)
+            return Target(token="RESULT", attributes=attributes)
+        
+        if "COMPARE" in req_tokens:
+            attributes = self._enhance_target_attributes("ITEMS", text, doc)
+            attributes['TYPE'] = 'COMPARISON'
+            return Target(token="ITEMS", attributes=attributes)
+        
+        if "TRANSFORM" in req_tokens or "CONVERT" in req_tokens:
+            attributes = self._enhance_target_attributes("RESULT", text, doc)
+            return Target(token="RESULT", attributes=attributes)
+        
+        if "CLASSIFY" in req_tokens or "CATEGORIZE" in req_tokens:
+            attributes = self._enhance_target_attributes("CONTENT", text, doc)
+            return Target(token="CONTENT", attributes=attributes)
+        
+        # Ultimate fallback: ANSWER
+        attributes = self._enhance_target_attributes("ANSWER", text, doc)
+        return Target(token="ANSWER", attributes=attributes)
 
+    def _add_domain_attributes(self, targets: list[Target], text: str) -> list[Target]:
+        """Add domain-specific attributes to targets (keep existing logic)"""
+        # This method stays the same - just returns targets as-is
+        # Domain is already added in _enhance_target_attributes
         return targets
+        
