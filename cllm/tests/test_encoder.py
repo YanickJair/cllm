@@ -28,6 +28,7 @@ class EncoderTestResult:
     compression_ratio: float
     has_req: bool
     has_target: bool
+    metadata: Dict
 
 
 class EncoderTester:
@@ -260,7 +261,8 @@ class EncoderTester:
                 issues=issues,
                 compression_ratio=result.compression_ratio,
                 has_req=has_req,
-                has_target=has_target
+                has_target=has_target,
+                metadata={'category': test_case['category'], 'priority': test_case['priority']}
             )
             self.results.append(test_result)
             
