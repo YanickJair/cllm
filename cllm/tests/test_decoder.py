@@ -40,7 +40,7 @@ class DecoderValidationRunner:
             if i % 10 == 0:
                 print(f"Progress: {i}/{total} ({i/total*100:.0f}%)")
             
-            result = self.decoder.decompress(compressed.get("compressed"))
+            result = self.decoder.decode(compressed.get("compressed"))
             self.results.append({
                 "decoded": result,
                 **compressed
