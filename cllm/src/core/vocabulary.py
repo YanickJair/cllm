@@ -23,13 +23,12 @@ class Vocabulary:
         "GENERATE": [
             "generate", "create", "write", "draft", "compose", "produce",
             "build", "develop", "design", "craft", "author", "make up",
-            "name", "suggest", "formulate", "form", "construct"
+            "name", "suggest", "formulate", "form", "construct", "propose", "transcribe"
         ],
 
         # Summaries and condensing
         "SUMMARIZE": [
-            "summarize", "condense", "brief", "synopsis", "sum up",
-            "digest", "recap"
+            "summarize", "condense", "brief", "synopsis", "sum up", "digest", "recap"
         ],
 
         # Content transformation
@@ -47,107 +46,68 @@ class Vocabulary:
 
         # Comparisons
         "COMPARE": [
-            "compare", "contrast", "versus", "vs", "difference between",
-            "differentiate", "distinguish"
+            "compare", "contrast", "versus", "vs", "difference between", "differentiate", "distinguish"
         ],
 
         # Classification and organization
         "CLASSIFY": [
-            "classify", "categorize", "sort", "group", "label", "organize",
-            "arrange", "order by", "segment"
+            "classify", "categorize", "sort", "group", "label", "organize", "arrange", "order by", "segment"
         ],
 
         # Debugging and fixing
         "DEBUG": [
-            "debug", "fix", "troubleshoot", "diagnose", "solve", "repair",
-            "resolve", "correct"
+            "debug", "fix", "troubleshoot", "diagnose", "solve", "repair", "resolve", "correct"
         ],
 
         # Optimization and improvement
         "OPTIMIZE": [
             "optimize", "improve", "enhance", "refactor", "speed up",
-            "streamline", "maximize", "minimize",
-            # NEW: Specific improvement verbs (65+ occurrences)
-            "reduce",  # "Reduce air pollution"
-            "increase",  # "Increase efficiency"
+            "streamline", "maximize", "minimize", "reduce", "increase",
         ],
 
         # Validation and verification
         "VALIDATE": [
-            "validate", "verify", "check", "confirm", "test", "ensure",
-            "certify", "authenticate"
+            "validate", "verify", "check", "confirm", "test", "ensure", "certify", "authenticate"
         ],
 
         # Search operations
         "SEARCH": [
-            "search", "query", "lookup", "find", "look for", "seek",
-            "hunt for", "discover"
+            "search", "query", "lookup", "find", "look for", "seek", "hunt for", "discover"
         ],
 
         # Ranking and prioritization
-        "RANK": [
-            "rank", "prioritize", "order", "sort by", "rate", "score"
-        ],
+        "RANK": ["rank", "prioritize", "order", "sort by", "rate", "score"],
 
         # Predictions and forecasting
         "PREDICT": [
-            "predict", "forecast", "estimate", "project", "anticipate",
-            "foresee", "extrapolate"
+            "predict", "forecast", "estimate", "project", "anticipate", "foresee", "extrapolate"
         ],
 
         # Formatting
-        "FORMAT": [
-            "format", "structure", "organize", "layout", "arrange"
-        ],
+        "FORMAT": ["format", "structure", "organize", "layout", "arrange"],
 
         # Detection
-        "DETECT": [
-            "detect", "spot", "discover", "uncover", "identify", "notice",
-            "recognize"
-        ],
+        "DETECT": ["detect", "spot", "discover", "uncover", "identify", "notice", "recognize"],
 
         # Mathematical operations
         "CALCULATE": [
-            "calculate", "compute", "figure out", "determine mathematically",
-            "quantify", "measure", "count", "tally"
+            "calculate", "compute", "figure out", "determine mathematically", "quantify", "measure", "count", "tally"
         ],
 
         # Aggregation
-        "AGGREGATE": [
-            "aggregate", "group", "combine", "consolidate", "roll up",
-            "merge", "compile", "collect"
-        ],
+        "AGGREGATE": ["aggregate", "group", "combine", "consolidate", "roll up", "merge", "compile", "collect"],
 
-        # Decision making
-        "DETERMINE": [
-            "determine", "decide", "assess", "evaluate", "figure out",
-            "conclude", "establish", "choose"
-        ],
+        # Decision-making
+        "DETERMINE": ["determine", "decide", "assess", "evaluate", "figure out", "conclude", "establish", "choose"],
 
         # Routing and assignment
-        "ROUTE": [
-            "route", "assign", "direct", "forward", "send to", "delegate",
-            "allocate"
-        ],
+        "ROUTE": ["route", "assign", "direct", "forward", "send to", "delegate", "allocate"],
 
         # NEW: Action execution (376 occurrences - HIGHEST PRIORITY)
-        "EXECUTE": [
-            "use",  # "Use X to do Y"
-            "apply",  # "Apply this method"
-            "implement",  # "Implement this solution"
-            "run",  # "Run this script"
-            "perform",  # "Perform this action"
-            "employ",  # "Employ this technique"
-            "utilize"  # "Utilize these resources"
-        ],
+        "EXECUTE": ["use", "apply", "implement", "run", "perform", "employ", "utilize"],
 
         # NEW: List generation (117+ occurrences with 72.6% fail rate)
-        "LIST": [
-            "list",  # "List 5 benefits"
-            "enumerate",  # "Enumerate the steps"
-            "itemize",  # "Itemize the costs"
-            "outline"  # "Outline the main points"
-        ],
+        "LIST": ["list", "enumerate", "itemize", "outline"],
     }
 
     # Verbs to EXCLUDE from intent detection (noise words)
@@ -325,14 +285,13 @@ class Vocabulary:
             (["list", "enumerate", "itemize"], "LIST", "ITEMS"),
             (["name", "identify"], "GENERATE", "ITEMS"),
             (["give", "provide", "suggest"], "GENERATE", "ITEMS"),
-            (["tell", "explain", "describe"], "EXPLAIN", "CONCEPT"),
+            (["tell", "explain", "describe", "clarify", "expand", "illustrate"], "EXPLAIN", "CONCEPT"),
         ]
 
         for triggers, req_token, target_token in imperative_patterns:
             for trigger in triggers:
                 if text_lower.startswith(trigger + " "):
                     return req_token, target_token
-
         return None
 
     @classmethod

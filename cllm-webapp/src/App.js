@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Layers, Database, Cpu, Zap, GitBranch, Brain, FileText, Settings } from 'lucide-react';
+import { Layers, Database, Zap, Brain, FileText, Settings } from 'lucide-react';
+import Header from './Header';
 
 const DCLLMArchitecture = () => {
   const [selectedLayer, setSelectedLayer] = useState('compression');
@@ -234,7 +235,9 @@ const DCLLMArchitecture = () => {
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 p-6">
+      
       <div className="max-w-7xl mx-auto">
+        <Header className="from-gray-900 via-slate-800 to-gray-900 p-6"/>
         
         {/* Header */}
         <div className="text-center mb-8">
