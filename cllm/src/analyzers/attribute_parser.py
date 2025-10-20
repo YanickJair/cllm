@@ -29,29 +29,22 @@ class AttributeParser:
         extraction_indicators = [
             "extract", "identify", "find", "get", "pull out",
             "highlight", "show", "return", "retrieve",
-            "compare", "contrast",  # Comparison implies extraction
+            "compare", "contrast",
         ]
         
         has_extraction = any(indicator in text_lower for indicator in extraction_indicators)
         
-        # Also check for explicit field names even without extraction verbs
-        # (e.g., "highlight their differences" - no "extract" but clear intent)
-        
-        # ===== COMPARISON FIELDS (NEW!) =====
         comparison_fields = {
             'differences': 'DIFFERENCES',
             'difference': 'DIFFERENCES',
             'distinguish': 'DIFFERENCES',
             'contrast': 'DIFFERENCES',
-            
             'similarities': 'SIMILARITIES',
             'similarity': 'SIMILARITIES',
             'common': 'SIMILARITIES',
-            
             'pros and cons': 'PROS_CONS',
             'advantages and disadvantages': 'PROS_CONS',
             'benefits and drawbacks': 'PROS_CONS',
-            
             'tradeoffs': 'TRADEOFFS',
             'trade-offs': 'TRADEOFFS',
         }
@@ -59,46 +52,34 @@ class AttributeParser:
         for keyword, field in comparison_fields.items():
             if keyword in text_lower:
                 found_fields.append(field)
-                has_extraction = True  # Implicit extraction
+                has_extraction = True
         
-        # If we found comparison fields, we're done
         if found_fields:
             return ExtractionField(fields=found_fields)
         
-        # Otherwise, continue with existing field detection
         if not has_extraction:
             return None
         
-        # ===== EXISTING FIELDS =====
         # Standard extraction fields from vocabulary
         standard_fields = {
-            # Issues
             'issue': 'ISSUE',
             'problem': 'PROBLEM',
             'error': 'ERROR',
             'bug': 'BUG',
-            
-            # Entities
             'names': 'NAMES',
             'dates': 'DATES',
             'amounts': 'AMOUNTS',
             'emails': 'EMAILS',
             'phones': 'PHONES',
             'addresses': 'ADDRESSES',
-            
-            # Analysis
             'sentiment': 'SENTIMENT',
             'urgency': 'URGENCY',
             'priority': 'PRIORITY',
             'category': 'CATEGORY',
-            
-            # Actions
             'actions': 'ACTIONS',
             'next steps': 'NEXT_STEPS',
             'action items': 'ACTIONS',
             'deadlines': 'DEADLINES',
-            
-            # Code
             'bugs': 'BUGS',
             'security': 'SECURITY',
             'performance': 'PERFORMANCE',
@@ -109,7 +90,13 @@ class AttributeParser:
                 found_fields.append(field)
         
         if found_fields:
-            return ExtractionField(fields=found_fields)
+            unique_fields = []
+            seen = set()
+            for field in found_fields:
+                if field not in seen:
+                    unique_fields.append(field)
+                    seen.add(field)
+            return ExtractionField(fields=unique_fields)
         
         return None
 
@@ -125,10 +112,8 @@ class AttributeParser:
         contexts = []
         text_lower = text.lower()
         
-        # Track what we've already added to avoid duplicates
         added_aspects = set()
         
-        # ===== AUDIENCE (keep as-is, already good) =====
         if any(pattern in text_lower for pattern in [
             'non-technical', 'nontechnical', 'non technical'
         ]):

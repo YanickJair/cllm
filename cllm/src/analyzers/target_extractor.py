@@ -247,112 +247,192 @@ class TargetExtractor:
         # Add domain attributes to all targets
         return self._add_domain_attributes(targets, text)
 
-    # ============================================================================
-    # NEW V2.0: ENHANCED ATTRIBUTE EXTRACTION
-    # ============================================================================
-
     def extract_topic_attribute(self, text: str, target_type: str, doc: Doc) -> Optional[str]:
         """
         Extract TOPIC attribute with high accuracy
         
+        FIXED: No longer greedy, extracts only the core concept
+        
         Examples:
-            "What are the three primary colors?" → "THREE_PRIMARY_COLORS"
-            "Explain the bubble sort algorithm" → "BUBBLE_SORT_ALGORITHM"
+            "Describe how DNS works in technical detail" → "DNS"
+            "Explain the bubble sort algorithm" → "BUBBLE_SORT"
+            "What are the three primary colors?" → "PRIMARY_COLORS"
             "How does photosynthesis work?" → "PHOTOSYNTHESIS"
-            "How can we reduce air pollution?" → "AIR_POLLUTION"
         
         Returns:
             TOPIC string in UPPER_SNAKE_CASE or None
         """
         text_lower = text.lower()
         
-        # Strategy 1: Question patterns (highest priority)
+        # Strategy 1: Question patterns - extract ONLY the noun/subject
         question_patterns = [
-            r'what (?:is|are) (?:the |an? )?([\w\s\'-]+)\??',
-            r'who (?:is|are|was|were) (?:the )?([\w\s\'-]+)\??',
-            r'where (?:is|are|can) ([\w\s\'-]+)',
-            r'when (?:is|are|was|were|did) ([\w\s\'-]+)',
-            r'why (?:is|are|does|do) ([\w\s\'-]+)',
-            r'how (?:does|do|can|is|are|could|should|would) ([\w\s\'-]+)',
+            # "What is X?" - capture only X
+            (r'what (?:is|are|\'s) (?:the |an? )?([\w\s]+?)(?:\?|$)', 1),
+            # "How does X work?" - capture only X, not "how X works"
+            (r'how (?:does|do|can|is|are) ([\w\s]+?)(?: work| function| operate|\?|$)', 1),
+            # "Why is X?" - capture only X
+            (r'why (?:is|are|does|do) ([\w\s]+?)(?:\?|$)', 1),
+            # "Where is X?" - capture only X
+            (r'where (?:is|are|can) ([\w\s]+?)(?:\?|$)', 1),
+            # "When did X?" - capture only X
+            (r'when (?:is|are|was|were|did) ([\w\s]+?)(?:\?|$)', 1),
+            # "Who is X?" - capture only X
+            (r'who (?:is|are|was|were) (?:the )?([\w\s]+?)(?:\?|$)', 1),
         ]
         
-        for pattern in question_patterns:
+        for pattern, group in question_patterns:
             match = re.search(pattern, text_lower)
             if match:
-                topic = match.group(1).strip()
-                # Clean up
+                topic = match.group(group).strip()
                 topic = self._clean_topic(topic)
                 if topic:
+                    # CRITICAL: Limit length to prevent greediness
+                    topic = self._trim_topic(topic)
                     return topic.replace(' ', '_').replace("'", '').upper()
         
-        # Strategy 2: "Explain/Describe X" patterns
+        # Strategy 2: "Explain/Describe X" patterns - extract ONLY the core noun
         explain_patterns = [
-            r'(?:explain|describe|clarify|detail|elaborate on|tell me about) (?:the |an? )?([\w\s\'-]+)',
-            r'(?:definition|meaning) of ([\w\s\'-]+)',
+            # "Explain how DNS works" → "DNS"
+            (r'(?:explain|describe) how ([\w\s]+?)(?: works?| functions?| operates?|$)', 1),
+            # "Explain the X" → "X"
+            (r'(?:explain|describe|clarify|detail) (?:the |an? )?([\w\s]+?)(?:\s+in\s+|\s+with\s+|\s+for\s+|\.|\?|$)', 1),
+            # "Tell me about X" → "X"
+            (r'tell me about ([\w\s]+?)(?:\s+in\s+|\s+with\s+|\.|\?|$)', 1),
         ]
         
-        for pattern in explain_patterns:
+        for pattern, group in explain_patterns:
             match = re.search(pattern, text_lower)
             if match:
-                topic = match.group(1).strip()
+                topic = match.group(group).strip()
                 topic = self._clean_topic(topic)
                 if topic:
+                    topic = self._trim_topic(topic)
                     return topic.replace(' ', '_').replace("'", '').upper()
         
         # Strategy 3: "X of Y" patterns for concepts
         if target_type == 'CONCEPT':
-            of_pattern = r'(?:concept|idea|notion|principle|theory) of ([\w\s\'-]+)'
+            of_pattern = r'(?:concept|idea|notion|principle|theory) of ([\w\s]+?)(?:\s+in\s+|\.|\?|$)'
             match = re.search(of_pattern, text_lower)
             if match:
                 topic = match.group(1).strip()
                 topic = self._clean_topic(topic)
                 if topic:
+                    topic = self._trim_topic(topic)
                     return topic.replace(' ', '_').replace("'", '').upper()
         
         # Strategy 4: For procedures, extract the action/process
         if target_type == 'PROCEDURE':
-            how_pattern = r'how (?:to|can I|do I|does|can we|do we) ([\w\s\'-]+)'
+            how_pattern = r'how (?:to|can I|do I) ([\w\s]+?)(?:\s+in\s+|\s+with\s+|\.|\?|$)'
             match = re.search(how_pattern, text_lower)
             if match:
                 topic = match.group(1).strip()
                 topic = self._clean_topic(topic)
                 if topic:
+                    topic = self._trim_topic(topic)
                     return topic.replace(' ', '_').replace("'", '').upper()
         
-        # Strategy 5: Meaningful noun chunks (last resort)
+        # Strategy 5: Extract main noun from first meaningful noun chunk
+        # FIXED: Only take the FIRST substantial noun chunk, not all of them
         for chunk in doc.noun_chunks:
             chunk_text = chunk.text.lower()
             # Filter out generic/demonstrative words
             if chunk_text in ['it', 'this', 'that', 'these', 'those', 'the following', 
-                             'a', 'an', 'the', 'something', 'anything']:
+                            'a', 'an', 'the', 'something', 'anything', 'everything']:
                 continue
             if len(chunk_text) > 3:
                 topic = self._clean_topic(chunk_text)
                 if topic:
+                    topic = self._trim_topic(topic)
                     return topic.replace(' ', '_').replace("'", '').upper()
         
         return None
 
+
+    def _trim_topic(self, topic: str) -> str:
+        """
+        NEW METHOD: Trim topic to prevent greediness
+        
+        Examples:
+            "how dns works in technical detail" → "dns"
+            "react and vue.js frameworks and highlight their differences" → "react"
+            "bubble sort algorithm" → "bubble sort"
+        
+        Rules:
+        - Max 4 words
+        - Stop at prepositions (in, with, for, and, or)
+        - Stop at action words (works, highlight, compare)
+        - Keep compound technical terms (bubble sort, binary search)
+        
+        Returns:
+            Trimmed topic string
+        """
+        if not topic:
+            return topic
+        
+        # Split into words
+        words = topic.split()
+        
+        # Rule 1: Stop at common prepositions and conjunctions
+        stop_words = ['in', 'with', 'for', 'from', 'about', 'and', 'or', 'but', 
+                    'on', 'at', 'by', 'of', 'to']
+        
+        trimmed_words = []
+        for word in words:
+            if word in stop_words:
+                break
+            trimmed_words.append(word)
+        
+        # Rule 2: Max 4 words (unless it's a known multi-word technical term)
+        if len(trimmed_words) > 4:
+            # Check if it's a known technical term that should stay together
+            known_multiword = [
+                'bubble sort', 'merge sort', 'quick sort', 'binary search',
+                'linear search', 'depth first', 'breadth first', 'machine learning',
+                'deep learning', 'natural language', 'computer vision'
+            ]
+            
+            full_phrase = ' '.join(trimmed_words).lower()
+            is_known_term = any(term in full_phrase for term in known_multiword)
+            
+            if not is_known_term:
+                trimmed_words = trimmed_words[:4]
+        
+        # Rule 3: Remove trailing verbs (works, functions, operates)
+        if trimmed_words:
+            last_word = trimmed_words[-1]
+            if last_word in ['works', 'work', 'functions', 'function', 'operates', 
+                            'operate', 'runs', 'run', 'performs', 'perform']:
+                trimmed_words = trimmed_words[:-1]
+        
+        result = ' '.join(trimmed_words).strip()
+        return result if result else topic
+
+
     def _clean_topic(self, topic: str) -> Optional[str]:
         """
         Clean up extracted topic by removing pronouns, verbs, and filler words
-        
+                
         Examples:
             "we reduce air pollution" → "air pollution"
-            "I can fix this bug" → "bug"
-            "you calculate the area" → "area"
+            "how dns works in technical detail" → "dns"
+            "the bubble sort algorithm" → "bubble sort algorithm"
         
         Returns:
             Cleaned topic string or None if nothing remains
         """
+        if not topic:
+            return None
+        
         # Remove common pronouns at start
         topic = re.sub(r'^(i|we|you|they|he|she|it|us|our|your|their)\s+', '', topic, flags=re.IGNORECASE)
         
         # Remove auxiliary/modal verbs at start
-        topic = re.sub(r'^(can|could|should|would|will|shall|may|might|must)\s+', '', topic, flags=re.IGNORECASE)
+        topic = re.sub(r'^(can|could|should|would|will|shall|may|might|must|do|does|did)\s+', '', topic, flags=re.IGNORECASE)
+        
+        # Remove question words at start
+        topic = re.sub(r'^(how|what|why|when|where|who|which)\s+', '', topic, flags=re.IGNORECASE)
         
         # Remove common action verbs that are redundant with REQ tokens
-        # These verbs are already captured in REQ, so remove from TOPIC
         action_verbs = [
             'reduce', 'increase', 'improve', 'optimize', 'enhance',
             'fix', 'solve', 'resolve', 'debug', 'repair',
@@ -362,17 +442,22 @@ class TargetExtractor:
             'calculate', 'compute', 'determine', 'find',
             'compare', 'contrast', 'differentiate',
             'classify', 'categorize', 'sort', 'organize',
+            'highlight', 'identify', 'show', 'demonstrate',
         ]
         
         for verb in action_verbs:
-            # Remove verb at start: "reduce air pollution" → "air pollution"
+            # Remove verb at start
             topic = re.sub(rf'^{verb}\s+', '', topic, flags=re.IGNORECASE)
-            # Remove verb + article: "reduce the pollution" → "pollution"
+            # Remove verb + article
             topic = re.sub(rf'^{verb}\s+(the|a|an)\s+', '', topic, flags=re.IGNORECASE)
         
-        # Remove trailing prepositions
-        topic = re.sub(r'\s+(of|in|for|with|about|from|to|at|on|by)$', '', topic)
-        return topic
+        # Remove articles at start
+        topic = re.sub(r'^(the|a|an)\s+', '', topic, flags=re.IGNORECASE)
+        
+        # Remove trailing prepositions and modifiers
+        topic = re.sub(r'\s+(of|in|for|with|about|from|to|at|on|by|detail|details|technical|specific)$', '', topic, flags=re.IGNORECASE)
+        
+        return topic.strip() if topic.strip() else None
 
     def detect_subject_attribute(self, text: str) -> Optional[str]:
         """
@@ -446,8 +531,6 @@ class TargetExtractor:
     def _enhance_target_attributes(self, target_token: str, text: str, doc: Doc) -> dict:
         """
         Central method to enhance Target attributes with TOPIC and SUBJECT
-        
-        This is the MAIN integration point - call this whenever creating a Target
         
         Args:
             target_token: The target type (e.g., "CONCEPT", "CONTENT", "ITEMS")
@@ -620,7 +703,27 @@ class TargetExtractor:
         req_tokens = req_tokens or []
         req_actions = [req.split(':')[0] if ':' in req else req for req in req_tokens]
         
-        doc = self.nlp(text)  # Create doc for attribute extraction
+        doc = self.nlp(text)
+
+        if re.match(r'^compare\s+', text_lower):
+            compare_pattern = r'compare\s+([\w\s.]+?)\s+and\s+([\w\s.]+?)(?:\s+frameworks?|\s+libraries?|\s+and|$)'
+            match = re.search(compare_pattern, text_lower)
+            
+            if match:
+                item1 = match.group(1).strip()
+                item2 = match.group(2).strip()
+                
+                attributes = {
+                    'TYPE': 'COMPARISON',
+                    'ITEMS': f"{item1.upper()}+{item2.upper()}".replace(' ', '_').replace('.', '')
+                }
+                if 'code' in text_lower or 'implementation' in text_lower:
+                    lang = self._detect_language(text)
+                    if lang:
+                        attributes['LANG'] = lang
+                
+                return Target(token="OPTIONS", attributes=attributes)
+    
         
         # Pattern 1: List/Name/Enumerate → ITEMS
         if re.match(r'^(list|name|enumerate|itemize)\s+', text_lower):
@@ -654,6 +757,49 @@ class TargetExtractor:
         if re.match(r'^(generate|create|write|draft)\s+', text_lower):
             attributes = self._enhance_target_attributes("CONTENT", text, doc)
             return Target(token="CONTENT", attributes=attributes)
+        
+        return None
+    
+    def _extract_comparison_items(self, text: str) -> Optional[tuple[str, str]]:
+        """
+        Extract two items being compared
+        
+        Examples:
+            "Difference between X and Y" → ("X", "Y")
+        
+        Returns:
+            Tuple of (item1, item2) or None
+        """
+        text_lower = text.lower()
+        
+        patterns = [
+            # "Compare X and Y"
+            r'compare\s+([\w\s.]+?)\s+and\s+([\w\s.]+?)(?:\s+frameworks?|\s+libraries?|\s+languages?|$)',
+            # "Compare X vs Y"
+            r'compare\s+([\w\s.]+?)\s+(?:vs|versus)\s+([\w\s.]+?)(?:\s+|$)',
+            # "X vs Y"
+            r'^([\w\s.]+?)\s+(?:vs|versus)\s+([\w\s.]+?)(?:\s+|$)',
+            # "Difference between X and Y"
+            r'difference[s]?\s+between\s+([\w\s.]+?)\s+and\s+([\w\s.]+?)(?:\s+|$)',
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, text_lower)
+            if match:
+                item1 = match.group(1).strip()
+                item2 = match.group(2).strip()
+                
+                item1 = re.sub(r'^(the|a|an)\s+', '', item1)
+                item2 = re.sub(r'^(the|a|an)\s+', '', item2)
+                
+                item1 = re.sub(r'\.js$', '', item1)
+                item2 = re.sub(r'\.js$', '', item2)
+                
+                if item1 and item2:
+                    return (
+                        item1.upper().replace(' ', '_'),
+                        item2.upper().replace(' ', '_')
+                    )
         
         return None
 
