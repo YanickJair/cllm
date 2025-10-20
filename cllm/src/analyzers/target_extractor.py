@@ -286,13 +286,10 @@ class TargetExtractor:
                 topic = match.group(group).strip()
                 topic = self._clean_topic(topic)
                 if topic:
-                    # CRITICAL: Limit length to prevent greediness
-                    topic = self._trim_topic(topic)
                     return topic.replace(' ', '_').replace("'", '').upper()
         
         # Strategy 2: "Explain/Describe X" patterns - extract ONLY the core noun
         explain_patterns = [
-            # "Explain how DNS works" → "DNS"
             (r'(?:explain|describe) how ([\w\s]+?)(?: works?| functions?| operates?|$)', 1),
             # "Explain the X" → "X"
             (r'(?:explain|describe|clarify|detail) (?:the |an? )?([\w\s]+?)(?:\s+in\s+|\s+with\s+|\s+for\s+|\.|\?|$)', 1),
@@ -306,7 +303,6 @@ class TargetExtractor:
                 topic = match.group(group).strip()
                 topic = self._clean_topic(topic)
                 if topic:
-                    topic = self._trim_topic(topic)
                     return topic.replace(' ', '_').replace("'", '').upper()
         
         # Strategy 3: "X of Y" patterns for concepts
@@ -317,7 +313,6 @@ class TargetExtractor:
                 topic = match.group(1).strip()
                 topic = self._clean_topic(topic)
                 if topic:
-                    topic = self._trim_topic(topic)
                     return topic.replace(' ', '_').replace("'", '').upper()
         
         # Strategy 4: For procedures, extract the action/process
@@ -332,96 +327,60 @@ class TargetExtractor:
                     return topic.replace(' ', '_').replace("'", '').upper()
         
         # Strategy 5: Extract main noun from first meaningful noun chunk
-        # FIXED: Only take the FIRST substantial noun chunk, not all of them
         for chunk in doc.noun_chunks:
             chunk_text = chunk.text.lower()
-            # Filter out generic/demonstrative words
-            if chunk_text in ['it', 'this', 'that', 'these', 'those', 'the following', 
-                            'a', 'an', 'the', 'something', 'anything', 'everything']:
+
+            skip_words = [
+                'it', 'this', 'that', 'these', 'those', 
+                'the following', 'a', 'an', 'the',
+                'something', 'anything', 'everything',
+                'someone', 'anyone', 'everyone',
+            ]
+            
+            # Skip if chunk is just a demonstrative/article
+            if chunk_text in skip_words:
                 continue
+            
+            # Skip if chunk starts with demonstrative
+            if chunk_text.startswith(('this ', 'that ', 'these ', 'those ')):
+                chunk_text = re.sub(r'^(this|that|these|those)\s+', '', chunk_text)
+                if not chunk_text or chunk_text in skip_words:
+                    continue
+            
+            # Only proceed if we have substantial content
             if len(chunk_text) > 3:
                 topic = self._clean_topic(chunk_text)
                 if topic:
-                    topic = self._trim_topic(topic)
-                    return topic.replace(' ', '_').replace("'", '').upper()
+                    topic_formatted = topic.replace(' ', '_').replace("'", '').upper()
+                    validated = self._validate_topic(topic_formatted)
+                    if validated:
+                        return validated
         
         return None
-
-
-    def _trim_topic(self, topic: str) -> str:
-        """
-        NEW METHOD: Trim topic to prevent greediness
-        
-        Examples:
-            "how dns works in technical detail" → "dns"
-            "react and vue.js frameworks and highlight their differences" → "react"
-            "bubble sort algorithm" → "bubble sort"
-        
-        Rules:
-        - Max 4 words
-        - Stop at prepositions (in, with, for, and, or)
-        - Stop at action words (works, highlight, compare)
-        - Keep compound technical terms (bubble sort, binary search)
-        
-        Returns:
-            Trimmed topic string
-        """
-        if not topic:
-            return topic
-        
-        # Split into words
-        words = topic.split()
-        
-        # Rule 1: Stop at common prepositions and conjunctions
-        stop_words = ['in', 'with', 'for', 'from', 'about', 'and', 'or', 'but', 
-                    'on', 'at', 'by', 'of', 'to']
-        
-        trimmed_words = []
-        for word in words:
-            if word in stop_words:
-                break
-            trimmed_words.append(word)
-        
-        # Rule 2: Max 4 words (unless it's a known multi-word technical term)
-        if len(trimmed_words) > 4:
-            # Check if it's a known technical term that should stay together
-            known_multiword = [
-                'bubble sort', 'merge sort', 'quick sort', 'binary search',
-                'linear search', 'depth first', 'breadth first', 'machine learning',
-                'deep learning', 'natural language', 'computer vision'
-            ]
-            
-            full_phrase = ' '.join(trimmed_words).lower()
-            is_known_term = any(term in full_phrase for term in known_multiword)
-            
-            if not is_known_term:
-                trimmed_words = trimmed_words[:4]
-        
-        # Rule 3: Remove trailing verbs (works, functions, operates)
-        if trimmed_words:
-            last_word = trimmed_words[-1]
-            if last_word in ['works', 'work', 'functions', 'function', 'operates', 
-                            'operate', 'runs', 'run', 'performs', 'perform']:
-                trimmed_words = trimmed_words[:-1]
-        
-        result = ' '.join(trimmed_words).strip()
-        return result if result else topic
-
 
     def _clean_topic(self, topic: str) -> Optional[str]:
         """
         Clean up extracted topic by removing pronouns, verbs, and filler words
                 
         Examples:
+            "this support ticket" → "support ticket"
             "we reduce air pollution" → "air pollution"
             "how dns works in technical detail" → "dns"
-            "the bubble sort algorithm" → "bubble sort algorithm"
         
         Returns:
             Cleaned topic string or None if nothing remains
         """
         if not topic:
             return None
+        
+        # CRITICAL FIX: Remove "this/that/these/those" ANYWHERE in topic
+        topic = re.sub(r'\bthis\b', '', topic, flags=re.IGNORECASE)
+        topic = re.sub(r'\bthat\b', '', topic, flags=re.IGNORECASE)
+        topic = re.sub(r'\bthese\b', '', topic, flags=re.IGNORECASE)
+        topic = re.sub(r'\bthose\b', '', topic, flags=re.IGNORECASE)
+        
+        # Remove articles at start
+        topic = re.sub(r'^(the|a|an)\s+', '', topic, flags=re.IGNORECASE)
         
         # Remove common pronouns at start
         topic = re.sub(r'^(i|we|you|they|he|she|it|us|our|your|their)\s+', '', topic, flags=re.IGNORECASE)
@@ -446,18 +405,56 @@ class TargetExtractor:
         ]
         
         for verb in action_verbs:
-            # Remove verb at start
-            topic = re.sub(rf'^{verb}\s+', '', topic, flags=re.IGNORECASE)
-            # Remove verb + article
-            topic = re.sub(rf'^{verb}\s+(the|a|an)\s+', '', topic, flags=re.IGNORECASE)
+            # Remove verb anywhere in string
+            topic = re.sub(rf'\b{verb}\b', '', topic, flags=re.IGNORECASE)
         
-        # Remove articles at start
-        topic = re.sub(r'^(the|a|an)\s+', '', topic, flags=re.IGNORECASE)
-        
-        # Remove trailing prepositions and modifiers
+        # Remove trailing/leading prepositions and modifiers
         topic = re.sub(r'\s+(of|in|for|with|about|from|to|at|on|by|detail|details|technical|specific)$', '', topic, flags=re.IGNORECASE)
         
-        return topic.strip() if topic.strip() else None
+        # Clean up multiple spaces
+        topic = re.sub(r'\s+', ' ', topic).strip()
+        
+        # Return None if nothing meaningful remains
+        return topic if topic and len(topic) > 1 else None
+
+    def _validate_topic(self, topic: str) -> Optional[str]:
+        """
+        Final validation to ensure TOPIC quality
+        
+        Reject topics that are:
+        - Just demonstratives (THIS, THAT)
+        - Too short (< 2 chars)
+        - Still have "THIS_" prefix
+        - Just numbers or punctuation
+        
+        Returns:
+            Validated topic or None if invalid
+        """
+        if not topic:
+            return None
+        
+        topic_upper = topic.upper()
+        
+        # Reject if it's just a demonstrative
+        if topic_upper in ['THIS', 'THAT', 'THESE', 'THOSE', 'IT', 'THE', 'A', 'AN']:
+            return None
+        
+        # Reject if it still starts with "THIS_"
+        if topic_upper.startswith('THIS_'):
+            # Try to salvage by removing prefix
+            topic = re.sub(r'^THIS_', '', topic, flags=re.IGNORECASE)
+            if not topic or len(topic) < 2:
+                return None
+        
+        # Reject if too short
+        if len(topic) < 2:
+            return None
+        
+        # Reject if just numbers or punctuation
+        if re.match(r'^[\d\W_]+$', topic):
+            return None
+        
+        return topic
 
     def detect_subject_attribute(self, text: str) -> Optional[str]:
         """
@@ -757,6 +754,76 @@ class TargetExtractor:
         if re.match(r'^(generate|create|write|draft)\s+', text_lower):
             attributes = self._enhance_target_attributes("CONTENT", text, doc)
             return Target(token="CONTENT", attributes=attributes)
+        
+        if re.match(r'^classify\s+', text_lower):
+            # Check what's being classified
+            if 'ticket' in text_lower[:30]:
+                attributes = self._enhance_target_attributes("TICKET", text, doc)
+                return Target(token="TICKET", attributes=attributes)
+            elif 'email' in text_lower[:30] or 'message' in text_lower[:30]:
+                attributes = self._enhance_target_attributes("EMAIL", text, doc)
+                return Target(token="EMAIL", attributes=attributes)
+            else:
+                # Generic classification
+                attributes = self._enhance_target_attributes("CONTENT", text, doc)
+                return Target(token="CONTENT", attributes=attributes)
+    
+        # Pattern 7: Summarize → DOCUMENT or specific content type
+        if re.match(r'^summarize\s+', text_lower):
+            if 'transcript' in text_lower[:30]:
+                attributes = self._enhance_target_attributes("TRANSCRIPT", text, doc)
+                return Target(token="TRANSCRIPT", attributes=attributes)
+            elif 'call' in text_lower[:30]:
+                attributes = self._enhance_target_attributes("CALL", text, doc)
+                return Target(token="CALL", attributes=attributes)
+            elif 'article' in text_lower[:30]:
+                attributes = self._enhance_target_attributes("DOCUMENT", text, doc)
+                return Target(token="DOCUMENT", attributes=attributes)
+            else:
+                attributes = self._enhance_target_attributes("DOCUMENT", text, doc)
+                return Target(token="DOCUMENT", attributes=attributes)
+        
+        # Pattern 8: Optimize → QUERY or CODE
+        if re.match(r'^optimize\s+', text_lower):
+            if 'query' in text_lower[:30] or 'sql' in text_lower[:30]:
+                attributes = self._enhance_target_attributes("QUERY", text, doc)
+                return Target(token="QUERY", attributes=attributes)
+            elif 'code' in text_lower[:30]:
+                attributes = self._enhance_target_attributes("CODE", text, doc)
+                return Target(token="CODE", attributes=attributes)
+            else:
+                attributes = self._enhance_target_attributes("CODE", text, doc)
+                return Target(token="CODE", attributes=attributes)
+        
+        # Pattern 9: Debug → CODE
+        if re.match(r'^debug\s+', text_lower):
+            attributes = self._enhance_target_attributes("CODE", text, doc)
+            return Target(token="CODE", attributes=attributes)
+        
+        # Pattern 10: Review → CODE or DOCUMENT
+        if re.match(r'^review\s+', text_lower):
+            if 'code' in text_lower[:30]:
+                attributes = self._enhance_target_attributes("CODE", text, doc)
+                return Target(token="CODE", attributes=attributes)
+            else:
+                attributes = self._enhance_target_attributes("DOCUMENT", text, doc)
+                return Target(token="DOCUMENT", attributes=attributes)
+        
+        # Pattern 11: Convert/Transform → RESULT with source detection
+        if re.match(r'^(convert|transform|translate|rewrite)\s+', text_lower):
+            # Try to detect what's being transformed
+            if 'transcript' in text_lower[:40]:
+                attributes = self._enhance_target_attributes("TRANSCRIPT", text, doc)
+                return Target(token="TRANSCRIPT", attributes=attributes)
+            elif 'document' in text_lower[:40] or 'documentation' in text_lower[:40]:
+                attributes = self._enhance_target_attributes("DOCUMENT", text, doc)
+                return Target(token="DOCUMENT", attributes=attributes)
+            elif 'proposal' in text_lower[:40]:
+                attributes = self._enhance_target_attributes("DOCUMENT", text, doc)
+                return Target(token="DOCUMENT", attributes=attributes)
+            else:
+                attributes = self._enhance_target_attributes("CONTENT", text, doc)
+                return Target(token="CONTENT", attributes=attributes)
         
         return None
     
