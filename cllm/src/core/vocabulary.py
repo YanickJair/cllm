@@ -130,10 +130,10 @@ class Vocabulary:
 
     # Context patterns to filter out (verb used non-actionably)
     CONTEXT_FILTERS = {
-        "give": ["given", "give me", "giving"],  # "the given text" is not an action
-        "follow": ["following", "as follows"],  # "the following items" is not an action
-        "base": ["based on", "base it on"],  # "based on X" is descriptive
-        "use": ["useful", "used to", "uses"],  # Sometimes descriptive
+        "give": ["given", "give me", "giving"],
+        "follow": ["following", "as follows"],
+        "base": ["based on", "base it on"],
+        "use": ["useful", "used to", "uses"],
     }
 
     # TARGET tokens with trigger words

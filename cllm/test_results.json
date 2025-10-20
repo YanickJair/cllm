@@ -43,11 +43,11 @@
   },
   {
     "prompt": "Summarize this 30-minute customer call transcript briefly.",
-    "compressed": "[REQ:SUMMARIZE:BRIEF] [TARGET:CALL] [TARGET:TRANSCRIPT] [TARGET:CONCEPT:TOPIC=THIS_30-MINUTE_CUSTOMER_CALL_TRANSCRIPT] [CTX:LENGTH=BRIEF]",
+    "compressed": "[REQ:SUMMARIZE:BRIEF] [TARGET:CALL] [TARGET:TRANSCRIPT] [TARGET:CONCEPT:TOPIC=THIS_30-MINUTE_CUSTOMER_CALL] [CTX:LENGTH=BRIEF]",
     "expected": "[REQ:SUMMARIZE:BRIEF] [TARGET:TRANSCRIPT:TYPE=CALL:DURATION=30]",
     "matches": true,
     "issues": [],
-    "compression_ratio": -136.2,
+    "compression_ratio": -117.2,
     "has_req": true,
     "has_target": true,
     "metadata": {
@@ -197,11 +197,11 @@
   },
   {
     "prompt": "Explain quantum computing to a 10-year-old using simple analogies.",
-    "compressed": "[REQ:EXPLAIN:SIMPLE] [REQ:EXECUTE] [QUANTIFIER:A] [TARGET:CONCEPT:TOPIC=QUANTUM_COMPUTING_TO_A_10-YEAR-OLD_USING_SIMPLE_ANALOGIES] [CTX:AUDIENCE=BEGINNER] [CTX:STYLE=SIMPLE]",
+    "compressed": "[REQ:EXPLAIN:SIMPLE] [REQ:EXECUTE] [QUANTIFIER:A] [TARGET:CONCEPT:TOPIC=QUANTUM_COMPUTING] [CTX:AUDIENCE=BEGINNER] [CTX:STYLE=SIMPLE]",
     "expected": "[REQ:EXPLAIN:SIMPLE] [TARGET:CONCEPT:TOPIC=QUANTUM_COMPUTING] [CTX:AUDIENCE=CHILD:AGE=10] [CTX:METHOD=ANALOGIES]",
     "matches": true,
     "issues": [],
-    "compression_ratio": -162.1,
+    "compression_ratio": -101.5,
     "has_req": true,
     "has_target": true,
     "metadata": {
@@ -211,11 +211,11 @@
   },
   {
     "prompt": "Describe how DNS works in technical detail.",
-    "compressed": "[REQ:EXPLAIN:TECHNICAL] [TARGET:CONCEPT:TOPIC=HOW_DNS_WORKS_IN_TECHNICAL_DETAIL] [CTX:AUDIENCE=TECHNICAL]",
+    "compressed": "[REQ:EXPLAIN:TECHNICAL] [TARGET:CONCEPT:TOPIC=DNS] [CTX:AUDIENCE=TECHNICAL]",
     "expected": "[REQ:EXPLAIN:TECHNICAL] [TARGET:CONCEPT:TOPIC=DNS]",
     "matches": true,
     "issues": [],
-    "compression_ratio": -144.2,
+    "compression_ratio": -74.4,
     "has_req": true,
     "has_target": true,
     "metadata": {
@@ -225,11 +225,11 @@
   },
   {
     "prompt": "Compare React and Vue.js frameworks and highlight their differences.",
-    "compressed": "[REQ:COMPARE] [TARGET:CONCEPT:TOPIC=REACT:LANG=JAVASCRIPT] [EXTRACT:DIFFERENCES+DIFFERENCES]",
+    "compressed": "[REQ:COMPARE] [TARGET:OPTIONS:TYPE=COMPARISON:ITEMS=REACT+VUEJS] [EXTRACT:DIFFERENCES+DIFFERENCES]",
     "expected": "[REQ:COMPARE] [TARGET:FRAMEWORK:ITEMS=REACT,VUE] [EXTRACT:DIFFERENCES]",
     "matches": true,
     "issues": [],
-    "compression_ratio": -35.3,
+    "compression_ratio": -44.1,
     "has_req": true,
     "has_target": true,
     "metadata": {
