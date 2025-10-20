@@ -12,56 +12,52 @@ class CLLMTokenizer:
         extractions: Optional[ExtractionField],
         contexts: list[Context],
         output_format: Optional[OutputFormat],
-        quantifier=None,
-        specifications=None
-    ):
+        quantifier: Optional[tuple[str, int]] = None,
+        specifications=None,
+    ) -> str:
         """
-        Build CLLM token sequence (V2.0 with quantifiers and specs)
-
-        NEW Format:
-        [REQ] [QUANTIFIER] [TARGET:SUBJECT=X:TOPIC=Y] [SPEC:COUNT=3] [EXTRACT] [CTX] [OUT]
+        Build compressed CLLM sequence
+        
+        v3 FIX: Skip REQ:EXTRACT when EXTRACT attribute exists (redundant)
         """
         tokens = []
-
-        # 1. REQ tokens
+        
+        # Add REQ tokens
         for intent in intents:
+            if intent.token == "EXTRACT" and extractions and extractions.fields:
+                continue
+            
+            # Build REQ token with modifiers
             if intent.modifier:
-                tokens.append(f"[REQ:{intent.token}:{intent.modifier}]")
+                req_str = f"[REQ:{intent.token}:{intent.modifier}]"
             else:
-                tokens.append(f"[REQ:{intent.token}]")
-
-        # 2. QUANTIFIER tokens (NEW!)
-        if quantifier:
-            tokens.append(f"[QUANTIFIER:{quantifier[0]}]")
-
-        # 3. TARGET tokens (with enhanced attributes)
+                req_str = f"[REQ:{intent.token}]"
+            tokens.append(req_str)
+        
+        # Add TARGET tokens
         for target in targets:
             target_str = f"[TARGET:{target.token}"
-
-            # Add attributes
             if target.attributes:
-                for key, value in target.attributes.items():
+                for key, value in sorted(target.attributes.items()):
                     target_str += f":{key}={value}"
-
             target_str += "]"
             tokens.append(target_str)
-
-        # 4. SPEC tokens (NEW!)
-        if specifications:
-            spec_parts = [f"{k}={v}" for k, v in specifications.items()]
-            tokens.append(f"[SPEC:{'+'.join(spec_parts)}]")
-
-        # 5. EXTRACT tokens (existing)
+        
+        # Add EXTRACT fields
         if extractions and extractions.fields:
             extract_str = "[EXTRACT:" + "+".join(extractions.fields) + "]"
             tokens.append(extract_str)
-
-        # 6. CTX tokens (existing, but now with AUDIENCE!)
+        
+        # Add CTX tokens
         for ctx in contexts:
             tokens.append(f"[CTX:{ctx.aspect}={ctx.value}]")
-
-        # 7. OUT tokens (existing)
+        
+        # Add OUT token
         if output_format:
-            tokens.append(f"[OUT:{output_format.format_type}]")
-
+            out_str = f"[OUT:{output_format.format_type}]"
+            if output_format.attributes:
+                for key, value in output_format.attributes.items():
+                    out_str = out_str[:-1] + f":{key}={value}]"
+            tokens.append(out_str)
+        
         return " ".join(tokens)
