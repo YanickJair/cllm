@@ -10,6 +10,7 @@ import sys
 import os
 from typing import List, Dict
 from dataclasses import dataclass
+import dataclasses
 
 # Add the parent directory to the Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -28,6 +29,7 @@ class EncoderTestResult:
     compression_ratio: float
     has_req: bool
     has_target: bool
+    metadata: Dict = dataclasses.field(default_factory=dict)
 
 
 class EncoderTester:

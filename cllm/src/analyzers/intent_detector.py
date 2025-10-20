@@ -1,19 +1,39 @@
-# Detect REQ tokens
 from typing import Optional
 from spacy import Language
 
+from src.analyzers.base import BaseAnalyzer
 from src.core import Intent
 from src.core.vocabulary import Vocabulary
 
 
-class IntentDetector:
+class IntentDetector(BaseAnalyzer):
     """
     Detects REQ (request/action) tokens from text
     """
 
     def __init__(self, nlp: Language) -> None:
-        self.nlp = nlp
-        self.vocab = Vocabulary()
+        super().__init__(nlp=nlp)
+
+        self._modifiers = {
+            'SUMMARIZE': {
+                'BRIEF': ['brief', 'short', 'quick', 'concise'],
+                'DETAILED': ['detailed', 'comprehensive', 'thorough'],
+            },
+            'EXPLAIN': {
+                'SIMPLE': ['simple', 'basic', 'easy'],
+                'TECHNICAL': ['technical', 'detailed', 'in-depth'],
+                'DEEP': ['deep', 'thorough', 'comprehensive'],
+            },
+            'ANALYZE': {
+                'DEEP': ['deep', 'thorough', 'comprehensive', 'detailed'],
+                'QUICK': ['quick', 'brief', 'rapid', 'fast'],
+                'SURFACE': ['surface', 'high-level', 'overview'],
+            },
+            'GENERATE': {
+                'CREATIVE': ['creative', 'original', 'unique'],
+                'FORMAL': ['formal', 'professional'],
+            },
+        }
 
     def detect(self, text: str, context: str = "") -> list[Intent]:
         """
@@ -34,28 +54,20 @@ class IntentDetector:
         """
         doc = self.nlp(text)
         intents: list[Intent] = []
-        seen = set()  # Prevent duplicates
+        seen = set()
 
-        # This catches "List X", "Give Y", "Suggest Z" patterns
-        # These are high-confidence and should override verb matching
         imperative_result = self.vocab.detect_imperative_pattern(text)
         if imperative_result:
-            req_token, _ = imperative_result  # We only need REQ here, target handled elsewhere
+            req_token, _ = imperative_result
             intents.append(Intent(
                 token=req_token,
-                confidence=1.0,  # Highest confidence
-                trigger_word=text.split()[0].lower()  # First word is the trigger
+                confidence=1.0,
+                trigger_word=text.split()[0].lower()
             ))
             seen.add(req_token)
 
-            # IMPORTANT: For imperative patterns, often this is THE intent
-            # Return early to avoid over-detecting
-            # But still check for secondary intents (e.g., "List and sort")
-
-        # Strategy 1: Look for verbs that match REQ vocabulary
         for token in doc:
             if token.pos_ == "VERB":
-                # Get REQ token with context-aware filtering
                 req_token = self.vocab.get_req_token(
                     token.lemma_,
                     context=context,
@@ -63,55 +75,65 @@ class IntentDetector:
                 if req_token and req_token not in seen:
                     intents.append(Intent(
                         token=req_token,
-                        confidence=0.95,  # High confidence for verb matches
+                        confidence=0.95,
                         trigger_word=token.text
                     ))
                     seen.add(req_token)
 
-        # Strategy 2: Look for multi-word expressions
         text_lower = text.lower()
         for token, synonyms in self.vocab.REQ_TOKENS.items():
             for synonym in synonyms:
-                # Only check multi-word phrases (2+ words)
                 if len(synonym.split()) > 1 and synonym in text_lower:
-                    # Check if not already detected
                     if token not in seen:
                         intents.append(Intent(
                             token=token,
-                            confidence=0.90,  # Medium-high confidence
+                            confidence=0.90,
                             trigger_word=synonym
                         ))
                         seen.add(token)
 
-        # If NO intents detected so far, check if it's a question
-        # This handles prompts like "What is X?" with no verbs
         if not intents:
             question_req = self.vocab.get_question_req(text)
             if question_req:
                 intents.append(Intent(
                     token=question_req,
-                    confidence=0.85,  # Medium confidence (fallback)
+                    confidence=0.85,
                     trigger_word="question_pattern"
                 ))
                 seen.add(question_req)
 
-        # Remove duplicates, keep the highest confidence
         unique_intents: dict[str, Intent] = {}
         for intent in intents:
             if intent.token not in unique_intents or intent.confidence > unique_intents[intent.token].confidence:
+                intent.modifier = self._detect_req_modifier(text=text, req_token=intent.token)
                 unique_intents[intent.token] = intent
 
-        # Return sorted by confidence (highest first)
         return sorted(unique_intents.values(), key=lambda i: i.confidence, reverse=True)
 
     @staticmethod
     def get_primary_intent(intents: list[Intent]) -> Optional[Intent]:
         """
         Get the primary (most confident) intent
-
-        With v2.1 improvements, the first intent in the list
-        is always the highest confidence due to sorting.
         """
         if not intents:
             return None
         return intents[0]
+
+    def _detect_req_modifier(self, text: str, req_token: str) -> Optional[str]:
+        """
+        Detect modifiers for REQ tokens
+
+        Examples:
+            "Write a brief summary" + SUMMARIZE → BRIEF
+            "Explain in detail" + EXPLAIN → DETAILED
+            "Quick analysis" + ANALYZE → QUICK
+
+        Returns:
+            Modifier string or None
+        """
+        text_lower = text.lower()
+        if req_token in self._modifiers.items():
+            for modifier, kws in self._modifiers:
+                if any(kw_ in text_lower for kw_ in kws):
+                    return modifier
+        return None
