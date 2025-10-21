@@ -56,7 +56,7 @@ class Vocabulary:
 
         # Debugging and fixing
         "DEBUG": [
-            "debug", "fix", "troubleshoot", "diagnose", "solve", "repair", "resolve", "correct"
+            "debug", "troubleshoot", "diagnose", "fix bug", "investigate bug", "find bug", "track down", "identify issue"
         ],
 
         # Optimization and improvement

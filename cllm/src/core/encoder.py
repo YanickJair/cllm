@@ -5,7 +5,7 @@ import spacy
 from src.core.vocabulary import Vocabulary
 from src.analyzers.attribute_parser import AttributeParser
 from src.analyzers.intent_detector import IntentDetector
-from src.analyzers.target_extractor import TargetExtractor
+from src.analyzers.target import TargetExtractor
 from src.core.tokenizer import CLLMTokenizer
 
 from src.core._schemas import CompressionResult
