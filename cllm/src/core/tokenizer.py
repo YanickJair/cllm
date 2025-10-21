@@ -33,7 +33,7 @@ class CLLMTokenizer:
             else:
                 req_str = f"[REQ:{intent.token}]"
             tokens.append(req_str)
-        
+
         # Add TARGET tokens
         for target in targets:
             target_str = f"[TARGET:{target.token}"
@@ -42,16 +42,17 @@ class CLLMTokenizer:
                     target_str += f":{key}={value}"
             target_str += "]"
             tokens.append(target_str)
-        
+
         # Add EXTRACT fields
         if extractions and extractions.fields:
             extract_str = "[EXTRACT:" + "+".join(extractions.fields) + "]"
             tokens.append(extract_str)
-        
+
         # Add CTX tokens
         for ctx in contexts:
-            tokens.append(f"[CTX:{ctx.aspect}={ctx.value}]")
-        
+            if not any(ctx.value == intent.modifier for intent in intents):
+                tokens.append(f"[CTX:{ctx.aspect}={ctx.value}]")
+
         # Add OUT token
         if output_format:
             out_str = f"[OUT:{output_format.format_type}]"

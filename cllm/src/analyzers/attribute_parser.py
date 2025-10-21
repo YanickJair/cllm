@@ -97,7 +97,6 @@ class AttributeParser:
                     unique_fields.append(field)
                     seen.add(field)
             return ExtractionField(fields=unique_fields)
-        
         return None
 
     def parse_contexts(self, text: str) -> list[Context]:
