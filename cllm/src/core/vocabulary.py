@@ -223,6 +223,7 @@ class Vocabulary:
         "OWNERS", "ASSIGNEES", "STAKEHOLDERS", "PARTICIPANTS",
         "TIMESTAMPS", "DURATIONS", "FREQUENCIES", "QUANTITIES",
         "CATEGORIES", "TAGS", "LABELS", "STATUS", "TYPE", "CUSTOMER_INTENT", "RELEVANCE_SCORE", "NBA_ID",
+        "MATCH_CONFIDENCE", "SEMANTIC_SIMILARITY", "THRESHOLD"
     ]
 
     # Output formats with trigger words
