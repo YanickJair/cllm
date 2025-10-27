@@ -12,11 +12,18 @@ class Vocabulary:
             "analyze", "review", "examine", "evaluate", "assess", "inspect",
             "check out", "audit", "investigate"
         ],
+        "MATCH": [
+            "match", "compare", "align", "map", "correlate",
+            "match against", "compare to", "check against"
+        ],
 
         # Information extraction
         "EXTRACT": [
             "extract", "pull out", "identify", "find", "locate", "get",
             "retrieve", "return", "include", "select", "pick out"
+        ],
+        "SELECT": [
+            "select", "choose", "pick", "filter", "identify matching"
         ],
 
         # Content generation
@@ -56,7 +63,7 @@ class Vocabulary:
 
         # Debugging and fixing
         "DEBUG": [
-            "debug", "fix", "troubleshoot", "diagnose", "solve", "repair", "resolve", "correct"
+            "debug", "troubleshoot", "diagnose", "fix bug", "investigate bug", "find bug", "track down", "identify issue"
         ],
 
         # Optimization and improvement
@@ -130,10 +137,10 @@ class Vocabulary:
 
     # Context patterns to filter out (verb used non-actionably)
     CONTEXT_FILTERS = {
-        "give": ["given", "give me", "giving"],  # "the given text" is not an action
-        "follow": ["following", "as follows"],  # "the following items" is not an action
-        "base": ["based on", "base it on"],  # "based on X" is descriptive
-        "use": ["useful", "used to", "uses"],  # Sometimes descriptive
+        "give": ["given", "give me", "giving"],
+        "follow": ["following", "as follows"],
+        "base": ["based on", "base it on"],
+        "use": ["useful", "used to", "uses"],
     }
 
     # TARGET tokens with trigger words
@@ -149,6 +156,10 @@ class Vocabulary:
         "LOG": ["log", "logs", "log file", "error log", "system log"],
         "RECORD": ["record", "entry", "row", "item"],
         "STRATEGY": ["strategy", "approach", "plan", "methodology"],
+        "NBA_CATALOG": [
+            "nba", "nbas", "next best action", "next best actions",
+            "predefined actions", "possible actions", "available actions"
+        ],
 
         # Documents and content
         "DOCUMENT": ["document", "doc", "file", "report", "paper"],
@@ -158,6 +169,10 @@ class Vocabulary:
         "TRANSCRIPT": ["transcript", "conversation", "dialogue", "chat log"],
         "FEEDBACK": ["feedback", "comment", "review", "critique"],
         "COMMENT": ["comment", "remark", "note", "observation"],
+        "CUSTOMER_INTENT": [
+            "customer intent", "customer's intent", "customer need",
+            "customer request", "customer goal", "customer problem"
+        ],
 
         # Customer service
         "COMPLAINT": ["complaint", "issue", "problem", "grievance"],
@@ -165,9 +180,6 @@ class Vocabulary:
         "INQUIRY": ["inquiry", "question", "query"],
         "INTERACTION": ["interaction", "support interaction", "customer interaction"],
         "CALL": ["call", "phone call", "support call", "customer call"],
-
-        # Business content
-        "EMAIL": ["email", "message", "correspondence"],
         "DESCRIPTION": ["description", "product description"],
         "SUMMARY": ["summary", "executive summary", "brief summary"],
         "PLAN": ["plan", "business plan", "project plan"],
@@ -210,7 +222,8 @@ class Vocabulary:
         "METRICS", "KPI", "SCORES", "RATINGS", "FEEDBACK", "COMPLAINTS",
         "OWNERS", "ASSIGNEES", "STAKEHOLDERS", "PARTICIPANTS",
         "TIMESTAMPS", "DURATIONS", "FREQUENCIES", "QUANTITIES",
-        "CATEGORIES", "TAGS", "LABELS", "STATUS", "TYPE"
+        "CATEGORIES", "TAGS", "LABELS", "STATUS", "TYPE", "CUSTOMER_INTENT", "RELEVANCE_SCORE", "NBA_ID",
+        "MATCH_CONFIDENCE", "SEMANTIC_SIMILARITY", "THRESHOLD"
     ]
 
     # Output formats with trigger words

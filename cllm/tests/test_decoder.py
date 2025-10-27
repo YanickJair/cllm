@@ -20,7 +20,7 @@ def load_compress_prompts() -> list[dict]:
             "expected": cp_.get("prompt")
         })
     return compressed_list
-
+0
 
 class DecoderValidationRunner:
     def __init__(self, decoder: CLLMDecoder):

@@ -95,6 +95,11 @@ class IntentDetector:
                 ))
                 seen.add(question_req)
 
+        for intent in intents:
+            modifier = self._detect_req_modifier(text, intent.token)
+            if modifier:
+                intent.modifier = modifier
+
         # Remove duplicates, keep the highest confidence
         unique_intents: dict[str, Intent] = {}
         for intent in intents:
@@ -115,3 +120,47 @@ class IntentDetector:
         if not intents:
             return None
         return intents[0]
+
+    @staticmethod
+    def _detect_req_modifier(text: str, req_token: str) -> Optional[str]:
+        """
+        Detect modifiers for REQ tokens
+        
+        Examples:
+            "Write a brief summary" + SUMMARIZE → BRIEF
+            "Explain in detail" + EXPLAIN → DETAILED
+            "Quick analysis" + ANALYZE → QUICK
+        
+        Returns:
+            Modifier string or None
+        """
+        text_lower = text.lower()
+        
+        # Modifier patterns by REQ type
+        modifiers = {
+            'SUMMARIZE': {
+                'BRIEF': ['brief', 'short', 'quick', 'concise'],
+                'DETAILED': ['detailed', 'comprehensive', 'thorough'],
+            },
+            'EXPLAIN': {
+                'SIMPLE': ['simple', 'basic', 'easy'],
+                'TECHNICAL': ['technical', 'detailed', 'in-depth'],
+                'DEEP': ['deep', 'thorough', 'comprehensive'],
+            },
+            'ANALYZE': {
+                'DEEP': ['deep', 'thorough', 'comprehensive', 'detailed'],
+                'QUICK': ['quick', 'brief', 'rapid', 'fast'],
+                'SURFACE': ['surface', 'high-level', 'overview'],
+            },
+            'GENERATE': {
+                'CREATIVE': ['creative', 'original', 'unique'],
+                'FORMAL': ['formal', 'professional'],
+            },
+        }
+        
+        if req_token in modifiers:
+            for modifier, keywords in modifiers[req_token].items():
+                if any(keyword in text_lower for keyword in keywords):
+                    return modifier
+        
+        return None
