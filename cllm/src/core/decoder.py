@@ -155,10 +155,10 @@ class CLLMDecoder:
         # Detect plural vs singular
         words = topic.split()
         is_plural = (
-            words and (
+                words and (
                 words[0] in ['many', 'few', 'several', 'some'] or
                 (len(words) > 1 and words[-1].endswith('s') and not words[-1].endswith('ss'))
-            )
+        )
         )
 
         # Choose "is" or "are"

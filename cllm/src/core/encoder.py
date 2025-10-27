@@ -5,7 +5,7 @@ import spacy
 from src.core.vocabulary import Vocabulary
 from src.analyzers.attribute_parser import AttributeParser
 from src.analyzers.intent_detector import IntentDetector
-from src.analyzers.target_extractor import TargetExtractor
+from src.analyzers.target import TargetExtractor
 from src.core.tokenizer import CLLMTokenizer
 
 from src.core._schemas import CompressionResult
@@ -58,10 +58,13 @@ class CLLMEncoder:
         if verbose:
             print(f"2. Targets detected: {[t.token for t in targets]}")
 
-        # Step 3: Parse extraction fields
+        # Step 3: Parse extraction fields and Quantifiers
         extractions = self.attribute_parser.parse_extraction_fields(prompt)
+        quantifiers = self.attribute_parser.extract_quantifier(prompt)
+        specifications = self.attribute_parser.extract_specifications(prompt)
         if verbose and extractions:
             print(f"3. Extraction fields: {extractions.fields}")
+            print(f"3.1 Quantifiers field: {quantifiers}")
 
         # Step 4: Parse contexts
         contexts = self.attribute_parser.parse_contexts(prompt)
@@ -80,6 +83,8 @@ class CLLMEncoder:
             targets=targets,
             output_format=output_format,
             extractions=extractions,
+            quantifier=quantifiers,
+            specifications=specifications,
         )
 
         # Calculate compression ratio
