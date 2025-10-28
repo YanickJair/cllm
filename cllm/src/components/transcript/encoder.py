@@ -2,7 +2,7 @@
 from typing import Optional
 
 from src.components.transcript import Resolution, SentimentTrajectory, CallInfo, CustomerProfile, Issue, Action, \
-    TranscriptAnalysis
+    TranscriptAnalysis, Turn
 from src.core.tokenizer import CLLMTokenizer
 
 
@@ -20,6 +20,8 @@ class TranscriptEncoder:
         Format Design:
         [CALL:type:key=value:...]
         [CUSTOMER:key=value:...]
+        [ID:key=value:...]                          ← NEW: All identifiers in one token
+        [CONTACT:key=value:...]                     ← NEW: Contact information
         [ISSUE:type:key=value:...]
         [ACTION:type:key=value:...]
         [RESOLUTION:type:key=value:...]
@@ -39,35 +41,45 @@ class TranscriptEncoder:
         if verbose:
             print(f"Customer: {customer_token}")
 
-        # 3. Issues (with full temporal details)
+        # 3. Identifiers (tracking, claim, product, order, ticket, case)
+        identifiers = self._encode_identifiers(analysis)
+        if identifiers:
+            tokens.append(identifiers)
+            if verbose:
+                print(f"Identifiers: {identifiers}")
+
+        # 4. Contact info (email, phone)
+        contact = self._encode_contact_info(analysis)
+        if contact:
+            tokens.append(contact)
+            if verbose:
+                print(f"Contact: {contact}")
+
+        # 5. Issues (with full temporal details and money)
         for issue in analysis.issues:
-            issue_token = self._encode_issue(issue)
+            issue_token = self._encode_issue(issue, analysis.turns)
             tokens.append(issue_token)
             if verbose:
                 print(f"Issue: {issue_token}")
 
-        # 4. Actions
+        # 6. Actions (with amounts for refunds)
         for action in analysis.actions:
             action_token = self._encode_action(action)
             tokens.append(action_token)
             if verbose:
                 print(f"Action: {action_token}")
 
-        # 5. Resolution
+        # 7. Resolution
         resolution_token = self._encode_resolution(analysis.resolution)
         tokens.append(resolution_token)
         if verbose:
             print(f"Resolution: {resolution_token}")
 
-        # 6. Sentiment trajectory
+        # 8. Sentiment trajectory
         sentiment_token = self._encode_sentiment(analysis.sentiment_trajectory)
         tokens.append(sentiment_token)
         if verbose:
             print(f"Sentiment: {sentiment_token}")
-
-        identifiers = self._encode_identifiers(analysis)
-        if identifiers:
-            tokens.append(identifiers)
 
         return ' '.join(tokens)
 
@@ -118,22 +130,135 @@ class TranscriptEncoder:
             address_compressed = self._compress_address(address)
             parts.append(f"ADDRESS={address_compressed}")
 
+        # Add organization if present
+        if customer.attributes and 'organization' in customer.attributes:
+            org = customer.attributes['organization']
+            # Compress organization name
+            org_compressed = org.replace(' ', '_')
+            parts.append(f"ORG={org_compressed}")
+
+        # Add location if present
+        if customer.attributes and 'location' in customer.attributes:
+            location = customer.attributes['location']
+            parts.append(f"LOCATION={location}")
+
         return f"[{':'.join(parts)}]"
 
-    def _encode_issue(self, issue: Issue) -> str:
+    def _encode_identifiers(self, analysis: TranscriptAnalysis) -> Optional[str]:
         """
-        Encode issue with full temporal details
+        Encode all identifiers in one token
+
+        Format: [ID:TYPE=value:TYPE=value:...]
+        Example: [ID:TRACKING=PL-7294008:PRODUCT=HP-300A]
+
+        Supported identifier types:
+        - TRACKING: Tracking numbers
+        - CLAIM: Claim numbers
+        - PRODUCT: Product models
+        - ORDER: Order numbers
+        - TICKET: Ticket numbers
+        - CASE: Case numbers
+        """
+
+        # Collect all identifiers from all turns
+        identifiers = {
+            'tracking_numbers': [],
+            'claim_numbers': [],
+            'product_models': [],
+            'order_numbers': [],
+            'ticket_numbers': [],
+            'case_numbers': []
+
+        }
+
+        for turn in analysis.turns:
+            if turn.entities:
+                for key in identifiers:
+                    identifiers[key].extend(turn.entities.get(key, []))
+
+        # Deduplicate all
+        for key in identifiers:
+            identifiers[key] = list(set(identifiers[key]))
+
+        # Build identifier token
+        parts = []
+
+        if identifiers['tracking_numbers']:
+            # Join multiple with comma (rare but possible)
+            parts.append(f"TRACKING={','.join(identifiers['tracking_numbers'])}")
+
+        if identifiers['claim_numbers']:
+            parts.append(f"CLAIM={','.join(identifiers['claim_numbers'])}")
+
+        if identifiers['product_models']:
+            parts.append(f"PRODUCT={','.join(identifiers['product_models'])}")
+
+        if identifiers['order_numbers']:
+            parts.append(f"ORDER={','.join(identifiers['order_numbers'])}")
+
+        if identifiers['ticket_numbers']:
+            parts.append(f"TICKET={','.join(identifiers['ticket_numbers'])}")
+
+        if identifiers['case_numbers']:
+            parts.append(f"CASE={','.join(identifiers['case_numbers'])}")
+
+        if not parts:
+            return None
+
+        return f"[ID:{':'.join(parts)}]"
+
+    def _encode_contact_info(self, analysis: TranscriptAnalysis) -> Optional[str]:
+        """
+        Encode contact information
+
+        Format: [CONTACT:TYPE=value:...]
+        Example: [CONTACT:EMAIL=user@example.com:PHONE=555-123-4567]
+        """
+
+        # Collect contact info from all turns
+        emails = []
+        phone_numbers = []
+
+        for turn in analysis.turns:
+            if turn.entities:
+                emails.extend(turn.entities.get('emails', []))
+                phone_numbers.extend(turn.entities.get('phone_numbers', []))
+
+        # Deduplicate
+        emails = list(set(emails))
+        phone_numbers = list(set(phone_numbers))
+
+        # Build contact token
+        parts = []
+
+        if emails:
+            # Usually just one email, but support multiple
+            parts.append(f"EMAIL={','.join(emails)}")
+
+        if phone_numbers:
+            parts.append(f"PHONE={','.join(phone_numbers)}")
+
+        if not parts:
+            return None
+
+        return f"[CONTACT:{':'.join(parts)}]"
+
+    def _encode_issue(self, issue: Issue, turns: list[Turn]) -> str:
+        """
+        Encode issue with full temporal details and money amounts
 
         Format: [ISSUE:TYPE:ATTR=VALUE:...]
         Example: [ISSUE:INTERNET_OUTAGE:SEVERITY=MEDIUM:FREQ=3x_daily:DURATION=3d:PATTERN=9am+1pm+6pm:DAYS=MON+TUE+WED]
+        Example: [ISSUE:BILLING_DISPUTE:SEVERITY=LOW:AMOUNTS=$14.99+$16.99]
         """
         parts = ['ISSUE', issue.type]
 
-        if issue.type in ['BILLING_DISPUTE', 'UNEXPECTED_CHARGE', 'REFUND_REQUEST']:
-            if issue.attributes and 'money' in issue.attributes:
-                amounts = issue.attributes['money']
-                if amounts:
-                    parts.append(f"AMOUNTS={'+'.join(amounts)}")
+        # Money amounts for billing issues
+        if issue.type in ['BILLING_DISPUTE', 'UNEXPECTED_CHARGE', 'REFUND_REQUEST', 'OVERCHARGE']:
+            for turn in turns:
+                if len(turn.entities.get('money', [])) > 0:
+                    amounts = '+'.join(turn.entities.get('money', []))
+                    parts.append(f"AMOUNTS={amounts}")
 
         # Severity
         if issue.severity:
@@ -166,15 +291,23 @@ class TranscriptEncoder:
 
     def _encode_action(self, action: Action) -> str:
         """
-        Encode action
+        Encode action with amounts for financial actions
 
         Format: [ACTION:TYPE:ATTR=VALUE:...]
         Example: [ACTION:TROUBLESHOOT:RESULT=PENDING]
+        Example: [ACTION:REFUND:AMOUNT=$12:RESULT=SUCCESS]
+        Example: [ACTION:CREDIT:AMOUNT=$10:RESULT=APPLIED]
         """
         parts = ['ACTION', action.type]
 
         if action.step:
             parts.append(f"STEP={action.step}")
+
+        # Add amount for financial actions (REFUND, CREDIT, CHARGE)
+        if action.type in ['REFUND', 'CREDIT', 'CHARGE', 'PAYMENT'] and action.attributes:
+            amount = action.attributes.get('amount')
+            if amount:
+                parts.append(f"AMOUNT={amount}")
 
         if action.result:
             parts.append(f"RESULT={action.result}")
@@ -187,6 +320,7 @@ class TranscriptEncoder:
 
         Format: [RESOLUTION:TYPE:ATTR=VALUE:...]
         Example: [RESOLUTION:PENDING:TIMELINE=24h:TICKET=TK12345]
+        Example: [RESOLUTION:RESOLVED:TIMELINE=3d]
         """
         parts = ['RESOLUTION', resolution.type]
 
@@ -235,6 +369,7 @@ class TranscriptEncoder:
         Examples:
         - "123 Main Street" → "123_Main_St"
         - "456 Oak Avenue" → "456_Oak_Ave"
+        - "41 Riverbend Lane" → "41_Riverbend_Ln"
         """
         # Replace spaces with underscores
         compressed = address.replace(' ', '_')
@@ -255,39 +390,3 @@ class TranscriptEncoder:
             compressed = compressed.replace(full, abbrev)
 
         return compressed
-
-    def _encode_identifiers(self, analysis: TranscriptAnalysis) -> Optional[str]:
-        """Encode tracking numbers, claim numbers, product models"""
-
-        # Collect all identifiers from all turns
-        tracking_numbers = []
-        claim_numbers = []
-        product_models = []
-
-        for turn in analysis.turns:
-            if turn.entities:
-                tracking_numbers.extend(turn.entities.get('tracking_numbers', []))
-                claim_numbers.extend(turn.entities.get('claim_numbers', []))
-                product_models.extend(turn.entities.get('product_models', []))
-
-        # Deduplicate
-        tracking_numbers = list(set(tracking_numbers))
-        claim_numbers = list(set(claim_numbers))
-        product_models = list(set(product_models))
-
-        # Build identifier token
-        parts = []
-
-        if tracking_numbers:
-            parts.append(f"TRACKING={','.join(tracking_numbers)}")
-
-        if claim_numbers:
-            parts.append(f"CLAIM={','.join(claim_numbers)}")
-
-        if product_models:
-            parts.append(f"PRODUCT={','.join(product_models)}")
-
-        if not parts:
-            return None
-
-        return f"[ID:{':'.join(parts)}]"
