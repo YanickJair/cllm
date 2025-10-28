@@ -1,0 +1,103 @@
+from typing import Optional
+
+from src.components.transcript import SentimentTrajectory, Turn
+
+
+class SentimentAnalyzer:
+    """Context-aware sentiment analysis"""
+
+    # Emotion keywords with intensity
+    EMOTION_KEYWORDS = {
+        'FRUSTRATED': {
+            'keywords': ['frustrating', 'frustrated', 'annoying', 'annoyed'],
+            'intensity': 0.7
+        },
+        'ANGRY': {
+            'keywords': ['angry', 'furious', 'mad', 'outraged', 'livid'],
+            'intensity': 0.9
+        },
+        'SATISFIED': {
+            'keywords': ['satisfied', 'happy', 'pleased', 'great', 'perfect', 'wonderful'],
+            'intensity': 0.8
+        },
+        'GRATEFUL': {
+            'keywords': ['thank', 'thanks', 'appreciate', 'grateful'],
+            'intensity': 0.6
+        },
+        'WORRIED': {
+            'keywords': ['worried', 'concerned', 'anxious', 'nervous'],
+            'intensity': 0.6
+        },
+        'CONFUSED': {
+            'keywords': ['confused', 'unclear', 'don\'t understand', 'not sure'],
+            'intensity': 0.5
+        },
+        'DISAPPOINTED': {
+            'keywords': ['disappointed', 'let down', 'expected better'],
+            'intensity': 0.7
+        }
+    }
+
+    def analyze_turn(self, text: str, speaker: str) -> tuple[Optional[str], float]:
+        """
+        Analyze sentiment of a turn
+
+        Returns:
+            (sentiment, confidence)
+        """
+        text_lower = text.lower()
+
+        # Check for emotion keywords
+        detected_emotions = []
+        for emotion, config in self.EMOTION_KEYWORDS.items():
+            for keyword in config['keywords']:
+                if keyword in text_lower:
+                    detected_emotions.append((emotion, config['intensity']))
+                    break
+
+        if not detected_emotions:
+            return 'NEUTRAL', 0.5
+
+        # Return strongest emotion
+        detected_emotions.sort(key=lambda x: x[1], reverse=True)
+        return detected_emotions[0]
+
+    def track_trajectory(self, turns: list[Turn]) -> SentimentTrajectory:
+        """Track sentiment changes across conversation"""
+
+        # Focus on customer turns
+        customer_turns = [t for t in turns if t.speaker == 'customer']
+
+        if not customer_turns:
+            return SentimentTrajectory(start='NEUTRAL', end='NEUTRAL')
+
+        # Analyze first and last customer turns
+        start_sentiment, _ = self.analyze_turn(
+            customer_turns[0].text,
+            'customer'
+        )
+        end_sentiment, _ = self.analyze_turn(
+            customer_turns[-1].text,
+            'customer'
+        )
+
+        # Track all sentiment changes
+        sentiments = []
+        for i, turn in enumerate(customer_turns):
+            sentiment, confidence = self.analyze_turn(turn.text, 'customer')
+            if sentiment != 'NEUTRAL':
+                sentiments.append((i, sentiment, confidence))
+
+        # Detect turning points
+        turning_points = []
+        for i in range(1, len(sentiments)):
+            prev_sentiment = sentiments[i - 1][1]
+            curr_sentiment = sentiments[i][1]
+            if prev_sentiment != curr_sentiment:
+                turning_points.append((sentiments[i][0], curr_sentiment))
+
+        return SentimentTrajectory(
+            start=start_sentiment,
+            end=end_sentiment,
+            turning_points=turning_points
+        )

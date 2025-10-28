@@ -1,0 +1,52 @@
+[
+    {
+        "id": "call_001",
+        "issue": "INTERNET_OUTAGE",
+        "transcript": "\nAgent: Good morning, thank you for calling TechCorp support. My name is Sarah. How can I help you today?\n\nCustomer: Hi Sarah, I’ve been having issues with my internet connection for the past three days. It keeps dropping every few hours, and I work from home so this is really frustrating.\n\nAgent: I totally understand how important that is. Let’s get this sorted. Could I have your account number, please?\n\nCustomer: Sure, it’s 847-392-1045.\n\nAgent: Thanks. I see you’re on the Premium 500 plan. When the connection drops, do all your devices lose internet, or just one?\n\nCustomer: Everything — my laptop, my wife’s phone, even the TV.\n\nAgent: Got it. I’m running a quick diagnostic on your modem… okay, it looks like a line fluctuation issue in your area. We’ve had similar reports from nearby addresses.\n\nCustomer: So it’s not just me?\n\nAgent: Correct. A technician is already assigned to inspect the local node this afternoon. I’ve added your account to that ticket so you’ll be notified once it’s resolved.\n\nCustomer: Great. Will I need to reboot anything?\n\nAgent: Once service stabilizes, just unplug your modem for 30 seconds and plug it back in. That will refresh your connection.\n\nCustomer: Perfect. Thanks for the help.\n"
+    },
+    {
+        "id": "call_002",
+        "issue": "BILLING_DISPUTE",
+        "transcript": "\nAgent: Hello, this is Daniel from MobileWave billing. How can I help you today?\n\nCustomer: Hi Daniel, I was charged twice for my plan this month. I only have one line, so I’m not sure why.\n\nAgent: I see how that’s confusing. Let’s check it out. What’s your account ID?\n\nCustomer: MW-55983.\n\nAgent: Thanks. I see two identical payments for $89.99 — one on the 2nd and one on the 4th. Looks like a duplicate authorization error.\n\nCustomer: Can that be fixed?\n\nAgent: Yes, I’m submitting a refund request right now. You’ll see the refund within 3–5 business days. I’ll also apply a $10 courtesy credit for the inconvenience.\n\nCustomer: Wow, thanks so much.\n\nAgent: My pleasure. Anything else I can assist with today?\n\nCustomer: Nope, that’s all. Appreciate it!\n"
+    },
+    {
+        "id": "call_003",
+        "issue": "DELIVERY_DELAY",
+        "transcript": "\nAgent: Thanks for contacting ShopEase. This is Monica. How can I help?\n\nCustomer: I ordered a blender last week and it still hasn’t arrived. The tracking hasn’t updated since Friday.\n\nAgent: I understand how frustrating that is. May I have your order number?\n\nCustomer: SE-90211.\n\nAgent: Thanks. It looks like the package is delayed at your local distribution center due to a regional storm. It’s in transit now with an updated delivery date of Friday.\n\nCustomer: Okay, that’s fine. Just wanted to make sure it wasn’t lost.\n\nAgent: Not at all — I’ll email you tracking updates. You should get it soon.\n"
+    },
+    {
+        "id": "call_004",
+        "issue": "LOGIN_FAILURE",
+        "transcript": "\nAgent: Hi, this is Jason from CloudSync support. What seems to be the issue today?\n\nCustomer: I can’t log into my account. It says “password incorrect” but I didn’t change it.\n\nAgent: No problem. Let’s fix that. What’s your registered email?\n\nCustomer: renee_hall@fastmail.com.\n\nAgent: Thanks. I see your account’s been temporarily locked due to multiple failed attempts. I’m sending a reset link — could you check your email?\n\nCustomer: Got it. Clicking now… okay, password updated.\n\nAgent: Great! Try logging in again.\n\nCustomer: It works now. Thanks!\n"
+    },
+    {
+        "id": "call_005",
+        "issue": "PRODUCT_DEFECT",
+        "transcript": "\nAgent: Hello, this is Anita from HomePlus warranty. How can I help you today?\n\nCustomer: Hi, my air purifier stopped working yesterday. The power light turns on, but no air is coming out.\n\nAgent: Thanks for letting me know. Can I get your model number?\n\nCustomer: HP-300A, purchased two months ago on your website.\n\nAgent: Perfect. You’re still within warranty. Let’s try one quick thing: can you unplug it and hold the power button for 10 seconds, then plug it back in?\n\nCustomer: Okay... still not working.\n\nAgent: Alright, we’ll replace it. You’ll receive a prepaid return label within 24 hours.\n"
+    },
+    {
+        "id": "call_006",
+        "issue": "INTERNET_OUTAGE",
+        "transcript": "\nAgent: Hi, you’ve reached TechLine Fiber Support. My name is Michael. How can I help?\n\nCustomer: Hey, Michael. My internet’s been cutting out randomly for the last week. It disconnects, then comes back after a few minutes. It’s driving me crazy.\n\nAgent: I’m really sorry about that. Let’s take a deeper look. Can I have your account number?\n\nCustomer: Sure, it’s 154882. Address is 41 Riverbend Lane.\n\nAgent: Thanks, found your account. You’re on the Fiber 1 Gbps plan. I see multiple drop events in the last 72 hours. Are you using a personal router or our company router?\n\nCustomer: I’m using your router, the one with the white antenna.\n\nAgent: Got it. Can I ask if the lights on the router go red when it disconnects?\n\nCustomer: Yeah, it flashes red for a few seconds, then goes back to blue.\n\nAgent: That’s a signal issue. It’s usually the optical line, not your devices. I’ll test your fiber link remotely… okay, the signal strength is below threshold intermittently.\n\nCustomer: So what does that mean?\n\nAgent: It means the fiber cable connection outside your home might be slightly bent or dirty. I’ll schedule a technician to clean and re-terminate it. The next available slot is tomorrow morning between 9 and 11.\n\nCustomer: That works. Do I need to be home?\n\nAgent: It’s best if you are, just in case they need indoor access. Also, I recommend avoiding frequent reboots tonight — it can worsen the signal calibration.\n\nCustomer: Got it. Thanks for the thorough explanation.\n\nAgent: You’re very welcome. Once fixed, you’ll get a text confirmation and a feedback survey.\n"
+    },
+    {
+        "id": "call_007",
+        "issue": "ACCOUNT_HACKED",
+        "transcript": "\nAgent: Hello, thank you for calling GameHub Security. My name is Leo. How can I assist you?\n\nCustomer: Hi Leo, I think my account got hacked. I can’t log in, and I got an email saying my password was changed.\n\nAgent: That’s concerning. Can I get your original email address?\n\nCustomer: Yes, it’s skylar83@outlook.com.\n\nAgent: Thank you. I’m checking… yep, there’s unauthorized access from a foreign IP. I’ll temporarily freeze the account and revert your email to the original.\n\nCustomer: Thank you. Can you also make sure none of my purchases were used?\n\nAgent: Yes — I see one suspicious purchase for $49.99. I’ve flagged it for refund. You’ll receive an email confirmation and a password reset link in a few minutes.\n\nCustomer: Awesome. Really appreciate the help.\n\nAgent: My pleasure. Security first!\n"
+    },
+    {
+        "id": "call_008",
+        "issue": "DELIVERY_DELAY",
+        "transcript": "\nAgent: Hi, this is Maria from ParcelLink. How may I help?\n\nCustomer: Hi Maria, my package was supposed to arrive three days ago. Tracking says “out for delivery,” but nothing’s come.\n\nAgent: That’s frustrating — let’s fix that. May I have your tracking number?\n\nCustomer: It’s PL-7294008.\n\nAgent: Thank you. Checking now… I see your parcel’s been looping between two depots due to an address mismatch. The street number is listed as 180 instead of 108.\n\nCustomer: Oh wow, that explains a lot.\n\nAgent: No worries, I can correct that. I’ve updated your address and requested re-dispatch. It’s being prioritized for tomorrow morning delivery.\n\nCustomer: Perfect. Will I get a new tracking update?\n\nAgent: Yes, you’ll receive an SMS within two hours with the corrected link.\n\nCustomer: Okay, thanks. I was worried it was lost.\n\nAgent: Not at all. I’ve also added a note for the courier to call you before delivery.\n\nCustomer: Appreciate that. You’ve been really helpful.\n"
+    },
+    {
+        "id": "call_009",
+        "issue": "BILLING_DISPUTE",
+        "transcript": "\nAgent: Hi, thank you for contacting Streamly billing. This is Raj. How can I assist?\n\nCustomer: Hi Raj, I was just checking my card statement and saw two charges for my monthly subscription — one for $14.99 and another for $16.99. What’s going on?\n\nAgent: That’s definitely unusual. Let me check. Can you give me the email linked to your account?\n\nCustomer: Sure, it’s emily.thomas@icloud.com.\n\nAgent: Thanks. I see you recently upgraded from Standard to Premium. The $14.99 was for your old plan, and the $16.99 is for the new one. The overlap happened because the upgrade occurred mid-billing cycle.\n\nCustomer: So I was charged twice for the same month?\n\nAgent: In a sense, yes — a partial overlap. But don’t worry, I can refund the difference. I’ll also adjust your billing cycle so this won’t happen again.\n\nCustomer: That would be great. I’ve been a customer for years, so I was surprised.\n\nAgent: I completely understand. I’ve processed a $12 credit back to your card and emailed a breakdown of your new billing schedule.\n\nCustomer: You’ve been really clear — thank you.\n\nAgent: My pleasure. Anything else I can help with today?\n\nCustomer: Nope, that’s all!\n"
+    },
+    {
+        "id": "call_010",
+        "issue": "CLAIM_STATUS",
+        "transcript": "\nAgent: Good afternoon, you’ve reached SafeSure Insurance. My name is Priya. How can I help?\n\nCustomer: Hi Priya, I filed a car accident claim two weeks ago and haven’t heard back.\n\nAgent: Let’s check that. What’s your claim number?\n\nCustomer: SS-CLA-89210.\n\nAgent: Thank you. I see it’s been reviewed and approved for payout. The funds should reach your account within 3 business days.\n\nCustomer: That’s a relief! Thanks.\n"
+    }
+]
