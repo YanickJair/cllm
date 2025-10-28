@@ -6,7 +6,7 @@ from . import (
     CallInfo, Issue, Action, Resolution,
     CustomerProfile, TranscriptAnalysis, Turn
 )
-from src.analyzers.intent_detector import IntentDetector
+from ...analyzers.intent_detector import IntentDetector
 from .utils.named_entity import EntityExtractor
 from .utils.sentiment_analyzer import SentimentAnalyzer
 from .utils.temporal_analyzer import TemporalAnalyzer
