@@ -327,6 +327,8 @@ if __name__ == '__main__':
         transcripts = json.load(f)
 
     result = []
+    # test = "\nAgent: Hi, thank you for contacting Streamly Billing. This is Raj. How can I assist?\n\nCustomer: Hi Raj, I was just checking my card statement and saw two charges for my monthly subscription — one for $14.99 and another for $16.99. What’s going on?\n\nAgent: That’s definitely unusual. Let me check. Can you give me the email linked to your account?\n\nCustomer: Sure, it’s emily.thomas@icloud.com.\n\nAgent: Thanks. I see you recently upgraded from Standard to Premium. The $14.99 was for your old plan, and the $16.99 is for the new one. The overlap happened because the upgrade occurred mid-billing cycle.\n\nCustomer: So I was charged twice for the same month?\n\nAgent: In a sense, yes — a partial overlap. But don’t worry, I can refund the difference. I’ll also adjust your billing cycle so this won’t happen again.\n\nCustomer: That would be great. I’ve been a customer for years, so I was surprised.\n\nAgent: I completely understand. I’ve processed a $12 credit back to your card and emailed a breakdown of your new billing schedule.\n\nCustomer: You’ve been really clear — thank you.\n\nAgent: My pleasure. Anything else I can help with today?\n\nCustomer: Nope, that’s all!\n"
+    # analysis, new_result = show_comparison(test)
     for transcript in transcripts:
         analysis, new_result = show_comparison(transcript.get("transcript"))
         result.append({
