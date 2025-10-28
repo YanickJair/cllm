@@ -32,6 +32,9 @@ class CallInfo:
 class Issue:
     """Customer issue"""
     type: str  # INTERNET_OUTAGE, BILLING_DISPUTE, etc.
+    disputed_amounts: list[str] = field(default_factory=list)
+    cause: Optional[str] = None
+    plan_change: Optional[str] = None
     severity: Optional[str] = None  # LOW, MEDIUM, HIGH, CRITICAL
     frequency: Optional[str] = None  # ONCE, DAILY, etc.
     duration: Optional[str] = None  # "3d", "1week"
@@ -48,6 +51,8 @@ class Action:
     result: Optional[str] = None  # SUCCESS, FAILED, TEMP_FIX
     timestamp: Optional[float] = None
     attributes: dict = field(default_factory=dict)
+    amount: Optional[str] = None
+    payment_method: Optional[str] = None
 
 
 @dataclass

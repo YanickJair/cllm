@@ -1,16 +1,14 @@
-# transcript_encoder.py - NEW file
 from typing import Optional
 
 from src.components.transcript import Resolution, SentimentTrajectory, CallInfo, CustomerProfile, Issue, Action, \
-    TranscriptAnalysis, Turn
-from src.core.tokenizer import CLLMTokenizer
+    TranscriptAnalysis
 
 
 class TranscriptEncoder:
     """
     Encodes transcript analysis into compressed tokens
 
-    Philosophy: Extends CLLMTokenizer format: [CALL:metadata][ISSUE:details][ACTION:details][RESOLUTION:details]
+    Philosophy: Extends CLLMTokenizer format with payment context separation
     """
 
     def encode(self, analysis: TranscriptAnalysis, verbose: bool = False) -> str:
@@ -20,10 +18,10 @@ class TranscriptEncoder:
         Format Design:
         [CALL:type:key=value:...]
         [CUSTOMER:key=value:...]
-        [ID:key=value:...]                          ← NEW: All identifiers in one token
-        [CONTACT:key=value:...]                     ← NEW: Contact information
-        [ISSUE:type:key=value:...]
-        [ACTION:type:key=value:...]
+        [ID:key=value:...]                          ← All identifiers in one token
+        [CONTACT:key=value:...]                     ← Contact information
+        [ISSUE:type:key=value:...]                  ← DISPUTED amounts only
+        [ACTION:type:key=value:...]                 ← REFUND/CREDIT amounts here
         [RESOLUTION:type:key=value:...]
         [SENTIMENT:start→end]
         """
@@ -55,14 +53,14 @@ class TranscriptEncoder:
             if verbose:
                 print(f"Contact: {contact}")
 
-        # 5. Issues (with full temporal details and money)
+        # 5. Issues (with disputed amounts, cause, plan change)
         for issue in analysis.issues:
-            issue_token = self._encode_issue(issue, analysis.turns)
+            issue_token = self._encode_issue(issue)
             tokens.append(issue_token)
             if verbose:
                 print(f"Issue: {issue_token}")
 
-        # 6. Actions (with amounts for refunds)
+        # 6. Actions (with refund/credit amounts)
         for action in analysis.actions:
             action_token = self._encode_action(action)
             tokens.append(action_token)
@@ -243,22 +241,33 @@ class TranscriptEncoder:
 
         return f"[CONTACT:{':'.join(parts)}]"
 
-    def _encode_issue(self, issue: Issue, turns: list[Turn]) -> str:
+    def _encode_issue(self, issue: Issue) -> str:
         """
-        Encode issue with full temporal details and money amounts
+        Encode issue with payment context separation
+
+        NEW: Uses issue.disputed_amounts (from customer)
+             Separate from refund amounts (in ACTION)
 
         Format: [ISSUE:TYPE:ATTR=VALUE:...]
-        Example: [ISSUE:INTERNET_OUTAGE:SEVERITY=MEDIUM:FREQ=3x_daily:DURATION=3d:PATTERN=9am+1pm+6pm:DAYS=MON+TUE+WED]
-        Example: [ISSUE:BILLING_DISPUTE:SEVERITY=LOW:AMOUNTS=$14.99+$16.99]
+
+        Examples:
+        [ISSUE:INTERNET_OUTAGE:SEVERITY=MEDIUM:FREQ=3x_daily:DURATION=3d]
+        [ISSUE:BILLING_DISPUTE:DISPUTED_AMOUNTS=$14.99+$16.99:CAUSE=MID_CYCLE_UPGRADE:PLAN_CHANGE=STANDARD→PREMIUM:SEVERITY=LOW]
         """
         parts = ['ISSUE', issue.type]
 
-        # Money amounts for billing issues
-        if issue.type in ['BILLING_DISPUTE', 'UNEXPECTED_CHARGE', 'REFUND_REQUEST', 'OVERCHARGE']:
-            for turn in turns:
-                if len(turn.entities.get('money', [])) > 0:
-                    amounts = '+'.join(turn.entities.get('money', []))
-                    parts.append(f"AMOUNTS={amounts}")
+        # NEW: Disputed amounts for billing issues
+        if issue.disputed_amounts:
+            amounts_str = '+'.join(issue.disputed_amounts)
+            parts.append(f"DISPUTED_AMOUNTS={amounts_str}")
+
+        # NEW: Root cause
+        if issue.cause:
+            parts.append(f"CAUSE={issue.cause}")
+
+        # NEW: Plan change
+        if issue.plan_change:
+            parts.append(f"PLAN_CHANGE={issue.plan_change}")
 
         # Severity
         if issue.severity:
@@ -291,23 +300,29 @@ class TranscriptEncoder:
 
     def _encode_action(self, action: Action) -> str:
         """
-        Encode action with amounts for financial actions
+        Encode action with financial details
+
+        NEW: Uses action.amount and action.payment_method directly
 
         Format: [ACTION:TYPE:ATTR=VALUE:...]
-        Example: [ACTION:TROUBLESHOOT:RESULT=PENDING]
-        Example: [ACTION:REFUND:AMOUNT=$12:RESULT=SUCCESS]
-        Example: [ACTION:CREDIT:AMOUNT=$10:RESULT=APPLIED]
+
+        Examples:
+        [ACTION:TROUBLESHOOT:RESULT=PENDING]
+        [ACTION:REFUND:AMOUNT=$12.00:METHOD=CARD_CREDIT:RESULT=COMPLETED]
+        [ACTION:CREDIT:AMOUNT=$10.00:METHOD=ACCOUNT_CREDIT:RESULT=APPLIED]
         """
         parts = ['ACTION', action.type]
 
         if action.step:
             parts.append(f"STEP={action.step}")
 
-        # Add amount for financial actions (REFUND, CREDIT, CHARGE)
-        if action.type in ['REFUND', 'CREDIT', 'CHARGE', 'PAYMENT'] and action.attributes:
-            amount = action.attributes.get('amount')
-            if amount:
-                parts.append(f"AMOUNT={amount}")
+        # NEW: Add amount for financial actions
+        if action.amount:
+            parts.append(f"AMOUNT={action.amount}")
+
+        # NEW: Add payment method
+        if action.payment_method:
+            parts.append(f"METHOD={action.payment_method}")
 
         if action.result:
             parts.append(f"RESULT={action.result}")

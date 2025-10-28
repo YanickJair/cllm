@@ -1,5 +1,5 @@
 import re
-from typing import Optional
+from typing import Optional, List, Tuple
 
 import spacy
 from . import (
@@ -63,7 +63,7 @@ class TranscriptAnalyzer:
         call_info = self._extract_call_info(turns, metadata)
         customer = self._extract_customer_profile(turns)
         issues = self._extract_issues_enhanced(turns)
-        actions = self._extract_actions(turns)
+        actions = self._extract_actions_enhanced(turns)  # Enhanced version
         resolution = self._extract_resolution(turns)
         sentiment_trajectory = self.sentiment_analyzer.track_trajectory(turns)
 
@@ -108,7 +108,7 @@ class TranscriptAnalyzer:
         return turns
 
     def _extract_issues_enhanced(self, turns: list[Turn]) -> list[Issue]:
-        """Extract issues with enhanced temporal information"""
+        """Extract issues with payment context separation"""
         issues = []
 
         # Combine all customer text for context
@@ -126,9 +126,24 @@ class TranscriptAnalyzer:
             # Detect severity
             severity = self._detect_severity(customer_text)
 
+            # NEW: Extract payment context for billing issues
+            disputed_amounts = []
+            cause = None
+            plan_change = None
+
+            if issue_type in ['BILLING_DISPUTE', 'UNEXPECTED_CHARGE', 'REFUND_REQUEST', 'OVERCHARGE']:
+                # Extract disputed amounts ONLY from customer turns
+                disputed_amounts = self._extract_disputed_amounts(turns)
+
+                # Detect cause and plan change from agent explanation
+                cause, plan_change = self._detect_billing_cause(turns)
+
             issue = Issue(
                 type=issue_type,
                 severity=severity,
+                disputed_amounts=disputed_amounts,
+                cause=cause,
+                plan_change=plan_change,
                 frequency=temporal.frequency,
                 duration=temporal.duration,
                 pattern=temporal.pattern,
@@ -140,6 +155,89 @@ class TranscriptAnalyzer:
             issues.append(issue)
 
         return issues
+
+    def _extract_disputed_amounts(self, turns: List[Turn]) -> List[str]:
+        """
+        Extract disputed amounts ONLY from customer turns mentioning the problem
+
+        Returns list like: ["$14.99", "$16.99"]
+        """
+        disputed_amounts = []
+
+        for turn in turns:
+            if turn.speaker == 'customer':
+                text_lower = turn.text.lower()
+
+                # Check if customer is mentioning charges/billing
+                problem_keywords = [
+                    'charged', 'charge', 'bill', 'statement',
+                    'saw', 'shows', 'billed', 'payment'
+                ]
+
+                if any(keyword in text_lower for keyword in problem_keywords):
+                    # Extract money from this turn
+                    money_amounts = turn.entities.get('money', [])
+                    disputed_amounts.extend(money_amounts)
+
+        # Deduplicate while preserving order
+        seen = set()
+        unique_amounts = []
+        for amount in disputed_amounts:
+            if amount not in seen:
+                seen.add(amount)
+                unique_amounts.append(amount)
+
+        return unique_amounts
+
+    def _detect_billing_cause(self, turns: List[Turn]) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Detect root cause and plan change from agent explanation
+
+        Returns: (cause, plan_change)
+        Example: ("MID_CYCLE_UPGRADE", "STANDARD→PREMIUM")
+        """
+        cause = None
+        plan_change = None
+
+        for turn in turns:
+            if turn.speaker == 'agent':
+                text_lower = turn.text.lower()
+
+                # Detect plan upgrade/downgrade
+                if 'upgrade' in text_lower or 'upgraded' in text_lower:
+                    cause = "MID_CYCLE_UPGRADE"
+
+                    # Extract plan names
+                    plan_patterns = [
+                        r'from (\w+) to (\w+)',
+                        r'(\w+) to (\w+) plan',
+                        r'(\w+) plan.*(\w+) plan'
+                    ]
+
+                    for pattern in plan_patterns:
+                        match = re.search(pattern, text_lower, re.IGNORECASE)
+                        if match:
+                            old_plan = match.group(1).upper()
+                            new_plan = match.group(2).upper()
+                            plan_change = f"{old_plan}→{new_plan}"
+                            break
+
+                elif 'downgrade' in text_lower or 'downgraded' in text_lower:
+                    cause = "MID_CYCLE_DOWNGRADE"
+
+                elif 'double' in text_lower or 'twice' in text_lower:
+                    cause = "DOUBLE_BILLING"
+
+                elif 'overlap' in text_lower:
+                    cause = "BILLING_OVERLAP"
+
+                elif 'error' in text_lower or 'mistake' in text_lower:
+                    cause = "SYSTEM_ERROR"
+
+                elif 'proration' in text_lower or 'prorated' in text_lower:
+                    cause = "PRORATION_CONFUSION"
+
+        return cause, plan_change
 
     @staticmethod
     def _extract_customer_profile(turns: list[Turn]) -> CustomerProfile:
@@ -254,8 +352,12 @@ class TranscriptAnalyzer:
             agent=agent_name
         )
 
-    def _extract_actions(self, turns: list[Turn]) -> list[Action]:
-        """Extract actions from agent turns"""
+    def _extract_actions_enhanced(self, turns: list[Turn]) -> list[Action]:
+        """
+        Extract actions with financial details
+
+        NEW: Populates amount and payment_method for REFUND/CREDIT actions
+        """
         actions = []
 
         for i, turn in enumerate(turns):
@@ -263,12 +365,57 @@ class TranscriptAnalyzer:
                 action_type = self.vocab.get_action_token(turn.text)
                 if action_type:
                     result = self._determine_action_result(turns, i)
+
+                    # NEW: Extract financial details for REFUND/CREDIT actions
+                    amount = None
+                    payment_method = None
+
+                    if action_type in ['REFUND', 'CREDIT', 'CHARGE', 'PAYMENT']:
+                        amount, payment_method = self._extract_financial_details(turn)
+
                     actions.append(Action(
                         type=action_type,
-                        result=result
+                        result=result,
+                        amount=amount,
+                        payment_method=payment_method
                     ))
 
         return actions
+
+    @staticmethod
+    def _extract_financial_details(turn: Turn) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Extract amount and payment method from agent turn
+
+        Returns: (amount, payment_method)
+        Example: ("$12.00", "CARD_CREDIT")
+        """
+        amount = None
+        payment_method = None
+
+        # Extract amount
+        money_amounts = turn.entities.get('money', [])
+        if money_amounts:
+            amount = money_amounts[0]  # Take first amount mentioned
+
+        # Detect payment method
+        text_lower = turn.text.lower()
+
+        if 'card' in text_lower or 'credit card' in text_lower:
+            payment_method = "CARD_CREDIT"
+        elif 'account' in text_lower and 'credit' in text_lower:
+            payment_method = "ACCOUNT_CREDIT"
+        elif 'check' in text_lower or 'cheque' in text_lower:
+            payment_method = "CHECK"
+        elif 'paypal' in text_lower:
+            payment_method = "PAYPAL"
+        elif 'balance' in text_lower:
+            payment_method = "BALANCE_CREDIT"
+        else:
+            # Default for refunds
+            payment_method = "CARD_CREDIT"
+
+        return amount, payment_method
 
     def _extract_resolution(self, turns: list[Turn]) -> Resolution:
         """Extract resolution"""
@@ -288,7 +435,7 @@ class TranscriptAnalyzer:
                 break
 
             # Pattern 2: Approved/Payout (insurance, refund)
-            if any(word in text_lower for word in ['approved', 'payout', 'refund processed']):
+            if any(word in text_lower for word in ['approved', 'payout', 'refund processed', 'credit', 'refund']):
                 resolution_type = 'RESOLVED'
                 # Extract timeline
                 timeline = self._extract_timeline(text_lower)
@@ -351,8 +498,8 @@ class TranscriptAnalyzer:
 
         for turn in following:
             text_lower = turn.text.lower()
-            if any(word in text_lower for word in ['worked', 'fixed', 'resolved']):
-                return 'SUCCESS'
+            if any(word in text_lower for word in ['worked', 'fixed', 'resolved', 'processed', 'applied']):
+                return 'COMPLETED'
             elif any(word in text_lower for word in ['didn\'t work', 'failed', 'still']):
                 return 'FAILED'
 
