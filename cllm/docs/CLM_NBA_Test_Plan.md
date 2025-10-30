@@ -16,7 +16,8 @@ Prove that CLM-compressed transcripts can:
 
 ## 📊 Test Matrix
 
-| Test ID | Input Format | Model | Metrics |
+| Test ID | Input Format | Model | Metrics*#YJKL0ud#
+
 |---------|-------------|-------|---------|
 | T1 | Natural Language | Claude Opus 4.1 | Baseline |
 | T2 | Natural Language | Claude Sonnet 4.5 | Compare |
