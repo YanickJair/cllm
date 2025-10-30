@@ -32,7 +32,7 @@ class TranscriptAnalyzer:
         self.sentiment_analyzer = SentimentAnalyzer()
         self.entity_extractor = EntityExtractor(nlp)
 
-    def analyze(self, transcript: str, metadata: dict = None) -> TranscriptAnalysis:
+    def analyze(self, transcript: str, metadata: dict | None = None) -> TranscriptAnalysis:
         """Analyze transcript with enhanced extraction"""
 
         if metadata is None:
@@ -63,8 +63,8 @@ class TranscriptAnalyzer:
         call_info = self._extract_call_info(turns, metadata)
         customer = self._extract_customer_profile(turns)
         issues = self._extract_issues_enhanced(turns)
-        actions = self._extract_actions_enhanced(turns)  # Enhanced version
-        resolution = self._extract_resolution(turns)
+        actions = self._extract_actions_enhanced(turns)  # Fixed version
+        resolution = self._extract_resolution_enhanced(turns)  # Enhanced version
         sentiment_trajectory = self.sentiment_analyzer.track_trajectory(turns)
 
         return TranscriptAnalysis(
@@ -148,8 +148,8 @@ class TranscriptAnalyzer:
                 duration=temporal.duration,
                 pattern=temporal.pattern,
                 attributes={
-                    'days': temporal.days,
-                    'times': temporal.times
+                    'days': temporal.days if temporal.days else [],
+                    'times': temporal.times if hasattr(temporal, 'times') else []
                 }
             )
             issues.append(issue)
@@ -203,8 +203,11 @@ class TranscriptAnalyzer:
             if turn.speaker == 'agent':
                 text_lower = turn.text.lower()
 
-                # Detect plan upgrade/downgrade
-                if 'upgrade' in text_lower or 'upgraded' in text_lower:
+                # Enhanced pattern matching
+                if 'duplicate' in text_lower or 'retried' in text_lower or 'processed twice' in text_lower:
+                    cause = "DUPLICATE_PROCESSING"
+
+                elif 'upgrade' in text_lower or 'upgraded' in text_lower:
                     cause = "MID_CYCLE_UPGRADE"
 
                     # Extract plan names
@@ -225,7 +228,7 @@ class TranscriptAnalyzer:
                 elif 'downgrade' in text_lower or 'downgraded' in text_lower:
                     cause = "MID_CYCLE_DOWNGRADE"
 
-                elif 'double' in text_lower or 'twice' in text_lower:
+                elif 'double' in text_lower and 'billing' in text_lower:
                     cause = "DOUBLE_BILLING"
 
                 elif 'overlap' in text_lower:
@@ -354,36 +357,119 @@ class TranscriptAnalyzer:
 
     def _extract_actions_enhanced(self, turns: list[Turn]) -> list[Action]:
         """
-        Extract actions with financial details
-
-        NEW: Populates amount and payment_method for REFUND/CREDIT actions
+        Extract actions with deduplication and financial details
         """
-        actions = []
+        actions_dict: dict = {}  # Deduplicate by type
 
         for i, turn in enumerate(turns):
-            if turn.speaker == 'agent':
-                action_type = self.vocab.get_action_token(turn.text)
-                if action_type:
-                    result = self._determine_action_result(turns, i)
+            if turn.speaker != 'agent':
+                continue
 
-                    # NEW: Extract financial details for REFUND/CREDIT actions
-                    amount = None
-                    payment_method = None
+            # Get action type
+            action_type = self._mock_get_action_type(turn.text)
 
-                    if action_type in ['REFUND', 'CREDIT', 'CHARGE', 'PAYMENT']:
-                        amount, payment_method = self._extract_financial_details(turn)
+            if not action_type:
+                continue
 
-                    actions.append(Action(
-                        type=action_type,
-                        result=result,
-                        amount=amount,
-                        payment_method=payment_method
-                    ))
+            # Determine result status for THIS turn
+            result = self._determine_action_result_enhanced(turns, i, turn)
 
-        return actions
+            # Extract information from THIS turn
+            attributes_new = {}
+            amount_new = None
+            payment_method_new = None
 
-    @staticmethod
-    def _extract_financial_details(turn: Turn) -> Tuple[Optional[str], Optional[str]]:
+            if action_type in ['REFUND', 'CREDIT', 'CHARGE', 'PAYMENT']:
+                amount_new, payment_method_new = self._extract_financial_details(turn)
+
+                # Extract reference
+                reference = self._extract_reference_number(turn)
+                if reference:
+                    attributes_new['reference'] = reference
+
+                # Extract timeline
+                timeline = self._extract_action_timeline(turn)
+                if timeline:
+                    attributes_new['timeline'] = timeline
+
+            # SMART MERGE: If action already exists, merge information
+            if action_type in actions_dict:
+                existing = actions_dict[action_type]
+
+                # Keep COMPLETED status if found
+                if result == 'COMPLETED':
+                    existing.result = 'COMPLETED'
+
+                # Merge attributes (keep both reference and timeline)
+                if attributes_new:
+                    if not existing.attributes:
+                        existing.attributes = {}
+                    existing.attributes.update(attributes_new)  # Merge!
+
+                # Update amount/method if found
+                if amount_new:
+                    existing.amount = amount_new
+                if payment_method_new:
+                    existing.payment_method = payment_method_new
+
+                print(
+                    f"🔄 MERGED {action_type}: REF={existing.attributes.get('reference')}, TIMELINE={existing.attributes.get('timeline')}, RESULT={existing.result}")
+
+            else:
+                # Create new action
+                from dataclasses import dataclass, field
+
+                @dataclass
+                class Action:
+                    type: str
+                    result: str = "PENDING"
+                    amount: Optional[str] = None
+                    payment_method: Optional[str] = None
+                    step: Optional[str] = None
+                    attributes: dict = field(default_factory=dict)
+
+                action = Action(
+                    type=action_type,
+                    result=result,
+                    amount=amount_new,
+                    payment_method=payment_method_new,
+                    attributes=attributes_new if attributes_new else {}
+                )
+
+                actions_dict[action_type] = action
+
+        return list(actions_dict.values())
+
+    def _extract_reference_number(self, turn: Turn) -> Optional[str]:
+        """
+        Extract reference/confirmation numbers
+
+        Patterns: RFD-908712, REF-12345, #ABC123, etc.
+        """
+        text = turn.text
+
+        # Pattern 1: XXX-NNNNNN (RFD-908712, REF-12345)
+        match = re.search(r'\b([A-Z]{2,4})-(\d{4,})\b', text)
+        if match:
+            return f"{match.group(1)}-{match.group(2)}"
+
+        # Pattern 2: reference number is XXXXX
+        match = re.search(r'reference (?:number )?is ([A-Z0-9-]+)', text, re.IGNORECASE)
+        if match:
+            return match.group(1)
+
+        # Pattern 3: confirmation #XXXXX
+        match = re.search(r'confirmation #([A-Z0-9-]+)', text, re.IGNORECASE)
+        if match:
+            return match.group(1)
+
+        return None
+
+    def _extract_action_timeline(self, turn: Turn) -> Optional[str]:
+        """Extract timeline for specific action"""
+        return self._extract_timeline(turn.text.lower())
+
+    def _extract_financial_details(self, turn: Turn) -> Tuple[Optional[str], Optional[str]]:
         """
         Extract amount and payment method from agent turn
 
@@ -417,10 +503,12 @@ class TranscriptAnalyzer:
 
         return amount, payment_method
 
-    def _extract_resolution(self, turns: list[Turn]) -> Resolution:
-        """Extract resolution"""
+    def _extract_resolution_enhanced(self, turns: list[Turn]) -> Resolution:
+        """
+        Enhanced resolution extraction with better pattern matching
+        """
         agent_turns = [t for t in turns if t.speaker == 'agent']
-        last_agent_turns = agent_turns[-4:]
+        last_agent_turns = agent_turns[-5:]  # Check last 5 turns
 
         resolution_type = 'UNKNOWN'
         timeline = None
@@ -429,33 +517,42 @@ class TranscriptAnalyzer:
         for turn in reversed(last_agent_turns):
             text_lower = turn.text.lower()
 
-            # Pattern 1: Explicit resolution
-            if any(word in text_lower for word in ['resolved', 'fixed', 'solved', 'working now']):
+            # Pattern 1: Explicit completion - HIGHEST PRIORITY
+            completion_keywords = [
+                'submitted', 'processed', 'completed', 'done',
+                'applied', 'issued', 'sent', 'filed'
+            ]
+            if any(word in text_lower for word in completion_keywords):
                 resolution_type = 'RESOLVED'
-                break
-
-            # Pattern 2: Approved/Payout (insurance, refund)
-            if any(word in text_lower for word in ['approved', 'payout', 'refund processed', 'credit', 'refund']):
-                resolution_type = 'RESOLVED'
-                # Extract timeline
                 timeline = self._extract_timeline(text_lower)
                 break
 
-            # Pattern 3: Replacement/Exchange scheduled
+            # Pattern 2: Explicit resolution
+            if any(word in text_lower for word in ['resolved', 'fixed', 'solved', 'working now']):
+                resolution_type = 'RESOLVED'
+                timeline = self._extract_timeline(text_lower)
+                break
+
+            # Pattern 3: Approved/Payout
+            if any(word in text_lower for word in ['approved', 'payout', 'refund processed']):
+                resolution_type = 'RESOLVED'
+                timeline = self._extract_timeline(text_lower)
+                break
+
+            # Pattern 4: Replacement/Exchange scheduled
             if any(word in text_lower for word in ['replace', 'replacement', 'exchange']):
                 resolution_type = 'PENDING'
-                # Look for timeline: "within 24 hours", "tomorrow"
                 timeline = self._extract_timeline(text_lower)
                 next_steps = 'REPLACEMENT'
                 break
 
-            # Pattern 4: Delivery scheduled
-            if any(word in text_lower for word in ['prioritized', 'scheduled', 'tomorrow', 'today']):
+            # Pattern 5: Delivery scheduled
+            if any(word in text_lower for word in ['prioritized', 'scheduled']):
                 resolution_type = 'PENDING'
                 timeline = self._extract_timeline(text_lower)
                 break
 
-            # Pattern 5: Escalated/Transferred
+            # Pattern 6: Escalated/Transferred
             if any(word in text_lower for word in ['escalate', 'transfer', 'supervisor']):
                 resolution_type = 'ESCALATED'
                 break
@@ -470,35 +567,58 @@ class TranscriptAnalyzer:
         """Extract timeline from text"""
 
         # Pattern 1: "within X hours/days"
-        match = re.search(r'within (\d+)\s*(hour|day|business day)s?', text)
+        match = re.search(r'within (\d+)\s*(?:-|to)?\s*(\d+)?\s*(hour|day|business day)s?', text)
         if match:
-            num = match.group(1)
-            unit = 'h' if 'hour' in match.group(2) else 'd'
-            return f"{num}{unit}"
+            if match.group(2):  # Range like "3-5 days"
+                return f"{match.group(1)}-{match.group(2)}d"
+            else:
+                num = match.group(1)
+                unit = 'h' if 'hour' in match.group(3) else 'd'
+                return f"{num}{unit}"
 
-        # Pattern 2: "tomorrow"
+        # Pattern 2: "X–Y business days" or "X-Y days"
+        match = re.search(r'(\d+)\s*[-–]\s*(\d+)\s*(?:business )?days?', text)
+        if match:
+            return f"{match.group(1)}-{match.group(2)}d"
+
+        # Pattern 3: "tomorrow"
         if 'tomorrow' in text:
             return 'TOMORROW'
 
-        # Pattern 3: "today"
-        if 'today' in text:
+        # Pattern 4: "today"
+        if 'today' in text and 'later today' not in text:
             return 'TODAY'
 
-        # Pattern 4: "X business days"
+        # Pattern 5: "X business days"
         match = re.search(r'(\d+)\s*business days?', text)
         if match:
             return f"{match.group(1)}d"
 
         return None
 
-    @staticmethod
-    def _determine_action_result(turns: list[Turn], action_index: int) -> str:
-        """Determine action result"""
-        following = turns[action_index + 1:action_index + 4]
+    def _determine_action_result(self, turns: list[Turn], action_index: int) -> str:
+        """
+        Determine action result with enhanced keyword detection
+        """
+        # Check the action turn itself first
+        action_turn = turns[action_index]
+        action_text_lower = action_turn.text.lower()
+
+        # Check for completion in same turn
+        completion_keywords = [
+            'submitted', 'processed', 'completed', 'filed',
+            'applied', 'issued', 'sent now', 'just sent',
+            'just processed', 'just submitted', 'just filed'
+        ]
+        if any(keyword in action_text_lower for keyword in completion_keywords):
+            return 'COMPLETED'
+
+        # Check following turns
+        following = turns[action_index + 1:min(action_index + 4, len(turns))]
 
         for turn in following:
             text_lower = turn.text.lower()
-            if any(word in text_lower for word in ['worked', 'fixed', 'resolved', 'processed', 'applied']):
+            if any(word in text_lower for word in ['worked', 'fixed', 'resolved', 'processed', 'applied', 'completed']):
                 return 'COMPLETED'
             elif any(word in text_lower for word in ['didn\'t work', 'failed', 'still']):
                 return 'FAILED'

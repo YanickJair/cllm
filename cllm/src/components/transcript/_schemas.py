@@ -83,6 +83,7 @@ class CustomerProfile:
     lifetime_value: Optional[float] = None
     churn_risk: Optional[str] = None  # LOW, MEDIUM, HIGH
     attributes: Optional[dict] = None
+    name: str | None = None
 
 
 @dataclass
