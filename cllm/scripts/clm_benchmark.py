@@ -3,6 +3,8 @@ import time
 import os
 import sys
 
+from src.core.encoder import CLLMEncoder
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import anthropic
@@ -57,7 +59,7 @@ PRIORITIZATION:
 class RunCLMBenchmark:
     def __init__(self) -> None:
         self.client = anthropic.Anthropic()
-
+        self.encoder = CLLMEncoder()
         self._claude_models: tuple[str, str, str] = ("claude-sonnet-4-5", "claude-haiku-3.5", "claude-opus-4.1")
 
     @staticmethod
@@ -86,6 +88,8 @@ class RunCLMBenchmark:
             "claude-haiku-3.5": {"clm": [], "nl": []},
             "claude-opus-4.1": {"clm": [], "nl": []},
         }
+        clm_system_prompt = self.encoder.compress(SYSTEM_PROMPT)
+        print(clm_system_prompt.compressed)
         for model in self._claude_models:
             for transcript in transcripts[:10]:
                 tc = transcript.get("compressed")
@@ -93,14 +97,14 @@ class RunCLMBenchmark:
 
                 print(f"\nOriginal length: {len(to)} chars")
                 print(f"Compressed length: {len(tc)} chars")
+                print(f"NBAs length: {len(nbas)}")
                 print(f"Compression ratio: {(1 - len(tc) / len(to)) * 100:.1f}%")
-                break
 
                 start_time = time.time()
                 tc_message = self.client.messages.create(
                     model=model,
                     max_tokens=1000,
-                    system=SYSTEM_PROMPT,
+                    system=clm_system_prompt.compressed,
                     messages=[{
                         "role": "user",
                         "content": f"""Analyze the following call transcript:
@@ -108,7 +112,7 @@ class RunCLMBenchmark:
                         {tc}
 
                         NBA CATALOG:
-                        {json.dumps(nbas)}
+                        {json.dumps(nbas[:5])}
 
                         Recommend the top 2 most relevant NBAs."""
                     }]
@@ -116,16 +120,20 @@ class RunCLMBenchmark:
                 tc_latency = time.time() - start_time
                 tc_tokens = tc_message.usage.input_tokens + tc_message.usage.output_tokens
                 tc_output = tc_message.content[0].text  # type: ignore
+
                 result[model]["clm"].append({
                     "llm_output": tc_output,
-                    "original": tc,  # Store original for comparison
+                    "original": to,  # Store original for comparison
+                    "compressed": tc,
                     "n_tokens": tc_tokens,
                     "latency": tc_latency,
                     "input_tokens": tc_message.usage.input_tokens,
                     "output_tokens": tc_message.usage.output_tokens,
                     "model": model
                 })
-                print(f"  CLM: {tc_tokens} tokens, {tc_latency:.2f}s")
+                print(f"  CLM: {tc_tokens} tokens, {tc_latency:.2f}s = {result}")
+                break
+
 
                 start_time = time.time()
                 to_message = self.client.messages.create(
@@ -162,7 +170,7 @@ class RunCLMBenchmark:
                 print(
                     f"  Savings: {(1 - tc_tokens / to_tokens) * 100:.1f}% tokens, {(1 - tc_latency / to_latency) * 100:.1f}% latency")
                 print()
-
+            break
         self.dump_result(result)
 
 if __name__ == "__main__":
