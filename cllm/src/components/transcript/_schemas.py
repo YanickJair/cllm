@@ -35,7 +35,7 @@ class Issue:
     disputed_amounts: list[str] = field(default_factory=list)
     cause: Optional[str] = None
     plan_change: Optional[str] = None
-    severity: Optional[str] = None  # LOW, MEDIUM, HIGH, CRITICAL
+    severity: Optional[str] = "LOW"  # LOW, MEDIUM, HIGH, CRITICAL
     frequency: Optional[str] = None  # ONCE, DAILY, etc.
     duration: Optional[str] = None  # "3d", "1week"
     pattern: Optional[str] = None  # "9am+1pm+6pm"
@@ -48,7 +48,7 @@ class Action:
     """Action taken by agent"""
     type: str  # TROUBLESHOOT, ESCALATE, etc.
     step: Optional[str] = None
-    result: Optional[str] = None  # SUCCESS, FAILED, TEMP_FIX
+    result: Optional[str] = "PENDING"  # SUCCESS, FAILED, TEMP_FIX
     timestamp: Optional[float] = None
     attributes: dict = field(default_factory=dict)
     amount: Optional[str] = None
@@ -58,7 +58,7 @@ class Action:
 @dataclass
 class Resolution:
     """How conversation resolved"""
-    type: str  # RESOLVED, PENDING, ESCALATED, etc.
+    type: str  = "UNKNOWN" # RESOLVED, PENDING, ESCALATED, etc.
     status: Optional[str] = None
     timeline: Optional[str] = None  # "24h", "3-5_days"
     next_steps: Optional[str] = None

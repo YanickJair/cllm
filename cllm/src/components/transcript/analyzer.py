@@ -97,63 +97,137 @@ class TranscriptAnalyzer:
 
     def _extract_actions(self, turns: List[Turn]) -> List[Action]:
         """Enhanced multi-action extraction with deduplication and merging"""
-        actions_dict: dict = {}
+        actions_dict = {}  # Deduplicate by type
+
         for i, turn in enumerate(turns):
             if turn.speaker != 'agent':
                 continue
 
-            detected_actions = []
-            text_lower = turn.text.lower()
+            # Get action type from your vocabulary
+            action_type = self._mock_get_action_type(turn.text)
 
-            # NEW: Detect multiple possible actions in a single line
-            for action_type, keywords in self.vocab.ACTION_TOKENS.items():
-                if any(kw in text_lower for kw in keywords):
-                    detected_actions.append(action_type)
+            if not action_type:
+                continue
 
-            for action_type in detected_actions:
-                result = self._determine_action_result(turns, i, turn)
-                if action_type in ['REFUND', 'CREDIT', 'CHARGE', 'PAYMENT']:
-                    amount, payment_method = self._extract_financial_details(turn)
-                else:
-                    amount = None
-                    payment_method = None
-                ref = self._extract_reference_number(turn)
-                timeline = self._extract_timeline(turn.text.lower())
+            # Filter: only keep essential actions
+            if action_type not in ['REFUND', 'CREDIT', 'TROUBLESHOOT', 'ESCALATE', 'REPLACE']:
+                continue
 
-                attrs = {}
-                if ref:
-                    attrs['reference'] = ref
+            # Determine result status for THIS turn
+            result = self._determine_action_result(turns, i, turn)
+
+            # Extract information from THIS turn
+            attributes_new = {}
+            amount_new = None
+            payment_method_new = None
+
+            # Only extract financial details for money-related actions
+            if action_type in ['REFUND', 'CREDIT', 'CHARGE', 'PAYMENT']:
+                amount_new, payment_method_new = self._extract_financial_details(turn)
+
+                # Extract reference number
+                reference = self._extract_reference_number(turn)
+                if reference:
+                    attributes_new['reference'] = reference
+
+                # Extract timeline
+                timeline = self._extract_timeline(turn.text)
                 if timeline:
-                    attrs['timeline'] = timeline
+                    attributes_new['timeline'] = timeline
 
-                # Merge logic
-                if action_type in actions_dict:
-                    existing = actions_dict[action_type]
-                    if result == 'COMPLETED':
-                        existing.result = 'COMPLETED'
-                    existing.attributes.update(attrs)
-                else:
-                    actions_dict[action_type] = Action(
-                        type=action_type,
-                        result=result,
-                        amount=amount,
-                        payment_method=payment_method,
-                        attributes=attrs
-                    )
+            # SMART MERGE: If action already exists, merge information
+            if action_type in actions_dict:
+                existing = actions_dict[action_type]
+
+                # Keep COMPLETED status if found (upgrade from PENDING)
+                if result == 'COMPLETED':
+                    existing.result = 'COMPLETED'
+
+                # Merge attributes (keeps both reference and timeline)
+                if attributes_new:
+                    if not existing.attributes:
+                        existing.attributes = {}
+                    existing.attributes.update(attributes_new)
+
+                # Update amount/method if found
+                if amount_new and not existing.amount:
+                    existing.amount = amount_new
+                if payment_method_new and not existing.payment_method:
+                    existing.payment_method = payment_method_new
+
+            else:
+                # Create new action
+                action = Action(
+                    type=action_type,
+                    result=result,
+                    amount=amount_new,
+                    payment_method=payment_method_new,
+                    attributes=attributes_new if attributes_new else {}
+                )
+
+                actions_dict[action_type] = action
 
         return list(actions_dict.values())
 
-    def _extract_resolution(self, turns: List[Turn]) -> Resolution:
-        """Resolution extraction with tiered keyword mapping"""
-        for turn in reversed(turns[-6:]):
-            if turn.speaker != 'agent':
-                continue
-            text = turn.text.lower()
-            for res_type, keywords in self.vocab.RESOLUTION_TOKENS.items():
-                if any(kw in text for kw in keywords):
-                    timeline = self._extract_timeline(text)
-                    return Resolution(type=res_type, timeline=timeline)
-        return Resolution(type='UNKNOWN')
+    def _extract_resolution(self, turns: List) -> Resolution:
+        """
+        Enhanced resolution extraction with better pattern matching
+
+        Priority:
+        1. Explicit completion (submitted, processed, completed)
+        2. Resolution keywords (resolved, fixed)
+        3. Approved/payout keywords
+        4. Pending indicators (scheduled, tomorrow)
+        """
+        agent_turns = [t for t in turns if t.speaker == 'agent']
+        last_agent_turns = agent_turns[-5:]  # Check last 5 turns
+
+        resolution_type = 'UNKNOWN'
+        timeline = None
+        next_steps = None
+
+        for turn in reversed(last_agent_turns):
+            text_lower = turn.text.lower()
+
+            # Pattern 1: Explicit completion - HIGHEST PRIORITY
+            completion_keywords = [
+                'submitted', 'processed', 'completed', 'done',
+                'applied', 'issued', 'sent', 'filed', "i've submitted"
+            ]
+            if any(word in text_lower for word in completion_keywords):
+                resolution_type = 'RESOLVED'
+                timeline = self._extract_timeline(text_lower)
+                break
+
+            # Pattern 2: Explicit resolution
+            if any(word in text_lower for word in ['resolved', 'fixed', 'solved']):
+                resolution_type = 'RESOLVED'
+                timeline = self._extract_timeline(text_lower)
+                break
+
+            # Pattern 3: Approved/Payout
+            if any(word in text_lower for word in ['approved', 'payout']):
+                resolution_type = 'RESOLVED'
+                timeline = self._extract_timeline(text_lower)
+                break
+
+            # Pattern 4: Replacement/Exchange scheduled
+            if any(word in text_lower for word in ['replace', 'replacement', 'exchange']):
+                resolution_type = 'PENDING'
+                timeline = self._extract_timeline(text_lower)
+                next_steps = 'REPLACEMENT'
+                break
+
+            # Pattern 5: Escalated/Transferred
+            if any(word in text_lower for word in ['escalate', 'transfer', 'supervisor']):
+                resolution_type = 'ESCALATED'
+                break
+
+        return Resolution(
+            type=resolution_type,
+            timeline=timeline,
+            next_steps=next_steps
+        )
 
     @staticmethod
     def _extract_timeline(text: str) -> Optional[str]:
@@ -248,87 +322,145 @@ class TranscriptAnalyzer:
             agent=agent_name,
         )
 
-    @staticmethod
-    def _extract_customer_profile(turns: list[Turn]) -> CustomerProfile:
+    def _extract_customer_profile(self, turns: list[Turn]) -> CustomerProfile:
         """Extract customer profile from turns in a cleaner, Pythonic way"""
-        all_entities = defaultdict(list)
-        for turn in turns:
-            if turn.entities:
-                for key, values in turn.entities.items():
-                    all_entities[key].extend(values)
+        profile = CustomerProfile()
 
         # Extract customer name
-        customer_name = next(
-            (
-                match.group(1)
-                for turn in (t for t in turns if t.speaker == 'agent')
-                for pattern in [
-                r'\b(?:Thanks?|Thank you),\s+([A-Z][a-z]+)',
-                r'\bcalling us,\s+([A-Z][a-z]+)',
-                r'^([A-Z][a-z]+),\s+(?:let me|I can|give me)',
-            ]
-                if (match := re.search(pattern, turn.text))
-            ),
-            None,
-        )
+        customer_name = self._extract_customer_name(turns)
+        if customer_name:
+            profile.name = customer_name
 
-        # Build profile with defaults
-        profile = CustomerProfile(
-            name=customer_name,
-            email=next(iter(all_entities.get('emails', [])), None),
-            account=next(iter(all_entities.get('accounts', [])), None),
-        )
+        # Extract other details from entities
+        for turn in turns:
+            if hasattr(turn, 'entities') and turn.entities:
+                # Email
+                emails = turn.entities.get('emails', [])
+                if emails:
+                    if not profile.attributes:
+                        profile.attributes = {}
+                    profile.attributes['email'] = emails[0]
 
-        # Determine tier
-        if plans := all_entities.get('plans'):
-            plan = plans[0].lower()
-            profile.tier = (
-                'PREMIUM' if 'premium' in plan else
-                'ENTERPRISE' if 'enterprise' in plan else
-                'BASIC' if 'basic' in plan else
-                'STANDARD'
-            )
+                # Account
+                accounts = turn.entities.get('accounts', [])
+                if accounts and not profile.account:
+                    profile.account = accounts[0]
 
-        # Address handling
-        if addresses := all_entities.get('addresses'):
-            profile.attributes = {'address': addresses[0]}
+                # Tier from plan mentions
+                plans = turn.entities.get('plans', [])
+                if plans and not profile.tier:
+                    plan = plans[0].lower()
+                    if 'premium' in plan:
+                        profile.tier = 'PREMIUM'
+                    elif 'enterprise' in plan:
+                        profile.tier = 'ENTERPRISE'
+                    elif 'basic' in plan:
+                        profile.tier = 'BASIC'
+                    else:
+                        profile.tier = 'STANDARD'
 
         return profile
 
+    def _extract_customer_name(self, turns: List) -> Optional[str]:
+        """
+        Extract customer name from agent addressing them
+
+        Patterns:
+        - "Thanks, NAME"
+        - "Thank you, NAME"
+        - Extract from email (name.something@)
+        """
+        for turn in turns:
+            if turn.speaker == 'agent':
+                text = turn.text
+
+                # Pattern 1: "Thanks, NAME" or "Thank you, NAME"
+                match = re.search(r'[Tt]hank[s]?,\s+([A-Z][a-z]+)', text)
+                if match:
+                    name = match.group(1)
+                    # Filter common false positives
+                    if name.lower() not in ['you', 'for', 'the', 'so', 'very']:
+                        return name
+
+                # Pattern 2: Extract from email (melissa.jordan@ → Melissa)
+                match = re.search(r'([a-z]+)\.[a-z]+@', text.lower())
+                if match:
+                    return match.group(1).title()
+
+        return None
+
     def _extract_issues(self, turns: list[Turn]) -> list[Issue]:
         """Extract issues with payment context separation"""
-        customer_text = ' '.join(
-            t.text for t in turns if t.speaker == 'customer'
-        )
+        issues = []
 
-        issue_type = self.vocab.get_issue_token(customer_text)
-        if not issue_type:
-            return []
+        # Combine all customer text
+        customer_text = ' '.join([
+            turn.text for turn in turns if turn.speaker == 'customer'
+        ])
 
-        temporal = self.temporal_extractor.extract(customer_text)
-        severity = self._detect_severity(customer_text)
+        # Get issue type from your vocabulary
+        issue_type = self._get_issue_type(customer_text)
 
-        disputed_amounts, cause, plan_change = [], None, None
-        if issue_type in {'BILLING_DISPUTE', 'UNEXPECTED_CHARGE', 'REFUND_REQUEST', 'OVERCHARGE'}:
-            disputed_amounts = self._extract_disputed_amounts(turns)
-            cause, plan_change = self._detect_billing_cause(turns)
+        if issue_type:
+            # Detect severity
+            severity = self._detect_severity(customer_text)
 
-        return [
-            Issue(
+            # For billing issues, detect cause
+            cause = None
+            plan_change = None
+            disputed_amounts = []
+
+            if issue_type in ['BILLING_DISPUTE', 'UNEXPECTED_CHARGE', 'REFUND_REQUEST']:
+                cause, plan_change = self._detect_billing_cause(turns)
+                disputed_amounts = self._extract_disputed_amounts(turns)
+
+            # Extract temporal pattern (but don't include if empty)
+            temporal_days = self._extract_temporal_days(customer_text)
+
+            issue = Issue(
                 type=issue_type,
                 severity=severity,
-                disputed_amounts=disputed_amounts,
                 cause=cause,
                 plan_change=plan_change,
-                frequency=temporal.frequency,
-                duration=temporal.duration,
-                pattern=temporal.pattern,
-                attributes={
-                    'days': getattr(temporal, 'days', []),
-                    'times': getattr(temporal, 'times', []),
-                },
+                disputed_amounts=disputed_amounts,
+                attributes={}
             )
-        ]
+
+            # Only add DAYS if actually present
+            if temporal_days and len(temporal_days) > 0:
+                issue.attributes['days'] = temporal_days
+
+            issues.append(issue)
+
+        return issues
+
+    def _get_issue_type(self, text: str) -> Optional[str]:
+        """Get issue type - replace with your vocab.get_issue_token()"""
+        text_lower = text.lower()
+
+        if 'bill' in text_lower or 'charge' in text_lower or 'refund' in text_lower:
+            return 'BILLING_DISPUTE'
+        elif 'internet' in text_lower or 'connection' in text_lower or 'wifi' in text_lower:
+            return 'CONNECTIVITY'
+        elif 'slow' in text_lower or 'speed' in text_lower:
+            return 'PERFORMANCE'
+
+        return None
+
+    def _extract_temporal_days(self, text: str) -> List[str]:
+        """Extract days from text"""
+        days = []
+        day_patterns = {
+            'monday': 'MON', 'tuesday': 'TUE', 'wednesday': 'WED',
+            'thursday': 'THU', 'friday': 'FRI', 'saturday': 'SAT', 'sunday': 'SUN'
+        }
+
+        text_lower = text.lower()
+        for day_name, day_abbr in day_patterns.items():
+            if day_name in text_lower:
+                days.append(day_abbr)
+
+        return days
 
     @staticmethod
     def _detect_severity(text: str) -> str:
