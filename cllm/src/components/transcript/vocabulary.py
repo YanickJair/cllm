@@ -263,6 +263,7 @@ class TranscriptVocabulary(Vocabulary):
             "remove service", "cancel request", "opt out of plan", "terminate contract",
             "unsubscribe", "end membership", "disable feature", "cancel policy"
         ],
+        'CLOSE': ['close account', 'cancel subscription', 'terminate'],
 
         "UPDATE_INFO": [
             "update", "change", "modify", "edit", "correct", "fix details", 
@@ -331,9 +332,20 @@ class TranscriptVocabulary(Vocabulary):
             "deny", "reject", "decline", "not approve", "refuse", 
             "unable to approve", "deny request", "not possible", 
             "reject claim", "decline application"
-        ]
+        ],
+        "EXPLAIN_FEATURES": [
+            'let me explain', 'i can explain', 'explain how', 'explanation of',
+            'covers', 'includes', 'consists of',
+            'comes with', 'provides',
+            'offers', 'you’ll get', 'you get', 'what this does', 'what it does',
+            'how it works', 'how this works', 'how that works', 'works by',
+            'means that', 'allows you to', 'enables you to', 'lets you',
+            'feature', 'option', 'setting', 'capability', 'function',
+            'basically', 'in other words', 'to clarify', 'just to clarify',
+            'just to confirm', 'to summarize', 'essentially',
+        ],
+        "ACTIVATE_TRIAL": ['activate', 'start', 'enable', 'i’ll activate your trial', 'trial activated successfully', 'trial'],
     }
-
 
     RESOLUTION_TOKENS = {
         "RESOLVED": [
@@ -445,7 +457,6 @@ class TranscriptVocabulary(Vocabulary):
             "once in a blue moon", "barely happens", "not often", "unusual"
         ]
     }
-
 
     @classmethod
     def get_issue_token(cls, text: str) -> Optional[str]:

@@ -84,6 +84,7 @@ class CustomerProfile:
     churn_risk: Optional[str] = None  # LOW, MEDIUM, HIGH
     attributes: Optional[dict] = None
     name: str | None = None
+    email: str | None = None
 
 
 @dataclass

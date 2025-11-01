@@ -355,13 +355,15 @@ class TranscriptEncoder:
 
         With turning points: [SENTIMENT:FRUSTRATED→NEUTRAL→SATISFIED]
         """
+        checked_sentiment = set()
         if not sentiment.turning_points:
             return f"[SENTIMENT:{sentiment.start}→{sentiment.end}]"
 
         # Build trajectory with turning points
         trajectory = [sentiment.start]
         for _, emotion in sentiment.turning_points:
-            if emotion != trajectory[-1]:
+            if emotion != trajectory[-1] and emotion not in checked_sentiment:
+                checked_sentiment.add(emotion)
                 trajectory.append(emotion)
 
         # Ensure end state is included
