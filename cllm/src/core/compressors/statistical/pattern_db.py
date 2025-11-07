@@ -11,18 +11,21 @@ class PatternDatabase:
         self.patterns: dict[str, Pattern] = {}
         self.load()
 
-
     def load(self) -> None:
         """Load patterns from disk"""
         if self.db_path.exists():
-            with open(self.db_path, 'r') as f:
+            with open(self.db_path, "r") as f:
                 data = json.load(f)
                 for pattern_dict in data.get("patterns", []):
                     # Convert date strings back to datetime objects
-                    if isinstance(pattern_dict.get('first_seen'), str):
-                        pattern_dict['first_seen'] = datetime.fromisoformat(pattern_dict['first_seen'])
-                    if isinstance(pattern_dict.get('last_seen'), str):
-                        pattern_dict['last_seen'] = datetime.fromisoformat(pattern_dict['last_seen'])
+                    if isinstance(pattern_dict.get("first_seen"), str):
+                        pattern_dict["first_seen"] = datetime.fromisoformat(
+                            pattern_dict["first_seen"]
+                        )
+                    if isinstance(pattern_dict.get("last_seen"), str):
+                        pattern_dict["last_seen"] = datetime.fromisoformat(
+                            pattern_dict["last_seen"]
+                        )
                     pattern = Pattern(**pattern_dict)
                     self.patterns[pattern.id] = pattern
 
@@ -40,7 +43,7 @@ class PatternDatabase:
                     "compression_gain": p.compression_gain,
                     "domains": p.domains,
                     "examples": p.examples,
-                    "version": p.version
+                    "version": p.version,
                 }
                 for p in self.patterns.values()
             ],
@@ -58,12 +61,14 @@ class PatternDatabase:
                     "compression_gain": stats.most_used_pattern.compression_gain,
                     "domains": stats.most_used_pattern.domains,
                     "examples": stats.most_used_pattern.examples,
-                    "version": stats.most_used_pattern.version
-                } if stats.most_used_pattern else None
-            }
+                    "version": stats.most_used_pattern.version,
+                }
+                if stats.most_used_pattern
+                else None,
+            },
         }
 
-        with open(self.db_path, 'w') as f:
+        with open(self.db_path, "w") as f:
             json.dump(data, f, indent=2)
 
     def add_pattern(self, pattern: Pattern) -> None:
@@ -85,7 +90,9 @@ class PatternDatabase:
     def get_pattern(self, pattern_id: str) -> Pattern:
         return self.patterns[pattern_id]
 
-    def get_top_patterns(self, n: int = 100, domain: str | None = None) -> list[Pattern]:
+    def get_top_patterns(
+        self, n: int = 100, domain: str | None = None
+    ) -> list[Pattern]:
         """Get top N patterns by value score"""
         patterns = list(self.patterns.values())
 
@@ -126,13 +133,16 @@ class PatternDatabase:
                 total_uses=0,
                 total_tokens_saved=0,
                 avg_compression_gain=0.0,
-                most_used_pattern=None
+                most_used_pattern=None,
             )
 
         total_uses = sum(p.frequency for p in self.patterns.values())
-        total_tokens_saved = sum(p.frequency * p.compression_gain
-                                 for p in self.patterns.values())
-        avg_compression_gain = sum(p.compression_gain for p in self.patterns.values()) / len(self.patterns)
+        total_tokens_saved = sum(
+            p.frequency * p.compression_gain for p in self.patterns.values()
+        )
+        avg_compression_gain = sum(
+            p.compression_gain for p in self.patterns.values()
+        ) / len(self.patterns)
         most_used = max(self.patterns.values(), key=lambda p: p.frequency)
 
         return PatternStats(
@@ -140,5 +150,5 @@ class PatternDatabase:
             total_uses=total_uses,
             total_tokens_saved=int(total_tokens_saved),
             avg_compression_gain=avg_compression_gain,
-            most_used_pattern=most_used
+            most_used_pattern=most_used,
         )

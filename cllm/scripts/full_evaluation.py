@@ -32,10 +32,7 @@ def run_full_evaluation():
     print("  3. ❓ Real-World Performance - Does it work in production?")
     print("\n" + "=" * 80)
 
-    results = {
-        'evaluation_date': datetime.now().isoformat(),
-        'evaluations': {}
-    }
+    results = {"evaluation_date": datetime.now().isoformat(), "evaluations": {}}
 
     # ============================================================
     # EVALUATION 1: Semantic Preservation
@@ -50,17 +47,17 @@ def run_full_evaluation():
         eval1.print_report(metrics1)
         eval1.export_results("semantic_preservation_results.json")
 
-        results['evaluations']['semantic_preservation'] = {
-            'status': 'completed',
-            'avg_score': metrics1['avg_preservation_score'],
-            'verdict': 'PASS' if metrics1['avg_preservation_score'] >= 0.80 else 'FAIL'
+        results["evaluations"]["semantic_preservation"] = {
+            "status": "completed",
+            "avg_score": metrics1["avg_preservation_score"],
+            "verdict": "PASS" if metrics1["avg_preservation_score"] >= 0.80 else "FAIL",
         }
 
     except Exception as e:
         print(f"❌ Error in semantic preservation evaluation: {e}")
-        results['evaluations']['semantic_preservation'] = {
-            'status': 'failed',
-            'error': str(e)
+        results["evaluations"]["semantic_preservation"] = {
+            "status": "failed",
+            "error": str(e),
         }
 
     # ============================================================
@@ -76,18 +73,17 @@ def run_full_evaluation():
         eval2.print_report(metrics2)
         eval2.export_results("reconstruction_results.json")
 
-        results['evaluations']['reconstruction'] = {
-            'status': 'completed',
-            'avg_score': metrics2['avg_reconstruction_score'],
-            'verdict': 'PASS' if metrics2['avg_reconstruction_score'] >= 0.70 else 'FAIL'
+        results["evaluations"]["reconstruction"] = {
+            "status": "completed",
+            "avg_score": metrics2["avg_reconstruction_score"],
+            "verdict": "PASS"
+            if metrics2["avg_reconstruction_score"] >= 0.70
+            else "FAIL",
         }
 
     except Exception as e:
         print(f"❌ Error in reconstruction evaluation: {e}")
-        results['evaluations']['reconstruction'] = {
-            'status': 'failed',
-            'error': str(e)
-        }
+        results["evaluations"]["reconstruction"] = {"status": "failed", "error": str(e)}
 
     # ============================================================
     # EVALUATION 3: Real-World Performance
@@ -108,19 +104,16 @@ def run_full_evaluation():
         eval3.print_report(metrics3)
         eval3.export_results("real_world_results.json")
 
-        results['evaluations']['real_world'] = {
-            'status': 'completed',
-            'success_rate': metrics3['success_rate'],
-            'avg_compression': metrics3['avg_compression_ratio'],
-            'verdict': 'PASS' if metrics3['success_rate'] >= 0.85 else 'FAIL'
+        results["evaluations"]["real_world"] = {
+            "status": "completed",
+            "success_rate": metrics3["success_rate"],
+            "avg_compression": metrics3["avg_compression_ratio"],
+            "verdict": "PASS" if metrics3["success_rate"] >= 0.85 else "FAIL",
         }
 
     except Exception as e:
         print(f"❌ Error in real-world evaluation: {e}")
-        results['evaluations']['real_world'] = {
-            'status': 'failed',
-            'error': str(e)
-        }
+        results["evaluations"]["real_world"] = {"status": "failed", "error": str(e)}
 
     # ============================================================
     # FINAL SUMMARY
@@ -128,40 +121,48 @@ def run_full_evaluation():
     print_header("📋 FINAL EVALUATION SUMMARY")
 
     print("Question 1: Semantic Preservation")
-    if results['evaluations']['semantic_preservation']['status'] == 'completed':
-        score = results['evaluations']['semantic_preservation']['avg_score']
-        verdict = results['evaluations']['semantic_preservation']['verdict']
-        print(f"  Answer: {'✅' if verdict == 'PASS' else '❌'} {score:.1%} of semantic information preserved")
+    if results["evaluations"]["semantic_preservation"]["status"] == "completed":
+        score = results["evaluations"]["semantic_preservation"]["avg_score"]
+        verdict = results["evaluations"]["semantic_preservation"]["verdict"]
+        print(
+            f"  Answer: {'✅' if verdict == 'PASS' else '❌'} {score:.1%} of semantic information preserved"
+        )
         print(f"  Verdict: {verdict}")
     else:
-        print(f"  Answer: ❌ Evaluation failed")
+        print("  Answer: ❌ Evaluation failed")
 
     print("\nQuestion 2: Reconstruction Quality")
-    if results['evaluations']['reconstruction']['status'] == 'completed':
-        score = results['evaluations']['reconstruction']['avg_score']
-        verdict = results['evaluations']['reconstruction']['verdict']
-        print(f"  Answer: {'✅' if verdict == 'PASS' else '❌'} {score:.1%} reconstruction quality")
+    if results["evaluations"]["reconstruction"]["status"] == "completed":
+        score = results["evaluations"]["reconstruction"]["avg_score"]
+        verdict = results["evaluations"]["reconstruction"]["verdict"]
+        print(
+            f"  Answer: {'✅' if verdict == 'PASS' else '❌'} {score:.1%} reconstruction quality"
+        )
         print(f"  Verdict: {verdict}")
-        print(f"  Note: This uses simple rule-based decoder. An LLM would do better!")
+        print("  Note: This uses simple rule-based decoder. An LLM would do better!")
     else:
-        print(f"  Answer: ❌ Evaluation failed")
+        print("  Answer: ❌ Evaluation failed")
 
     print("\nQuestion 3: Real-World Performance")
-    if results['evaluations']['real_world']['status'] == 'completed':
-        success = results['evaluations']['real_world']['success_rate']
-        compression = results['evaluations']['real_world']['avg_compression']
-        verdict = results['evaluations']['real_world']['verdict']
-        print(f"  Answer: {'✅' if verdict == 'PASS' else '❌'} {success:.1%} success rate on production scenarios")
+    if results["evaluations"]["real_world"]["status"] == "completed":
+        success = results["evaluations"]["real_world"]["success_rate"]
+        compression = results["evaluations"]["real_world"]["avg_compression"]
+        verdict = results["evaluations"]["real_world"]["verdict"]
+        print(
+            f"  Answer: {'✅' if verdict == 'PASS' else '❌'} {success:.1%} success rate on production scenarios"
+        )
         print(f"  Compression: {compression:.1f}% average")
         print(f"  Verdict: {verdict}")
     else:
-        print(f"  Answer: ❌ Evaluation failed")
+        print("  Answer: ❌ Evaluation failed")
 
     # Overall verdict
     print("\n" + "=" * 80)
 
-    completed = [v for v in results['evaluations'].values() if v['status'] == 'completed']
-    passed = [v for v in completed if v['verdict'] == 'PASS']
+    completed = [
+        v for v in results["evaluations"].values() if v["status"] == "completed"
+    ]
+    passed = [v for v in completed if v["verdict"] == "PASS"]
 
     if len(passed) == 3:
         print("🎉 OVERALL: PRODUCTION READY")
@@ -179,7 +180,7 @@ def run_full_evaluation():
     print("=" * 80 + "\n")
 
     # Save summary
-    with open("evaluation_summary.json", 'w') as f:
+    with open("evaluation_summary.json", "w") as f:
         json.dump(results, f, indent=2)
 
     print("💾 Evaluation summary saved to evaluation_summary.json")

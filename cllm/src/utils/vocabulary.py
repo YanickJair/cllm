@@ -9,110 +9,248 @@ class Vocabulary:
     REQ_TOKENS = {
         # Core analysis actions
         "ANALYZE": [
-            "analyze", "review", "examine", "evaluate", "assess", "inspect",
-            "check out", "audit", "investigate"
+            "analyze",
+            "review",
+            "examine",
+            "evaluate",
+            "assess",
+            "inspect",
+            "check out",
+            "audit",
+            "investigate",
         ],
         "MATCH": [
-            "match", "compare", "align", "map", "correlate",
-            "match against", "compare to", "check against"
+            "match",
+            "compare",
+            "align",
+            "map",
+            "correlate",
+            "match against",
+            "compare to",
+            "check against",
         ],
-
         # Information extraction
         "EXTRACT": [
-            "extract", "pull out", "identify", "find", "locate", "get",
-            "retrieve", "return", "include", "select", "pick out"
+            "extract",
+            "pull out",
+            "identify",
+            "find",
+            "locate",
+            "get",
+            "retrieve",
+            "return",
+            "include",
+            "select",
+            "pick out",
         ],
-        "SELECT": [
-            "select", "choose", "pick", "filter", "identify matching"
-        ],
-
+        "SELECT": ["select", "choose", "pick", "filter", "identify matching"],
         # Content generation
         "GENERATE": [
-            "generate", "create", "write", "draft", "compose", "produce",
-            "build", "develop", "design", "craft", "author", "make up",
-            "name", "suggest", "formulate", "form", "construct", "propose", "transcribe"
+            "generate",
+            "create",
+            "write",
+            "draft",
+            "compose",
+            "produce",
+            "build",
+            "develop",
+            "design",
+            "craft",
+            "author",
+            "make up",
+            "name",
+            "suggest",
+            "formulate",
+            "form",
+            "construct",
+            "propose",
+            "transcribe",
         ],
-
         # Summaries and condensing
         "SUMMARIZE": [
-            "summarize", "condense", "brief", "synopsis", "sum up", "digest", "recap"
+            "summarize",
+            "condense",
+            "brief",
+            "synopsis",
+            "sum up",
+            "digest",
+            "recap",
         ],
-
         # Content transformation
         "TRANSFORM": [
-            "convert", "transform", "change", "rewrite", "translate", "complete",
-            "turn into", "modify", "adapt", "adjust", "rephrase", "rework", "rearrange",
-            "edit", "add", "paraphrase", "fill", "remove", "replace", "reverse",
+            "convert",
+            "transform",
+            "change",
+            "rewrite",
+            "translate",
+            "complete",
+            "turn into",
+            "modify",
+            "adapt",
+            "adjust",
+            "rephrase",
+            "rework",
+            "rearrange",
+            "edit",
+            "add",
+            "paraphrase",
+            "fill",
+            "remove",
+            "replace",
+            "reverse",
         ],
-
         # Explanations and descriptions
         "EXPLAIN": [
-            "explain", "describe", "clarify", "elaborate", "tell me about",
-            "detail", "expound", "illustrate", "express", "tell", "discuss", "define"
+            "explain",
+            "describe",
+            "clarify",
+            "elaborate",
+            "tell me about",
+            "detail",
+            "expound",
+            "illustrate",
+            "express",
+            "tell",
+            "discuss",
+            "define",
         ],
-
         # Comparisons
         "COMPARE": [
-            "compare", "contrast", "versus", "vs", "difference between", "differentiate", "distinguish"
+            "compare",
+            "contrast",
+            "versus",
+            "vs",
+            "difference between",
+            "differentiate",
+            "distinguish",
         ],
-
         # Classification and organization
         "CLASSIFY": [
-            "classify", "categorize", "sort", "group", "label", "organize", "arrange", "order by", "segment"
+            "classify",
+            "categorize",
+            "sort",
+            "group",
+            "label",
+            "organize",
+            "arrange",
+            "order by",
+            "segment",
         ],
-
         # Debugging and fixing
         "DEBUG": [
-            "debug", "troubleshoot", "diagnose", "fix bug", "investigate bug", "find bug", "track down", "identify issue"
+            "debug",
+            "troubleshoot",
+            "diagnose",
+            "fix bug",
+            "investigate bug",
+            "find bug",
+            "track down",
+            "identify issue",
         ],
-
         # Optimization and improvement
         "OPTIMIZE": [
-            "optimize", "improve", "enhance", "refactor", "speed up",
-            "streamline", "maximize", "minimize", "reduce", "increase",
+            "optimize",
+            "improve",
+            "enhance",
+            "refactor",
+            "speed up",
+            "streamline",
+            "maximize",
+            "minimize",
+            "reduce",
+            "increase",
         ],
-
         # Validation and verification
         "VALIDATE": [
-            "validate", "verify", "check", "confirm", "test", "ensure", "certify", "authenticate"
+            "validate",
+            "verify",
+            "check",
+            "confirm",
+            "test",
+            "ensure",
+            "certify",
+            "authenticate",
         ],
-
         # Search operations
         "SEARCH": [
-            "search", "query", "lookup", "find", "look for", "seek", "hunt for", "discover"
+            "search",
+            "query",
+            "lookup",
+            "find",
+            "look for",
+            "seek",
+            "hunt for",
+            "discover",
         ],
-
         # Ranking and prioritization
         "RANK": ["rank", "prioritize", "order", "sort by", "rate", "score"],
-
         # Predictions and forecasting
         "PREDICT": [
-            "predict", "forecast", "estimate", "project", "anticipate", "foresee", "extrapolate"
+            "predict",
+            "forecast",
+            "estimate",
+            "project",
+            "anticipate",
+            "foresee",
+            "extrapolate",
         ],
-
         # Formatting
         "FORMAT": ["format", "structure", "organize", "layout", "arrange"],
-
         # Detection
-        "DETECT": ["detect", "spot", "discover", "uncover", "identify", "notice", "recognize"],
-
+        "DETECT": [
+            "detect",
+            "spot",
+            "discover",
+            "uncover",
+            "identify",
+            "notice",
+            "recognize",
+        ],
         # Mathematical operations
         "CALCULATE": [
-            "calculate", "compute", "figure out", "determine mathematically", "quantify", "measure", "count", "tally"
+            "calculate",
+            "compute",
+            "figure out",
+            "determine mathematically",
+            "quantify",
+            "measure",
+            "count",
+            "tally",
         ],
-
         # Aggregation
-        "AGGREGATE": ["aggregate", "group", "combine", "consolidate", "roll up", "merge", "compile", "collect"],
-
+        "AGGREGATE": [
+            "aggregate",
+            "group",
+            "combine",
+            "consolidate",
+            "roll up",
+            "merge",
+            "compile",
+            "collect",
+        ],
         # Decision-making
-        "DETERMINE": ["determine", "decide", "assess", "evaluate", "figure out", "conclude", "establish", "choose"],
-
+        "DETERMINE": [
+            "determine",
+            "decide",
+            "assess",
+            "evaluate",
+            "figure out",
+            "conclude",
+            "establish",
+            "choose",
+        ],
         # Routing and assignment
-        "ROUTE": ["route", "assign", "direct", "forward", "send to", "delegate", "allocate"],
-
+        "ROUTE": [
+            "route",
+            "assign",
+            "direct",
+            "forward",
+            "send to",
+            "delegate",
+            "allocate",
+        ],
         # NEW: Action execution (376 occurrences - HIGHEST PRIORITY)
         "EXECUTE": ["use", "apply", "implement", "run", "perform", "employ", "utilize"],
-
         # NEW: List generation (117+ occurrences with 72.6% fail rate)
         "LIST": ["list", "enumerate", "itemize", "outline"],
     }
@@ -121,18 +259,47 @@ class Vocabulary:
     # These appear as verbs in parsing but are not actionable intents
     NOISE_VERBS = {
         # Auxiliary/modal verbs
-        "be", "have", "do", "can", "could", "should", "would", "may",
-        "might", "must", "will", "shall",
-
+        "be",
+        "have",
+        "do",
+        "can",
+        "could",
+        "should",
+        "would",
+        "may",
+        "might",
+        "must",
+        "will",
+        "shall",
         # Generic motion/state verbs (non-specific actions)
-        "go", "come", "take", "get", "make", "work", "live", "stay",
-
+        "go",
+        "come",
+        "take",
+        "get",
+        "make",
+        "work",
+        "live",
+        "stay",
         # Descriptive/relational verbs (not actions)
-        "follow", "base", "relate", "need", "want", "start", "begin",
-        "become", "seem", "appear", "remain",
-
+        "follow",
+        "base",
+        "relate",
+        "need",
+        "want",
+        "start",
+        "begin",
+        "become",
+        "seem",
+        "appear",
+        "remain",
         # Context-dependent verbs (too ambiguous)
-        "show", "see", "know", "think", "feel", "say", "call",
+        "show",
+        "see",
+        "know",
+        "think",
+        "feel",
+        "say",
+        "call",
     }
 
     # Context patterns to filter out (verb used non-actionably)
@@ -157,10 +324,14 @@ class Vocabulary:
         "RECORD": ["record", "entry", "row", "item"],
         "STRATEGY": ["strategy", "approach", "plan", "methodology"],
         "NBA_CATALOG": [
-            "nba", "nbas", "next best action", "next best actions",
-            "predefined actions", "possible actions", "available actions"
+            "nba",
+            "nbas",
+            "next best action",
+            "next best actions",
+            "predefined actions",
+            "possible actions",
+            "available actions",
         ],
-
         # Documents and content
         "DOCUMENT": ["document", "doc", "file", "report", "paper"],
         "EMAIL": ["email", "message", "correspondence"],
@@ -170,10 +341,13 @@ class Vocabulary:
         "FEEDBACK": ["feedback", "comment", "review", "critique"],
         "COMMENT": ["comment", "remark", "note", "observation"],
         "CUSTOMER_INTENT": [
-            "customer intent", "customer's intent", "customer need",
-            "customer request", "customer goal", "customer problem"
+            "customer intent",
+            "customer's intent",
+            "customer need",
+            "customer request",
+            "customer goal",
+            "customer problem",
         ],
-
         # Customer service
         "COMPLAINT": ["complaint", "issue", "problem", "grievance"],
         "REQUEST": ["request", "customer request", "service request"],
@@ -189,7 +363,6 @@ class Vocabulary:
         "CAPTION": ["caption", "captions", "social media caption"],
         "QUESTIONS": ["questions", "interview questions", "quiz questions", "faq"],
         "RESPONSE": ["response", "reply", "answer", "template response"],
-
         # Analysis targets
         "LOGS": ["logs", "log files", "traffic logs", "system logs", "access logs"],
         "CORRELATION": ["correlation", "correlations", "relationship", "relationships"],
@@ -199,11 +372,9 @@ class Vocabulary:
         "PATTERN": ["pattern", "patterns", "trend", "trends"],
         "CHURN": ["churn", "customer churn", "attrition"],
         "FEATURES": ["features", "feature", "functionality", "capabilities"],
-
         # Abstract/metrics
         "METRICS": ["revenue", "metrics", "statistics", "numbers", "data points"],
         "REGIONS": ["regions", "areas", "locations", "territories"],
-
         # NEW: Fallback targets for common patterns
         "ITEMS": ["items", "things", "elements", "list", "options", "choices"],
         "CONCEPT": ["concept", "idea", "notion", "principle", "theory"],
@@ -214,16 +385,60 @@ class Vocabulary:
 
     # Common extraction fields
     EXTRACT_FIELDS = [
-        "ISSUE", "SENTIMENT", "ACTIONS", "NEXT_STEPS", "URGENCY", "PRIORITY",
-        "NAMES", "DATES", "AMOUNTS", "EMAILS", "PHONES", "ADDRESSES",
-        "BUGS", "SECURITY", "PERFORMANCE", "STYLE", "ERRORS", "WARNINGS",
-        "KEYWORDS", "TOPICS", "ENTITIES", "FACTS", "DECISIONS", "DEADLINES",
-        "REQUIREMENTS", "FEATURES", "PROBLEMS", "SOLUTIONS", "RISKS",
-        "METRICS", "KPI", "SCORES", "RATINGS", "FEEDBACK", "COMPLAINTS",
-        "OWNERS", "ASSIGNEES", "STAKEHOLDERS", "PARTICIPANTS",
-        "TIMESTAMPS", "DURATIONS", "FREQUENCIES", "QUANTITIES",
-        "CATEGORIES", "TAGS", "LABELS", "STATUS", "TYPE", "CUSTOMER_INTENT", "RELEVANCE_SCORE", "NBA_ID",
-        "MATCH_CONFIDENCE", "SEMANTIC_SIMILARITY", "THRESHOLD"
+        "ISSUE",
+        "SENTIMENT",
+        "ACTIONS",
+        "NEXT_STEPS",
+        "URGENCY",
+        "PRIORITY",
+        "NAMES",
+        "DATES",
+        "AMOUNTS",
+        "EMAILS",
+        "PHONES",
+        "ADDRESSES",
+        "BUGS",
+        "SECURITY",
+        "PERFORMANCE",
+        "STYLE",
+        "ERRORS",
+        "WARNINGS",
+        "KEYWORDS",
+        "TOPICS",
+        "ENTITIES",
+        "FACTS",
+        "DECISIONS",
+        "DEADLINES",
+        "REQUIREMENTS",
+        "FEATURES",
+        "PROBLEMS",
+        "SOLUTIONS",
+        "RISKS",
+        "METRICS",
+        "KPI",
+        "SCORES",
+        "RATINGS",
+        "FEEDBACK",
+        "COMPLAINTS",
+        "OWNERS",
+        "ASSIGNEES",
+        "STAKEHOLDERS",
+        "PARTICIPANTS",
+        "TIMESTAMPS",
+        "DURATIONS",
+        "FREQUENCIES",
+        "QUANTITIES",
+        "CATEGORIES",
+        "TAGS",
+        "LABELS",
+        "STATUS",
+        "TYPE",
+        "CUSTOMER_INTENT",
+        "RELEVANCE_SCORE",
+        "NBA_ID",
+        "MATCH_CONFIDENCE",
+        "SEMANTIC_SIMILARITY",
+        "THRESHOLD",
     ]
 
     # Output formats with trigger words
@@ -233,7 +448,7 @@ class Vocabulary:
         "TABLE": ["table", "tabular"],
         "LIST": ["list", "bullet points", "bullets"],
         "PLAIN": ["plain text", "text only"],
-        "CSV": ["csv", "comma-separated"]
+        "CSV": ["csv", "comma-separated"],
     }
 
     @classmethod
@@ -298,7 +513,11 @@ class Vocabulary:
             (["list", "enumerate", "itemize"], "LIST", "ITEMS"),
             (["name", "identify"], "GENERATE", "ITEMS"),
             (["give", "provide", "suggest"], "GENERATE", "ITEMS"),
-            (["tell", "explain", "describe", "clarify", "expand", "illustrate"], "EXPLAIN", "CONCEPT"),
+            (
+                ["tell", "explain", "describe", "clarify", "expand", "illustrate"],
+                "EXPLAIN",
+                "CONCEPT",
+            ),
         ]
 
         for triggers, req_token, target_token in imperative_patterns:

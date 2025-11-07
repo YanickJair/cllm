@@ -20,7 +20,7 @@ pattern_db = PatternDatabase("cllm_patterns.json")
 trainer = StatisticalTrainer(
     pattern_db,
     min_frequency=3,  # Lower threshold for small corpus
-    min_compression_gain=2.0
+    min_compression_gain=2.0,
 )
 
 # Train
@@ -32,7 +32,7 @@ print(f"Patterns added to DB: {stats['patterns_added']}")
 print(f"Estimated tokens saved: {stats['estimated_tokens_saved']}")
 
 print("\n=== Top 10 Patterns ===")
-for i, pattern in enumerate(stats['top_patterns'], 1):
+for i, pattern in enumerate(stats["top_patterns"], 1):
     print(f"{i}. {pattern['id']} (used {pattern['frequency']}x)")
     print(f"   Pattern: {pattern['pattern']}")
     print(f"   Domains: {', '.join(pattern['domains'])}")
@@ -45,7 +45,9 @@ for i, pattern in enumerate(stats['top_patterns'], 1):
 compressor = StatisticalCompressor(pattern_db)
 
 # Compress a new prompt
-semantic_output = "[REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=SUPPORT] [EXTRACT:ISSUE+SENTIMENT]"
+semantic_output = (
+    "[REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=SUPPORT] [EXTRACT:ISSUE+SENTIMENT]"
+)
 compressed, metadata = compressor.compress(semantic_output, domain="customer_support")
 
 print("\n=== Compression Example ===")

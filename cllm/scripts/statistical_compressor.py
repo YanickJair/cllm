@@ -47,13 +47,21 @@ for i, item in enumerate(test_cases, 1):
         print(f"  {with_ref}")
         print(f"\nPatterns applied: {len(metadata['patterns_applied'])}")
         for pattern_info in metadata["patterns_applied"]:
-            print(f"  - {pattern_info['pattern_id']}: saved {pattern_info['tokens_saved']} tokens")
+            print(
+                f"  - {pattern_info['pattern_id']}: saved {pattern_info['tokens_saved']} tokens"
+            )
 
 print("\n" + "=" * 80)
 print("OVERALL STATISTICS")
 print("=" * 80)
 print(f"Original:         {total_original} tokens")
-print(f"Semantic:         {total_compressed} tokens ({(1 - total_compressed / total_original) * 100:.1f}% compression)")
-print(f"With REF:         {total_with_ref} tokens ({(1 - total_with_ref / total_original) * 100:.1f}% compression)")
+print(
+    f"Semantic:         {total_compressed} tokens ({(1 - total_compressed / total_original) * 100:.1f}% compression)"
+)
+print(
+    f"With REF:         {total_with_ref} tokens ({(1 - total_with_ref / total_original) * 100:.1f}% compression)"
+)
 print(f"REF improvement:  {total_compressed - total_with_ref} additional tokens saved")
-print(f"                  ({(1 - total_with_ref / total_compressed) * 100:.1f}% better than semantic)")
+print(
+    f"                  ({(1 - total_with_ref / total_compressed) * 100:.1f}% better than semantic)"
+)

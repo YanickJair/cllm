@@ -10,5 +10,5 @@ __all__ = [
     "Issue",
     "CallInfo",
     "Turn",
-    "TemporalPattern"
+    "TemporalPattern",
 ]

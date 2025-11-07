@@ -1,8 +1,7 @@
 import hashlib
 import re
 from datetime import datetime
-from collections import Counter, defaultdict
-from typing import Set
+from collections import Counter
 
 from src.core.compressors.statistical.schemas import Pattern
 
@@ -16,12 +15,10 @@ class PatternMiner:
         """
         self.min_frequency = min_frequency
         self.min_tokens = min_tokens
-        self.patterns: dict = {} # pattern_hash -> Pattern object
+        self.patterns: dict = {}  # pattern_hash -> Pattern object
 
     def mine_patterns(
-        self,
-        compressed_corpus: list[str],
-        original_corpus: list[str] | None = None
+        self, compressed_corpus: list[str], original_corpus: list[str] | None = None
     ) -> list[Pattern]:
         """
         Mine patterns from a corpus of compressed prompts
@@ -33,7 +30,8 @@ class PatternMiner:
         ngram_counts = self._extract_ngrams(compressed_corpus)
 
         frequent_patterns = {
-            ngram: count for ngram, count in ngram_counts.items()
+            ngram: count
+            for ngram, count in ngram_counts.items()
             if count >= self.min_frequency
         }
 
@@ -45,7 +43,7 @@ class PatternMiner:
                 pattern_tuple=pattern_str,
                 frequency=frequency,
                 compressed_corpus=compressed_corpus,
-                original_corpus=original_corpus
+                original_corpus=original_corpus,
             )
             patterns.append(pattern)
             self.patterns[pattern.id] = pattern
@@ -58,22 +56,19 @@ class PatternMiner:
         ngrams: Counter = Counter()
 
         for compressed in compressed_corpus:
-            tokens = re.findall(r'\[[^\]]+\]', compressed)
+            tokens = re.findall(r"\[[^\]]+\]", compressed)
             for n in range(self.min_tokens, min(6, len(tokens) + 1)):
                 for i in range(len(tokens) - n + 1):
-                    ngram = tuple(tokens[1:i+n])
+                    ngram = tuple(tokens[1 : i + n])
                     ngrams[ngram] += 1
 
         return ngrams
-
 
     def _filter_subsumed(self, patterns: dict[tuple, int]) -> dict[tuple, int]:
         """Remove patterns that are substrings of more frequent longer patterns"""
         filtered: dict[tuple, int] = {}
         sorted_patterns = sorted(
-            patterns.items(),
-            key=lambda x: (len(x[0]), x[1]),
-            reverse=True
+            patterns.items(), key=lambda x: (len(x[0]), x[1]), reverse=True
         )
 
         for pattern, count in sorted_patterns:
@@ -94,7 +89,7 @@ class PatternMiner:
     def _is_subsequence(short: tuple, long: tuple) -> bool:
         """Check if short is a contiguous subsequence of long"""
         for i in range(len(long) - len(short) + 1):
-            if long[i:i + len(short)] == long:
+            if long[i : i + len(short)] == long:
                 return True
         return False
 
@@ -103,7 +98,7 @@ class PatternMiner:
         pattern_tuple: tuple[str],
         frequency: int,
         compressed_corpus: list[str],
-        original_corpus: list[str] | None = None
+        original_corpus: list[str] | None = None,
     ) -> Pattern:
         """Create Pattern object from n-gram"""
         pattern_str = " ".join(pattern_tuple)
@@ -135,7 +130,7 @@ class PatternMiner:
             compression_gain=compression_gain,
             domains=domains,
             examples=examples,
-            version=1
+            version=1,
         )
 
     @staticmethod
@@ -144,9 +139,24 @@ class PatternMiner:
         domains = set()
         domain_keywords = {
             "customer_support": ["customer", "ticket", "support", "complaint"],
-            "code_analysis": ["code", "function", "bug", "debug", "python", "javascript"],
+            "code_analysis": [
+                "code",
+                "function",
+                "bug",
+                "debug",
+                "python",
+                "javascript",
+            ],
             "data_analysis": ["data", "csv", "analyze", "extract", "metrics"],
-            "content_generation": ["write", "draft", "generate", "create", "email", "produce", "design"]
+            "content_generation": [
+                "write",
+                "draft",
+                "generate",
+                "create",
+                "email",
+                "produce",
+                "design",
+            ],
         }
         for example in examples:
             example_lower = example.lower()

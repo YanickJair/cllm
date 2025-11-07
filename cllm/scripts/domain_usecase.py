@@ -1,5 +1,4 @@
 import json
-from collections import defaultdict
 
 from src.core.encoder import CLLMEncoder
 
@@ -55,7 +54,7 @@ if __name__ == "__main__":
         "has_target": has_target,
         "status": "PASS" if is_complete else "FAIL",
         "category": "CX",
-        "metadata": result.metadata
+        "metadata": result.metadata,
     }
     with open("system_prompt.json", "w") as f:
         json.dump(result, f)

@@ -10,14 +10,16 @@ from datetime import datetime
 from typing import List
 
 
-def extract_token_sequences(semantic_output: str, min_length: int = 2, max_length: int = 4) -> List[str]:
+def extract_token_sequences(
+    semantic_output: str, min_length: int = 2, max_length: int = 4
+) -> List[str]:
     """Extract all possible token sequences"""
-    tokens = re.findall(r'\[[^\]]+\]', semantic_output)
+    tokens = re.findall(r"\[[^\]]+\]", semantic_output)
 
     sequences = []
     for n in range(min_length, max_length + 1):
         for i in range(len(tokens) - n + 1):
-            seq = ' '.join(tokens[i:i + n])
+            seq = " ".join(tokens[i : i + n])
             sequences.append(seq)
 
     return sequences
@@ -48,20 +50,24 @@ def discover_patterns_optimized(corpus: List[str]) -> list:
     counts_2 = Counter(sequences_2)
     for seq, freq in counts_2.items():
         if freq >= 2:
-            all_patterns.append({
-                "id": f"PATTERN_{pattern_id:04d}",
-                "pattern": seq,
-                "frequency": freq,
-                "first_seen": current_time.isoformat(),
-                "last_seen": current_time.isoformat(),
-                "compression_gain": 1,  # 2 tokens -> 1 REF = 1 saved
-                "domains": [],
-                "examples": [],
-                "version": 1
-            })
+            all_patterns.append(
+                {
+                    "id": f"PATTERN_{pattern_id:04d}",
+                    "pattern": seq,
+                    "frequency": freq,
+                    "first_seen": current_time.isoformat(),
+                    "last_seen": current_time.isoformat(),
+                    "compression_gain": 1,  # 2 tokens -> 1 REF = 1 saved
+                    "domains": [],
+                    "examples": [],
+                    "version": 1,
+                }
+            )
             pattern_id += 1
 
-    print(f"    Found {len([p for p in all_patterns if p['compression_gain'] == 1])} patterns")
+    print(
+        f"    Found {len([p for p in all_patterns if p['compression_gain'] == 1])} patterns"
+    )
 
     # Strategy 2: 3-token patterns (freq >= 2)
     print("  Finding 3-token patterns (min_freq=2)...")
@@ -73,17 +79,19 @@ def discover_patterns_optimized(corpus: List[str]) -> list:
     initial_count = len(all_patterns)
     for seq, freq in counts_3.items():
         if freq >= 2:
-            all_patterns.append({
-                "id": f"PATTERN_{pattern_id:04d}",
-                "pattern": seq,
-                "frequency": freq,
-                "first_seen": current_time.isoformat(),
-                "last_seen": current_time.isoformat(),
-                "compression_gain": 2,  # 3 tokens -> 1 REF = 2 saved
-                "domains": [],
-                "examples": [],
-                "version": 1
-            })
+            all_patterns.append(
+                {
+                    "id": f"PATTERN_{pattern_id:04d}",
+                    "pattern": seq,
+                    "frequency": freq,
+                    "first_seen": current_time.isoformat(),
+                    "last_seen": current_time.isoformat(),
+                    "compression_gain": 2,  # 3 tokens -> 1 REF = 2 saved
+                    "domains": [],
+                    "examples": [],
+                    "version": 1,
+                }
+            )
             pattern_id += 1
 
     print(f"    Found {len(all_patterns) - initial_count} patterns")
@@ -98,28 +106,32 @@ def discover_patterns_optimized(corpus: List[str]) -> list:
     initial_count = len(all_patterns)
     for seq, freq in counts_4.items():
         if freq >= 3:
-            all_patterns.append({
-                "id": f"PATTERN_{pattern_id:04d}",
-                "pattern": seq,
-                "frequency": freq,
-                "first_seen": current_time.isoformat(),
-                "last_seen": current_time.isoformat(),
-                "compression_gain": 3,  # 4 tokens -> 1 REF = 3 saved
-                "domains": [],
-                "examples": [],
-                "version": 1
-            })
+            all_patterns.append(
+                {
+                    "id": f"PATTERN_{pattern_id:04d}",
+                    "pattern": seq,
+                    "frequency": freq,
+                    "first_seen": current_time.isoformat(),
+                    "last_seen": current_time.isoformat(),
+                    "compression_gain": 3,  # 4 tokens -> 1 REF = 3 saved
+                    "domains": [],
+                    "examples": [],
+                    "version": 1,
+                }
+            )
             pattern_id += 1
 
     print(f"    Found {len(all_patterns) - initial_count} patterns")
 
     # Sort by value (frequency × compression_gain)
-    all_patterns.sort(key=lambda p: p['frequency'] * p['compression_gain'], reverse=True)
+    all_patterns.sort(
+        key=lambda p: p["frequency"] * p["compression_gain"], reverse=True
+    )
 
     print(f"\n✅ Total patterns discovered: {len(all_patterns)}")
 
     # Calculate potential savings
-    total_savings = sum(p['frequency'] * p['compression_gain'] for p in all_patterns)
+    total_savings = sum(p["frequency"] * p["compression_gain"] for p in all_patterns)
     print(f"   Potential tokens saved: {total_savings}")
 
     return all_patterns
@@ -127,10 +139,12 @@ def discover_patterns_optimized(corpus: List[str]) -> list:
 
 def save_patterns(patterns: list, output_file: str = "patterns.json"):
     """Save patterns to file"""
-    total_uses = sum(p['frequency'] for p in patterns)
-    total_tokens_saved = sum(p['frequency'] * p['compression_gain'] for p in patterns)
-    avg_gain = sum(p['compression_gain'] for p in patterns) / len(patterns) if patterns else 0
-    most_used = max(patterns, key=lambda p: p['frequency']) if patterns else None
+    total_uses = sum(p["frequency"] for p in patterns)
+    total_tokens_saved = sum(p["frequency"] * p["compression_gain"] for p in patterns)
+    avg_gain = (
+        sum(p["compression_gain"] for p in patterns) / len(patterns) if patterns else 0
+    )
+    most_used = max(patterns, key=lambda p: p["frequency"]) if patterns else None
 
     data = {
         "patterns": patterns,
@@ -139,11 +153,11 @@ def save_patterns(patterns: list, output_file: str = "patterns.json"):
             "total_uses": total_uses,
             "total_tokens_saved": total_tokens_saved,
             "avg_compression_gain": avg_gain,
-            "most_used_pattern": most_used
-        }
+            "most_used_pattern": most_used,
+        },
     }
 
-    with open(output_file, 'w') as f:
+    with open(output_file, "w") as f:
         json.dump(data, f, indent=2)
 
     print(f"\n💾 Saved to {output_file}")
@@ -157,8 +171,10 @@ def show_top_patterns(patterns: list, n: int = 20):
     print("-" * 80)
 
     for i, p in enumerate(patterns[:n], 1):
-        value = p['frequency'] * p['compression_gain']
-        print(f"{i:<4} {p['frequency']:<6} {p['compression_gain']:<6} {value:<7} {p['pattern'][:55]}")
+        value = p["frequency"] * p["compression_gain"]
+        print(
+            f"{i:<4} {p['frequency']:<6} {p['compression_gain']:<6} {value:<7} {p['pattern'][:55]}"
+        )
 
 
 def main():
@@ -173,8 +189,11 @@ def main():
         with open("validation_results_100.json") as f:
             data = json.load(f)
 
-        corpus = [item['compressed'] for item in data
-                  if item.get('compressed') and len(item['compressed']) > 0]
+        corpus = [
+            item["compressed"]
+            for item in data
+            if item.get("compressed") and len(item["compressed"]) > 0
+        ]
 
         print(f"   Loaded {len(corpus)} semantic outputs\n")
 

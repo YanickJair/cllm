@@ -14,13 +14,13 @@ def main():
         "Extract all dates, names, and monetary amounts from this legal document and format as JSON.",
         "Summarize this customer support transcript briefly and identify the main issue.",
         "Generate a professional email declining a job offer while expressing gratitude.",
-        "Explain quantum computing to a 10-year-old using simple analogies."
+        "Explain quantum computing to a 10-year-old using simple analogies.",
     ]
-    
-    print("\n" + "="*80)
+
+    print("\n" + "=" * 80)
     print("CLLM ENCODER - DEMO")
-    print("="*80)
-    
+    print("=" * 80)
+
     # Compress each prompt
     for prompt in test_prompts:
         result = encoder.compress(prompt, verbose=True)
@@ -38,7 +38,7 @@ def pattern_train():
     trainer = StatisticalTrainer(
         pattern_db,
         min_frequency=3,  # Lower threshold for small corpus
-        min_compression_gain=2.0
+        min_compression_gain=2.0,
     )
     stats = trainer.train(compressed_corpus, original_corpus)
     print("\n=== Training Results ===")
@@ -47,7 +47,7 @@ def pattern_train():
     print(f"Estimated tokens saved: {stats['estimated_tokens_saved']}")
 
     print("\n=== Top 10 Patterns ===")
-    for i, pattern in enumerate(stats['top_patterns'], 1):
+    for i, pattern in enumerate(stats["top_patterns"], 1):
         print(f"{i}. {pattern['id']} (used {pattern['frequency']}x)")
         print(f"   Pattern: {pattern['pattern']}")
         print(f"   Domains: {', '.join(pattern['domains'])}")
@@ -56,13 +56,19 @@ def pattern_train():
         print()
 
     compressor = StatisticalCompressor(pattern_db)
-    semantic_output = "[REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=SUPPORT] [EXTRACT:ISSUE+SENTIMENT]"
-    compressed, metadata = compressor.compress(semantic_output, domain="customer_support")
+    semantic_output = (
+        "[REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=SUPPORT] [EXTRACT:ISSUE+SENTIMENT]"
+    )
+    compressed, metadata = compressor.compress(
+        semantic_output, domain="customer_support"
+    )
 
     print("\n=== Compression Example ===")
     print(f"Semantic: {semantic_output}")
     print(f"Statistical: {compressed}")
-    print(f"Additional compression: {metadata.get('additional_compression_ratio', 0.0):.1%}")
+    print(
+        f"Additional compression: {metadata.get('additional_compression_ratio', 0.0):.1%}"
+    )
     print(f"Patterns applied: {len(metadata.get('patterns_applied', []))}")
 
 

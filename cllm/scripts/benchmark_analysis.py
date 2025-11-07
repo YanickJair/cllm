@@ -56,6 +56,7 @@ summary = (
 summary.columns = [f"{a}_{b}" for a, b in summary.columns]
 summary.reset_index(inplace=True)
 
+
 # === Efficiency Gains (CLM vs NL) ===
 def pct_diff(nl, clm):
     try:
@@ -63,14 +64,15 @@ def pct_diff(nl, clm):
     except ZeroDivisionError:
         return None
 
+
 summary["latency_gain_%"] = summary.apply(
     lambda x: pct_diff(x.get("latency_ms_nl", 0), x.get("latency_ms_clm", 0)), axis=1
 )
 summary["cost_gain_%"] = summary.apply(
     lambda x: pct_diff(x.get("cost_usd_nl", 0), x.get("cost_usd_clm", 0)), axis=1
 )
-summary["accuracy_delta"] = (
-    summary.get("accuracy_clm", 0) - summary.get("accuracy_nl", 0)
+summary["accuracy_delta"] = summary.get("accuracy_clm", 0) - summary.get(
+    "accuracy_nl", 0
 )
 summary["token_efficiency_%"] = summary.apply(
     lambda x: pct_diff(x.get("tokens_used_nl", 0), x.get("tokens_used_clm", 0)), axis=1
@@ -80,7 +82,11 @@ print("\n=== Quantitative Summary (per model) ===")
 print(summary.round(3))
 
 # === Global Averages ===
-global_means = summary[[c for c in summary.columns if any(m in c for m in metrics)]].mean().round(3)
+global_means = (
+    summary[[c for c in summary.columns if any(m in c for m in metrics)]]
+    .mean()
+    .round(3)
+)
 print("\n=== Global Averages (CLM vs NL) ===")
 print(global_means)
 
@@ -91,7 +97,9 @@ plt.suptitle("CLM vs Natural Language Benchmark Results", fontsize=14, weight="b
 # Plot latency, cost, accuracy averages
 for i, metric in enumerate(["latency_ms", "cost_usd", "accuracy"]):
     means = df.groupby("approach")[metric].mean()
-    means.plot(kind="bar", ax=axes[i], title=f"Average {metric.replace('_', ' ').title()}")
+    means.plot(
+        kind="bar", ax=axes[i], title=f"Average {metric.replace('_', ' ').title()}"
+    )
     axes[i].set_ylabel(metric.split("_")[0].title())
 
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
@@ -100,15 +108,21 @@ plt.show()
 # === Qualitative Summary (printed) ===
 print("\n=== Qualitative Insights ===")
 if summary["accuracy_delta"].mean() >= 0:
-    print("✅ CLM maintains or slightly improves output quality compared to Natural Language.")
+    print(
+        "✅ CLM maintains or slightly improves output quality compared to Natural Language."
+    )
 else:
-    print("⚠️ CLM shows slight degradation in quality, depending on model or test domain.")
+    print(
+        "⚠️ CLM shows slight degradation in quality, depending on model or test domain."
+    )
 
 if summary["latency_gain_%"].mean() > 0:
     print(f"⚡ Average latency improvement: {summary['latency_gain_%'].mean():.2f}%")
 if summary["cost_gain_%"].mean() > 0:
     print(f"💰 Average cost reduction: {summary['cost_gain_%'].mean():.2f}%")
 if summary["token_efficiency_%"].mean() > 0:
-    print(f"🔹 Average token efficiency gain: {summary['token_efficiency_%'].mean():.2f}%")
+    print(
+        f"🔹 Average token efficiency gain: {summary['token_efficiency_%'].mean():.2f}%"
+    )
 
 print("\nDone ✅ — All results computed and visualized.")

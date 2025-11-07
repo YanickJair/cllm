@@ -8,19 +8,21 @@ def load_data_file(path: str) -> list:
     prompts = []
     print(path.exists())
     if path.exists():
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             data = json.load(f)
             for i, d in enumerate(data):
                 prompt = d.get("instruction")
                 if input_ := d.get("input", None):
                     prompt += f"\n{input_}"
 
-                prompts.append({
-                    "id": f"general_{i+1:03d}",
-                    "prompt": prompt,
-                    "category": "general",
-                    "subcategory": ""
-                })
+                prompts.append(
+                    {
+                        "id": f"general_{i + 1:03d}",
+                        "prompt": prompt,
+                        "category": "general",
+                        "subcategory": "",
+                    }
+                )
     return prompts
 
 

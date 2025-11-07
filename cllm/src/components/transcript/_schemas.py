@@ -8,6 +8,7 @@ from src.core import Intent, Target
 @dataclass
 class Turn:
     """Single turn in conversation"""
+
     speaker: str  # "agent", "customer", "system"
     text: str
     timestamp: Optional[float] = None
@@ -20,6 +21,7 @@ class Turn:
 @dataclass
 class CallInfo:
     """Call metadata"""
+
     call_id: str
     type: str  # SUPPORT, SALES, BILLING
     channel: str  # VOICE, CHAT, EMAIL
@@ -31,6 +33,7 @@ class CallInfo:
 @dataclass
 class Issue:
     """Customer issue"""
+
     type: str  # INTERNET_OUTAGE, BILLING_DISPUTE, etc.
     disputed_amounts: list[str] = field(default_factory=list)
     cause: Optional[str] = None
@@ -46,6 +49,7 @@ class Issue:
 @dataclass
 class Action:
     """Action taken by agent"""
+
     type: str  # TROUBLESHOOT, ESCALATE, etc.
     step: Optional[str] = None
     result: Optional[str] = "PENDING"  # SUCCESS, FAILED, TEMP_FIX
@@ -58,7 +62,8 @@ class Action:
 @dataclass
 class Resolution:
     """How conversation resolved"""
-    type: str  = "UNKNOWN" # RESOLVED, PENDING, ESCALATED, etc.
+
+    type: str = "UNKNOWN"  # RESOLVED, PENDING, ESCALATED, etc.
     status: Optional[str] = None
     timeline: Optional[str] = None  # "24h", "3-5_days"
     next_steps: Optional[str] = None
@@ -68,15 +73,19 @@ class Resolution:
 @dataclass
 class SentimentTrajectory:
     """Sentiment across conversation"""
+
     start: str  # FRUSTRATED, ANGRY, etc.
     end: str
-    turning_points: list[tuple[int, str]] = field(default_factory=list)  # (turn_number, sentiment)
+    turning_points: list[tuple[int, str]] = field(
+        default_factory=list
+    )  # (turn_number, sentiment)
     intensity: Optional[float] = None
 
 
 @dataclass
 class CustomerProfile:
     """Customer information"""
+
     account: Optional[str] = None
     tier: Optional[str] = None  # FREE, BASIC, PREMIUM, ENTERPRISE
     tenure: Optional[str] = None  # "5yr"
@@ -90,6 +99,7 @@ class CustomerProfile:
 @dataclass
 class TranscriptAnalysis:
     """Complete transcript analysis"""
+
     call_info: CallInfo
     customer: CustomerProfile
     turns: list[Turn]
@@ -105,6 +115,7 @@ class TranscriptAnalysis:
 @dataclass
 class TranscriptCompressionResult:
     """Transcript compression result"""
+
     original: str
     compressed: str
     analysis: TranscriptAnalysis
@@ -112,9 +123,11 @@ class TranscriptCompressionResult:
     information_preserved: float
     metadata: dict
 
+
 @dataclass
 class TemporalPattern:
     """Represents extracted temporal information"""
+
     days: list[str]  # ["monday", "tuesday"]
     times: list[str]  # ["9am", "1pm", "6pm"]
     duration: str  # "3d"

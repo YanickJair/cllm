@@ -1,0 +1,233 @@
+from typing import Any
+
+from src.components.ds_compression import CompressionConfig, FieldImportance
+
+
+class DSEncoder:
+    """
+    Compresses any structured catalog (NBAs, products, articles, etc.)
+
+    This implements your diagram's logic
+    """
+
+    def __init__(
+        self,
+        config: CompressionConfig,
+        catalog_name: str = "CATALOG",
+        delimiter: str = ",",
+    ) -> None:
+        self._config = config
+        self._catalog_name = catalog_name
+        self._done: bool = False
+        self._delimiter = delimiter
+
+        self._default_importance = {
+            "id": FieldImportance.CRITICAL,
+            "name": FieldImportance.CRITICAL,
+            "title": FieldImportance.CRITICAL,
+            "description": FieldImportance.HIGH,
+            "category": FieldImportance.HIGH,
+            "type": FieldImportance.HIGH,
+            "tags": FieldImportance.MEDIUM,
+            "metadata": FieldImportance.LOW,
+            "created_at": FieldImportance.NEVER,
+            "updated_at": FieldImportance.NEVER,
+        }
+
+    @property
+    def delimiter(self) -> str:
+        return self._delimiter
+
+    @delimiter.setter
+    def delimiter(self, val: str) -> None:
+        self._delimiter = val
+
+    def encode(self, catalog: list[dict[str, Any]] | dict[str, Any]) -> str:
+        """
+        Main entry point: compress entire catalog
+
+        Args:
+            catalog: List of catalog items (any schema)
+
+        Returns:
+            Compressed catalog in format:
+            [NBA_CATALOG:
+             [NBA:id:title:KEY=VALUE:KEY=VALUE]
+             [NBA:id:title:KEY=VALUE:KEY=VALUE]
+            ]
+        """
+        # Handle single dict
+        if isinstance(catalog, dict):
+            compressed_item = self.encode_item(catalog)
+            return self._format_item_token(compressed_item)
+
+        # Compress all items
+        count_catalogs = len(catalog)
+        compressed_results = [
+            self.encode_item(item) for item in catalog if isinstance(item, dict)
+        ]
+
+        if len(compressed_results) > 0:
+            compressed_keys = f"{self.delimiter}".join(
+                k.upper() for k in self._formated_keys(compressed_results[0])
+            )
+
+            lines = [
+                f"[{self._catalog_name.upper()}_CATALOG:{count_catalogs}]{{{compressed_keys}}}"
+            ]
+
+            for compressed in compressed_results:
+                item_token = self._format_item_token(compressed)
+                lines.append(f" {item_token}")
+
+            return "\n".join(lines)
+        return ""
+
+    def encode_item(self, item: dict[str, Any]) -> dict[str, Any]:
+        """
+        Compress a single catalog item
+
+        This is where your diagram's logic happens
+        """
+        compressed: dict[str, Any] = {}
+
+        if "id" in item:
+            compressed["id"] = item["id"]
+
+        compressed_keys: list[str] = []
+        for key, value in item.items():
+            if self._should_include_field(key, value):
+                if isinstance(value, dict):
+                    self.encode_item(value)
+                elif isinstance(value, list):
+                    self.encode(value)
+                else:
+                    compressed[key] = value
+                compressed_keys.append(key)
+        return compressed
+
+    def _format_item_token(self, compressed_item: dict[str, Any]) -> str:
+        """
+        Format single item as [NBA:id:title:KEY=VALUE:KEY=VALUE]
+
+        Args:
+            compressed_item: Dict returned by encode_item()
+
+        Returns:
+            Token string like "[NBA:NBA-001:BILLING_ISSUE_RESOLUTION:CATEGORY=BILLING:PRIORITY=HIGH]"
+        """
+        parts = []
+
+        # Separate simple fields (id, title, name) from complex fields
+        simple_fields = []
+        complex_fields = []
+
+        for key, value in compressed_item.items():
+            key_lower = key.lower()
+            formatted_value = self._format_value(value)
+
+            # Simple fields: id, title, name, type - no key prefix
+            if key_lower in ["id", "title", "name", "type", "article_id", "product_id"]:
+                simple_fields.append((key_lower, formatted_value))
+            else:
+                # Complex fields: everything else - with KEY=VALUE format
+                complex_fields.append((key.upper(), formatted_value))
+
+        # Sort simple fields by importance (id first, then title/name)
+        field_order = ["id", "article_id", "product_id", "title", "name", "type"]
+        simple_fields.sort(
+            key=lambda x: field_order.index(x[0]) if x[0] in field_order else 999
+        )
+
+        # Add simple fields (no key prefix)
+        for _, value in simple_fields:
+            parts.append(value)
+
+        # Add complex fields (with KEY=VALUE)
+        for key, value in complex_fields:
+            # Skip empty values
+            if value and value != "":
+                parts.append(f"{value}")
+
+        # Wrap everything in [NBA:...] brackets
+        return f"[{f'{self.delimiter}'.join(parts)}]"
+
+    @staticmethod
+    def _formated_keys(compressed_item: dict[str, Any]):
+        return compressed_item.keys()
+
+    def _format_value(self, value: Any) -> str:
+        """
+        Format a value for token output
+
+        Args:
+            value: Any value from compressed item
+
+        Returns:
+            Formatted string
+        """
+        if isinstance(value, list):
+            # Join list items with +
+            return "+".join([str(v).replace(" ", "_") for v in value])
+
+        if isinstance(value, dict):
+            # Nested dict as key=value pairs
+            return "+".join([f"{v}" for k, v in value.items()])
+
+        if isinstance(value, str):
+            # Clean string - remove special chars, convert to uppercase
+            cleaned = value.replace(" ", "_").replace(":", "").replace("=", "")
+            return cleaned.upper()
+
+        # Numbers, bools, etc
+        return str(value)
+
+    def _should_include_field(self, key: str, value: Any) -> bool:
+        """
+        Decide if a field should be included (your diagram's decision logic)
+
+        This implements both Blue and Orange approaches
+        """
+        if self._config.excluded_fields and key in self._config.excluded_fields:
+            return False
+
+        if self._config.required_fields and key in self._config.required_fields:
+            return True
+
+        if self._config.field_importance and key in self._config.field_importance:
+            return (
+                self._config.field_importance[key] >= self._config.importance_threshold
+            )
+
+        if self._config.auto_detect:
+            importance = self._detect_field_importance(key, value)
+            return importance.value >= self._config.importance_threshold
+        return True
+
+    def _detect_field_importance(self, key: str, value: Any) -> FieldImportance:
+        """
+        Automatically detect how important a field is (Orange approach)
+
+        This is the "intelligent" system that learns what's important
+        """
+        key_lower = key.lower()
+
+        for pattern, importance in self._default_importance.items():
+            if pattern in key_lower:
+                return importance
+
+        if key_lower.startswith("internal_") or key_lower.startswith("_"):
+            return FieldImportance.LOW
+
+        if key_lower.endswith("_at") or key_lower.endswith("_date"):
+            return FieldImportance.NEVER
+
+        if value is None or value == "":
+            return FieldImportance.NEVER
+
+        if isinstance(value, str):
+            if len(value) > 500:
+                return FieldImportance.MEDIUM
+            if len(value) < 3:
+                return FieldImportance.LOW
+        return FieldImportance.MEDIUM

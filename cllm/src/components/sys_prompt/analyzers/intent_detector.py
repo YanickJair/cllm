@@ -3,7 +3,7 @@ from typing import Optional
 from spacy import Language
 
 from src.core import Intent
-from src.core.vocabulary import Vocabulary
+from src.utils.vocabulary import Vocabulary
 
 
 class IntentDetector:
@@ -40,12 +40,16 @@ class IntentDetector:
         # These are high-confidence and should override verb matching
         imperative_result = self.vocab.detect_imperative_pattern(text)
         if imperative_result:
-            req_token, _ = imperative_result  # We only need REQ here, target handled elsewhere
-            intents.append(Intent(
-                token=req_token,
-                confidence=1.0,  # Highest confidence
-                trigger_word=text.split()[0].lower()  # First word is the trigger
-            ))
+            req_token, _ = (
+                imperative_result  # We only need REQ here, target handled elsewhere
+            )
+            intents.append(
+                Intent(
+                    token=req_token,
+                    confidence=1.0,  # Highest confidence
+                    trigger_word=text.split()[0].lower(),  # First word is the trigger
+                )
+            )
             seen.add(req_token)
 
             # IMPORTANT: For imperative patterns, often this is THE intent
@@ -61,11 +65,13 @@ class IntentDetector:
                     context=context,
                 )
                 if req_token and req_token not in seen:
-                    intents.append(Intent(
-                        token=req_token,
-                        confidence=0.95,  # High confidence for verb matches
-                        trigger_word=token.text
-                    ))
+                    intents.append(
+                        Intent(
+                            token=req_token,
+                            confidence=0.95,  # High confidence for verb matches
+                            trigger_word=token.text,
+                        )
+                    )
                     seen.add(req_token)
 
         # Strategy 2: Look for multi-word expressions
@@ -76,11 +82,13 @@ class IntentDetector:
                 if len(synonym.split()) > 1 and synonym in text_lower:
                     # Check if not already detected
                     if token not in seen:
-                        intents.append(Intent(
-                            token=token,
-                            confidence=0.90,  # Medium-high confidence
-                            trigger_word=synonym
-                        ))
+                        intents.append(
+                            Intent(
+                                token=token,
+                                confidence=0.90,  # Medium-high confidence
+                                trigger_word=synonym,
+                            )
+                        )
                         seen.add(token)
 
         # If NO intents detected so far, check if it's a question
@@ -88,11 +96,13 @@ class IntentDetector:
         if not intents:
             question_req = self.vocab.get_question_req(text)
             if question_req:
-                intents.append(Intent(
-                    token=question_req,
-                    confidence=0.85,  # Medium confidence (fallback)
-                    trigger_word="question_pattern"
-                ))
+                intents.append(
+                    Intent(
+                        token=question_req,
+                        confidence=0.85,  # Medium confidence (fallback)
+                        trigger_word="question_pattern",
+                    )
+                )
                 seen.add(question_req)
 
         for intent in intents:
@@ -103,7 +113,10 @@ class IntentDetector:
         # Remove duplicates, keep the highest confidence
         unique_intents: dict[str, Intent] = {}
         for intent in intents:
-            if intent.token not in unique_intents or intent.confidence > unique_intents[intent.token].confidence:
+            if (
+                intent.token not in unique_intents
+                or intent.confidence > unique_intents[intent.token].confidence
+            ):
                 unique_intents[intent.token] = intent
 
         # Return sorted by confidence (highest first)
@@ -125,42 +138,42 @@ class IntentDetector:
     def _detect_req_modifier(text: str, req_token: str) -> Optional[str]:
         """
         Detect modifiers for REQ tokens
-        
+
         Examples:
             "Write a brief summary" + SUMMARIZE → BRIEF
             "Explain in detail" + EXPLAIN → DETAILED
             "Quick analysis" + ANALYZE → QUICK
-        
+
         Returns:
             Modifier string or None
         """
         text_lower = text.lower()
-        
+
         # Modifier patterns by REQ type
         modifiers = {
-            'SUMMARIZE': {
-                'BRIEF': ['brief', 'short', 'quick', 'concise'],
-                'DETAILED': ['detailed', 'comprehensive', 'thorough'],
+            "SUMMARIZE": {
+                "BRIEF": ["brief", "short", "quick", "concise"],
+                "DETAILED": ["detailed", "comprehensive", "thorough"],
             },
-            'EXPLAIN': {
-                'SIMPLE': ['simple', 'basic', 'easy'],
-                'TECHNICAL': ['technical', 'detailed', 'in-depth'],
-                'DEEP': ['deep', 'thorough', 'comprehensive'],
+            "EXPLAIN": {
+                "SIMPLE": ["simple", "basic", "easy"],
+                "TECHNICAL": ["technical", "detailed", "in-depth"],
+                "DEEP": ["deep", "thorough", "comprehensive"],
             },
-            'ANALYZE': {
-                'DEEP': ['deep', 'thorough', 'comprehensive', 'detailed'],
-                'QUICK': ['quick', 'brief', 'rapid', 'fast'],
-                'SURFACE': ['surface', 'high-level', 'overview'],
+            "ANALYZE": {
+                "DEEP": ["deep", "thorough", "comprehensive", "detailed"],
+                "QUICK": ["quick", "brief", "rapid", "fast"],
+                "SURFACE": ["surface", "high-level", "overview"],
             },
-            'GENERATE': {
-                'CREATIVE': ['creative', 'original', 'unique'],
-                'FORMAL': ['formal', 'professional'],
+            "GENERATE": {
+                "CREATIVE": ["creative", "original", "unique"],
+                "FORMAL": ["formal", "professional"],
             },
         }
-        
+
         if req_token in modifiers:
             for modifier, keywords in modifiers[req_token].items():
                 if any(keyword in text_lower for keyword in keywords):
                     return modifier
-        
+
         return None

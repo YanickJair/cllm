@@ -9,10 +9,10 @@ from src.components.transcript.encoder import TranscriptEncoder
 
 
 CX_TRANSCRIPTS = [
-{
-    "id": "call_001",
-    "issue": "INTERNET_OUTAGE",
-    "transcript": """
+    {
+        "id": "call_001",
+        "issue": "INTERNET_OUTAGE",
+        "transcript": """
 Agent: Good morning, thank you for calling TechCorp support. My name is Sarah. How can I help you today?
 
 Customer: Hi Sarah, I’ve been having issues with my internet connection for the past three days. It keeps dropping every few hours, and I work from home so this is really frustrating.
@@ -36,13 +36,12 @@ Customer: Great. Will I need to reboot anything?
 Agent: Once service stabilizes, just unplug your modem for 30 seconds and plug it back in. That will refresh your connection.
 
 Customer: Perfect. Thanks for the help.
-"""
-},
-
-{
-    "id": "call_002",
-    "issue": "BILLING_DISPUTE",
-    "transcript": """
+""",
+    },
+    {
+        "id": "call_002",
+        "issue": "BILLING_DISPUTE",
+        "transcript": """
 Agent: Hello, this is Daniel from MobileWave billing. How can I help you today?
 
 Customer: Hi Daniel, I was charged twice for my plan this month. I only have one line, so I’m not sure why.
@@ -62,13 +61,12 @@ Customer: Wow, thanks so much.
 Agent: My pleasure. Anything else I can assist with today?
 
 Customer: Nope, that’s all. Appreciate it!
-"""
-},
-
-{
-    "id": "call_003",
-    "issue": "DELIVERY_DELAY",
-    "transcript": """
+""",
+    },
+    {
+        "id": "call_003",
+        "issue": "DELIVERY_DELAY",
+        "transcript": """
 Agent: Thanks for contacting ShopEase. This is Monica. How can I help?
 
 Customer: I ordered a blender last week and it still hasn’t arrived. The tracking hasn’t updated since Friday.
@@ -82,13 +80,12 @@ Agent: Thanks. It looks like the package is delayed at your local distribution c
 Customer: Okay, that’s fine. Just wanted to make sure it wasn’t lost.
 
 Agent: Not at all — I’ll email you tracking updates. You should get it soon.
-"""
-},
-
-{
-    "id": "call_004",
-    "issue": "LOGIN_FAILURE",
-    "transcript": """
+""",
+    },
+    {
+        "id": "call_004",
+        "issue": "LOGIN_FAILURE",
+        "transcript": """
 Agent: Hi, this is Jason from CloudSync support. What seems to be the issue today?
 
 Customer: I can’t log into my account. It says “password incorrect” but I didn’t change it.
@@ -104,13 +101,12 @@ Customer: Got it. Clicking now… okay, password updated.
 Agent: Great! Try logging in again.
 
 Customer: It works now. Thanks!
-"""
-},
-
-{
-    "id": "call_005",
-    "issue": "PRODUCT_DEFECT",
-    "transcript": """
+""",
+    },
+    {
+        "id": "call_005",
+        "issue": "PRODUCT_DEFECT",
+        "transcript": """
 Agent: Hello, this is Anita from HomePlus warranty. How can I help you today?
 
 Customer: Hi, my air purifier stopped working yesterday. The power light turns on, but no air is coming out.
@@ -124,14 +120,13 @@ Agent: Perfect. You’re still within warranty. Let’s try one quick thing: can
 Customer: Okay... still not working.
 
 Agent: Alright, we’ll replace it. You’ll receive a prepaid return label within 24 hours.
-"""
-},
-
-# === LONG TRANSCRIPT (5-minute call) ===
-{
-    "id": "call_006",
-    "issue": "INTERNET_OUTAGE",
-    "transcript": """
+""",
+    },
+    # === LONG TRANSCRIPT (5-minute call) ===
+    {
+        "id": "call_006",
+        "issue": "INTERNET_OUTAGE",
+        "transcript": """
 Agent: Hi, you’ve reached TechLine Fiber Support. My name is Michael. How can I help?
 
 Customer: Hey, Michael. My internet’s been cutting out randomly for the last week. It disconnects, then comes back after a few minutes. It’s driving me crazy.
@@ -161,13 +156,12 @@ Agent: It’s best if you are, just in case they need indoor access. Also, I rec
 Customer: Got it. Thanks for the thorough explanation.
 
 Agent: You’re very welcome. Once fixed, you’ll get a text confirmation and a feedback survey.
-"""
-},
-
-{
-    "id": "call_007",
-    "issue": "ACCOUNT_HACKED",
-    "transcript": """
+""",
+    },
+    {
+        "id": "call_007",
+        "issue": "ACCOUNT_HACKED",
+        "transcript": """
 Agent: Hello, thank you for calling GameHub Security. My name is Leo. How can I assist you?
 
 Customer: Hi Leo, I think my account got hacked. I can’t log in, and I got an email saying my password was changed.
@@ -185,14 +179,13 @@ Agent: Yes — I see one suspicious purchase for $49.99. I’ve flagged it for r
 Customer: Awesome. Really appreciate the help.
 
 Agent: My pleasure. Security first!
-"""
-},
-
-# === LONG TRANSCRIPT (5-minute call) ===
-{
-    "id": "call_008",
-    "issue": "DELIVERY_DELAY",
-    "transcript": """
+""",
+    },
+    # === LONG TRANSCRIPT (5-minute call) ===
+    {
+        "id": "call_008",
+        "issue": "DELIVERY_DELAY",
+        "transcript": """
 Agent: Hi, this is Maria from ParcelLink. How may I help?
 
 Customer: Hi Maria, my package was supposed to arrive three days ago. Tracking says “out for delivery,” but nothing’s come.
@@ -216,14 +209,13 @@ Customer: Okay, thanks. I was worried it was lost.
 Agent: Not at all. I’ve also added a note for the courier to call you before delivery.
 
 Customer: Appreciate that. You’ve been really helpful.
-"""
-},
-
-# === LONG TRANSCRIPT (5-minute call) ===
-{
-    "id": "call_009",
-    "issue": "BILLING_DISPUTE",
-    "transcript": """
+""",
+    },
+    # === LONG TRANSCRIPT (5-minute call) ===
+    {
+        "id": "call_009",
+        "issue": "BILLING_DISPUTE",
+        "transcript": """
 Agent: Hi, thank you for contacting Streamly billing. This is Raj. How can I assist?
 
 Customer: Hi Raj, I was just checking my card statement and saw two charges for my monthly subscription — one for $14.99 and another for $16.99. What’s going on?
@@ -247,13 +239,12 @@ Customer: You’ve been really clear — thank you.
 Agent: My pleasure. Anything else I can help with today?
 
 Customer: Nope, that’s all!
-"""
-},
-
-{
-    "id": "call_010",
-    "issue": "CLAIM_STATUS",
-    "transcript": """
+""",
+    },
+    {
+        "id": "call_010",
+        "issue": "CLAIM_STATUS",
+        "transcript": """
 Agent: Good afternoon, you’ve reached SafeSure Insurance. My name is Priya. How can I help?
 
 Customer: Hi Priya, I filed a car accident claim two weeks ago and haven’t heard back.
@@ -265,13 +256,15 @@ Customer: SS-CLA-89210.
 Agent: Thank you. I see it’s been reviewed and approved for payout. The funds should reach your account within 3 business days.
 
 Customer: That’s a relief! Thanks.
-"""
-}
+""",
+    },
 ]
 
+
 def dump_to_json():
-    with open("transcripts.json", "w", encoding='utf-8') as file:
+    with open("transcripts.json", "w", encoding="utf-8") as file:
         json.dump(CX_TRANSCRIPTS, file, ensure_ascii=False)
+
 
 def show_comparison(transcript: str, metadata: dict):
     """Show before/after comparison"""
@@ -281,6 +274,7 @@ def show_comparison(transcript: str, metadata: dict):
     print(f"\nLength: {len(transcript)} characters")
 
     import spacy
+
     print("\nLoading spaCy model...")
     nlp = spacy.load("en_core_web_sm")
 
@@ -304,17 +298,21 @@ def show_comparison(transcript: str, metadata: dict):
     original_chars = len(transcript)
     new_chars = len(new_result)
 
-    print(f"\nCharacter count:")
+    print("\nCharacter count:")
     print(f"  Original:  {original_chars:>6} chars")
-    print(f"  Compressed:       {new_chars:>6} chars ({(1 - new_chars / original_chars) * 100:>5.1f}% compression)")
+    print(
+        f"  Compressed:       {new_chars:>6} chars ({(1 - new_chars / original_chars) * 100:>5.1f}% compression)"
+    )
 
     # Token count estimate
     original_tokens = len(transcript.split())
     new_tokens = len(new_result.split())
 
-    print(f"\nToken count (approximate):")
+    print("\nToken count (approximate):")
     print(f"  Original:  {original_tokens:>6} tokens")
-    print(f"  Compressed:       {new_tokens:>6} tokens ({(1 - new_tokens / original_tokens) * 100:>5.1f}% compression)")
+    print(
+        f"  Compressed:       {new_tokens:>6} tokens ({(1 - new_tokens / original_tokens) * 100:>5.1f}% compression)"
+    )
 
     print(f"🗜️  Compression Ratio: {(1 - new_chars / original_chars) * 100:.1f}%")
 
@@ -322,7 +320,7 @@ def show_comparison(transcript: str, metadata: dict):
     return analysis.dict(), new_result
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     with open("./data/raw/transcripts_dataset.json", "r") as f:
         transcripts = json.load(f)
 
@@ -331,11 +329,15 @@ if __name__ == '__main__':
     # analysis, new_result = show_comparison(test)
     for transcript in transcripts:
         if transcript["metadata"]["channel"] == "voice":
-            analysis, new_result = show_comparison(transcript.get("transcript"), metadata=transcript.get("metadata"))
-            result.append({
-                **analysis,
-                "compressed": new_result,
-                "original": transcript.get("transcript")
-            })
-    with open("transcript_analysis.json", "w", encoding='utf-8') as f:
+            analysis, new_result = show_comparison(
+                transcript.get("transcript"), metadata=transcript.get("metadata")
+            )
+            result.append(
+                {
+                    **analysis,
+                    "compressed": new_result,
+                    "original": transcript.get("transcript"),
+                }
+            )
+    with open("transcript_analysis.json", "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False)
