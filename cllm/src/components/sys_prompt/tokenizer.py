@@ -1,10 +1,10 @@
-# CLLM tokenizer
 from typing import Optional
-from src.core import Intent, Target, ExtractionField, Context, OutputFormat
+from ._schemas import Intent, Target, ExtractionField, Context, OutputFormat
 
 
 class CLLMTokenizer:
     """Builds final compressed token sequence"""
+
     @staticmethod
     def build_sequence(
         intents: list[Intent],
@@ -15,18 +15,14 @@ class CLLMTokenizer:
         quantifier: Optional[tuple[str, int]] = None,
         specifications=None,
     ) -> str:
-        """
-        Build compressed CLLM sequence
-        
-        v3 FIX: Skip REQ:EXTRACT when EXTRACT attribute exists (redundant)
-        """
+        """Build compressed CLLM sequence"""
         tokens = []
-        
+
         # Add REQ tokens
         for intent in intents:
             if intent.token == "EXTRACT" and extractions and extractions.fields:
                 continue
-            
+
             # Build REQ token with modifiers
             if intent.modifier:
                 req_str = f"[REQ:{intent.token}:{intent.modifier}]"
@@ -60,5 +56,5 @@ class CLLMTokenizer:
                 for key, value in output_format.attributes.items():
                     out_str = out_str[:-1] + f":{key}={value}]"
             tokens.append(out_str)
-        
+
         return " ".join(tokens)

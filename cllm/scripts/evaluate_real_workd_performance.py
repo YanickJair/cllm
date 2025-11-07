@@ -15,8 +15,14 @@ from src.core.encoder import CLLMEncoder
 class RealWorldTestCase:
     """Represents a real-world use case"""
 
-    def __init__(self, name: str, category: str, prompt: str,
-                 expected_tokens: List[str], context: str = ""):
+    def __init__(
+        self,
+        name: str,
+        category: str,
+        prompt: str,
+        expected_tokens: List[str],
+        context: str = "",
+    ):
         self.name = name
         self.category = category
         self.prompt = prompt
@@ -42,115 +48,154 @@ class RealWorldEvaluator:
         cases = []
 
         # === CUSTOMER SUPPORT SCENARIOS ===
-        cases.append(RealWorldTestCase(
-            name="Support Ticket Analysis",
-            category="customer_support",
-            prompt="""Analyze this customer support ticket and extract the main issue, 
+        cases.append(
+            RealWorldTestCase(
+                name="Support Ticket Analysis",
+                category="customer_support",
+                prompt="""Analyze this customer support ticket and extract the main issue, 
             sentiment, and urgency level. Customer: "I've been trying to log in for 2 hours 
             and keep getting error 403. This is blocking my work!""",
-        expected_tokens = ["REQ:ANALYZE", "TARGET:TICKET", "EXTRACT:ISSUE", "EXTRACT:SENTIMENT"]
-        ))
+                expected_tokens=[
+                    "REQ:ANALYZE",
+                    "TARGET:TICKET",
+                    "EXTRACT:ISSUE",
+                    "EXTRACT:SENTIMENT",
+                ],
+            )
+        )
 
-        cases.append(RealWorldTestCase(
-            name="Support Response Generation",
-            category="customer_support",
-            prompt="""Generate a professional response to this customer complaint: 
+        cases.append(
+            RealWorldTestCase(
+                name="Support Response Generation",
+                category="customer_support",
+                prompt="""Generate a professional response to this customer complaint: 
             "Your product stopped working after the update." Include an apology and 
             troubleshooting steps.""",
-            expected_tokens=["REQ:GENERATE", "TARGET:RESPONSE"]
-        ))
+                expected_tokens=["REQ:GENERATE", "TARGET:RESPONSE"],
+            )
+        )
 
-        cases.append(RealWorldTestCase(
-            name="Ticket Routing",
-            category="customer_support",
-            prompt="""Classify this support ticket and route it to the appropriate team: 
+        cases.append(
+            RealWorldTestCase(
+                name="Ticket Routing",
+                category="customer_support",
+                prompt="""Classify this support ticket and route it to the appropriate team: 
             "Cannot connect to database, getting timeout errors." Categories: Technical, 
             Billing, Account, General.""",
-            expected_tokens=["REQ:CLASSIFY", "TARGET:TICKET"]
-        ))
+                expected_tokens=["REQ:CLASSIFY", "TARGET:TICKET"],
+            )
+        )
 
         # === CODE ANALYSIS SCENARIOS ===
-        cases.append(RealWorldTestCase(
-            name="Bug Detection",
-            category="code_analysis",
-            prompt="""Review this Python code for bugs and security issues:
+        cases.append(
+            RealWorldTestCase(
+                name="Bug Detection",
+                category="code_analysis",
+                prompt="""Review this Python code for bugs and security issues:
             def process_user_input(data):
                 return eval(data)""",
-            expected_tokens=["REQ:ANALYZE", "TARGET:CODE", "EXTRACT:BUGS", "EXTRACT:SECURITY"]
-        ))
+                expected_tokens=[
+                    "REQ:ANALYZE",
+                    "TARGET:CODE",
+                    "EXTRACT:BUGS",
+                    "EXTRACT:SECURITY",
+                ],
+            )
+        )
 
-        cases.append(RealWorldTestCase(
-            name="Code Optimization",
-            category="code_analysis",
-            prompt="""Optimize this code for better performance:
+        cases.append(
+            RealWorldTestCase(
+                name="Code Optimization",
+                category="code_analysis",
+                prompt="""Optimize this code for better performance:
             for i in range(len(arr)):
                 for j in range(len(arr)):
                     if arr[i] > arr[j]:
                         temp = arr[i]
                         arr[i] = arr[j]
                         arr[j] = temp""",
-            expected_tokens=["REQ:OPTIMIZE", "TARGET:CODE"]
-        ))
+                expected_tokens=["REQ:OPTIMIZE", "TARGET:CODE"],
+            )
+        )
 
-        cases.append(RealWorldTestCase(
-            name="Code Documentation",
-            category="code_analysis",
-            prompt="""Generate documentation for this function explaining what it does, 
+        cases.append(
+            RealWorldTestCase(
+                name="Code Documentation",
+                category="code_analysis",
+                prompt="""Generate documentation for this function explaining what it does, 
             parameters, and return value.""",
-            expected_tokens=["REQ:GENERATE", "TARGET:DOCUMENT"]
-        ))
+                expected_tokens=["REQ:GENERATE", "TARGET:DOCUMENT"],
+            )
+        )
 
         # === DATA ANALYSIS SCENARIOS ===
-        cases.append(RealWorldTestCase(
-            name="Data Extraction",
-            category="data_analysis",
-            prompt="""Extract all email addresses, phone numbers, and dates from this text: 
+        cases.append(
+            RealWorldTestCase(
+                name="Data Extraction",
+                category="data_analysis",
+                prompt="""Extract all email addresses, phone numbers, and dates from this text: 
             Contact John at john@example.com or 555-1234. Meeting scheduled for 2024-03-15.""",
-            expected_tokens=["REQ:EXTRACT", "EXTRACT:EMAILS", "EXTRACT:PHONES", "EXTRACT:DATES"]
-        ))
+                expected_tokens=[
+                    "REQ:EXTRACT",
+                    "EXTRACT:EMAILS",
+                    "EXTRACT:PHONES",
+                    "EXTRACT:DATES",
+                ],
+            )
+        )
 
-        cases.append(RealWorldTestCase(
-            name="Data Transformation",
-            category="data_analysis",
-            prompt="""Convert this CSV data to JSON format: 
+        cases.append(
+            RealWorldTestCase(
+                name="Data Transformation",
+                category="data_analysis",
+                prompt="""Convert this CSV data to JSON format: 
             Name,Age,City
             Alice,25,NYC
             Bob,30,LA""",
-            expected_tokens=["REQ:TRANSFORM", "TARGET:DATA", "OUT:JSON"]
-        ))
+                expected_tokens=["REQ:TRANSFORM", "TARGET:DATA", "OUT:JSON"],
+            )
+        )
 
-        cases.append(RealWorldTestCase(
-            name="Data Aggregation",
-            category="data_analysis",
-            prompt="""Analyze this sales data and calculate total revenue by region, 
+        cases.append(
+            RealWorldTestCase(
+                name="Data Aggregation",
+                category="data_analysis",
+                prompt="""Analyze this sales data and calculate total revenue by region, 
             average order value, and identify top 3 products.""",
-            expected_tokens=["REQ:ANALYZE", "TARGET:DATA"]
-        ))
+                expected_tokens=["REQ:ANALYZE", "TARGET:DATA"],
+            )
+        )
 
         # === CONTENT GENERATION SCENARIOS ===
-        cases.append(RealWorldTestCase(
-            name="Email Generation",
-            category="content_generation",
-            prompt="""Write a professional email to a client explaining a project delay. 
+        cases.append(
+            RealWorldTestCase(
+                name="Email Generation",
+                category="content_generation",
+                prompt="""Write a professional email to a client explaining a project delay. 
             Keep tone apologetic but confident. Include next steps.""",
-            expected_tokens=["REQ:GENERATE", "TARGET:EMAIL"]
-        ))
+                expected_tokens=["REQ:GENERATE", "TARGET:EMAIL"],
+            )
+        )
 
-        cases.append(RealWorldTestCase(
-            name="Report Summary",
-            category="content_generation",
-            prompt="""Summarize this quarterly report into 3 key bullet points highlighting 
+        cases.append(
+            RealWorldTestCase(
+                name="Report Summary",
+                category="content_generation",
+                prompt="""Summarize this quarterly report into 3 key bullet points highlighting 
             main achievements and challenges.""",
-            expected_tokens=["REQ:SUMMARIZE", "TARGET:REPORT", "OUT:LIST"]
-        ))
+                expected_tokens=["REQ:SUMMARIZE", "TARGET:REPORT", "OUT:LIST"],
+            )
+        )
 
-        cases.append(RealWorldTestCase(
-            name="Documentation Writing",
-            category="content_generation",
-            prompt="""Create API documentation for a REST endpoint that accepts POST requests 
+        cases.append(
+            RealWorldTestCase(
+                name="Documentation Writing",
+                category="content_generation",
+                prompt="""Create API documentation for a REST endpoint that accepts POST requests 
             with user data and returns a success/error response.""",
-            expected_tokens=["REQ:GENERATE", "TARGET:DOCUMENT"]
-        ))
+                expected_tokens=["REQ:GENERATE", "TARGET:DOCUMENT"],
+            )
+        )
 
         return cases
 
@@ -163,36 +208,38 @@ class RealWorldEvaluator:
         compression_time = time.time() - start_time
 
         # Extract tokens from compressed output
-        actual_tokens = re.findall(r'\[([^\]]+)\]', compressed)
+        actual_tokens = re.findall(r"\[([^\]]+)\]", compressed)
 
         # Check if expected tokens are present
         token_matches = {}
         for expected in test_case.expected_tokens:
             # Check if token (or its base) is in actual tokens
-            found = any(expected.split(':')[0] in token for token in actual_tokens)
+            found = any(expected.split(":")[0] in token for token in actual_tokens)
             token_matches[expected] = found
 
         # Calculate metrics
-        token_coverage = sum(token_matches.values()) / len(token_matches) if token_matches else 0
+        token_coverage = (
+            sum(token_matches.values()) / len(token_matches) if token_matches else 0
+        )
 
         original_length = len(test_case.prompt)
         compressed_length = len(compressed)
         compression_ratio = (1 - compressed_length / original_length) * 100
 
         result = {
-            'test_case': test_case.name,
-            'category': test_case.category,
-            'original_prompt': test_case.prompt,
-            'compressed': compressed,
-            'original_length': original_length,
-            'compressed_length': compressed_length,
-            'compression_ratio': compression_ratio,
-            'compression_time': compression_time,
-            'expected_tokens': test_case.expected_tokens,
-            'actual_tokens': actual_tokens,
-            'token_matches': token_matches,
-            'token_coverage': token_coverage,
-            'success': token_coverage >= 0.75  # 75% token coverage = success
+            "test_case": test_case.name,
+            "category": test_case.category,
+            "original_prompt": test_case.prompt,
+            "compressed": compressed,
+            "original_length": original_length,
+            "compressed_length": compressed_length,
+            "compression_ratio": compression_ratio,
+            "compression_time": compression_time,
+            "expected_tokens": test_case.expected_tokens,
+            "actual_tokens": actual_tokens,
+            "token_matches": token_matches,
+            "token_coverage": token_coverage,
+            "success": token_coverage >= 0.75,  # 75% token coverage = success
         }
 
         self.results.append(result)
@@ -211,11 +258,13 @@ class RealWorldEvaluator:
         for test_case in self.test_cases:
             result = self.evaluate_test_case(test_case)
 
-            status = "✅" if result['success'] else "❌"
+            status = "✅" if result["success"] else "❌"
             print(f"{status} {result['category']:20s} | {result['test_case']}")
-            print(f"   Compression: {result['compression_ratio']:.1f}% | "
-                  f"Token Coverage: {result['token_coverage']:.0%} | "
-                  f"Time: {result['compression_time'] * 1000:.2f}ms")
+            print(
+                f"   Compression: {result['compression_ratio']:.1f}% | "
+                f"Token Coverage: {result['token_coverage']:.0%} | "
+                f"Time: {result['compression_time'] * 1000:.2f}ms"
+            )
 
         return self.calculate_metrics()
 
@@ -226,36 +275,42 @@ class RealWorldEvaluator:
 
         # Overall metrics
         metrics = {
-            'total_test_cases': total,
-            'success_rate': sum(1 for r in self.results if r['success']) / total,
-            'avg_compression_ratio': sum(r['compression_ratio'] for r in self.results) / total,
-            'avg_token_coverage': sum(r['token_coverage'] for r in self.results) / total,
-            'avg_compression_time': sum(r['compression_time'] for r in self.results) / total,
+            "total_test_cases": total,
+            "success_rate": sum(1 for r in self.results if r["success"]) / total,
+            "avg_compression_ratio": sum(r["compression_ratio"] for r in self.results)
+            / total,
+            "avg_token_coverage": sum(r["token_coverage"] for r in self.results)
+            / total,
+            "avg_compression_time": sum(r["compression_time"] for r in self.results)
+            / total,
         }
 
         # Per-category metrics
-        categories = set(r['category'] for r in self.results)
-        metrics['category_performance'] = {}
+        categories = set(r["category"] for r in self.results)
+        metrics["category_performance"] = {}
 
         for category in categories:
-            category_results = [r for r in self.results if r['category'] == category]
-            metrics['category_performance'][category] = {
-                'total': len(category_results),
-                'success_rate': sum(1 for r in category_results if r['success']) / len(category_results),
-                'avg_compression': sum(r['compression_ratio'] for r in category_results) / len(category_results),
-                'avg_coverage': sum(r['token_coverage'] for r in category_results) / len(category_results),
+            category_results = [r for r in self.results if r["category"] == category]
+            metrics["category_performance"][category] = {
+                "total": len(category_results),
+                "success_rate": sum(1 for r in category_results if r["success"])
+                / len(category_results),
+                "avg_compression": sum(r["compression_ratio"] for r in category_results)
+                / len(category_results),
+                "avg_coverage": sum(r["token_coverage"] for r in category_results)
+                / len(category_results),
             }
 
         # Find problem cases
-        metrics['failed_cases'] = [
+        metrics["failed_cases"] = [
             {
-                'name': r['test_case'],
-                'category': r['category'],
-                'token_coverage': r['token_coverage'],
-                'compressed': r['compressed']
+                "name": r["test_case"],
+                "category": r["category"],
+                "token_coverage": r["token_coverage"],
+                "compressed": r["compressed"],
             }
             for r in self.results
-            if not r['success']
+            if not r["success"]
         ]
 
         return metrics
@@ -271,29 +326,35 @@ class RealWorldEvaluator:
         print(f"Success Rate:            {metrics['success_rate']:.1%}")
         print(f"Avg Compression Ratio:   {metrics['avg_compression_ratio']:.1f}%")
         print(f"Avg Token Coverage:      {metrics['avg_token_coverage']:.1%}")
-        print(f"Avg Compression Time:    {metrics['avg_compression_time'] * 1000:.2f}ms")
+        print(
+            f"Avg Compression Time:    {metrics['avg_compression_time'] * 1000:.2f}ms"
+        )
 
         # Category breakdown
-        print(f"\n📋 Performance by Category:")
+        print("\n📋 Performance by Category:")
         print("-" * 80)
-        print(f"{'Category':<25} {'Success Rate':<15} {'Avg Compression':<18} {'Coverage'}")
+        print(
+            f"{'Category':<25} {'Success Rate':<15} {'Avg Compression':<18} {'Coverage'}"
+        )
         print("-" * 80)
 
-        for category, stats in metrics['category_performance'].items():
-            print(f"{category:<25} {stats['success_rate']:<14.1%} "
-                  f"{stats['avg_compression']:<17.1f}% {stats['avg_coverage']:.1%}")
+        for category, stats in metrics["category_performance"].items():
+            print(
+                f"{category:<25} {stats['success_rate']:<14.1%} "
+                f"{stats['avg_compression']:<17.1f}% {stats['avg_coverage']:.1%}"
+            )
 
         # Show failed cases
-        if metrics['failed_cases']:
+        if metrics["failed_cases"]:
             print(f"\n⚠️  Failed Cases ({len(metrics['failed_cases'])}):")
-            for case in metrics['failed_cases']:
+            for case in metrics["failed_cases"]:
                 print(f"\n  • {case['name']} ({case['category']})")
                 print(f"    Token Coverage: {case['token_coverage']:.0%}")
                 print(f"    Compressed: {case['compressed']}")
 
         # Overall verdict
         print("\n" + "=" * 80)
-        success_rate = metrics['success_rate']
+        success_rate = metrics["success_rate"]
         if success_rate >= 0.95:
             print("✅ EXCELLENT: Ready for production use (≥95% success)")
         elif success_rate >= 0.85:
@@ -307,7 +368,7 @@ class RealWorldEvaluator:
 
     def export_results(self, output_file: str = "real_world_results.json"):
         """Export detailed results"""
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             json.dump(self.results, f, indent=2)
         print(f"💾 Detailed results saved to {output_file}\n")
 
@@ -317,11 +378,10 @@ def main():
 
     # Import encoder
     import sys
-    from pathlib import Path
+
     sys.path.insert(0, str(Path(__file__).parent))
 
     from src.core.encoder import CLLMEncoder
-    import spacy
 
     # Initialize encoder
     print("Initializing CLLM Encoder...\n")

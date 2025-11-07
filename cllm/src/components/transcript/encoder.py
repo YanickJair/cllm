@@ -1,8 +1,17 @@
 # transcript_encoder.py - NEW file
 from typing import Optional
+from spacy import Language
 
-from . import Resolution, SentimentTrajectory, CallInfo, CustomerProfile, Issue, Action, \
-    TranscriptAnalysis, Turn
+from . import (
+    Resolution,
+    SentimentTrajectory,
+    CallInfo,
+    CustomerProfile,
+    Issue,
+    Action,
+    TranscriptAnalysis,
+    Turn,
+)
 
 
 class TranscriptEncoder:
@@ -11,6 +20,8 @@ class TranscriptEncoder:
 
     Philosophy: Extends CLLMTokenizer format: [CALL:metadata][ISSUE:details][ACTION:details][RESOLUTION:details]
     """
+    def __init__(self, nlp: Language) -> None:
+        self._nlp = nlp
 
     def encode(self, analysis: TranscriptAnalysis, verbose: bool = False) -> str:
         """
@@ -80,7 +91,7 @@ class TranscriptEncoder:
         if verbose:
             print(f"Sentiment: {sentiment_token}")
 
-        return ' '.join(tokens)
+        return " ".join(tokens)
 
     def _encode_call_info(self, call: CallInfo) -> str:
         """
@@ -89,7 +100,7 @@ class TranscriptEncoder:
         Format: [CALL:TYPE:ATTR=VALUE:...]
         Example: [CALL:SUPPORT:AGENT=Sarah:DURATION=8m]
         """
-        parts = ['CALL', call.type]
+        parts = ["CALL", call.type]
 
         if call.agent:
             parts.append(f"AGENT={call.agent}")
@@ -111,7 +122,7 @@ class TranscriptEncoder:
         Format: [CUSTOMER:ATTR=VALUE:...]
         Example: [CUSTOMER:ACCOUNT=847-392-1045:TIER=PREMIUM:ADDRESS=123_Main_St]
         """
-        parts = ['CUSTOMER']
+        parts = ["CUSTOMER"]
 
         if customer.account:
             parts.append(f"ACCOUNT={customer.account}")
@@ -123,22 +134,22 @@ class TranscriptEncoder:
             parts.append(f"TENURE={customer.tenure}")
 
         # Add address if present
-        if customer.attributes and 'address' in customer.attributes:
+        if customer.attributes and "address" in customer.attributes:
             # Compress address: "123 Main Street" → "123_Main_St"
-            address = customer.attributes['address']
+            address = customer.attributes["address"]
             address_compressed = self._compress_address(address)
             parts.append(f"ADDRESS={address_compressed}")
 
         # Add organization if present
-        if customer.attributes and 'organization' in customer.attributes:
-            org = customer.attributes['organization']
+        if customer.attributes and "organization" in customer.attributes:
+            org = customer.attributes["organization"]
             # Compress organization name
-            org_compressed = org.replace(' ', '_')
+            org_compressed = org.replace(" ", "_")
             parts.append(f"ORG={org_compressed}")
 
         # Add location if present
-        if customer.attributes and 'location' in customer.attributes:
-            location = customer.attributes['location']
+        if customer.attributes and "location" in customer.attributes:
+            location = customer.attributes["location"]
             parts.append(f"LOCATION={location}")
 
         return f"[{':'.join(parts)}]"
@@ -161,13 +172,12 @@ class TranscriptEncoder:
 
         # Collect all identifiers from all turns
         identifiers: dict = {
-            'tracking_numbers': [],
-            'claim_numbers': [],
-            'product_models': [],
-            'order_numbers': [],
-            'ticket_numbers': [],
-            'case_numbers': []
-
+            "tracking_numbers": [],
+            "claim_numbers": [],
+            "product_models": [],
+            "order_numbers": [],
+            "ticket_numbers": [],
+            "case_numbers": [],
         }
 
         for turn in analysis.turns:
@@ -182,23 +192,23 @@ class TranscriptEncoder:
         # Build identifier token
         parts = []
 
-        if identifiers['tracking_numbers']:
+        if identifiers["tracking_numbers"]:
             # Join multiple with comma (rare but possible)
             parts.append(f"TRACKING={','.join(identifiers['tracking_numbers'])}")
 
-        if identifiers['claim_numbers']:
+        if identifiers["claim_numbers"]:
             parts.append(f"CLAIM={','.join(identifiers['claim_numbers'])}")
 
-        if identifiers['product_models']:
+        if identifiers["product_models"]:
             parts.append(f"PRODUCT={','.join(identifiers['product_models'])}")
 
-        if identifiers['order_numbers']:
+        if identifiers["order_numbers"]:
             parts.append(f"ORDER={','.join(identifiers['order_numbers'])}")
 
-        if identifiers['ticket_numbers']:
+        if identifiers["ticket_numbers"]:
             parts.append(f"TICKET={','.join(identifiers['ticket_numbers'])}")
 
-        if identifiers['case_numbers']:
+        if identifiers["case_numbers"]:
             parts.append(f"CASE={','.join(identifiers['case_numbers'])}")
 
         if not parts:
@@ -220,8 +230,8 @@ class TranscriptEncoder:
 
         for turn in analysis.turns:
             if turn.entities:
-                emails.extend(turn.entities.get('emails', []))
-                phone_numbers.extend(turn.entities.get('phone_numbers', []))
+                emails.extend(turn.entities.get("emails", []))
+                phone_numbers.extend(turn.entities.get("phone_numbers", []))
 
         # Deduplicate
         emails = list(set(emails))
@@ -250,13 +260,18 @@ class TranscriptEncoder:
         Example: [ISSUE:INTERNET_OUTAGE:SEVERITY=MEDIUM:FREQ=3x_daily:DURATION=3d:PATTERN=9am+1pm+6pm:DAYS=MON+TUE+WED]
         Example: [ISSUE:BILLING_DISPUTE:SEVERITY=LOW:AMOUNTS=$14.99+$16.99]
         """
-        parts = ['ISSUE', issue.type]
+        parts = ["ISSUE", issue.type]
 
         # Money amounts for billing issues
-        if issue.type in ['BILLING_DISPUTE', 'UNEXPECTED_CHARGE', 'REFUND_REQUEST', 'OVERCHARGE']:
+        if issue.type in [
+            "BILLING_DISPUTE",
+            "UNEXPECTED_CHARGE",
+            "REFUND_REQUEST",
+            "OVERCHARGE",
+        ]:
             for turn in turns:
-                if len(turn.entities.get('money', [])) > 0:
-                    amounts = '+'.join(turn.entities.get('money', []))
+                if len(turn.entities.get("money", [])) > 0:
+                    amounts = "+".join(turn.entities.get("money", []))
                     parts.append(f"AMOUNTS={amounts}")
 
         # Severity
@@ -276,10 +291,10 @@ class TranscriptEncoder:
             parts.append(f"PATTERN={issue.pattern}")
 
         # Days (if available in attributes)
-        if issue.attributes and 'days' in issue.attributes:
-            days = issue.attributes['days']
+        if issue.attributes and "days" in issue.attributes:
+            days = issue.attributes["days"]
             if days and len(days) > 0:  # Only if not empty
-                days_str = '+'.join(days)
+                days_str = "+".join(days)
                 parts.append(f"DAYS={days_str}")
 
         # Impact
@@ -297,17 +312,25 @@ class TranscriptEncoder:
         Example: [ACTION:REFUND:REFERENCE=RFD-908712:TIMELINE=3-5d:RESULT=COMPLETED]
         Example: [ACTION:CREDIT:AMOUNT=$10:METHOD=ACCOUNT_CREDIT:RESULT=APPLIED]
         """
-        parts = ['ACTION', action.type]
+        parts = ["ACTION", action.type]
 
         if action.step:
             parts.append(f"STEP={action.step}")
 
         # Add reference number if present
-        if action.attributes and 'reference' in action.attributes and action.attributes['reference']:
+        if (
+            action.attributes
+            and "reference" in action.attributes
+            and action.attributes["reference"]
+        ):
             parts.append(f"REFERENCE={action.attributes['reference']}")
 
         # Add timeline if present
-        if action.attributes and 'timeline' in action.attributes and action.attributes['timeline']:
+        if (
+            action.attributes
+            and "timeline" in action.attributes
+            and action.attributes["timeline"]
+        ):
             parts.append(f"TIMELINE={action.attributes['timeline']}")
 
         # Add amount for financial actions
@@ -331,7 +354,7 @@ class TranscriptEncoder:
         Example: [RESOLUTION:PENDING:TIMELINE=24h:TICKET=TK12345]
         Example: [RESOLUTION:RESOLVED:TIMELINE=3d]
         """
-        parts = ['RESOLUTION', resolution.type]
+        parts = ["RESOLUTION", resolution.type]
 
         if resolution.timeline:
             parts.append(f"TIMELINE={resolution.timeline}")
@@ -341,7 +364,7 @@ class TranscriptEncoder:
 
         if resolution.next_steps:
             # Compress next steps
-            steps_compressed = resolution.next_steps.replace(' ', '_')
+            steps_compressed = resolution.next_steps.replace(" ", "_")
             parts.append(f"NEXT={steps_compressed}")
 
         return f"[{':'.join(parts)}]"
@@ -370,7 +393,7 @@ class TranscriptEncoder:
         if trajectory[-1] != sentiment.end:
             trajectory.append(sentiment.end)
 
-        trajectory_str = '→'.join(trajectory)
+        trajectory_str = "→".join(trajectory)
         return f"[SENTIMENT:{trajectory_str}]"
 
     def _compress_address(self, address: str) -> str:
@@ -383,18 +406,18 @@ class TranscriptEncoder:
         - "41 Riverbend Lane" → "41_Riverbend_Ln"
         """
         # Replace spaces with underscores
-        compressed = address.replace(' ', '_')
+        compressed = address.replace(" ", "_")
 
         # Abbreviate common words
         abbreviations = {
-            'Street': 'St',
-            'Avenue': 'Ave',
-            'Road': 'Rd',
-            'Drive': 'Dr',
-            'Lane': 'Ln',
-            'Boulevard': 'Blvd',
-            'Court': 'Ct',
-            'Place': 'Pl'
+            "Street": "St",
+            "Avenue": "Ave",
+            "Road": "Rd",
+            "Drive": "Dr",
+            "Lane": "Ln",
+            "Boulevard": "Blvd",
+            "Court": "Ct",
+            "Place": "Pl",
         }
 
         for full, abbrev in abbreviations.items():

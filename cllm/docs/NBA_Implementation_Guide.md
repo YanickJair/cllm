@@ -34,12 +34,13 @@ OUTPUT_FORMAT:
 
 ```python
 from src.core.encoder import CLLMEncoder
-from src.core.vocabulary import Vocabulary
+from src.utils.vocabulary import Vocabulary
+
 
 # Step 1: Extend vocabulary for NBA use case
 class NBAVocabulary(Vocabulary):
     """Extended vocabulary for NBA selection"""
-    
+
     # Add NBA-specific REQ tokens
     REQ_TOKENS = {
         **Vocabulary.REQ_TOKENS,
@@ -52,7 +53,7 @@ class NBAVocabulary(Vocabulary):
             "find relevant", "determine applicable"
         ],
     }
-    
+
     # Add NBA-specific TARGET tokens
     TARGET_TOKENS = {
         **Vocabulary.TARGET_TOKENS,
@@ -68,13 +69,14 @@ class NBAVocabulary(Vocabulary):
         ],
         "NBA_ID": ["nba id", "action id", "nba identifier"],
     }
-    
+
     # Add NBA-specific extraction fields
     EXTRACT_FIELDS = [
         *Vocabulary.EXTRACT_FIELDS,
         "CUSTOMER_INTENT", "RELEVANCE_SCORE", "NBA_ID",
         "MATCH_CONFIDENCE", "SEMANTIC_SIMILARITY"
     ]
+
 
 # Step 2: Create enhanced encoder
 encoder = CLLMEncoder()
@@ -336,55 +338,55 @@ Specialized optimizer for Next Best Action selection prompts
 """
 
 from src.core.encoder import CLLMEncoder
-from src.core.vocabulary import Vocabulary
-from src.core._schemas import CompressionResult
+from src.utils.vocabulary import Vocabulary
+from src.components.sys_prompt._schemas import CompressionResult
 from typing import Optional
 
 
 class NBAPromptOptimizer:
     """Optimized encoder for NBA selection use cases"""
-    
+
     def __init__(self):
         self.encoder = CLLMEncoder()
-        
+
         # Extend vocabulary for NBA domain
         self._extend_vocabulary()
-    
+
     def _extend_vocabulary(self):
         """Add NBA-specific tokens to vocabulary"""
-        
+
         # Add MATCH intent
         Vocabulary.REQ_TOKENS["MATCH"] = [
             "match", "compare", "align", "map", "correlate",
             "match against", "compare to", "check against", "pair"
         ]
-        
+
         # Add SELECT intent  
         Vocabulary.REQ_TOKENS["SELECT"] = [
             "select", "choose", "pick", "filter", "identify matching"
         ]
-        
+
         # Add NBA targets
         Vocabulary.TARGET_TOKENS["NBA_CATALOG"] = [
             "nba", "nbas", "next best action", "next best actions",
             "predefined actions", "available actions", "action catalog"
         ]
-        
+
         Vocabulary.TARGET_TOKENS["NBA_ID"] = [
             "nba id", "action id", "nba identifier"
         ]
-        
+
         # Add extraction fields
         Vocabulary.EXTRACT_FIELDS.extend([
             "CUSTOMER_INTENT", "RELEVANCE_SCORE", "NBA_ID",
             "MATCH_CONFIDENCE"
         ])
-    
+
     def optimize(
-        self, 
-        prompt: str, 
-        strategy: str = "minimal",
-        add_context: bool = True
+            self,
+            prompt: str,
+            strategy: str = "minimal",
+            add_context: bool = True
     ) -> CompressionResult:
         """
         Optimize NBA prompt with configurable strategy
@@ -399,7 +401,7 @@ class NBAPromptOptimizer:
         """
         # Compress using CLLM
         result = self.encoder.compress(prompt, verbose=False)
-        
+
         # Post-process based on strategy
         if strategy == "minimal":
             optimized = self._build_minimal(result)
@@ -407,39 +409,39 @@ class NBAPromptOptimizer:
             optimized = self._build_balanced(result, add_context)
         else:  # verbose
             optimized = self._build_verbose(result)
-        
+
         # Update compressed field
         result.compressed = optimized
         result.compression_ratio = round(
             (1 - len(optimized) / len(prompt)) * 100, 1
         )
-        
+
         return result
-    
+
     def _build_minimal(self, result: CompressionResult) -> str:
         """Ultra-compact version for production"""
         # Filter intents to only core NBA ones
         core_intents = ["ANALYZE", "MATCH", "RANK", "SELECT"]
         intents = [i for i in result.intents if i.token in core_intents]
-        
+
         if not intents:
             intents = result.intents  # Fallback
-        
+
         # Build intent chain
         intent_chain = ">".join([i.token for i in intents[:3]])  # Max 3
-        
+
         # Build target flow
         target_flow = "TRANSCRIPT→NBA_CATALOG→NBA_ID[]"
-        
+
         # Core extractions only
         extractions = "CUSTOMER_INTENT+RELEVANCE_SCORE+NBA_ID"
-        
+
         # Critical context
         context = "MATCH_STRATEGY=SEMANTIC:THRESHOLD=0.7:MULTI_SELECT=TRUE:SORT=DESC"
-        
+
         # Output spec
         output = "JSON:STRUCT=ARRAY:EMPTY_ON_NO_MATCH"
-        
+
         return (
             f"[REQ:{intent_chain}] "
             f"[TARGET:{target_flow}] "
@@ -447,15 +449,15 @@ class NBAPromptOptimizer:
             f"[CTX:{context}] "
             f"[OUT:{output}]"
         )
-    
+
     def _build_balanced(
-        self, 
-        result: CompressionResult,
-        add_context: bool
+            self,
+            result: CompressionResult,
+            add_context: bool
     ) -> str:
         """Balanced version with some natural language"""
         compressed = self._build_minimal(result)
-        
+
         if add_context:
             context_rules = """
 
@@ -469,18 +471,18 @@ OUTPUT_FORMAT:
 [] // if no matches above threshold
 """
             compressed += context_rules
-        
+
         return compressed
-    
+
     def _build_verbose(self, result: CompressionResult) -> str:
         """Verbose version for debugging"""
         # Use full compression result
         tokens = []
-        
+
         # REQ tokens
         for intent in result.intents:
             tokens.append(f"[REQ:{intent.token}:CONFIDENCE={intent.confidence:.2f}]")
-        
+
         # TARGET tokens
         for target in result.targets:
             token_str = f"[TARGET:{target.token}"
@@ -490,27 +492,27 @@ OUTPUT_FORMAT:
                 token_str += f":{k}={v}"
             token_str += "]"
             tokens.append(token_str)
-        
+
         # EXTRACT
         if result.extractions:
             fields = "+".join(result.extractions.fields)
             tokens.append(f"[EXTRACT:{fields}]")
-        
+
         # CTX
         for ctx in result.contexts:
             tokens.append(f"[CTX:{ctx.aspect}={ctx.value}]")
-        
+
         # OUT
         if result.output_format:
             tokens.append(f"[OUT:{result.output_format.format_type}]")
-        
+
         return " ".join(tokens)
 
 
 # Usage example
 if __name__ == "__main__":
     optimizer = NBAPromptOptimizer()
-    
+
     # Original verbose prompt
     original = """
     You are a Customer Experience (CX) intelligence agent designed to assist 
@@ -518,16 +520,16 @@ if __name__ == "__main__":
     interaction transcript and determine which predefined actions (Next Best 
     Actions, or NBAs) are relevant to the conversation...
     """
-    
+
     # Optimize with different strategies
     strategies = ["minimal", "balanced", "verbose"]
-    
+
     for strategy in strategies:
         result = optimizer.optimize(original, strategy=strategy)
-        
-        print(f"\n{'='*60}")
+
+        print(f"\n{'=' * 60}")
         print(f"Strategy: {strategy.upper()}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         print(f"Compressed:\n{result.compressed}")
         print(f"\nCompression: {result.compression_ratio}%")
         print(f"Tokens: {result.metadata['output_tokens']}")

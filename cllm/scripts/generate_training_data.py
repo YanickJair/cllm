@@ -10,7 +10,6 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent))
 from src.core.encoder import CLLMEncoder
-import spacy
 
 
 class TrainingDataGenerator:
@@ -20,7 +19,9 @@ class TrainingDataGenerator:
         self.encoder = CLLMEncoder("en_core_web_sm")
         self.examples = []
 
-    def generate_instruction_response_pairs(self, num_samples: int = 10000) -> list[dict]:
+    def generate_instruction_response_pairs(
+        self, num_samples: int = 10000
+    ) -> list[dict]:
         """
         Generate training pairs showing how to interpret CLLM tokens
 
@@ -49,17 +50,17 @@ class TrainingDataGenerator:
             base = random.choice(base_examples)
 
             # Get compressed version
-            compressed = base.get('compressed', '')
+            compressed = base.get("compressed", "")
             if not compressed:
                 continue
 
             # Create training example
             example = {
-                'id': f'train_{i:05d}',
-                'compressed_instruction': compressed,
-                'natural_instruction': base['prompt'],
-                'data': self._generate_synthetic_data(compressed),
-                'expected_behavior': self._describe_expected_behavior(compressed)
+                "id": f"train_{i:05d}",
+                "compressed_instruction": compressed,
+                "natural_instruction": base["prompt"],
+                "data": self._generate_synthetic_data(compressed),
+                "expected_behavior": self._describe_expected_behavior(compressed),
             }
 
             training_data.append(example)
@@ -72,13 +73,13 @@ class TrainingDataGenerator:
     def _generate_synthetic_data(self, compressed: str) -> str:
         """Generate appropriate data based on compressed instruction"""
 
-        if 'TARGET:CODE' in compressed:
+        if "TARGET:CODE" in compressed:
             return self._generate_code_sample()
-        elif 'TARGET:TRANSCRIPT' in compressed:
+        elif "TARGET:TRANSCRIPT" in compressed:
             return self._generate_transcript_sample()
-        elif 'TARGET:EMAIL' in compressed:
+        elif "TARGET:EMAIL" in compressed:
             return self._generate_email_sample()
-        elif 'TARGET:DATA' in compressed:
+        elif "TARGET:DATA" in compressed:
             return self._generate_data_sample()
         else:
             return self._generate_generic_text()
@@ -129,26 +130,28 @@ class TrainingDataGenerator:
 
         behaviors = []
 
-        if 'REQ:ANALYZE' in compressed:
+        if "REQ:ANALYZE" in compressed:
             behaviors.append("Perform thorough analysis")
-        if 'REQ:EXTRACT' in compressed:
+        if "REQ:EXTRACT" in compressed:
             behaviors.append("Extract specified information")
-        if 'REQ:GENERATE' in compressed:
+        if "REQ:GENERATE" in compressed:
             behaviors.append("Generate requested content")
-        if 'REQ:SUMMARIZE' in compressed:
+        if "REQ:SUMMARIZE" in compressed:
             behaviors.append("Create concise summary")
 
-        if 'EXTRACT:' in compressed:
-            fields = compressed.split('EXTRACT:')[1].split(']')[0]
+        if "EXTRACT:" in compressed:
+            fields = compressed.split("EXTRACT:")[1].split("]")[0]
             behaviors.append(f"Focus on extracting: {fields}")
 
-        if 'OUT:' in compressed:
-            format_type = compressed.split('OUT:')[1].split(']')[0]
+        if "OUT:" in compressed:
+            format_type = compressed.split("OUT:")[1].split("]")[0]
             behaviors.append(f"Format output as: {format_type}")
 
         return " | ".join(behaviors) if behaviors else "Process as instructed"
 
-    def create_instruction_tuning_dataset(self, output_file: str = "cllm_training_data.jsonl"):
+    def create_instruction_tuning_dataset(
+        self, output_file: str = "cllm_training_data.jsonl"
+    ):
         """
         Create dataset in instruction-tuning format
 
@@ -173,21 +176,20 @@ class TrainingDataGenerator:
         for example in training_data:
             # Create instruction-following example
             entry = {
-                'instruction': example['compressed_instruction'],
-                'input': example['data'],
-                'output': self._generate_appropriate_response(
-                    example['compressed_instruction'],
-                    example['data']
+                "instruction": example["compressed_instruction"],
+                "input": example["data"],
+                "output": self._generate_appropriate_response(
+                    example["compressed_instruction"], example["data"]
                 ),
-                'natural_equivalent': example['natural_instruction']
+                "natural_equivalent": example["natural_instruction"],
             }
 
             instruction_dataset.append(entry)
 
         # Save as JSONL
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             for entry in instruction_dataset:
-                f.write(json.dumps(entry) + '\n')
+                f.write(json.dumps(entry) + "\n")
 
         print(f"✅ Created {len(instruction_dataset)} training examples")
         print(f"💾 Saved to {output_file}")
@@ -203,20 +205,20 @@ class TrainingDataGenerator:
         # This is a simplified version - in practice, you'd want to use an LLM
         # to generate high-quality responses based on the CLLM instruction
 
-        if 'REQ:ANALYZE' in compressed:
-            if 'TARGET:CODE' in compressed:
+        if "REQ:ANALYZE" in compressed:
+            if "TARGET:CODE" in compressed:
                 return f"Analysis of the code:\n{data}\n\nThis code defines functionality that..."
             else:
                 return f"Analysis:\n{data}\n\nKey observations: ..."
 
-        elif 'REQ:EXTRACT' in compressed:
-            return f"Extracted information:\n- Field 1: ...\n- Field 2: ..."
+        elif "REQ:EXTRACT" in compressed:
+            return "Extracted information:\n- Field 1: ...\n- Field 2: ..."
 
-        elif 'REQ:SUMMARIZE' in compressed:
+        elif "REQ:SUMMARIZE" in compressed:
             return f"Summary: {data[:100]}... Key points include..."
 
-        elif 'REQ:GENERATE' in compressed:
-            return f"Generated content based on input..."
+        elif "REQ:GENERATE" in compressed:
+            return "Generated content based on input..."
 
         else:
             return f"Processed according to instruction: {compressed}"
@@ -231,9 +233,9 @@ class TrainingDataGenerator:
         # Count by REQ type
         req_types = {}
         for entry in dataset:
-            compressed = entry['instruction']
-            for req in ['ANALYZE', 'EXTRACT', 'GENERATE', 'SUMMARIZE', 'TRANSFORM']:
-                if f'REQ:{req}' in compressed:
+            compressed = entry["instruction"]
+            for req in ["ANALYZE", "EXTRACT", "GENERATE", "SUMMARIZE", "TRANSFORM"]:
+                if f"REQ:{req}" in compressed:
                     req_types[req] = req_types.get(req, 0) + 1
 
         print("\nInstruction Types:")
@@ -244,22 +246,26 @@ class TrainingDataGenerator:
         # Count by TARGET type
         target_types = {}
         for entry in dataset:
-            compressed = entry['instruction']
-            for target in ['CODE', 'TRANSCRIPT', 'EMAIL', 'DATA', 'DOCUMENT']:
-                if f'TARGET:{target}' in compressed:
+            compressed = entry["instruction"]
+            for target in ["CODE", "TRANSCRIPT", "EMAIL", "DATA", "DOCUMENT"]:
+                if f"TARGET:{target}" in compressed:
                     target_types[target] = target_types.get(target, 0) + 1
 
         print("\nTarget Types:")
-        for target, count in sorted(target_types.items(), key=lambda x: x[1], reverse=True):
+        for target, count in sorted(
+            target_types.items(), key=lambda x: x[1], reverse=True
+        ):
             pct = (count / len(dataset)) * 100
             print(f"  TARGET:{target:<12} {count:5d} ({pct:5.1f}%)")
 
         # Token statistics
-        avg_instruction_length = sum(len(e['instruction']) for e in dataset) / len(dataset)
-        avg_input_length = sum(len(e['input']) for e in dataset) / len(dataset)
-        avg_output_length = sum(len(e['output']) for e in dataset) / len(dataset)
+        avg_instruction_length = sum(len(e["instruction"]) for e in dataset) / len(
+            dataset
+        )
+        avg_input_length = sum(len(e["input"]) for e in dataset) / len(dataset)
+        avg_output_length = sum(len(e["output"]) for e in dataset) / len(dataset)
 
-        print(f"\nAverage Lengths:")
+        print("\nAverage Lengths:")
         print(f"  Instruction: {avg_instruction_length:.1f} chars")
         print(f"  Input:       {avg_input_length:.1f} chars")
         print(f"  Output:      {avg_output_length:.1f} chars")
@@ -273,33 +279,36 @@ class TrainingDataGenerator:
         print("=" * 80 + "\n")
 
         vocab = {
-            'special_tokens': ['[PAD]', '[UNK]', '[CLS]', '[SEP]'],
-            'req_tokens': [],
-            'target_tokens': [],
-            'extract_tokens': [],
-            'ctx_tokens': [],
-            'out_tokens': [],
+            "special_tokens": ["[PAD]", "[UNK]", "[CLS]", "[SEP]"],
+            "req_tokens": [],
+            "target_tokens": [],
+            "extract_tokens": [],
+            "ctx_tokens": [],
+            "out_tokens": [],
         }
 
         # Load vocabulary from your encoder
-        from src.core.vocabulary import Vocabulary
+        from src.utils.vocabulary import Vocabulary
+
         v = Vocabulary()
 
         # Add all token types
-        vocab['req_tokens'] = list(v.REQ_TOKENS.keys())
-        vocab['target_tokens'] = list(v.TARGET_TOKENS.keys())
-        vocab['extract_tokens'] = v.EXTRACT_FIELDS
+        vocab["req_tokens"] = list(v.REQ_TOKENS.keys())
+        vocab["target_tokens"] = list(v.TARGET_TOKENS.keys())
+        vocab["extract_tokens"] = v.EXTRACT_FIELDS
 
         # Calculate total
-        total_tokens = (len(vocab['special_tokens']) +
-                        len(vocab['req_tokens']) +
-                        len(vocab['target_tokens']) +
-                        len(vocab['extract_tokens']))
+        total_tokens = (
+            len(vocab["special_tokens"])
+            + len(vocab["req_tokens"])
+            + len(vocab["target_tokens"])
+            + len(vocab["extract_tokens"])
+        )
 
-        vocab['vocab_size'] = total_tokens
+        vocab["vocab_size"] = total_tokens
 
         # Save
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             json.dump(vocab, f, indent=2)
 
         print(f"✅ Created vocabulary with {total_tokens} tokens")
@@ -319,11 +328,11 @@ def main():
 
     # 1. Create instruction-tuning dataset
     print("Step 1: Generating instruction-tuning dataset...")
-    dataset = generator.create_instruction_tuning_dataset()
+    generator.create_instruction_tuning_dataset()
 
     # 2. Create token vocabulary
     print("\nStep 2: Creating token vocabulary...")
-    vocab = generator.create_token_vocabulary()
+    generator.create_token_vocabulary()
 
     print("\n" + "=" * 80)
     print("✅ TRAINING DATA GENERATION COMPLETE")

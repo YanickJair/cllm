@@ -5,13 +5,15 @@ from typing import Optional, Any
 
 class GateSeverity(Enum):
     CRITICAL = "critical"  # Must pass or fail entire compression
-    WARNING = "warning"    # Log but allow through
-    INFO = "info"          # Collect metrics only
+    WARNING = "warning"  # Log but allow through
+    INFO = "info"  # Collect metrics only
+
 
 class GateStatus(Enum):
     PASS = "pass"
     FAIL = "fail"
     DEGRADED = "degraded"  # Passed but with concerns
+
 
 @dataclass
 class GateResult:
@@ -22,7 +24,8 @@ class GateResult:
     message: str
     metadata: dict[str, Any]
     failures: list[str]  # Specific failure reasons
-    
+
+
 @dataclass
 class CompressionPipeline:
     input: str
@@ -32,4 +35,3 @@ class CompressionPipeline:
     gate_results: list[GateResult]
     final_output: Optional[str]
     fallback_used: bool
-

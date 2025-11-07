@@ -10,7 +10,7 @@ from transformers import (
     AutoTokenizer,
     PreTrainedModel,
     PretrainedConfig,
-    AutoConfig
+    AutoConfig,
 )
 import json
 from typing import Optional
@@ -23,19 +23,21 @@ class CLLMConfig(PretrainedConfig):
     model_type = "cllm"
 
     def __init__(
-            self,
-            base_model_name: str = "meta-llama/Llama-2-7b-hf",
-            cllm_vocab_size: int = 200,  # Number of CLLM tokens
-            cllm_embedding_dim: int = 768,
-            use_hierarchical_attention: bool = True,
-            compression_awareness: bool = True,
-            token: Optional[str] = None,
-            **kwargs
+        self,
+        base_model_name: str = "meta-llama/Llama-2-7b-hf",
+        cllm_vocab_size: int = 200,  # Number of CLLM tokens
+        cllm_embedding_dim: int = 768,
+        use_hierarchical_attention: bool = True,
+        compression_awareness: bool = True,
+        token: Optional[str] = None,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         # Load the base model's configuration to get the hidden_size
         base_model_config = AutoConfig.from_pretrained(base_model_name, token=token)
-        self.hidden_size = base_model_config.hidden_size # Ensure CLLMConfig has hidden_size
+        self.hidden_size = (
+            base_model_config.hidden_size
+        )  # Ensure CLLMConfig has hidden_size
 
         print("HF Token", token)
         self.base_model_name = base_model_name
@@ -70,30 +72,30 @@ class CLLMEmbedding(nn.Module):
     def _load_vocabulary(self):
         """Load CLLM token vocabulary"""
         try:
-            with open('data/vocabulary/cllm_token_vocab.json', 'r') as f:
+            with open("data/vocabulary/cllm_token_vocab.json", "r") as f:
                 vocab = json.load(f)
 
             idx = 0
             # Add special tokens
-            for token in vocab.get('special_tokens', []):
+            for token in vocab.get("special_tokens", []):
                 self.token_to_id[token] = idx
                 self.id_to_token[idx] = token
                 idx += 1
 
             # Add CLLM tokens
-            for token in vocab.get('req_tokens', []):
+            for token in vocab.get("req_tokens", []):
                 full_token = f"[REQ:{token}]"
                 self.token_to_id[full_token] = idx
                 self.id_to_token[idx] = full_token
                 idx += 1
 
-            for token in vocab.get('target_tokens', []):
+            for token in vocab.get("target_tokens", []):
                 full_token = f"[TARGET:{token}]"
                 self.token_to_id[full_token] = idx
                 self.id_to_token[idx] = full_token
                 idx += 1
 
-            for token in vocab.get('extract_tokens', []):
+            for token in vocab.get("extract_tokens", []):
                 full_token = f"[EXTRACT:{token}]"
                 self.token_to_id[full_token] = idx
                 self.id_to_token[idx] = full_token
@@ -109,9 +111,16 @@ class CLLMEmbedding(nn.Module):
     def _create_default_vocabulary(self):
         """Create a basic vocabulary if file not found"""
         basic_tokens = [
-            '[PAD]', '[UNK]', '[CLS]', '[SEP]',
-            '[REQ:ANALYZE]', '[REQ:EXTRACT]', '[REQ:GENERATE]',
-            '[TARGET:CODE]', '[TARGET:TRANSCRIPT]', '[TARGET:DATA]'
+            "[PAD]",
+            "[UNK]",
+            "[CLS]",
+            "[SEP]",
+            "[REQ:ANALYZE]",
+            "[REQ:EXTRACT]",
+            "[REQ:GENERATE]",
+            "[TARGET:CODE]",
+            "[TARGET:TRANSCRIPT]",
+            "[TARGET:DATA]",
         ]
 
         for idx, token in enumerate(basic_tokens):
@@ -121,7 +130,7 @@ class CLLMEmbedding(nn.Module):
     def tokenize_cllm(self, text: str) -> torch.Tensor:
         """Convert CLLM text to token IDs"""
         # Extract CLLM tokens from text
-        tokens = re.findall(r'\[[^\]]+\]', text)
+        tokens = re.findall(r"\[[^\]]+\]", text)
 
         # Convert to IDs
         ids = []
@@ -129,7 +138,7 @@ class CLLMEmbedding(nn.Module):
             if token in self.token_to_id:
                 ids.append(self.token_to_id[token])
             else:
-                ids.append(self.token_to_id.get('[UNK]', 1))
+                ids.append(self.token_to_id.get("[UNK]", 1))
 
         return torch.tensor(ids, dtype=torch.long)
 
@@ -152,38 +161,30 @@ class HierarchicalAttention(nn.Module):
 
         # Semantic-level attention (coarse)
         self.semantic_attention = nn.MultiheadAttention(
-            embed_dim=hidden_dim,
-            num_heads=num_heads,
-            batch_first=True
+            embed_dim=hidden_dim, num_heads=num_heads, batch_first=True
         )
 
         # Token-level attention (fine)
         self.token_attention = nn.MultiheadAttention(
-            embed_dim=hidden_dim,
-            num_heads=num_heads,
-            batch_first=True
+            embed_dim=hidden_dim, num_heads=num_heads, batch_first=True
         )
 
         # Cross-level fusion
         self.fusion = nn.Linear(hidden_dim * 2, hidden_dim)
 
     def forward(
-        self,
-        hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None
+        self, hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = None
     ) -> torch.Tensor:
         """Apply hierarchical attention"""
 
         # Semantic-level attention
         semantic_output, _ = self.semantic_attention(
-            hidden_states, hidden_states, hidden_states,
-            key_padding_mask=attention_mask
+            hidden_states, hidden_states, hidden_states, key_padding_mask=attention_mask
         )
 
         # Token-level attention
         token_output, _ = self.token_attention(
-            hidden_states, hidden_states, hidden_states,
-            key_padding_mask=attention_mask
+            hidden_states, hidden_states, hidden_states, key_padding_mask=attention_mask
         )
 
         # Fuse both levels
@@ -205,7 +206,7 @@ class CLLMModel(PreTrainedModel):
         super().__init__(config)
         self.config = config
 
-        print(f"\n🔧 Initializing CLLM Model...")
+        print("\n🔧 Initializing CLLM Model...")
         print(f"   Base model: {config.base_model_name}")
         print(f"   CLLM vocab size: {config.cllm_vocab_size}")
 
@@ -226,15 +227,13 @@ class CLLMModel(PreTrainedModel):
 
         # 2. Custom CLLM embedding layer
         self.cllm_embeddings = CLLMEmbedding(
-            vocab_size=config.cllm_vocab_size,
-            embedding_dim=config.cllm_embedding_dim
+            vocab_size=config.cllm_vocab_size, embedding_dim=config.cllm_embedding_dim
         ).to(self.wrapped_model.dtype)
 
         # 3. Projection layer to match base model's embedding dimension
         base_hidden_size = self.wrapped_model.config.hidden_size
         self.cllm_projection = nn.Linear(
-            config.cllm_embedding_dim,
-            base_hidden_size
+            config.cllm_embedding_dim, base_hidden_size
         ).to(self.wrapped_model.dtype)
 
         # 4. Optional hierarchical attention
@@ -243,13 +242,10 @@ class CLLMModel(PreTrainedModel):
                 hidden_dim=base_hidden_size
             ).to(self.wrapped_model.dtype)
 
-        print(f"✅ CLLM Model initialized\n")
+        print("✅ CLLM Model initialized\n")
 
     def prepare_inputs(
-        self,
-        cllm_instruction: str,
-        data: str,
-        device: torch.device
+        self, cllm_instruction: str, data: str, device: torch.device
     ) -> dict[str, torch.Tensor]:
         """
         Prepare inputs combining CLLM instruction + regular text data
@@ -270,31 +266,26 @@ class CLLMModel(PreTrainedModel):
 
         # 2. Process regular data with base tokenizer
         data_tokens = self.wrapped_tokenizer(
-            data,
-            return_tensors="pt",
-            padding=True,
-            truncation=True,
-            max_length=2048
+            data, return_tensors="pt", padding=True, truncation=True, max_length=2048
         )
 
-        data_input_ids = data_tokens['input_ids'].to(device)
+        data_input_ids = data_tokens["input_ids"].to(device)
         data_embeddings = self.wrapped_model.get_input_embeddings()(data_input_ids)
 
         # 3. Concatenate CLLM instruction + data
-        combined_embeddings = torch.cat([
-            cllm_embeddings.unsqueeze(0).to(device),
-            data_embeddings
-        ], dim=1)
+        combined_embeddings = torch.cat(
+            [cllm_embeddings.unsqueeze(0).to(device), data_embeddings], dim=1
+        )
 
         # 4. Create attention mask
         cllm_mask = torch.ones(1, cllm_embeddings.size(0), device=device)
-        data_mask = data_tokens['attention_mask'].to(device)
+        data_mask = data_tokens["attention_mask"].to(device)
         combined_mask = torch.cat([cllm_mask, data_mask], dim=1)
 
         return {
-            'inputs_embeds': combined_embeddings,
-            'attention_mask': combined_mask,
-            'cllm_length': cllm_embeddings.size(0)
+            "inputs_embeds": combined_embeddings,
+            "attention_mask": combined_mask,
+            "cllm_length": cllm_embeddings.size(0),
         }
 
     def forward(
@@ -304,19 +295,17 @@ class CLLMModel(PreTrainedModel):
         inputs_embeds: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
         labels: Optional[torch.Tensor] = None,
-        **kwargs
+        **kwargs,
     ):
         """Forward pass through CLLM model"""
 
         # If raw strings provided, prepare inputs
         if cllm_instruction is not None and data is not None:
             prepared = self.prepare_inputs(
-                cllm_instruction,
-                data,
-                device=self.wrapped_model.device
+                cllm_instruction, data, device=self.wrapped_model.device
             )
-            inputs_embeds = prepared['inputs_embeds']
-            attention_mask = prepared['attention_mask']
+            inputs_embeds = prepared["inputs_embeds"]
+            attention_mask = prepared["attention_mask"]
 
         # Apply hierarchical attention if enabled
         if self.config.use_hierarchical_attention and inputs_embeds is not None:
@@ -327,17 +316,17 @@ class CLLMModel(PreTrainedModel):
             inputs_embeds=inputs_embeds,
             attention_mask=attention_mask,
             labels=labels,
-            **kwargs
+            **kwargs,
         )
 
         return outputs
 
     def generate(
-            self,
-            cllm_instruction: str,
-            data: str,
-            max_new_tokens: int = 512,
-            **generation_kwargs
+        self,
+        cllm_instruction: str,
+        data: str,
+        max_new_tokens: int = 512,
+        **generation_kwargs,
     ) -> str:
         """
         Generate response given CLLM instruction + data
@@ -353,24 +342,21 @@ class CLLMModel(PreTrainedModel):
 
         # Prepare inputs
         prepared = self.prepare_inputs(
-            cllm_instruction,
-            data,
-            device=self.base_model.device
+            cllm_instruction, data, device=self.base_model.device
         )
 
         # Generate
         with torch.no_grad():
             outputs = self.wrapped_model.generate(
-                inputs_embeds=prepared['inputs_embeds'],
-                attention_mask=prepared['attention_mask'],
+                inputs_embeds=prepared["inputs_embeds"],
+                attention_mask=prepared["attention_mask"],
                 max_new_tokens=max_new_tokens,
-                **generation_kwargs
+                **generation_kwargs,
             )
 
         # Decode
         generated_text = self.wrapped_tokenizer.decode(
-            outputs[0][prepared['inputs_embeds'].size(1):],
-            skip_special_tokens=True
+            outputs[0][prepared["inputs_embeds"].size(1) :], skip_special_tokens=True
         )
 
         return generated_text
@@ -396,6 +382,7 @@ class CLLMModel(PreTrainedModel):
     def save_pretrained(self, save_directory: str):
         """Save CLLM model"""
         import os
+
         os.makedirs(save_directory, exist_ok=True)
 
         # Save config
@@ -435,9 +422,7 @@ def test_cllm_model():
     # Test generation
     print("Generating response...")
     response = model.generate(
-        cllm_instruction=cllm_instruction,
-        data=data,
-        max_new_tokens=100
+        cllm_instruction=cllm_instruction, data=data, max_new_tokens=100
     )
 
     print(f"\nGenerated Response:\n{response}\n")

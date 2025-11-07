@@ -8,10 +8,20 @@ class TemporalAnalyzer:
 
     # Day name mappings
     DAY_NAMES = {
-        'monday': 'MON', 'tuesday': 'TUE', 'wednesday': 'WED',
-        'thursday': 'THU', 'friday': 'FRI', 'saturday': 'SAT', 'sunday': 'SUN',
-        'mon': 'MON', 'tue': 'TUE', 'wed': 'WED', 'thu': 'THU',
-        'fri': 'FRI', 'sat': 'SAT', 'sun': 'SUN'
+        "monday": "MON",
+        "tuesday": "TUE",
+        "wednesday": "WED",
+        "thursday": "THU",
+        "friday": "FRI",
+        "saturday": "SAT",
+        "sunday": "SUN",
+        "mon": "MON",
+        "tue": "TUE",
+        "wed": "WED",
+        "thu": "THU",
+        "fri": "FRI",
+        "sat": "SAT",
+        "sun": "SUN",
     }
 
     def extract(self, text: str) -> TemporalPattern:
@@ -28,7 +38,7 @@ class TemporalAnalyzer:
             times=times,
             duration=duration,
             frequency=frequency,
-            pattern=pattern
+            pattern=pattern,
         )
 
     def _extract_days(self, text: str) -> list[str]:
@@ -56,21 +66,21 @@ class TemporalAnalyzer:
         times = []
 
         # Pattern 1: "9am", "1pm"
-        pattern1 = re.finditer(r'\b(\d{1,2})\s?(am|pm)\b', text.lower())
+        pattern1 = re.finditer(r"\b(\d{1,2})\s?(am|pm)\b", text.lower())
         for match in pattern1:
             hour = match.group(1)
             period = match.group(2)
             times.append(f"{hour}{period}")
 
         # Pattern 2: "9:00am", "1:30pm"
-        pattern2 = re.finditer(r'\b(\d{1,2}):(\d{2})\s?(am|pm)\b', text.lower())
+        pattern2 = re.finditer(r"\b(\d{1,2}):(\d{2})\s?(am|pm)\b", text.lower())
         for match in pattern2:
             hour = match.group(1)
             period = match.group(3)
             times.append(f"{hour}{period}")
 
         # Pattern 3: "around 9", "around 1", "around 6" (infer from context)
-        pattern3 = re.finditer(r'around (\d{1,2})', text.lower())
+        pattern3 = re.finditer(r"around (\d{1,2})", text.lower())
         for match in pattern3:
             hour = int(match.group(1))
             # Heuristic: if mentioned with work, assume business hours
@@ -101,15 +111,22 @@ class TemporalAnalyzer:
         text_lower = text.lower()
 
         # Pattern 1: "X days/weeks/months"
-        match = re.search(r'(\d+|one|two|three|four|five|six|seven)\s+(day|week|month)s?', text_lower)
+        match = re.search(
+            r"(\d+|one|two|three|four|five|six|seven)\s+(day|week|month)s?", text_lower
+        )
         if match:
             num_str = match.group(1)
             unit = match.group(2)
 
             # Convert words to numbers
             word_to_num = {
-                'one': 1, 'two': 2, 'three': 3, 'four': 4,
-                'five': 5, 'six': 6, 'seven': 7
+                "one": 1,
+                "two": 2,
+                "three": 3,
+                "four": 4,
+                "five": 5,
+                "six": 6,
+                "seven": 7,
             }
             num = word_to_num.get(num_str, num_str)
 
@@ -118,16 +135,16 @@ class TemporalAnalyzer:
             return f"{num}{unit_code}"
 
         # Pattern 2: "past X days"
-        match = re.search(r'past (\d+|one|two|three|four|five)\s+days?', text_lower)
+        match = re.search(r"past (\d+|one|two|three|four|five)\s+days?", text_lower)
         if match:
             num_str = match.group(1)
-            word_to_num = {'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5}
+            word_to_num = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5}
             num = word_to_num.get(num_str, num_str)
             return f"{num}d"
 
         # Pattern 3: "since Monday/Tuesday" (calculate from context)
         days_mentioned = self._extract_days(text)
-        if days_mentioned and 'since' in text_lower:
+        if days_mentioned and "since" in text_lower:
             # Simple heuristic: if multiple days mentioned, it's been that many days
             return f"{len(days_mentioned)}d"
 
@@ -149,14 +166,14 @@ class TemporalAnalyzer:
 
         if duration:
             # Extract number from duration (e.g., "3d" → 3)
-            match = re.match(r'(\d+)([dwm])', duration)
+            match = re.match(r"(\d+)([dwm])", duration)
             if match:
                 num_units = int(match.group(1))
                 unit = match.group(2)
 
-                if unit == 'd' and num_units == 1:
+                if unit == "d" and num_units == 1:
                     return f"{num_occurrences}x_daily"
-                elif unit == 'w' and num_units == 1:
+                elif unit == "w" and num_units == 1:
                     return f"{num_occurrences}x_weekly"
 
         # Default: if we see multiple times mentioned, assume daily
@@ -175,4 +192,4 @@ class TemporalAnalyzer:
         if not times:
             return None
 
-        return '+'.join(times)
+        return "+".join(times)

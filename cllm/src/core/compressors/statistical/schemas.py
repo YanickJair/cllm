@@ -6,6 +6,7 @@ from typing import Optional
 @dataclass
 class Pattern:
     """Represents a discovered pattern"""
+
     id: str  # Unique identifier (e.g., "REF:CS_STD_001")
     pattern: str  # The token sequence
     frequency: int  # How many times seen
@@ -31,6 +32,7 @@ class Pattern:
 @dataclass
 class PatternStats:
     """Statistics for pattern database"""
+
     total_patterns: int
     total_uses: int
     total_tokens_saved: int
