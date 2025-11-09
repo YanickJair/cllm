@@ -1,7 +1,7 @@
 import re
-from typing import Optional, List, Tuple
-
+from typing import Optional
 import spacy
+
 from . import (
     CallInfo,
     Issue,
@@ -11,51 +11,40 @@ from . import (
     TranscriptAnalysis,
     Turn,
 )
-from src.components.sys_prompt.analyzers import IntentDetector
 from .utils.named_entity import EntityExtractor
 from .utils.sentiment_analyzer import SentimentAnalyzer
 from .utils.temporal_analyzer import TemporalAnalyzer
 from .vocabulary import TranscriptVocabulary
-from src.components.sys_prompt.analyzers import TargetExtractor
+from ..sys_prompt.analyzers.intent_detector import IntentDetector
+from ..sys_prompt.analyzers.target import TargetExtractor
 
 
 class TranscriptAnalyzer:
-    """
-    Analyzes transcripts using existing CLLM components
-
-    Philosophy: Reuse IntentDetector, TargetExtractor
-    Add transcript-specific logic on top
-    """
-
     def __init__(self, nlp: spacy.Language):
         self.nlp = nlp
         self.vocab = TranscriptVocabulary()
-
         self.intent_detector = IntentDetector(nlp)
         self.target_extractor = TargetExtractor(nlp)
         self.temporal_extractor = TemporalAnalyzer()
         self.sentiment_analyzer = SentimentAnalyzer()
-        self.entity_extractor = EntityExtractor(nlp)
+        self.entity_extractor = EntityExtractor()
 
-    def analyze(
-        self, transcript: str, metadata: Optional[dict] = None
-    ) -> TranscriptAnalysis:
-        """Run full transcript analysis pipeline"""
+    def analyze(self, transcript: str, metadata: Optional[dict] = None) -> TranscriptAnalysis:
         metadata = metadata or {}
-
         turns = self._parse_turns(transcript)
 
-        for turn in turns:
+        # Preprocess all turns once (tokenization + entities)
+        docs = list(self.nlp.pipe([t.text for t in turns])) if turns else []
+        for turn, doc in zip(turns, docs):
+            turn.doc = doc
             turn.intent = self.intent_detector.get_primary_intent(
                 self.intent_detector.detect(turn.text)
             )
             turn.targets = self.target_extractor.extract(turn.text)
-            turn.sentiment, _ = self.sentiment_analyzer.analyze_turn(
-                turn.text, turn.speaker
-            )
+            turn.sentiment, _ = self.sentiment_analyzer.analyze_turn(turn.text, turn.speaker)
             turn.entities = self.entity_extractor.extract(turn.text)
 
-        # Higher-level inferences
+        # Higher-level reasoning
         call_info = self._extract_call_info(turns, metadata)
         customer = self._extract_customer_profile(turns)
         issues = self._extract_issues(turns)
@@ -74,8 +63,7 @@ class TranscriptAnalyzer:
         )
 
     @staticmethod
-    def _parse_turns(transcript: str) -> List[Turn]:
-        """Split transcript into speaker turns"""
+    def _parse_turns(transcript: str) -> list[Turn]:
         turns = []
         for line in transcript.strip().split("\n"):
             if not line or ":" not in line:
@@ -91,566 +79,118 @@ class TranscriptAnalyzer:
             turns.append(Turn(speaker=speaker, text=text.strip()))
         return turns
 
-    def _mock_get_action_type(self, text: str) -> Optional[str]:
-        """Detect probable action type from agent text"""
-        text_lower = text.lower()
-        best_match = None
-        longest_kw = 0
-        for action, keywords in self.vocab.ACTION_TOKENS.items():
-            for kw in keywords:
-                if kw in text_lower and len(kw) > longest_kw:
-                    best_match = action
-                    longest_kw = len(kw)
-        return best_match
+    def _extract_actions(self, turns: list[Turn]) -> list[Action]:
+        actions: dict = {}
 
-    def _extract_actions(self, turns: List[Turn]) -> List[Action]:
-        """Enhanced multi-action extraction with deduplication and merging"""
-        actions_dict = {}  # Deduplicate by type
+        # We need indices for _determine_action_result; create indexable list
+        indexed_turns = list(turns)
 
-        for i, turn in enumerate(turns):
+        for i, turn in enumerate(indexed_turns):
             if turn.speaker != "agent":
                 continue
 
-            # Get action type from your vocabulary
-            action_type = self._mock_get_action_type(turn.text)
-
-            if not action_type:
+            action_type = self._detect_action_type(turn.text)
+            if not action_type or action_type not in ["REFUND", "CREDIT", "TROUBLESHOOT", "ESCALATE", "REPLACE", "CHARGE", "PAYMENT"]:
                 continue
 
-            # Filter: only keep essential actions
-            if action_type not in [
-                "REFUND",
-                "CREDIT",
-                "TROUBLESHOOT",
-                "ESCALATE",
-                "REPLACE",
-            ]:
-                continue
+            result = self._determine_action_result(indexed_turns, i, turn)
+            amount, method, attributes = self._extract_action_details(action_type, turn)
 
-            # Determine result status for THIS turn
-            result = self._determine_action_result(turns, i, turn)
-
-            # Extract information from THIS turn
-            attributes_new = {}
-            amount_new = None
-            payment_method_new = None
-
-            # Only extract financial details for money-related actions
-            if action_type in ["REFUND", "CREDIT", "CHARGE", "PAYMENT"]:
-                amount_new, payment_method_new = self._extract_financial_details(turn)
-
-                # Extract reference number
-                reference = self._extract_reference_number(turn)
-                if reference:
-                    attributes_new["reference"] = reference
-
-                # Extract timeline
-                timeline = self._extract_timeline(turn.text)
-                if timeline:
-                    attributes_new["timeline"] = timeline
-
-            # SMART MERGE: If action already exists, merge information
-            if action_type in actions_dict:
-                existing = actions_dict[action_type]
-
-                # Keep COMPLETED status if found (upgrade from PENDING)
+            if action_type in actions:
+                existing = actions[action_type]
+                # Prefer COMPLETED over PENDING
                 if result == "COMPLETED":
                     existing.result = "COMPLETED"
-
-                # Merge attributes (keeps both reference and timeline)
-                if attributes_new:
-                    if not existing.attributes:
-                        existing.attributes = {}
-                    existing.attributes.update(attributes_new)
-
-                # Update amount/method if found
-                if amount_new and not existing.amount:
-                    existing.amount = amount_new
-                if payment_method_new and not existing.payment_method:
-                    existing.payment_method = payment_method_new
-
+                # Merge attributes
+                if attributes:
+                    existing.attributes = existing.attributes or {}
+                    existing.attributes.update(attributes)
+                if amount and not existing.amount:
+                    existing.amount = amount
+                if method and not existing.payment_method:
+                    existing.payment_method = method
             else:
-                # Create new action
-                action = Action(
+                actions[action_type] = Action(
                     type=action_type,
                     result=result,
-                    amount=amount_new,
-                    payment_method=payment_method_new,
-                    attributes=attributes_new if attributes_new else {},
+                    amount=amount,
+                    payment_method=method,
+                    attributes=attributes or {},
                 )
+        return list(actions.values())
 
-                actions_dict[action_type] = action
+    def _detect_action_type(self, text: str) -> Optional[str]:
+        text_lower = text.lower()
+        best, longest = None, 0
+        for action, keywords in self.vocab.ACTION_TOKENS.items():
+            for kw in keywords:
+                if kw in text_lower and len(kw) > longest:
+                    best, longest = action, len(kw)
+        return best
 
-        return list(actions_dict.values())
+    def _extract_action_details(self, action_type: str, turn: Turn):
+        amount, method = None, None
+        attributes = {}
+        if action_type in ["REFUND", "CREDIT", "CHARGE", "PAYMENT"]:
+            amount, method = self._extract_financial_details(turn)
+            if ref := self._extract_reference_number(turn):
+                attributes["reference"] = ref
+            if timeline := self._extract_timeline(turn.text):
+                attributes["timeline"] = timeline
+        return amount, method, attributes
 
-    def _extract_resolution(self, turns: List) -> Resolution:
-        """
-        Enhanced resolution extraction with better pattern matching
-
-        Priority:
-        1. Explicit completion (submitted, processed, completed)
-        2. Resolution keywords (resolved, fixed)
-        3. Approved/payout keywords
-        4. Pending indicators (scheduled, tomorrow)
-        """
+    def _extract_resolution(self, turns: list[Turn]) -> Resolution:
         agent_turns = [t for t in turns if t.speaker == "agent"]
-        last_agent_turns = agent_turns[-5:]  # Check last 5 turns
+        recent = agent_turns[-5:] if agent_turns else []
+        res_type, timeline, next_steps = "UNKNOWN", None, None
 
-        resolution_type = "UNKNOWN"
-        timeline = None
-        next_steps = None
+        for turn in reversed(recent):
+            text = turn.text.lower()
+            if self._match_any(text, ["submitted", "processed", "completed", "done", "issued", "sent"]):
+                res_type = "RESOLVED"
+            elif self._match_any(text, ["resolved", "fixed", "solved", "approved", "payout"]):
+                res_type = "RESOLVED"
+            elif self._match_any(text, ["replace", "replacement", "exchange"]):
+                res_type, next_steps = "PENDING", "REPLACEMENT"
+            elif self._match_any(text, ["escalate", "supervisor", "transfer"]):
+                res_type = "ESCALATED"
 
-        for turn in reversed(last_agent_turns):
-            text_lower = turn.text.lower()
-
-            # Pattern 1: Explicit completion - HIGHEST PRIORITY
-            completion_keywords = [
-                "submitted",
-                "processed",
-                "completed",
-                "done",
-                "applied",
-                "issued",
-                "sent",
-                "filed",
-                "i've submitted",
-            ]
-            if any(word in text_lower for word in completion_keywords):
-                resolution_type = "RESOLVED"
-                timeline = self._extract_timeline(text_lower)
+            if res_type != "UNKNOWN":
+                timeline = self._extract_timeline(text)
                 break
 
-            # Pattern 2: Explicit resolution
-            if any(word in text_lower for word in ["resolved", "fixed", "solved"]):
-                resolution_type = "RESOLVED"
-                timeline = self._extract_timeline(text_lower)
-                break
-
-            # Pattern 3: Approved/Payout
-            if any(word in text_lower for word in ["approved", "payout"]):
-                resolution_type = "RESOLVED"
-                timeline = self._extract_timeline(text_lower)
-                break
-
-            # Pattern 4: Replacement/Exchange scheduled
-            if any(
-                word in text_lower for word in ["replace", "replacement", "exchange"]
-            ):
-                resolution_type = "PENDING"
-                timeline = self._extract_timeline(text_lower)
-                next_steps = "REPLACEMENT"
-                break
-
-            # Pattern 5: Escalated/Transferred
-            if any(
-                word in text_lower for word in ["escalate", "transfer", "supervisor"]
-            ):
-                resolution_type = "ESCALATED"
-                break
-
-        return Resolution(
-            type=resolution_type, timeline=timeline, next_steps=next_steps
-        )
+        return Resolution(type=res_type, timeline=timeline, next_steps=next_steps)
 
     @staticmethod
-    def _extract_timeline(text: str) -> Optional[str]:
-        """Improved timeline extraction"""
-        if "tomorrow" in text:
+    def _match_any(text: str, keywords: list[str]) -> bool:
+        return any(kw in text for kw in keywords)
+
+    def _extract_timeline(self, text: str) -> Optional[str]:
+        pattern = self.temporal_extractor.extract(text)
+        if pattern and getattr(pattern, "duration", None):
+            # keep original return format, uppercase for consistency if string
+            return str(pattern.duration).upper()
+        if "tomorrow" in text.lower():
             return "TOMORROW"
-        if "today" in text:
+        if "today" in text.lower():
             return "TODAY"
-        if match := re.search(r"within (\d+)(?:-(\d+))?\s*(hour|day)", text):
-            if match.group(2):
-                return f"{match.group(1)}-{match.group(2)}d"
-            return f"{match.group(1)}{'h' if 'hour' in match.group(3) else 'd'}"
-        if match := re.search(r"(\d+)\s*[-–]\s*(\d+)\s*(?:business )?days?", text):
-            return f"{match.group(1)}-{match.group(2)}d"
-        if match := re.search(r"(\d+)\s*(?:business )?days?", text):
+        # fallback numeric patterns (within X days/hours)
+        if match := re.search(r"within\s+(\d+)\s*(hour|hours)", text, re.I):
+            return f"{match.group(1)}h"
+        if match := re.search(r"within\s+(\d+)\s*(day|days)", text, re.I):
             return f"{match.group(1)}d"
         return None
 
     @staticmethod
-    def _extract_reference_number(turn: Turn) -> Optional[str]:
-        """Extract reference/confirmation numbers"""
-        text = turn.text
-        if match := re.search(r"\b([A-Z]{2,4})-(\d{4,})\b", text):
-            return f"{match.group(1)}-{match.group(2)}"
-        if match := re.search(
-            r"(reference|confirmation) (?:number )?(is|#)? ?([A-Z0-9-]+)",
-            text,
-            re.IGNORECASE,
-        ):
-            return match.group(3)
-        return None
-
-    @staticmethod
-    def _extract_financial_details(turn: Turn) -> tuple[Optional[str], Optional[str]]:
-        """Extract amount and payment method from entities and text"""
-        amount = (turn.entities.get("money", []) or [None])[0]
-        text_lower = turn.text.lower()
-        if "paypal" in text_lower:
-            method = "PAYPAL"
-        elif "check" in text_lower:
-            method = "CHECK"
-        elif "credit card" in text_lower:
-            method = "CARD_CREDIT"
-        elif "account" in text_lower and "credit" in text_lower:
-            method = "ACCOUNT_CREDIT"
-        else:
-            method = "CARD_CREDIT"
-        return amount, method
-
-    def _extract_call_info(self, turns: list[Turn], metadata: dict) -> CallInfo:
-        """Extract call metadata more compactly"""
-        agent_name = metadata.get("agent")
-        call_type = "SUPPORT"
-        full_text = " ".join([t.text for t in turns]).lower()
-        if any(
-            word in full_text
-            for word in [
-                "upgrade",
-                "upgrading",
-                "plan",
-                "pricing",
-                "purchase",
-                "buy",
-                "considering",
-                "interested in",
-            ]
-        ):
-            call_type = "SALES"
-
-        if not agent_name:
-            # Check first 3 agent turns for NER-based name extraction
-            for turn in (t for t in turns[:3] if t.speaker == "agent"):
-                for ent in self.nlp(turn.text).ents:
-                    if ent.label_ == "PERSON":
-                        agent_name = ent.text
-                        break
-                if agent_name:
-                    break
-
-            # Fallback: regex patterns
-            if not agent_name:
-                patterns = [
-                    r"my name is (\w+)",
-                    r"i'?m (\w+)",
-                    r"this is (\w+)",
-                    r"(\w+) from",
-                    r"(\w+) here",
-                ]
-                agent_name = next(
-                    (
-                        match.group(1).title()
-                        for turn in turns[:3]
-                        if turn.speaker == "agent"
-                        for pattern in patterns
-                        if (match := re.search(pattern, turn.text.lower()))
-                    ),
-                    None,
-                )
-
-        return CallInfo(
-            call_id=metadata.get("call_id", "unknown"),
-            type=call_type,
-            channel=metadata.get("channel", "VOICE"),
-            duration=len(turns),
-            agent=agent_name,
-        )
-
-    def _extract_customer_profile(self, turns: list[Turn]) -> CustomerProfile:
-        """Extract customer profile from turns in a cleaner, Pythonic way"""
-        profile = CustomerProfile()
-
-        # Extract customer name
-        customer_name = self._extract_customer_name(turns)
-        if customer_name:
-            profile.name = customer_name
-
-        # Extract other details from entities
-        for turn in turns:
-            if hasattr(turn, "entities") and turn.entities:
-                # Email
-                emails = turn.entities.get("emails", [])
-                if emails:
-                    if not profile.attributes:
-                        profile.attributes = {}
-                    profile.attributes["email"] = emails[0]
-
-                # Account
-                accounts = turn.entities.get("accounts", [])
-                if accounts and not profile.account:
-                    profile.account = accounts[0]
-
-                # Tier from plan mentions
-                plans = turn.entities.get("plans", [])
-                if plans and not profile.tier:
-                    plan = plans[0].lower()
-                    if "premium" in plan:
-                        profile.tier = "PREMIUM"
-                    elif "enterprise" in plan:
-                        profile.tier = "ENTERPRISE"
-                    elif "basic" in plan:
-                        profile.tier = "BASIC"
-                    else:
-                        profile.tier = "STANDARD"
-
-        return profile
-
-    def _extract_customer_name(self, turns: List) -> Optional[str]:
+    def _determine_action_result(turns: list[Turn], action_index: int, action_turn: Turn) -> str:
         """
-        Extract customer name from agent addressing them
-
-        Patterns:
-        - "Thanks, NAME"
-        - "Thank you, NAME"
-        - Extract from email (name.something@)
-        """
-        for turn in turns:
-            if turn.speaker == "agent":
-                text = turn.text
-
-                # Pattern 1: "Thanks, NAME" or "Thank you, NAME"
-                match = re.search(r"[Tt]hank[s]?,\s+([A-Z][a-z]+)", text)
-                if match:
-                    name = match.group(1)
-                    # Filter common false positives
-                    if name.lower() not in ["you", "for", "the", "so", "very"]:
-                        return name
-
-                # Pattern 2: Extract from email (melissa.jordan@ → Melissa)
-                match = re.search(r"([a-z]+)\.[a-z]+@", text.lower())
-                if match:
-                    return match.group(1).title()
-
-        return None
-
-    def _extract_issues(self, turns: list[Turn]) -> list[Issue]:
-        """Extract issues with payment context separation"""
-        issues = []
-
-        # Combine all customer text
-        customer_text = " ".join(
-            [turn.text for turn in turns if turn.speaker == "customer"]
-        )
-
-        # Get issue type from your vocabulary
-        issue_type = self._get_issue_type(customer_text)
-
-        if issue_type:
-            # Detect severity
-            severity = self._detect_severity(customer_text)
-
-            # For billing issues, detect cause
-            cause = None
-            plan_change = None
-            disputed_amounts = []
-
-            if issue_type in ["BILLING_DISPUTE", "UNEXPECTED_CHARGE", "REFUND_REQUEST"]:
-                cause, plan_change = self._detect_billing_cause(turns)
-                disputed_amounts = self._extract_disputed_amounts(turns)
-
-            # Extract temporal pattern (but don't include if empty)
-            temporal_days = self._extract_temporal_days(customer_text)
-
-            issue = Issue(
-                type=issue_type,
-                severity=severity,
-                cause=cause,
-                plan_change=plan_change,
-                disputed_amounts=disputed_amounts,
-                attributes={},
-            )
-
-            # Only add DAYS if actually present
-            if temporal_days and len(temporal_days) > 0:
-                issue.attributes["days"] = temporal_days
-
-            issues.append(issue)
-
-        return issues
-
-    def _get_issue_type(self, text: str) -> Optional[str]:
-        """Get issue type - replace with your vocab.get_issue_token()"""
-        text_lower = text.lower()
-
-        if "bill" in text_lower or "charge" in text_lower or "refund" in text_lower:
-            return "BILLING_DISPUTE"
-        elif (
-            "internet" in text_lower
-            or "connection" in text_lower
-            or "wifi" in text_lower
-        ):
-            return "CONNECTIVITY"
-        elif "slow" in text_lower or "speed" in text_lower:
-            return "PERFORMANCE"
-
-        return None
-
-    def _extract_temporal_days(self, text: str) -> List[str]:
-        """Extract days from text"""
-        days = []
-        day_patterns = {
-            "monday": "MON",
-            "tuesday": "TUE",
-            "wednesday": "WED",
-            "thursday": "THU",
-            "friday": "FRI",
-            "saturday": "SAT",
-            "sunday": "SUN",
-        }
-
-        text_lower = text.lower()
-        for day_name, day_abbr in day_patterns.items():
-            if day_name in text_lower:
-                days.append(day_abbr)
-
-        return days
-
-    @staticmethod
-    def _detect_severity(text: str) -> str:
-        """Detect issue severity from text"""
-        text_lower = text.lower()
-
-        # High severity indicators
-        high_severity = [
-            "critical",
-            "urgent",
-            "emergency",
-            "completely down",
-            "not working at all",
-            "can't work",
-            "losing money",
-        ]
-        if any(indicator in text_lower for indicator in high_severity):
-            return "HIGH"
-
-        # Medium severity indicators
-        medium_severity = [
-            "frustrated",
-            "frustrating",
-            "annoying",
-            "work from home",
-            "need it for work",
-            "important",
-        ]
-        if any(indicator in text_lower for indicator in medium_severity):
-            return "MEDIUM"
-
-        return "LOW"
-
-    @staticmethod
-    def _extract_disputed_amounts(turns: List[Turn]) -> List[str]:
-        """
-        Extract disputed amounts ONLY from customer turns mentioning the problem
-
-        Returns list like: ["$14.99", "$16.99"]
-        """
-        disputed_amounts = []
-
-        for turn in turns:
-            if turn.speaker == "customer":
-                text_lower = turn.text.lower()
-
-                # Check if customer is mentioning charges/billing
-                problem_keywords = [
-                    "charged",
-                    "charge",
-                    "bill",
-                    "statement",
-                    "saw",
-                    "shows",
-                    "billed",
-                    "payment",
-                ]
-
-                if any(keyword in text_lower for keyword in problem_keywords):
-                    # Extract money from this turn
-                    money_amounts = turn.entities.get("money", [])
-                    disputed_amounts.extend(money_amounts)
-
-        # Deduplicate while preserving order
-        seen = set()
-        unique_amounts = []
-        for amount in disputed_amounts:
-            if amount not in seen:
-                seen.add(amount)
-                unique_amounts.append(amount)
-
-        return unique_amounts
-
-    @staticmethod
-    def _detect_billing_cause(turns: List[Turn]) -> Tuple[Optional[str], Optional[str]]:
-        """
-        Detect root cause and plan change from agent explanation
-
-        Returns: (cause, plan_change)
-        """
-        cause = None
-        plan_change = None
-
-        for turn in turns:
-            if turn.speaker == "agent":
-                text_lower = turn.text.lower()
-
-                # Enhanced pattern matching
-                if (
-                    "duplicate" in text_lower
-                    or "retried" in text_lower
-                    or "processed twice" in text_lower
-                ):
-                    cause = "DUPLICATE_PROCESSING"
-
-                elif "upgrade" in text_lower or "upgraded" in text_lower:
-                    cause = "MID_CYCLE_UPGRADE"
-
-                    # Extract plan names
-                    plan_patterns = [
-                        r"from (\w+) to (\w+)",
-                        r"(\w+) to (\w+) plan",
-                        r"(\w+) plan.*(\w+) plan",
-                    ]
-
-                    for pattern in plan_patterns:
-                        match = re.search(pattern, text_lower, re.IGNORECASE)
-                        if match:
-                            old_plan = match.group(1).upper()
-                            new_plan = match.group(2).upper()
-                            plan_change = f"{old_plan}→{new_plan}"
-                            break
-
-                elif "downgrade" in text_lower or "downgraded" in text_lower:
-                    cause = "MID_CYCLE_DOWNGRADE"
-
-                elif "double" in text_lower and "billing" in text_lower:
-                    cause = "DOUBLE_BILLING"
-
-                elif "overlap" in text_lower:
-                    cause = "BILLING_OVERLAP"
-
-                elif "error" in text_lower or "mistake" in text_lower:
-                    cause = "SYSTEM_ERROR"
-
-                elif "proration" in text_lower or "prorated" in text_lower:
-                    cause = "PRORATION_CONFUSION"
-
-        return cause, plan_change
-
-    @staticmethod
-    def _determine_action_result(
-        turns: list[Turn], action_index: int, action_turn: Turn
-    ) -> str:
-        """
-        Enhanced action result detection
-
         Priority:
         1. Check current turn for completion keywords
-        2. Check following turns for confirmation
+        2. Check immediate following turns for confirmations
         3. Default to PENDING
         """
         text_lower = action_turn.text.lower()
 
-        # HIGH PRIORITY: Explicit completion in current turn
         completion_keywords = [
             "submitted",
             "processed",
@@ -662,49 +202,230 @@ class TranscriptAnalyzer:
             "done",
             "just submitted",
             "just processed",
-            "just filed",
             "already submitted",
             "already processed",
         ]
-
-        if any(keyword in text_lower for keyword in completion_keywords):
+        if any(k in text_lower for k in completion_keywords):
             return "COMPLETED"
 
-        # Check if action verb + "now" or "right now"
+        # Patterns like "I've submitted the refund now" or "I'm processing it now"
         action_now_patterns = [
-            r"I\'?(?:ve|ll)\s+\w+\s+(?:the\s+)?\w+\s+now",  # "I've submitted the refund now"
-            r"I\'?m\s+\w+ing\s+\w+\s+now",  # "I'm processing it now"
+            r"(i('|’)ve|i have) (just )?(submitted|processed|filed)\b",
+            r"i('?m| am) (processing|submitting|filing) (it|the|that)? (now)?\b",
         ]
-
-        for pattern in action_now_patterns:
-            if re.search(pattern, text_lower):
+        for pat in action_now_patterns:
+            if re.search(pat, text_lower):
                 return "COMPLETED"
 
-        # Check following turns for confirmation
-        following_turns = turns[action_index + 1 : min(action_index + 3, len(turns))]
-
-        for turn in following_turns:
-            turn_text_lower = turn.text.lower()
-
-            # Customer confirmation
-            if turn.speaker == "customer" and any(
-                word in turn_text_lower
-                for word in [
-                    "perfect",
-                    "great",
-                    "thank",
-                    "appreciate",
-                    "received",
-                    "got it",
-                ]
-            ):
+        # Inspect the next 1-2 turns for customer/agent confirmation
+        following_turns = turns[action_index + 1 : action_index + 3]
+        for t in following_turns:
+            tl = t.text.lower()
+            if t.speaker == "customer" and any(word in tl for word in ["perfect", "great", "thank", "got it", "received", "appreciate"]):
                 return "COMPLETED"
-
-            # Agent follow-up confirmation
-            if turn.speaker == "agent" and any(
-                word in turn_text_lower
-                for word in ["all set", "you're all set", "that's done", "completed"]
-            ):
+            if t.speaker == "agent" and any(word in tl for word in ["all set", "you're all set", "that's done", "completed"]):
                 return "COMPLETED"
 
         return "PENDING"
+
+    @staticmethod
+    def _extract_financial_details(turn: Turn) -> tuple[Optional[str], Optional[str]]:
+        """
+        Prefer using named entities from turn.entities if present; otherwise fallback to regex heuristics.
+        Returns (amount, payment_method)
+        """
+        amount = None
+        method = None
+        ents = getattr(turn, "entities", {}) or {}
+
+        # try spaCy/NER money field
+        money_candidates = ents.get("money") or ents.get("money_amounts") or []
+        if money_candidates:
+            amount = money_candidates[0]
+
+        # fallback regex for $ amounts in the text
+        if not amount:
+            if m := re.search(r"\$\s?([\d,]+(?:\.\d{1,2})?)", turn.text):
+                amount = f"${m.group(1)}"
+
+        text_lower = turn.text.lower()
+        if "paypal" in text_lower:
+            method = "PAYPAL"
+        elif "check" in text_lower:
+            method = "CHECK"
+        elif "credit card" in text_lower or "card" in text_lower:
+            method = "CARD_CREDIT"
+        elif "account credit" in text_lower or "account" in text_lower and "credit" in text_lower:
+            method = "ACCOUNT_CREDIT"
+        # If nothing found, let caller decide default; return None for clarity
+        return amount, method
+
+    def _extract_reference_number(self, turn: Turn) -> Optional[str]:
+        """
+        Extracts reference numbers like:
+         - RFD-908712
+         - ESC-45390
+         - "reference number is RFD-..." or "confirmation #12345"
+        """
+        text = turn.text
+        # common pattern: ABC-12345
+        if m := re.search(r"\b([A-Z]{2,5}-\d{3,})\b", text):
+            return m.group(0)
+
+        # "reference number is ...", "confirmation #..."
+        if m := re.search(r"(?:reference|confirmation|ref)[^\w]{0,6}#?\s*([A-Z0-9-]{4,30})", text, re.I):
+            return m.group(1)
+
+        # fallback: sequences labeled as "id" or "ticket"
+        if m := re.search(r"(?:id|ticket|case|order)[^\w]{0,6}#?\s*([A-Z0-9-]{3,30})", text, re.I):
+            return m.group(1)
+
+        return None
+
+    def _extract_customer_profile(self, turns: list[Turn]) -> CustomerProfile:
+        # === CUSTOMER PROFILE ===
+        profile = CustomerProfile()
+        profile.name = self._extract_customer_name(turns)
+
+        # Consolidate entities across all customer turns
+        for t in turns:
+            ents = getattr(t, "entities", {}) or {}
+            if emails := ents.get("emails"):
+                profile.attributes = profile.attributes or {}
+                profile.attributes["email"] = emails[0]
+            if accounts := ents.get("accounts") or ents.get("account_numbers"):
+                profile.account = profile.account or accounts[0]
+            if plans := ents.get("plans"):
+                profile.tier = profile.tier or self._map_plan_to_tier(plans[0])
+
+        return profile
+
+    @staticmethod
+    def _map_plan_to_tier(plan: str) -> str:
+        plan = plan.lower()
+        if "premium" in plan:
+            return "PREMIUM"
+        if "enterprise" in plan:
+            return "ENTERPRISE"
+        if "basic" in plan:
+            return "BASIC"
+        return "STANDARD"
+
+    @staticmethod
+    def _extract_customer_name(turns: list[Turn]) -> Optional[str]:
+        # Try agent-doc NER first (requires doc attached)
+        for t in turns[:3]:
+            if t.speaker == "agent":
+                doc = t.doc
+                if doc:
+                    for ent in doc.ents:
+                        if ent.label_ == "PERSON":
+                            return ent.text
+                # fallback patterns on text
+                if match := re.search(r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)", t.text, re.I):
+                    return match.group(1).title()
+                if match := re.search(r"thank(?:s| you),\s+([A-Z][a-z]+)", t.text):
+                    return match.group(1)
+        # fallback: extract from first customer email
+        for t in turns:
+            ents = getattr(t, "entities", {}) or {}
+            emails = ents.get("emails") or []
+            if emails:
+                local_part = emails[0].split("@")[0]
+                if "." in local_part:
+                    return local_part.split(".")[0].title()
+        return None
+
+    # === ISSUE DETECTION ===
+    def _extract_issues(self, turns: list[Turn]) -> list[Issue]:
+        customer_text = " ".join(t.text for t in turns if t.speaker == "customer").lower()
+        issue_type = self._get_issue_type(customer_text)
+        if not issue_type:
+            return []
+
+        severity = self._detect_severity(customer_text)
+        cause, plan_change = None, None
+        amounts = []
+        if issue_type in ["BILLING_DISPUTE", "UNEXPECTED_CHARGE", "REFUND_REQUEST"]:
+            cause, plan_change = self._detect_billing_cause(turns)
+            amounts = self._extract_disputed_amounts(turns)
+
+        days = self.temporal_extractor.extract(customer_text).days or []
+        attrs = {"days": days} if days else {}
+
+        return [Issue(type=issue_type, severity=severity, cause=cause,
+                      plan_change=plan_change, disputed_amounts=amounts, attributes=attrs)]
+
+    @staticmethod
+    def _get_issue_type(text: str) -> Optional[str]:
+        if any(x in text for x in ["bill", "charge", "refund"]):
+            return "BILLING_DISPUTE"
+        if any(x in text for x in ["internet", "connection", "wifi"]):
+            return "CONNECTIVITY"
+        if any(x in text for x in ["slow", "speed"]):
+            return "PERFORMANCE"
+        return None
+
+    @staticmethod
+    def _detect_severity(text: str) -> str:
+        text = text.lower()
+        if any(x in text for x in ["critical", "urgent", "emergency", "not working at all", "can't work"]):
+            return "HIGH"
+        if any(x in text for x in ["frustrated", "annoying", "need it for work", "important"]):
+            return "MEDIUM"
+        return "LOW"
+
+    @staticmethod
+    def _extract_disputed_amounts(turns: list[Turn]) -> list[str]:
+        amounts = []
+        for t in (t for t in turns if t.speaker == "customer"):
+            if any(k in t.text.lower() for k in ["charge", "bill", "statement", "payment"]):
+                amounts.extend(getattr(t, "entities", {}).get("money", []))
+        return list(dict.fromkeys(amounts))
+
+    @staticmethod
+    def _detect_billing_cause(turns: list[Turn]) -> tuple[Optional[str], Optional[str]]:
+        cause, plan_change = None, None
+        for t in (t for t in turns if t.speaker == "agent"):
+            text = t.text.lower()
+            if any(x in text for x in ["duplicate", "processed twice", "retried"]):
+                cause = "DUPLICATE_PROCESSING"
+            elif "upgrade" in text:
+                cause = "MID_CYCLE_UPGRADE"
+                if match := re.search(r"from (\w+) to (\w+)", text):
+                    plan_change = f"{match.group(1).upper()}→{match.group(2).upper()}"
+            elif "downgrade" in text:
+                cause = "MID_CYCLE_DOWNGRADE"
+            elif "double" in text and "billing" in text:
+                cause = "DOUBLE_BILLING"
+            elif "overlap" in text:
+                cause = "BILLING_OVERLAP"
+            elif any(x in text for x in ["error", "mistake"]):
+                cause = "SYSTEM_ERROR"
+            elif any(x in text for x in ["proration", "prorated"]):
+                cause = "PRORATION_CONFUSION"
+        return cause, plan_change
+
+    def _extract_call_info(self, turns: list[Turn], metadata: dict) -> CallInfo:
+        agent_name = metadata.get("agent") or self._detect_agent_name(turns)
+        full_text = " ".join(t.text.lower() for t in turns)
+        call_type = "SALES" if any(x in full_text for x in ["upgrade", "pricing", "buy", "interested in"]) else "SUPPORT"
+        return CallInfo(
+            call_id=metadata.get("call_id", "unknown"),
+            type=call_type,
+            channel=metadata.get("channel", "VOICE"),
+            duration=len(turns),
+            agent=agent_name,
+        )
+
+    @staticmethod
+    def _detect_agent_name(turns: list[Turn]) -> Optional[str]:
+        for t in (t for t in turns[:3] if t.speaker == "agent"):
+            doc = getattr(t, "doc", None)
+            if doc:
+                for ent in doc.ents:
+                    if ent.label_ == "PERSON":
+                        return ent.text
+            if match := re.search(r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)", t.text, re.I):
+                return match.group(1)
+        return None

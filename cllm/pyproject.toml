@@ -7,6 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "accelerate>=1.10.1",
     "anthropic>=0.72.0",
+    "dateparser>=1.2.2",
     "matplotlib>=3.10.7",
     "pandas>=2.3.3",
     "pytest>=8.4.2",

@@ -282,7 +282,7 @@ def show_comparison(transcript: str, metadata: dict):
     analyzer = TranscriptAnalyzer(nlp)
     analysis = analyzer.analyze(transcript, metadata)
 
-    encoder = TranscriptEncoder()
+    encoder = TranscriptEncoder(nlp)
     new_result = encoder.encode(analysis)
 
     # INFORMATION PRESERVATION CHECK
@@ -317,7 +317,7 @@ def show_comparison(transcript: str, metadata: dict):
     print(f"🗜️  Compression Ratio: {(1 - new_chars / original_chars) * 100:.1f}%")
 
     print("\n✅ Ready for production use!")
-    return analysis.dict(), new_result
+    return analysis.to_dict(), new_result
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from src.components.transcript import SentimentTrajectory, Turn
+from .._schemas import SentimentTrajectory, Turn
 
 
 class SentimentAnalyzer:
