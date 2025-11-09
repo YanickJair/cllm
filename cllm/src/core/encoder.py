@@ -21,15 +21,24 @@ class CLLMEncoder:
         print(f"Loading spaCy model: {model}...")
 
         self._nlp: spacy.Language = spacy.load(model)
+        self._ds_config = CompressionConfig(
+            required_fields=["id", "title", "description", "category"], auto_detect=False
+        )
         self._ds_encoder = DSEncoder(
-            config=CompressionConfig(
-                required_fields=["id", "title", "description", "category"], auto_detect=False
-            )
+            config=self._ds_config
         )
         self._ts_encoder = TranscriptEncoder(self._nlp)
         self._sys_prompt_encoder = SysPromptEncoder(self._nlp)
 
         self._classifier = DataClassifier()
+
+    @property
+    def ds_config(self) -> CompressionConfig:
+        return self._ds_config
+
+    @ds_config.setter
+    def ds_config(self, cfg: CompressionConfig) -> None:
+        self._ds_config = cfg
 
     def encoder(self, input_: Any, verbose: bool = False) -> Any:
         class_ = self._classifier.classifier(input_=input_)

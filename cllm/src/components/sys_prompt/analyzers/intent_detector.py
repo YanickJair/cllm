@@ -2,7 +2,7 @@
 from typing import Optional
 from spacy import Language
 
-from src.core import Intent
+from src.components.sys_prompt import Intent
 from src.utils.vocabulary import Vocabulary
 
 
