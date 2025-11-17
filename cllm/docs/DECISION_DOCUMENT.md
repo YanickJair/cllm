@@ -280,7 +280,7 @@ You can have a working demo this week AND a production-ready system in a month.
 # 1. Integrate fixed analyzer
 cp analyzer_production_ready.py src/components/transcript/analyzer.py
 
-# 2. Update encoder
+# 2. Update encode
 # Follow INTEGRATION_GUIDE.md
 
 # 3. Test
@@ -292,7 +292,7 @@ python run_nba_benchmark.py
 
 ### Long-Term Architecture:
 ```bash
-# 1. Add general encoder
+# 1. Add general encode
 cp generalizable_encoder_architecture.py src/components/cllm/encoder_v2.py
 
 # 2. Create adapters
