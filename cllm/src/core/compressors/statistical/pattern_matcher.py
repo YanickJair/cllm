@@ -17,7 +17,7 @@ class StatisticalCompressor:
         Apply statistical compression by replacing patterns with REF tokens
 
         Args:
-            semantic_tokens: Output from semantic encoder
+            semantic_tokens: Output from semantic encode
             domain: Optional domain hint for better pattern matching
 
         Returns:

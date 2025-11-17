@@ -95,7 +95,7 @@ def run_full_evaluation():
         from src.core.encoder import CLLMEncoder
         import spacy
 
-        print("Initializing encoder...")
+        print("Initializing encode...")
         nlp = spacy.load("en_core_web_sm")
         encoder = CLLMEncoder(nlp)
 

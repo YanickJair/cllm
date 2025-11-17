@@ -2,7 +2,7 @@ import re
 
 import spacy
 
-from ._schemas import CompressionResult
+from ._schemas import CompressionResult, SysPromptConfig
 from .analyzers.attribute_parser import AttributeParser
 from .analyzers.intent_detector import IntentDetector
 from .analyzers.target import TargetExtractor
@@ -11,19 +11,20 @@ from ...utils.vocabulary import Vocabulary
 
 
 class SysPromptEncoder:
-    def __init__(self, nlp: spacy.Language):
+    def __init__(self, nlp: spacy.Language, config: SysPromptConfig = SysPromptConfig()):  # type: ignore
         """
-        Initialize encoder
+        Initialize encode
 
         Args:
             nlp: spaCy model to use (en_core_web_sm, en_core_web_md, en_core_web_lg)
         """
 
         self.nlp: spacy.Language = nlp
+        self._config = config
 
         self.intent_detector = IntentDetector(self.nlp)
         self.target_extractor = TargetExtractor(self.nlp)
-        self.attribute_parser = AttributeParser(self.nlp)
+        self.attribute_parser = AttributeParser(self.nlp, config=config)
         self.tokenizer = CLLMTokenizer()
 
     def compress(self, prompt: str, verbose: bool = False) -> CompressionResult:

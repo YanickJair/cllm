@@ -240,9 +240,9 @@ class SchemaOutputCompressor:
     Produces:
     OutputSchema(format_type="JSON", attributes={"SCHEMA": "{...}", "SCORE_MAP": "{...}"})
     """
-    def __init__(self) -> None:
-        self._add_attributes: bool = False
-        self._infer_types: bool = False
+    def __init__(self, *, infer_types: bool, add_attributes: bool) -> None:
+        self._add_attributes: bool = infer_types
+        self._infer_types: bool = add_attributes
 
     SCORE_PATTERN = re.compile(
         r'(\d+\.\d+)\s*[-–]\s*(\d+\.\d+)\s*:\s*([A-Za-z ]+)',
@@ -367,8 +367,12 @@ class SchemaOutputCompressor:
 
 
 class SysPromptOutputFormat:
-    def __init__(self):
-        self.struct_compressor = SchemaOutputCompressor()
+    def __init__(self, infer_types: bool, add_attributes: bool):
+        self.struct_compressor = SchemaOutputCompressor(
+            infer_types=infer_types,
+            add_attributes=add_attributes
+        )
+
 
     def compress(self, output_spec, is_structured=None):
         if is_structured is None:

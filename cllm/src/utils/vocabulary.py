@@ -183,7 +183,7 @@ class Vocabulary:
             "discover",
         ],
         # Ranking and prioritization
-        "RANK": ["rank", "prioritize", "order", "sort by", "rate", "score"],
+        "RANK": ["prioritize", "order", "sort by", "rate", "score"],
         # Predictions and forecasting
         "PREDICT": [
             "predict",

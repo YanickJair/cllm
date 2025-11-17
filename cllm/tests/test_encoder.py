@@ -1,6 +1,6 @@
 """
 CLLM Encoder - Test Suite
-Validates encoder performance on diverse prompts
+Validates encode performance on diverse prompts
 
 Usage:
     python test_encoder.py
@@ -14,11 +14,11 @@ from dataclasses import dataclass
 # Add the parent directory to the Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Import the encoder (assuming it's in encoder.py)
-# from encoder import CLLMEncoder, CompressionResult
+# Import the encode (assuming it's in encode.py)
+# from encode import CLLMEncoder, CompressionResult
 
 
-# For demonstration, we'll simulate the encoder structure
+# For demonstration, we'll simulate the encode structure
 @dataclass
 class EncoderTestResult:
     prompt: str
@@ -33,7 +33,7 @@ class EncoderTestResult:
 
 
 class EncoderTester:
-    """Test harness for CLLM encoder"""
+    """Test harness for CLLM encode"""
 
     def __init__(self):
         self.test_cases = self._load_test_cases()
@@ -193,7 +193,7 @@ class EncoderTester:
 
     def run_tests(self, encoder) -> Dict:
         """
-        Run all test cases through the encoder
+        Run all test cases through the encode
 
         Args:
             encoder: Instance of CLLMEncoder
@@ -392,7 +392,7 @@ def main():
     print("CLLM ENCODER - VALIDATION TEST")
     print("=" * 80)
     print("\nThis test suite will:")
-    print("  1. Run the encoder on 20 diverse test cases")
+    print("  1. Run the encode on 20 diverse test cases")
     print("  2. Compare outputs with expected results")
     print("  3. Identify gaps and issues")
     print("  4. Provide actionable insights for iteration")
@@ -402,11 +402,11 @@ def main():
     print("\n" + "=" * 80 + "\n")
 
     try:
-        # Import the encoder
+        # Import the encode
         from src.core.encoder import CLLMEncoder
 
-        # Initialize encoder
-        print("Initializing encoder...")
+        # Initialize encode
+        print("Initializing encode...")
         encoder = CLLMEncoder()
 
         # Create test harness
@@ -439,13 +439,13 @@ def main():
 
         print("\nNext steps:")
         print("  1. Review test_results.json for detailed analysis")
-        print("  2. Fix identified issues in encoder.py")
+        print("  2. Fix identified issues in encode.py")
         print("  3. Re-run tests until pass rate > 80%")
         print("  4. Then test on full 100-prompt dataset")
 
     except ImportError as e:
-        print(f"ERROR: Could not import encoder.py: {e}")
-        print("Make sure encoder.py is in the same directory")
+        print(f"ERROR: Could not import encode.py: {e}")
+        print("Make sure encode.py is in the same directory")
         import traceback
 
         traceback.print_exc()

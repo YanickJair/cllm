@@ -1,6 +1,6 @@
 """
 CLLM Encoder - Full Validation Suite
-Tests encoder on 100 diverse prompts to validate production readiness
+Tests encode on 100 diverse prompts to validate production readiness
 
 Usage:
     python validate_full.py
@@ -306,15 +306,15 @@ def main():
     print("\n" + "=" * 80)
     print("CLLM ENCODER - 100 PROMPT VALIDATION")
     print("=" * 80)
-    print("\nThis will test the encoder on 100 diverse prompts:")
+    print("\nThis will test the encode on 100 diverse prompts:")
     print("  • 50 General-purpose prompts")
     print("  • 50 Customer Support prompts")
     print("  • Comprehensive coverage analysis")
     print("  • Detailed failure reporting")
     print("\n" + "=" * 80)
 
-    # Initialize encoder
-    print("\nInitializing encoder...")
+    # Initialize encode
+    print("\nInitializing encode...")
     encoder = CLLMEncoder()
 
     # Load prompts
