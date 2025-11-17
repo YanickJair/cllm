@@ -20,7 +20,7 @@ class StatisticalTrainer:
         Train on a corpus of compressed prompts
 
         Args:
-            compressed_corpus: Semantic encoder outputs
+            compressed_corpus: Semantic encode outputs
             original_corpus: Original prompts (for examples)
 
         Returns:

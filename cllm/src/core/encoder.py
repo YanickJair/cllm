@@ -9,11 +9,11 @@ from .text_classifier import DataClassifier, DataTypes
 
 
 class CLLMEncoder:
-    """Main CLLM encoder - orchestrates compression pipeline"""
+    """Main CLLM encode - orchestrates compression pipeline"""
 
     def __init__(self, model: str = "en_core_web_sm"):
         """
-        Initialize encoder
+        Initialize encode
 
         Args:
             model: spaCy model to use (en_core_web_sm, en_core_web_md, en_core_web_lg)
@@ -40,8 +40,9 @@ class CLLMEncoder:
     def ds_config(self, cfg: CompressionConfig) -> None:
         self._ds_config = cfg
 
-    def encoder(self, input_: Any, verbose: bool = False) -> Any:
+    def encode(self, input_: Any, verbose: bool = False) -> Any:
         class_ = self._classifier.classifier(input_=input_)
+
         if verbose:
             print(f"Data Type Classified as - {class_}")
 

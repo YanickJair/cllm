@@ -287,7 +287,7 @@ class TrainingDataGenerator:
             "out_tokens": [],
         }
 
-        # Load vocabulary from your encoder
+        # Load vocabulary from your encode
         from src.utils.vocabulary import Vocabulary
 
         v = Vocabulary()

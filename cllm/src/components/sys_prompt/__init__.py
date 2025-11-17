@@ -1,1 +1,1 @@
-from ._schemas import Intent, Target
+from ._schemas import Intent, Target, CompressionResult

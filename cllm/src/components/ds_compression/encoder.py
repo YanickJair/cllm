@@ -1,6 +1,6 @@
 from typing import Any
 
-from src.components.ds_compression import CompressionConfig, FieldImportance
+from . import CompressionConfig, FieldImportance
 
 
 class DSEncoder:

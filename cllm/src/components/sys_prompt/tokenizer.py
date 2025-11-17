@@ -1,5 +1,5 @@
 from typing import Optional
-from ._schemas import Intent, Target, ExtractionField, Context, OutputFormat
+from ._schemas import Intent, Target, ExtractionField, Context, OutputFormat, OutputSchema
 
 
 class CLLMTokenizer:
@@ -11,7 +11,7 @@ class CLLMTokenizer:
         targets: list[Target],
         extractions: Optional[ExtractionField],
         contexts: list[Context],
-        output_format: Optional[OutputFormat],
+        output_format: Optional[OutputSchema],
         quantifier: Optional[tuple[str, int]] = None,
         specifications=None,
     ) -> str:
@@ -51,10 +51,6 @@ class CLLMTokenizer:
 
         # Add OUT token
         if output_format:
-            out_str = f"[OUT:{output_format.format_type}]"
-            if output_format.attributes:
-                for key, value in output_format.attributes.items():
-                    out_str = out_str[:-1] + f":{key}={value}]"
-            tokens.append(out_str)
+            tokens.append(output_format.build_token())
 
         return " ".join(tokens)

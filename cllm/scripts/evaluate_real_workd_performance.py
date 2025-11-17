@@ -376,14 +376,14 @@ class RealWorldEvaluator:
 def main():
     """Run real-world performance evaluation"""
 
-    # Import encoder
+    # Import encode
     import sys
 
     sys.path.insert(0, str(Path(__file__).parent))
 
     from src.core.encoder import CLLMEncoder
 
-    # Initialize encoder
+    # Initialize encode
     print("Initializing CLLM Encoder...\n")
     encoder = CLLMEncoder("en_core_web_sm")
 
