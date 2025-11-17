@@ -5,7 +5,7 @@ Tests if compressed tokens can be decompressed back to natural language
 
 import json
 import re
-from typing import Dict, List
+from typing import Dict
 from difflib import SequenceMatcher
 import spacy
 
@@ -16,38 +16,38 @@ class SimpleDecoder:
     def __init__(self):
         # Token to natural language mappings
         self.req_to_text = {
-            'ANALYZE': 'Analyze',
-            'EXTRACT': 'Extract',
-            'GENERATE': 'Generate',
-            'SUMMARIZE': 'Summarize',
-            'TRANSFORM': 'Transform',
-            'EXPLAIN': 'Explain',
-            'COMPARE': 'Compare',
-            'CLASSIFY': 'Classify',
-            'DEBUG': 'Debug',
-            'OPTIMIZE': 'Optimize',
-            'VALIDATE': 'Validate',
-            'SEARCH': 'Search',
-            'RANK': 'Rank',
-            'PREDICT': 'Predict',
-            'FORMAT': 'Format',
-            'DETECT': 'Detect',
-            'CALCULATE': 'Calculate',
+            "ANALYZE": "Analyze",
+            "EXTRACT": "Extract",
+            "GENERATE": "Generate",
+            "SUMMARIZE": "Summarize",
+            "TRANSFORM": "Transform",
+            "EXPLAIN": "Explain",
+            "COMPARE": "Compare",
+            "CLASSIFY": "Classify",
+            "DEBUG": "Debug",
+            "OPTIMIZE": "Optimize",
+            "VALIDATE": "Validate",
+            "SEARCH": "Search",
+            "RANK": "Rank",
+            "PREDICT": "Predict",
+            "FORMAT": "Format",
+            "DETECT": "Detect",
+            "CALCULATE": "Calculate",
         }
 
         self.target_to_text = {
-            'CODE': 'this code',
-            'TRANSCRIPT': 'this transcript',
-            'EMAIL': 'this email',
-            'DOCUMENT': 'this document',
-            'DATA': 'this data',
-            'TICKET': 'this ticket',
-            'QUERY': 'this query',
-            'REPORT': 'this report',
-            'CONVERSATION': 'this conversation',
-            'CONCEPT': 'this concept',
-            'PATTERN': 'the pattern',
-            'ANSWER': 'an answer',
+            "CODE": "this code",
+            "TRANSCRIPT": "this transcript",
+            "EMAIL": "this email",
+            "DOCUMENT": "this document",
+            "DATA": "this data",
+            "TICKET": "this ticket",
+            "QUERY": "this query",
+            "REPORT": "this report",
+            "CONVERSATION": "this conversation",
+            "CONCEPT": "this concept",
+            "PATTERN": "the pattern",
+            "ANSWER": "an answer",
         }
 
     def decode(self, compressed: str) -> str:
@@ -57,7 +57,7 @@ class SimpleDecoder:
             return ""
 
         # Extract tokens
-        tokens = re.findall(r'\[([^\]]+)\]', compressed)
+        tokens = re.findall(r"\[([^\]]+)\]", compressed)
 
         # Parse token structure
         req_tokens = []
@@ -67,17 +67,17 @@ class SimpleDecoder:
         out_tokens = []
 
         for token in tokens:
-            if token.startswith('REQ:'):
-                req = token.split(':')[1].split(':')[0]  # Get action without modifiers
+            if token.startswith("REQ:"):
+                req = token.split(":")[1].split(":")[0]  # Get action without modifiers
                 req_tokens.append(req)
-            elif token.startswith('TARGET:'):
-                target = token.split(':')[1].split(':')[0]
+            elif token.startswith("TARGET:"):
+                target = token.split(":")[1].split(":")[0]
                 target_tokens.append(target)
-            elif token.startswith('EXTRACT:'):
+            elif token.startswith("EXTRACT:"):
                 extract_tokens.append(token)
-            elif token.startswith('CTX:'):
+            elif token.startswith("CTX:"):
                 ctx_tokens.append(token)
-            elif token.startswith('OUT:'):
+            elif token.startswith("OUT:"):
                 out_tokens.append(token)
 
         # Reconstruct natural language
@@ -95,19 +95,19 @@ class SimpleDecoder:
 
         # Add extract fields
         if extract_tokens:
-            extract_text = extract_tokens[0].replace('EXTRACT:', '').replace('+', ', ')
+            extract_text = extract_tokens[0].replace("EXTRACT:", "").replace("+", ", ")
             parts.append(f"and extract {extract_text.lower()}")
 
         # Add output format
         if out_tokens:
-            format_text = out_tokens[0].replace('OUT:', '').split(':')[0]
+            format_text = out_tokens[0].replace("OUT:", "").split(":")[0]
             parts.append(f"in {format_text.lower()} format")
 
         # Construct sentence
         if len(parts) == 0:
             return compressed  # Can't decode, return as-is
 
-        reconstructed = ' '.join(parts) + '.'
+        reconstructed = " ".join(parts) + "."
 
         # Capitalize first letter
         reconstructed = reconstructed[0].upper() + reconstructed[1:]
@@ -145,7 +145,9 @@ class ReconstructionEvaluator:
         concepts.update(token.lemma_ for token in doc if token.pos_ == "VERB")
 
         # Extract nouns
-        concepts.update(token.lemma_ for token in doc if token.pos_ in ["NOUN", "PROPN"])
+        concepts.update(
+            token.lemma_ for token in doc if token.pos_ in ["NOUN", "PROPN"]
+        )
 
         # Extract entities
         concepts.update(ent.text.lower() for ent in doc.ents)
@@ -164,7 +166,9 @@ class ReconstructionEvaluator:
         overlap = original_concepts.intersection(reconstructed_concepts)
         return len(overlap) / len(original_concepts)
 
-    def evaluate_sample(self, prompt: str, compressed: str, prompt_id: str = None) -> Dict:
+    def evaluate_sample(
+        self, prompt: str, compressed: str, prompt_id: str = None
+    ) -> Dict:
         """Evaluate reconstruction for a single sample"""
 
         # Decode
@@ -177,26 +181,28 @@ class ReconstructionEvaluator:
 
         # Overall reconstruction score (weighted average)
         reconstruction_score = (
-                text_similarity * 0.2 +  # 20% weight on exact text match
-                semantic_similarity * 0.4 +  # 40% weight on semantic similarity
-                concept_coverage * 0.4  # 40% weight on concept preservation
+            text_similarity * 0.2  # 20% weight on exact text match
+            + semantic_similarity * 0.4  # 40% weight on semantic similarity
+            + concept_coverage * 0.4  # 40% weight on concept preservation
         )
 
         result = {
-            'prompt_id': prompt_id,
-            'original': prompt,
-            'compressed': compressed,
-            'reconstructed': reconstructed,
-            'text_similarity': text_similarity,
-            'semantic_similarity': semantic_similarity,
-            'concept_coverage': concept_coverage,
-            'reconstruction_score': reconstruction_score,
+            "prompt_id": prompt_id,
+            "original": prompt,
+            "compressed": compressed,
+            "reconstructed": reconstructed,
+            "text_similarity": text_similarity,
+            "semantic_similarity": semantic_similarity,
+            "concept_coverage": concept_coverage,
+            "reconstruction_score": reconstruction_score,
         }
 
         self.results.append(result)
         return result
 
-    def evaluate_corpus(self, validation_file: str = "validation_results_100.json") -> Dict:
+    def evaluate_corpus(
+        self, validation_file: str = "validation_results_100.json"
+    ) -> Dict:
         """Evaluate reconstruction quality on entire corpus"""
 
         print("=" * 80)
@@ -211,11 +217,11 @@ class ReconstructionEvaluator:
 
         # Evaluate each sample
         for item in data:
-            if item.get('compressed') and len(item['compressed']) > 0:
+            if item.get("compressed") and len(item["compressed"]) > 0:
                 self.evaluate_sample(
-                    prompt=item['prompt'],
-                    compressed=item['compressed'],
-                    prompt_id=item.get('id')
+                    prompt=item["prompt"],
+                    compressed=item["compressed"],
+                    prompt_id=item.get("id"),
                 )
 
         return self.calculate_metrics()
@@ -226,31 +232,41 @@ class ReconstructionEvaluator:
         total = len(self.results)
 
         metrics = {
-            'total_samples': total,
-            'avg_text_similarity': sum(r['text_similarity'] for r in self.results) / total,
-            'avg_semantic_similarity': sum(r['semantic_similarity'] for r in self.results) / total,
-            'avg_concept_coverage': sum(r['concept_coverage'] for r in self.results) / total,
-            'avg_reconstruction_score': sum(r['reconstruction_score'] for r in self.results) / total,
+            "total_samples": total,
+            "avg_text_similarity": sum(r["text_similarity"] for r in self.results)
+            / total,
+            "avg_semantic_similarity": sum(
+                r["semantic_similarity"] for r in self.results
+            )
+            / total,
+            "avg_concept_coverage": sum(r["concept_coverage"] for r in self.results)
+            / total,
+            "avg_reconstruction_score": sum(
+                r["reconstruction_score"] for r in self.results
+            )
+            / total,
         }
 
         # Find good and bad examples
-        sorted_results = sorted(self.results, key=lambda x: x['reconstruction_score'], reverse=True)
+        sorted_results = sorted(
+            self.results, key=lambda x: x["reconstruction_score"], reverse=True
+        )
 
-        metrics['best_reconstructions'] = [
+        metrics["best_reconstructions"] = [
             {
-                'original': r['original'][:80],
-                'reconstructed': r['reconstructed'][:80],
-                'score': r['reconstruction_score']
+                "original": r["original"][:80],
+                "reconstructed": r["reconstructed"][:80],
+                "score": r["reconstruction_score"],
             }
             for r in sorted_results[:5]
         ]
 
-        metrics['worst_reconstructions'] = [
+        metrics["worst_reconstructions"] = [
             {
-                'original': r['original'][:80],
-                'compressed': r['compressed'],
-                'reconstructed': r['reconstructed'][:80],
-                'score': r['reconstruction_score']
+                "original": r["original"][:80],
+                "compressed": r["compressed"],
+                "reconstructed": r["reconstructed"][:80],
+                "score": r["reconstruction_score"],
             }
             for r in sorted_results[-5:]
         ]
@@ -265,21 +281,21 @@ class ReconstructionEvaluator:
         print("=" * 80 + "\n")
 
         print(f"Total Samples:               {metrics['total_samples']}")
-        print(f"\nReconstruction Metrics:")
+        print("\nReconstruction Metrics:")
         print(f"  Text Similarity:           {metrics['avg_text_similarity']:.2%}")
         print(f"  Semantic Similarity:       {metrics['avg_semantic_similarity']:.2%}")
         print(f"  Concept Coverage:          {metrics['avg_concept_coverage']:.2%}")
         print(f"  Overall Score:             {metrics['avg_reconstruction_score']:.2%}")
 
         # Show examples
-        print(f"\n✅ Best Reconstructions:")
-        for i, ex in enumerate(metrics['best_reconstructions'][:3], 1):
+        print("\n✅ Best Reconstructions:")
+        for i, ex in enumerate(metrics["best_reconstructions"][:3], 1):
             print(f"\n  {i}. Score: {ex['score']:.0%}")
             print(f"     Original:      {ex['original']}...")
             print(f"     Reconstructed: {ex['reconstructed']}...")
 
-        print(f"\n⚠️  Worst Reconstructions:")
-        for i, ex in enumerate(metrics['worst_reconstructions'][:3], 1):
+        print("\n⚠️  Worst Reconstructions:")
+        for i, ex in enumerate(metrics["worst_reconstructions"][:3], 1):
             print(f"\n  {i}. Score: {ex['score']:.0%}")
             print(f"     Original:      {ex['original']}...")
             print(f"     Compressed:    {ex['compressed']}")
@@ -287,7 +303,7 @@ class ReconstructionEvaluator:
 
         # Overall verdict
         print("\n" + "=" * 80)
-        score = metrics['avg_reconstruction_score']
+        score = metrics["avg_reconstruction_score"]
         if score >= 0.80:
             print("✅ EXCELLENT: High-quality reconstruction (≥80%)")
         elif score >= 0.70:
@@ -303,7 +319,7 @@ class ReconstructionEvaluator:
 
     def export_results(self, output_file: str = "reconstruction_results.json"):
         """Export detailed results"""
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             json.dump(self.results, f, indent=2)
         print(f"💾 Detailed results saved to {output_file}\n")
 

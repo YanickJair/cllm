@@ -12,13 +12,13 @@ class _QualityGate(ABC):
     def validate(self, input: str, output: CompressionResult):
         """
         Validate the compressed prompt
-        
+
         Gate 1: Intent Detection
         - Assert: At least 1 REQ token found
         - Assert: REQ token is valid vocabulary entry
         - Confidence: ≥ 0.7 match score
 
-        Gate 2: Target Extraction  
+        Gate 2: Target Extraction
         - Assert: At least 1 TARGET token found
         - Assert: TARGET domain is valid
         - Coverage: Noun chunks → TARGET mapping ≥ 50%
@@ -40,9 +40,8 @@ class _QualityGate(ABC):
 
         Args:
             text: Input prompt text
-            
+
         Returns:
             List of detected Target objects
         """
         raise NotImplementedError
-    

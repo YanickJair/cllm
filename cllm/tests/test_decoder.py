@@ -15,12 +15,14 @@ def load_compress_prompts() -> list[dict]:
         cp = json.load(f)
 
     for cp_ in cp[:100]:
-        compressed_list.append({
-            "compressed": cp_.get("compressed"),
-            "expected": cp_.get("prompt")
-        })
+        compressed_list.append(
+            {"compressed": cp_.get("compressed"), "expected": cp_.get("prompt")}
+        )
     return compressed_list
+
+
 0
+
 
 class DecoderValidationRunner:
     def __init__(self, decoder: CLLMDecoder):
@@ -29,24 +31,20 @@ class DecoderValidationRunner:
         self.stats = defaultdict()
 
     def run_validation(self, compressed_list: list[dict]) -> dict:
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("CLLM DECODER - FULL VALIDATION")
-        print("="*80)
+        print("=" * 80)
         print(f"\nValidating {len(compressed_list)} prompts...")
         print("This may take 1-2 minutes...\n")
 
         total = len(compressed_list)
         for i, compressed in enumerate(compressed_list):
             if i % 10 == 0:
-                print(f"Progress: {i}/{total} ({i/total*100:.0f}%)")
-            
-            result = self.decoder.decode(compressed.get("compressed"))
-            self.results.append({
-                "decoded": result,
-                **compressed
-            })
-        print(f"\n✓ Validation complete!\n")
+                print(f"Progress: {i}/{total} ({i / total * 100:.0f}%)")
 
+            result = self.decoder.decode(compressed.get("compressed"))
+            self.results.append({"decoded": result, **compressed})
+        print("\n✓ Validation complete!\n")
 
 
 if __name__ == "__main__":
