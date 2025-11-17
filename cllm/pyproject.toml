@@ -1,0 +1,35 @@
+[project]
+name = "cllm"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "accelerate>=1.10.1",
+    "anthropic>=0.72.0",
+    "dateparser>=1.2.2",
+    "matplotlib>=3.10.7",
+    "nltk>=3.9.2",
+    "openai>=2.7.2",
+    "pandas>=2.3.3",
+    "pytest>=8.4.2",
+    "scikit-learn>=1.7.2",
+    "setuptools>=80.9.0",
+    "spacy>=3.8.7",
+    "torch>=2.8.0",
+    "torchvision>=0.23.0",
+    "transformers>=4.57.0",
+    "wheel>=0.45.1",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cllm*"]
+
+[tool.setuptools.package-dir]
+"" = "."
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]

@@ -1,0 +1,145 @@
+[
+    {
+    "id": "general_007",
+    "prompt": "Check this API endpoint for potential race conditions.",
+    "compressed": "[REQ:VALIDATE]",
+    "compression_ratio": 74.1,
+    "has_req": true,
+    "has_target": false,
+    "status": "PARTIAL",
+    "category": "general",
+    "subcategory": "code_analysis"
+  },
+  {
+    "id": "general_009",
+    "prompt": "Find memory leaks in this React component.",
+    "compressed": "[REQ:EXTRACT]",
+    "compression_ratio": 69.0,
+    "has_req": true,
+    "has_target": false,
+    "status": "PARTIAL",
+    "category": "general",
+    "subcategory": "code_analysis"
+  },
+  {
+    "id": "general_010",
+    "prompt": "Validate this input sanitization logic.",
+    "compressed": "[REQ:VALIDATE]",
+    "compression_ratio": 64.1,
+    "has_req": true,
+    "has_target": false,
+    "status": "PARTIAL",
+    "category": "general",
+    "subcategory": "code_analysis"
+  },
+  {
+    "id": "general_011",
+    "prompt": "Review this database schema for normalization issues.",
+    "compressed": "[REQ:ANALYZE]",
+    "compression_ratio": 75.5,
+    "has_req": true,
+    "has_target": false,
+    "status": "PARTIAL",
+    "category": "general",
+    "subcategory": "code_analysis"
+  },
+  {
+    "id": "general_013",
+    "prompt": "Analyze this caching strategy for correctness.",
+    "compressed": "[REQ:ANALYZE]",
+    "compression_ratio": 71.7,
+    "has_req": true,
+    "has_target": false,
+    "status": "PARTIAL",
+    "category": "general",
+    "subcategory": "code_analysis"
+  },
+  {
+    "id": "general_004",
+    "prompt": "Compare quarterly revenue across different regions.",
+    "compressed": "[REQ:COMPARE]",
+    "compression_ratio": 74.5,
+    "has_req": true,
+    "has_target": false,
+    "status": "PARTIAL",
+    "category": "general",
+    "subcategory": "data_analysis"
+  },
+  {
+    "id": "general_009",
+    "prompt": "Detect anomalies in this time-series sensor data.",
+    "compressed": "[TARGET:DATA]",
+    "compression_ratio": 73.5,
+    "has_req": false,
+    "has_target": true,
+    "status": "PARTIAL",
+    "category": "general",
+    "subcategory": "data_analysis"
+  },
+  {
+    "id": "general_002",
+    "prompt": "Write a brief product description for an eco-friendly water bottle.",
+    "compressed": "[REQ:GENERATE] [CTX:TONE=CASUAL] [CTX:LENGTH=BRIEF]",
+    "compression_ratio": 23.9,
+    "has_req": true,
+    "has_target": false,
+    "status": "PARTIAL",
+    "category": "general",
+    "subcategory": "content_generation"
+  },
+  {
+    "id": "general_008",
+    "prompt": "Write a concise executive summary for this business plan.",
+    "compressed": "[REQ:GENERATE] [CTX:TONE=PROFESSIONAL]",
+    "compression_ratio": 33.3,
+    "has_req": true,
+    "has_target": false,
+    "status": "PARTIAL",
+    "category": "general",
+    "subcategory": "content_generation"
+  },
+  {
+    "id": "general_003",
+    "prompt": "Compare AWS, Azure, and GCP for hosting a web application.",
+    "compressed": "[REQ:COMPARE]",
+    "compression_ratio": 77.6,
+    "has_req": true,
+    "has_target": false,
+    "status": "PARTIAL",
+    "category": "general",
+    "subcategory": "comparison"
+  },
+  {
+    "id": "general_004",
+    "prompt": "Contrast microservices and monolithic architectures.",
+    "compressed": "[REQ:COMPARE]",
+    "compression_ratio": 75.0,
+    "has_req": true,
+    "has_target": false,
+    "status": "PARTIAL",
+    "category": "general",
+    "subcategory": "comparison"
+  },
+  {
+    "id": "support_005",
+    "prompt": "Analyze customer sentiment throughout this support interaction.",
+    "compressed": "[REQ:ANALYZE]",
+    "compression_ratio": 79.4,
+    "has_req": true,
+    "has_target": false,
+    "status": "PARTIAL",
+    "category": "customer_support",
+    "subcategory": "transcript_analysis"
+  },
+  {
+    "id": "support_006",
+    "prompt": "Extract all action items and deadlines from this support call.",
+    "compressed": "[REQ:EXTRACT] [EXTRACT:DEADLINES]",
+    "compression_ratio": 46.8,
+    "has_req": true,
+    "has_target": false,
+    "status": "PARTIAL",
+    "category": "customer_support",
+    "subcategory": "transcript_analysis"
+  }
+]
