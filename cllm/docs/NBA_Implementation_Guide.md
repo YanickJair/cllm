@@ -78,7 +78,7 @@ class NBAVocabulary(Vocabulary):
     ]
 
 
-# Step 2: Create enhanced encoder
+# Step 2: Create enhanced encode
 encoder = CLLMEncoder()
 
 # Override vocabulary
@@ -344,7 +344,7 @@ from typing import Optional
 
 
 class NBAPromptOptimizer:
-    """Optimized encoder for NBA selection use cases"""
+    """Optimized encode for NBA selection use cases"""
 
     def __init__(self):
         self.encoder = CLLMEncoder()
