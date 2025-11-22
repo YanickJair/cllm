@@ -4,8 +4,8 @@ from typing import Optional, Any
 from spacy import Language
 from spacy.tokens import Doc
 
+from src.utils.vocabulary import BaseVocabulary
 from src.utils.parser_rules import Rules
-from src.utils.vocabulary import Vocabulary
 from src.components.sys_prompt.analyzers.extraction_field import ExtractionFieldParser
 from src.components.sys_prompt.analyzers.output_format import SysPromptOutputFormat
 from .context_parser import ContextParser
@@ -15,9 +15,9 @@ from .._schemas import ExtractionField, Context, OutputSchema, SysPromptConfig
 class AttributeParser:
     """Improved AttributeParser: rule-driven, spaCy-aware, and extensible."""
 
-    def __init__(self, nlp: Language, config: SysPromptConfig) -> None:
+    def __init__(self, nlp: Language, config: SysPromptConfig, vocab: type[BaseVocabulary]) -> None:
         self.nlp = nlp
-        self.vocab = Vocabulary()
+        self.vocab = vocab
         self.rules = Rules()
         self._config = config
 

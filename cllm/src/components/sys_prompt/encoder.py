@@ -7,8 +7,7 @@ from .analyzers.attribute_parser import AttributeParser
 from .analyzers.intent_detector import IntentDetector
 from .analyzers.target import TargetExtractor
 from .tokenizer import CLLMTokenizer
-from ...utils.vocabulary import Vocabulary
-
+from src.dictionary import vocab_map
 
 class SysPromptEncoder:
     def __init__(self, nlp: spacy.Language, config: SysPromptConfig = SysPromptConfig()):  # type: ignore
@@ -21,10 +20,11 @@ class SysPromptEncoder:
 
         self.nlp: spacy.Language = nlp
         self._config = config
+        self._vocab = vocab_map[config.lang]
 
-        self.intent_detector = IntentDetector(self.nlp)
-        self.target_extractor = TargetExtractor(self.nlp)
-        self.attribute_parser = AttributeParser(self.nlp, config=config)
+        self.intent_detector = IntentDetector(self.nlp, vocab=self._vocab)
+        self.target_extractor = TargetExtractor(self.nlp, vocab=self._vocab)
+        self.attribute_parser = AttributeParser(self.nlp, config=config, vocab=self._vocab)
         self.tokenizer = CLLMTokenizer()
 
     def compress(self, prompt: str, verbose: bool = False) -> CompressionResult:
@@ -122,9 +122,9 @@ class SysPromptEncoder:
                     v
                     for v in verbs
                     if not any(
-                        v in Vocabulary.REQ_TOKENS[i.token]
+                        v in self._vocab.REQ_TOKENS[i.token]
                         for i in intents
-                        if i.token in Vocabulary.REQ_TOKENS
+                        if i.token in self._vocab.REQ_TOKENS
                     )
                 ],
             },
