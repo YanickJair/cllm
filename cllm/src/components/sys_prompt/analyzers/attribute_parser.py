@@ -60,23 +60,19 @@ class AttributeParser:
          - special words (few/several/many) as negative sentinel values
         """
         clean = self._normalize_whitespace(text).lower()
-        # first: digits
         digit_match = re.search(r"\b(\d+)\s*(tips?|items?|examples?|steps?|ways?|methods?)\b", clean)
         if digit_match:
             num = int(digit_match.group(1))
             return (f"NUM_{num}", num)
 
-        # second: exact number words
         for word, val in self.rules.NUMBER_WORDS.items():
             if re.search(rf"\b{re.escape(word)}\s+(tips|items|examples|steps|ways|methods|examples?)\b", clean):
                 return (word.upper(), val)
 
-        # third: bare mentions like "give me three" or "three tips" (without explicit ttoken)
         for word, val in self.rules.NUMBER_WORDS.items():
             if re.search(rf"\b{re.escape(word)}\b", clean):
                 return (word.upper(), val)
 
-        # spaCy cardinal entity detection fallback
         doc = self._doc(text)
         for ent in doc.ents:
             if ent.label_ in {"CARDINAL", "QUANTITY"}:
@@ -84,14 +80,13 @@ class AttributeParser:
                     n = int(ent.text)
                     return (f"NUM_{n}", n)
                 except ValueError:
-                    # ignore non-integer ordinals etc.
                     pass
 
         return None
 
     def parse_output_format(self, text: str) -> Optional[OutputSchema]:
         """Use vocabulary helper to determine output format (keeps compatibility)."""
-        parser = SysPromptOutputFormat(infer_types=self._config.infer_types, add_attributes=self._config.add_attrs)
+        parser = SysPromptOutputFormat(config=self._config)
         return parser.compress(text)
 
     def extract_specifications(self, text: str) -> Optional[dict[str, int]]:

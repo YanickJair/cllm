@@ -1,0 +1,220 @@
+[
+  {
+    "metadata": {
+      "call_id": "CX-0001",
+      "agent": "Raj",
+      "duration": "9m",
+      "channel": "voice",
+      "issue_type": "Billing Dispute"
+    },
+    "transcript": "Customer: Hi Raj, I noticed an extra charge on my card for my plan this month. It looks like I was billed twice for the same subscription.\nAgent: I'm sorry to hear that, let’s take a look together. Can I have your account email or billing ID to verify your record?\nCustomer: Sure, it’s melissa.jordan@example.com.\nAgent: Thanks, Melissa. Give me just a moment... alright, I can see two transactions on your file — one processed on the 2nd and another on the 3rd. It seems the system retried payment even after the first one succeeded.\nCustomer: Oh wow, that explains it. So I’m not crazy then.\nAgent: Not at all. It’s a known issue we had earlier this week with duplicate processing. The good news is, you’re eligible for a full refund on the second charge.\nCustomer: Great. How long will it take to show up?\nAgent: Once I file the refund, it usually reflects within 3–5 business days depending on your bank. I’ll also send you a confirmation email with the reference number.\nCustomer: That works. Thank you for sorting it out so quickly.\nAgent: My pleasure. I’ve just submitted the refund request now — your reference number is RFD-908712. You should see that update later today.\nCustomer: Perfect. I appreciate your help, Raj.\nAgent: Anytime! Is there anything else I can check for you today?\nCustomer: No, that’s all. Thanks again!\nAgent: Thank you for calling us, Melissa. Have a great day ahead!"
+  },
+  {
+    "metadata": {
+      "call_id": "CX-0002",
+      "agent": "Michael",
+      "duration": "11m",
+      "channel": "voice",
+      "issue_type": "Technical Support"
+    },
+    "transcript": "Customer: Hi Michael, my internet keeps dropping every few minutes. It’s been happening since yesterday afternoon.\nAgent: I’m sorry about that. Let’s get it fixed for you. Can I get your service ID or the phone number associated with the account?\nCustomer: Sure, it’s under 416-982-9980.\nAgent: Got it. Let me pull that up... Okay, I can see your router went offline multiple times in the last 24 hours. Can you tell me if you see any blinking red lights on it right now?\nCustomer: Yeah, the broadband light keeps flashing red.\nAgent: Thanks — that usually indicates a signal interruption. I’ll run a quick line test from my end... alright, I’m getting some packet loss on your connection, likely from a degraded line in your area.\nCustomer: So it’s not just me?\nAgent: Exactly. There’s a small outage affecting a few customers nearby. The technicians have already been dispatched and it’s expected to be resolved by this evening.\nCustomer: Okay, that’s good to know. Is there anything I can do in the meantime?\nAgent: You can try power cycling your router once every couple of hours. That helps it reconnect when the service stabilizes. I can also schedule a callback for you once it’s fully restored.\nCustomer: That would be helpful.\nAgent: Alright, I’ll mark your account for follow-up tomorrow morning. You’ll receive a message once the network team closes the ticket.\nCustomer: Appreciate it, Michael. You’ve been very helpful.\nAgent: You’re welcome! Sorry again for the trouble. We’ll make sure your connection is back up soon."
+  },
+  {
+    "metadata": {
+      "call_id": "CX-0003",
+      "agent": "Laura",
+      "duration": "7m",
+      "channel": "voice",
+      "issue_type": "Product Inquiry"
+    },
+    "transcript": "Customer: Hi Laura, I’m considering upgrading to your Business Pro plan, but I wanted to know if it includes advanced analytics features.\nAgent: Great question! The Business Pro plan does include analytics, but there are a few levels to it. Can I ask how you plan to use the data — mostly for tracking sales, or customer engagement?\nCustomer: Mostly engagement. We want to track activity per user, response times, and conversion metrics.\nAgent: Perfect, that’s exactly what the advanced analytics module covers. You’d get access to dashboards that show detailed engagement stats by user segment, plus export options for CSV and API access.\nCustomer: Sounds good. Does that come standard or as an add-on?\nAgent: It’s included in the Business Pro plan. The only add-on you might consider is the predictive insights module, which uses machine learning to forecast trends.\nCustomer: Interesting — what’s the cost for that?\nAgent: It’s an additional $30 a month per account. But if you’re upgrading before the end of the quarter, you’d qualify for a 20% discount for the first six months.\nCustomer: That’s tempting. Can I try it before committing?\nAgent: Yes, we offer a 14-day trial for the predictive module. I can activate that trial for you right after the call.\nCustomer: Please do. This helps a lot.\nAgent: Done! You’ll receive a confirmation email shortly with setup instructions.\nCustomer: Awesome, thank you Laura.\nAgent: My pleasure! Feel free to reach out anytime if you need help exploring the analytics dashboard."
+  },
+  {
+    "metadata": {
+      "call_id": "CX-0004",
+      "agent": "Sophia",
+      "duration": "10m",
+      "channel": "voice",
+      "issue_type": "Account Change"
+    },
+    "transcript": "Customer: Hi Sophia, I recently changed my last name after getting married, and I’d like to update it on my account. But when I tried to edit my profile, it said the field is locked.\nAgent: Congratulations on your marriage! And sure, I can help you with that. May I have your account email and the name as it currently appears?\nCustomer: It’s emily.reed@example.com, and it still shows as Emily Reed. I’d like to change it to Emily Carter.\nAgent: Got it. Thank you, Emily. For name changes, we just need to verify your identity before updating the record. I’ll send a quick verification code to your registered email.\nCustomer: Okay, I see it — the code is 542819.\nAgent: Perfect, verified. I’ve updated your account name to Emily Carter. It may take about 30 minutes for the change to show across all systems.\nCustomer: Great, that was fast. Do I need to update my billing details separately?\nAgent: Good question — the billing name will automatically sync, but if your payment method is under a different name, you might need to update that manually in your payment settings.\nCustomer: Got it. And just to confirm, my login credentials stay the same, right?\nAgent: Yes, nothing changes with your login. Only your display and billing name are updated.\nCustomer: Awesome. Thanks for walking me through this.\nAgent: My pleasure, Emily — or should I say Mrs. Carter now! Congratulations again, and is there anything else I can assist you with today?\nCustomer: Haha, that’s all. Thanks, Sophia!\nAgent: You’re very welcome. Have a wonderful day!"
+  },
+  {
+    "metadata": {
+      "call_id": "CX-0005",
+      "agent": "Daniel",
+      "duration": "14m",
+      "channel": "voice",
+      "issue_type": "Escalation"
+    },
+    "transcript": "Customer: Hi, I’m honestly pretty frustrated right now. This is the third time I’ve called about the same issue — my refund still hasn’t come through, even though it was approved last week.\nAgent: I’m really sorry to hear that. Let’s get this sorted once and for all. May I have your case number or the email linked to your account?\nCustomer: It’s jason.miller@example.com and the case number is 22091.\nAgent: Thanks, Jason. Give me a moment... alright, I can see that your refund was approved on the 10th but hasn’t been processed yet due to a pending review flag. That shouldn’t have happened.\nCustomer: Yeah, that’s exactly what the last agent said. I’ve been waiting 12 days already.\nAgent: Completely understandable, and I apologize for the delay. What I’m going to do right now is escalate this directly to our billing supervisor. They’ll have the authority to override the pending status and release the refund immediately.\nCustomer: That’s all I’ve been asking for. Can you guarantee it’ll be done today?\nAgent: Once I mark it as a high-priority escalation, it’ll move to the top of the queue. Typically, these are processed within a few hours.\nCustomer: Alright, but I really need confirmation this time.\nAgent: Absolutely. I’m creating the escalation now... okay, your escalation ticket number is ESC-45390. I’ve also added my name to the notes so the supervisor knows this was personally verified.\nCustomer: That’s good to hear. I just want closure on this.\nAgent: Totally understandable. You’ll receive an email update by the end of the day confirming the refund transfer.\nCustomer: Alright, I appreciate your help, Daniel. You’ve been much more responsive than the last person.\nAgent: Thank you for saying that, Jason. I’ll keep an eye on your case and personally follow up to ensure it’s resolved.\nCustomer: Appreciate that. Hopefully this is the last call I need to make.\nAgent: I hope so too. Thanks for your patience — you’ll hear from us shortly with confirmation."
+  },
+  {
+    "metadata": {
+      "call_id": "CX-0006",
+      "agent": "Nina",
+      "duration": "8m",
+      "channel": "voice",
+      "issue_type": "Product Issue Follow-up"
+    },
+    "transcript": "Customer: Hi Nina, I called last week about a defective Bluetooth headset I ordered. I was told a replacement would be shipped, but I haven’t received any update yet.\nAgent: Hi there, I’m sorry for the delay. Let’s check what’s happening. Could you please share your order number?\nCustomer: Sure, it’s 7730219.\nAgent: Thanks. One moment... okay, I see that the replacement order was created last Friday, but the warehouse hadn’t assigned a tracking number yet. That’s why you haven’t received a shipping notification.\nCustomer: Ah, that makes sense. Is there any delay on your end?\nAgent: A slight one — the headset model you ordered just came back into stock yesterday, so the replacement should go out today. I can prioritize your order so it ships in the next batch.\nCustomer: I’d really appreciate that. I’ve been using a backup headset that keeps cutting out.\nAgent: Understood! I’ve just flagged it for same-day dispatch. You’ll get an email with the tracking ID within a few hours.\nCustomer: Great. Once I receive the new one, do I need to return the defective item?\nAgent: Yes, please. We’ll send a prepaid return label in the box. Just pack the old headset and drop it at any postal point within 10 days.\nCustomer: Got it. Thanks for clearing that up.\nAgent: You’re welcome! I’ll follow up tomorrow to make sure the replacement is in transit.\nCustomer: Awesome, thanks Nina.\nAgent: Anytime! Hope you get to enjoy the new headset soon."
+  },
+  {
+    "metadata": {
+      "call_id": "CX-0007",
+      "agent": "Aisha",
+      "duration": "12m",
+      "channel": "voice",
+      "issue_type": "Technical Escalation"
+    },
+    "transcript": "Agent: Hi, this is Aisha from technical support. I understand you’re having trouble with your cloud storage syncing correctly?\nCustomer: Yes, exactly. Files aren’t updating on my desktop even though they show up fine on the web app.\nAgent: Got it. Let’s dig into that. Can you confirm which operating system you’re using?\nCustomer: Windows 11.\nAgent: Thanks. Have you tried restarting the sync client recently?\nCustomer: I did, but it didn’t help. I even reinstalled it, but nothing changed.\nAgent: Alright, I’ll check your account logs. Could you please confirm your username or account email?\nCustomer: Sure, it’s ryan.torres@example.com.\nAgent: Thank you. I can see that your desktop client hasn’t synced in 48 hours. The logs show a ‘token mismatch’ error, which sometimes happens if the authentication key expires.\nCustomer: So how do we fix that?\nAgent: I’ll need to escalate this to our Tier 2 engineering team since it requires a backend token refresh. It’s a quick fix, usually handled within a few hours.\nCustomer: Will I need to do anything on my end?\nAgent: Once the engineers reset the token, you’ll just need to sign out and sign back in to the desktop app. I’ll send an email once that’s ready.\nCustomer: Okay, appreciate it. I’ve been stuck on this for days.\nAgent: Totally understand. I’ve already opened the escalation case — ID is TEC-9087. You should hear from us later today.\nCustomer: Great. Thanks for being clear about it.\nAgent: You’re very welcome. I’ll make sure the team prioritizes your case."
+  },
+  {
+    "metadata": {
+      "call_id": "CX-0008",
+      "agent": "Leo",
+      "duration": "10m",
+      "channel": "voice",
+      "issue_type": "Billing Correction"
+    },
+    "transcript": "Agent: Hello, this is Leo with billing support. How can I help you today?\nCustomer: Hi Leo, I just noticed a $20 service fee on my bill that I wasn’t expecting. I’ve been a customer for over three years and never had that before.\nAgent: Thanks for bringing that up. Let me take a look at your account details to find out what triggered that fee. May I have your account email?\nCustomer: Sure, it’s andrea.peters@example.com.\nAgent: Alright, give me a moment... okay, I see the fee you mentioned. It’s a reactivation charge from when your payment was processed three days late last month.\nCustomer: Oh, but I thought the grace period was five days.\nAgent: You’re absolutely right — it used to be five days, but our policy changed in July. It’s now a three-day grace period. However, I do see you’ve had a perfect payment record before this, so I can waive it as a one-time courtesy.\nCustomer: That would be great, I really appreciate it.\nAgent: No problem. I’ve just reversed the charge. You’ll see a $20 credit applied within the next 24 hours, and your updated invoice will reflect that.\nCustomer: Perfect. Can you send me a confirmation email too?\nAgent: Of course. I’ll include the refund reference number — BCR-55209 — in that email.\nCustomer: Thank you so much, Leo. That clears everything up.\nAgent: My pleasure, Andrea. Glad we could fix it quickly!"
+  },
+  {
+    "metadata": {
+      "call_id": "CX-0009",
+      "agent": "Chloe",
+      "duration": "9m",
+      "channel": "voice",
+      "issue_type": "Product Upgrade Inquiry"
+    },
+    "transcript": "Agent: Good afternoon, this is Chloe from customer care. How can I assist you today?\nCustomer: Hi Chloe, I’m currently on the Starter plan, and I’m thinking of upgrading to Premium. Can you tell me what’s different?\nAgent: Absolutely. The Premium plan gives you access to unlimited projects, advanced analytics, and priority support. You also get integration options for CRMs like Salesforce and HubSpot.\nCustomer: That sounds useful. Does it include team collaboration tools too?\nAgent: Yes, it does. You’ll get real-time editing, version history, and role-based permissions for team members.\nCustomer: Nice. How much is it per month?\nAgent: The Premium plan is $49 a month, or $480 if you choose annual billing — which saves you about $108 per year.\nCustomer: Hmm, not bad. If I upgrade mid-cycle, do I get billed immediately?\nAgent: You’d only pay the prorated difference for the remaining days in your billing period. The upgrade takes effect right away.\nCustomer: Great, that’s transparent. Can I switch back if it’s not what I expected?\nAgent: Yes, you can downgrade anytime before your next renewal, and the system automatically adjusts your credits.\nCustomer: Perfect. Go ahead and upgrade me, then.\nAgent: Done! Your account is now on the Premium plan. You’ll receive a confirmation email with all the new features highlighted.\nCustomer: That was quick. Thanks for the great service.\nAgent: Always happy to help! Enjoy your upgraded plan."
+  },
+  {
+    "metadata": {
+      "call_id": "CX-0010",
+      "agent": "Hannah",
+      "duration": "8m",
+      "channel": "voice",
+      "issue_type": "Account Security Verification"
+    },
+    "transcript": "Agent: Hi, this is Hannah with account security support. I see you reached out about an unexpected login alert — is that correct?\nCustomer: Yes, I got an email saying someone signed into my account from a different location, but it wasn’t me.\nAgent: Thanks for confirming. Let’s secure your account right away. Can I verify your full name and the last four digits of your phone number?\nCustomer: Sure, it’s David Grant, and 7821.\nAgent: Perfect, thank you. I’ve locked the account temporarily while we review the activity. The login came from a device in New Jersey. Does that sound familiar?\nCustomer: No, I’m in Chicago. I’ve never been to New Jersey.\nAgent: Understood. That confirms it’s unauthorized. I’ll help you reset your password and revoke access to that device. Please check your email for a verification link.\nCustomer: Got it, I just received it. Clicking now... okay, done.\nAgent: Excellent. Now you can set a new password. Once that’s updated, I’ll enable two-factor authentication for extra security.\nCustomer: Alright, password updated. Please enable the 2FA.\nAgent: Done. You’ll now get a code by text whenever there’s a new login attempt. I’ve also reported the suspicious session for investigation.\nCustomer: Thank you, Hannah. That was scary, but I feel much better now.\nAgent: You’re very welcome, David. It’s always better to catch these things early. You’ll get a confirmation email shortly."
+  },
+  {
+    "metadata": {
+      "call_id": "CX-0011",
+      "agent": "Owen",
+      "duration": "9m",
+      "channel": "voice",
+      "issue_type": "Subscription Cancellation Request"
+    },
+    "transcript": "Agent: Hello, this is Owen from customer care. How can I help you today?\nCustomer: Hi Owen, I’d like to cancel my subscription. I just haven’t been using the service much lately.\nAgent: I understand. Can I ask what’s prompting the cancellation — lack of use, or something we could improve?\nCustomer: Honestly, mostly lack of time. I’m busy with work and barely log in anymore.\nAgent: Totally understandable. Before I process it, I want to mention we offer a pause option — you can freeze your subscription for up to three months instead of canceling. That way, you won’t lose your saved settings or data.\nCustomer: Oh, I didn’t know that. If I pause, I won’t get charged, right?\nAgent: Correct. No charges during the pause period, and you can reactivate anytime.\nCustomer: That might actually work better for me.\nAgent: Great! Let’s do that. I’ll pause your subscription starting today and send you an email confirming the end date. You’ll get a reminder before it resumes so you can decide whether to continue or cancel permanently.\nCustomer: Sounds good. Thanks for suggesting that — saves me the hassle.\nAgent: My pleasure. You’re all set. Enjoy the flexibility, and we hope to see you back when things calm down!\nCustomer: Thanks, Owen.\nAgent: You’re very welcome. Take care!"
+  },
+  {
+    "metadata": {
+      "call_id": "CX-0012",
+      "agent": "Isabella",
+      "duration": "13m",
+      "channel": "voice",
+      "issue_type": "High-Priority Escalation"
+    },
+    "transcript": "Agent: Hi, this is Isabella, senior support specialist. I’m picking up your case that was escalated earlier today about a service outage. I understand you’ve been trying to get this resolved for over a week?\nCustomer: Yes, finally! I’ve called three times. Our business relies on your platform, and it’s been offline since last Thursday.\nAgent: I can imagine how frustrating that must be. I have your account pulled up now. I see multiple tickets tied to your service ID, and one marked as high-priority from this morning.\nCustomer: Yeah, but nothing’s changed. Every agent keeps saying it’s being worked on.\nAgent: You’re right, and I apologize for the delays. I just checked with the infrastructure team before joining this call — they identified a corrupted configuration file that’s been preventing your system from restarting.\nCustomer: So what does that mean for me? How long until it’s fixed?\nAgent: The good news is that the engineering team has already replaced the corrupted instance, and your service is in the process of rebooting right now. I can see logs showing recovery steps happening in real time.\nCustomer: Okay, that’s promising. I just want to be sure it actually works this time.\nAgent: Absolutely. Let’s stay on the line for a few minutes while I confirm the reboot status... alright, I’m now seeing the connection restored on our side. Can you refresh your dashboard?\nCustomer: Yep... and it’s back! Finally! I can see everything online again.\nAgent: Wonderful. I’ll monitor your account for the next few hours to ensure it remains stable. I’ll also extend your current billing cycle by five days to compensate for the downtime.\nCustomer: Wow, thank you, Isabella. That’s really appreciated. You’ve been the first person to actually fix this.\nAgent: I’m glad we could turn it around. I know it’s been a long week — thank you for your patience.\nCustomer: You’ve been great. Thanks again.\nAgent: You’re very welcome. Have a better rest of your week!"
+  },
+  {
+    "metadata": {
+      "call_id": "CX-0013",
+      "agent": "Lara",
+      "duration": "6m",
+      "channel": "chat",
+      "issue_type": "Refund Request"
+    },
+    "transcript": [
+      {"timestamp": "10:02", "sender": "Agent", "message": "Hi there 👋 I’m Lara from support. How can I help you today?"},
+      {"timestamp": "10:03", "sender": "Customer", "message": "Hi, I was charged twice for the same order. Can I get one of them refunded?"},
+      {"timestamp": "10:03", "sender": "Agent", "message": "I’m sorry about that! Could you share the order number, please?"},
+      {"timestamp": "10:04", "sender": "Customer", "message": "Sure, it’s #A93281."},
+      {"timestamp": "10:05", "sender": "Agent", "message": "Thanks! I can confirm there’s a duplicate payment. I’ll initiate the refund now — it should return to your card in 3–5 business days."},
+      {"timestamp": "10:05", "sender": "Customer", "message": "Perfect, thank you so much for the quick response."},
+      {"timestamp": "10:06", "sender": "Agent", "message": "You’re very welcome! You’ll get a confirmation email shortly 😊."}
+    ]
+  },
+  {
+    "metadata": {
+      "call_id": "CX-0014",
+      "agent": "Dylan",
+      "duration": "7m",
+      "channel": "chat",
+      "issue_type": "Login Issue"
+    },
+    "transcript": [
+      {"timestamp": "14:11", "sender": "Agent", "message": "Hey there! Dylan here. What seems to be the issue?"},
+      {"timestamp": "14:11", "sender": "Customer", "message": "Hi, I can’t log into my account. It keeps saying ‘invalid password,’ but I’m sure it’s correct."},
+      {"timestamp": "14:12", "sender": "Agent", "message": "Got it. Have you tried resetting your password yet?"},
+      {"timestamp": "14:12", "sender": "Customer", "message": "Yeah, I tried, but the reset link never came through."},
+      {"timestamp": "14:13", "sender": "Agent", "message": "Okay, let’s check that. What’s the email linked to your account?"},
+      {"timestamp": "14:13", "sender": "Customer", "message": "katie.miller@example.com"},
+      {"timestamp": "14:14", "sender": "Agent", "message": "Thanks! Looks like the email bounced due to a typo in your profile (miler → miller). I can fix that and resend the reset link."},
+      {"timestamp": "14:15", "sender": "Customer", "message": "Ah, that explains it. Please resend."},
+      {"timestamp": "14:16", "sender": "Agent", "message": "Done ✅. You should see it now."},
+      {"timestamp": "14:16", "sender": "Customer", "message": "Got it! Resetting now. Thanks, Dylan."},
+      {"timestamp": "14:17", "sender": "Agent", "message": "Glad to hear it! Anything else I can help you with today?"}
+    ]
+  },
+  {
+    "metadata": {
+      "call_id": "CX-0015",
+      "agent": "Rina",
+      "duration": "8m",
+      "channel": "chat",
+      "issue_type": "Feature Guidance"
+    },
+    "transcript": [
+      {"timestamp": "09:45", "sender": "Agent", "message": "Hi 👋 This is Rina. How can I assist you today?"},
+      {"timestamp": "09:45", "sender": "Customer", "message": "I’m trying to use the export feature but it keeps showing ‘permission denied.’"},
+      {"timestamp": "09:46", "sender": "Agent", "message": "Understood. Are you the workspace admin or a member?"},
+      {"timestamp": "09:47", "sender": "Customer", "message": "I think I’m a member."},
+      {"timestamp": "09:48", "sender": "Agent", "message": "That explains it 😊 Only admins can export project data. You can ask your admin to toggle permissions in Settings → Roles & Access."},
+      {"timestamp": "09:49", "sender": "Customer", "message": "Ah, got it. Makes sense now. Thanks for clarifying!"},
+      {"timestamp": "09:49", "sender": "Agent", "message": "Happy to help! I’ll also send you a short guide on managing export access."}
+    ]
+  },
+  {
+    "metadata": {
+      "call_id": "CX-0016",
+      "agent": "Ethan",
+      "duration": "9m",
+      "channel": "chat",
+      "issue_type": "Product Compatibility"
+    },
+    "transcript": [
+      {"timestamp": "13:20", "sender": "Agent", "message": "Hi there! Ethan here — how can I help you today?"},
+      {"timestamp": "13:21", "sender": "Customer", "message": "Does your app work with Android 12? I’m getting installation errors."},
+      {"timestamp": "13:22", "sender": "Agent", "message": "Good question. Yes, it’s compatible, but there’s a known issue with the Play Store cache on Android 12 devices."},
+      {"timestamp": "13:23", "sender": "Customer", "message": "Oh, what should I do then?"},
+      {"timestamp": "13:24", "sender": "Agent", "message": "Try this: open Play Store → Settings → Clear cache & storage → Restart your phone → Reinstall the app."},
+      {"timestamp": "13:25", "sender": "Customer", "message": "Doing that now... okay, it installed! Thank you."},
+      {"timestamp": "13:25", "sender": "Agent", "message": "Awesome 🎉 Glad it worked!"},
+      {"timestamp": "13:26", "sender": "Customer", "message": "You saved me a headache 😄"},
+      {"timestamp": "13:26", "sender": "Agent", "message": "Always happy to help!"}
+    ]
+  },
+  {
+    "metadata": {
+      "call_id": "CX-0017",
+      "agent": "Maya",
+      "duration": "11m",
+      "channel": "chat",
+      "issue_type": "Escalation Follow-Up"
+    },
+    "transcript": [
+      {"timestamp": "16:02", "sender": "Agent", "message": "Hi, this is Maya from the Tier 2 team. I’m following up on your ticket about the missing shipment."},
+      {"timestamp": "16:03", "sender": "Customer", "message": "Oh good, I was waiting on that. It’s been two weeks since I placed the order."},
+      {"timestamp": "16:03", "sender": "Agent", "message": "I completely understand. I checked with our logistics partner — your package was delayed in customs but cleared this morning."},
+      {"timestamp": "16:04", "sender": "Customer", "message": "Okay, so when should I expect it?"},
+      {"timestamp": "16:05", "sender": "Agent", "message": "You should receive it by Thursday. I’ve also updated your tracking number: PL-1098307."},
+      {"timestamp": "16:06", "sender": "Customer", "message": "Got it, thanks for the update. Appreciate the follow-up."},
+      {"timestamp": "16:06", "sender": "Agent", "message": "You’re welcome! I’ll monitor the shipment and message you once it’s delivered."},
+      {"timestamp": "16:07", "sender": "Customer", "message": "Perfect. Thank you, Maya!"},
+      {"timestamp": "16:07", "sender": "Agent", "message": "My pleasure 😊 Have a great day!"}
+    ]
+  }
+]

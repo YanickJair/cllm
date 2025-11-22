@@ -109,6 +109,23 @@ class Rules:
         r"\bwhat are\b",
     ]
 
+    QA_CRITERIA = {
+        r"\b(verification|verify|verified)\b": "VERIFICATION",
+        r"\b(policy|policies|policy adherence)\b": "POLICY",
+        r"\b(soft[- ]?skills?|empathy|clarity|ownership)\b": "SOFT_SKILLS",
+        r"\b(accuracy|accurate|process accuracy)\b": "ACCURACY",
+        r"\b(compliance|compliant|violations?)\b": "COMPLIANCE",
+        r"\b(sentiment|emotion|feeling|mood)\b": "SENTIMENT",
+        r"\b(disclosures?|mandatory disclosures?)\b": "DISCLOSURES",
+    }
+    QA_INDICATORS = [
+        r"\bscore\b",
+        r"\bqa\b",
+        r"\bquality assurance\b",
+        r"\bcompliance\b",
+        r"\baudit\b",
+    ]
+
     # Compile regexes once
     COMPILED = {
         "comparison": [(re.compile(p, re.I), v) for p, v in COMPARISON_MAP.items()],
@@ -119,4 +136,6 @@ class Rules:
         "tone": [(re.compile(p, re.I), v) for p, v in TONE_MAP.items()],
         "specs": [(re.compile(p, re.I), name) for p, name in SPEC_PATTERNS],
         "extraction_indicators": [re.compile(p, re.I) for p in EXTRACTION_INDICATORS],
+        "qa_criteria": [(re.compile(p, re.I), v) for p, v in QA_CRITERIA.items()],
+        "qa_indicators": [re.compile(p, re.I) for p in QA_INDICATORS]
     }

@@ -2,9 +2,9 @@ from typing import Any
 
 import spacy
 
-from src.components.ds_compression import DSEncoder, CompressionConfig
-from src.components.sys_prompt.encoder import SysPromptEncoder
-from src.components.transcript.encoder import TranscriptEncoder
+from ..components.ds_compression import DSEncoder, CompressionConfig
+from ..components.sys_prompt.encoder import SysPromptEncoder
+from ..components.transcript.encoder import TranscriptEncoder
 from .text_classifier import DataClassifier, DataTypes
 
 
@@ -18,7 +18,7 @@ class CLLMEncoder:
         Args:
             model: spaCy model to use (en_core_web_sm, en_core_web_md, en_core_web_lg)
         """
-        print(f"Loading spaCy model: {model}...")
+        print(f"Loading spaCy model here: {model}...")
 
         self._nlp: spacy.Language = spacy.load(model)
         self._ds_config = CompressionConfig(
