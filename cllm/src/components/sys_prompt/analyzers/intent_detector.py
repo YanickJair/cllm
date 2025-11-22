@@ -2,7 +2,7 @@ import re
 from typing import List, Optional
 from spacy import Language
 
-from src.utils.vocabulary import Vocabulary
+from src.utils.vocabulary import BaseVocabulary
 from .. import Intent
 
 
@@ -23,9 +23,9 @@ class IntentDetector:
         "top", "bottom", "highest", "lowest", "best", "worst"
     }
 
-    def __init__(self, nlp: Language):
+    def __init__(self, nlp: Language, vocab: type[BaseVocabulary]):
         self.nlp = nlp
-        self.vocab = Vocabulary()
+        self.vocab = vocab
         self.REQ_MAP = self.vocab.REQ_TOKENS
         self.syn_index = self._build_reverse_index()
 
@@ -220,4 +220,3 @@ class IntentDetector:
                     return True
 
         return False
-

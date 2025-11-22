@@ -144,6 +144,7 @@ class DetectedField(BaseModel):
 
 
 class SysPromptConfig(BaseModel):
+    lang: str = Field(default="en", description="Language of the prompt")
     infer_types: Annotated[bool, Field(default=False, description="Infer types for output fields")]
     add_examples: Annotated[bool, Field(default=False, description="Add examples based on extracted ones from input if exist")]
     add_attrs: Annotated[bool, Field(default=True, description="Add extra attributes from input prompt")]
