@@ -3,7 +3,7 @@ import json
 import re
 from typing import Any, Union, Optional
 
-from src.components.sys_prompt._schemas import OutputField, OutputSchema
+from src.components.sys_prompt._schemas import OutputField, OutputSchema, SysPromptConfig
 
 BULLET_PATTERNS = [
     r'^\s*[-*]\s+',        # - item
@@ -240,9 +240,10 @@ class SchemaOutputCompressor:
     Produces:
     OutputSchema(format_type="JSON", attributes={"SCHEMA": "{...}", "SCORE_MAP": "{...}"})
     """
-    def __init__(self, *, infer_types: bool, add_attributes: bool) -> None:
-        self._add_attributes: bool = infer_types
-        self._infer_types: bool = add_attributes
+    def __init__(self, *, infer_types: bool, add_attributes: bool, add_examples: bool) -> None:
+        self._add_attributes: bool = add_attributes
+        self._infer_types: bool = infer_types
+        self._add_specs_attr = add_examples
 
     SCORE_PATTERN = re.compile(
         r'(\d+\.\d+)\s*[-–]\s*(\d+\.\d+)\s*:\s*([A-Za-z ]+)',
@@ -250,19 +251,23 @@ class SchemaOutputCompressor:
     )
 
     def compress_schema(self, schema: dict, extra_text: str = "") -> OutputSchema:
-
         schema_encoded = self._encode_schema(schema)
-        score_map_attr = self._extract_score_map(extra_text)
+        attributes = {"schema": schema_encoded}
 
-        if score_map_attr and self._add_attributes:
-            # attributes["SCORE_MAP"] = score_map_attr
-            pass
+        if self._add_attributes:
+            score_map_attr = self._extract_score_map(extra_text)
+            if score_map_attr:
+                attributes["SCORE_MAP"] = score_map_attr
+            if self._add_specs_attr:
+                specs_attr = self._extract_specs(extra_text)
+                if specs_attr is not None:
+                    attributes["SPECS"] = specs_attr
 
         fields = self._extract_fields(schema)
         return OutputSchema(
             format_type="JSON",
             fields=fields,
-            attributes={"schema": schema_encoded},
+            attributes=attributes,
             raw_schema=schema
         )
 
@@ -274,7 +279,7 @@ class SchemaOutputCompressor:
         - When self._infer_types is True: emit types as before.
           e.g. {summary:STR,qa_scores:{verification:FLOAT,...},violations:[STR],...}
         """
-        # DICT case
+
         if isinstance(obj, dict):
             parts = []
             for k, v in obj.items():
@@ -336,6 +341,156 @@ class SchemaOutputCompressor:
 
         return "{" + ",".join(parts) + "}"
 
+    def _extract_specs(self, text: str) -> Optional[dict]:
+        """
+        Generic SPECS extractor.
+        - Detects explicit SPECS={...} blocks and parses leniently.
+        - Falls back to NL heuristics to infer range maps, types, and field lists.
+        """
+        if not text:
+            return None
+
+        # 1) Look for explicit SPECS block: SPECS={ ... }
+        m = re.search(r'specs\s*[:=]\s*\{([\s\S]+?)\}', text, flags=re.IGNORECASE)
+        if m:
+            raw = m.group(1).strip()
+            parsed = self._parse_specs_block(raw)
+            return parsed if parsed else None
+
+        # 2) No explicit block found -> use NL inference
+        nl_parsed = self._extract_specs_from_nl(text)
+        return nl_parsed if nl_parsed else None
+
+    def _parse_specs_block(self, body: str) -> dict:
+        """
+        Parse the inside of SPECS={...} into a Python dict using lenient pseudo-JSON parsing.
+        Supports nested {...}, arrays [...], key:value and key=value styles.
+        """
+        specs = {}
+        # Split on top-level commas only (handles simple nesting)
+        parts = re.split(r',\s*(?=(?:[^{}]*\{[^}]*\})*[^}]*$)', body)
+
+        for p in parts:
+            if not p.strip():
+                continue
+            # try key:val or key=val
+            if ':' in p:
+                key, val = p.split(':', 1)
+            elif '=' in p:
+                key, val = p.split('=', 1)
+            else:
+                # standalone token -> treat as flag
+                k = p.strip()
+                specs[k] = True
+                continue
+
+            key = key.strip().strip('"').strip("'")
+            val = val.strip()
+            parsed = self._try_parse_json_fragment(val)
+            specs[key] = parsed if parsed is not None else self._clean_value_string(val)
+
+        return specs
+
+    def _try_parse_json_fragment(self, val: str):
+        """
+        Tries to parse pseudo-JSON fragments:
+            {a:b,c:d}
+            [x,y,z]
+            {"key":"value"}
+        Returns Python object or None.
+        """
+        v = val.strip()
+        # Attempt direct JSON parse
+        try:
+            return json.loads(v)
+        except Exception:
+            pass
+
+        # Heuristic: ensure keys are quoted for JSON parsing
+        heur = v
+        # add quotes to unquoted keys (e.g., a:1 -> "a":1)
+        heur = re.sub(r'([\{\[,]\s*)([A-Za-z0-9_]+\s*):', lambda m: m.group(1) + '"' + m.group(2).strip().rstrip(':') + '":', heur)
+        # quote simple barewords for values if necessary
+        heur = re.sub(r':\s*([A-Za-z_][A-Za-z0-9_\-]*)', r':"\1"', heur)
+
+        try:
+            return json.loads(heur)
+        except Exception:
+            pass
+
+        # Arrays like [a,b] -> try to split
+        if heur.startswith('[') and heur.endswith(']'):
+            inner = heur[1:-1].strip()
+            parts = [x.strip().strip('"').strip("'") for x in inner.split(',') if x.strip()]
+            return parts
+
+        return None
+
+    def _clean_value_string(self, s: str) -> str:
+        # strip surrounding braces/brackets/quotes
+        s = s.strip()
+        if s.startswith('{') and s.endswith('}'):
+            s = s[1:-1].strip()
+        if s.startswith('[') and s.endswith(']'):
+            s = s[1:-1].strip()
+        return s.strip().strip('"').strip("'")
+
+    def _extract_specs_from_nl(self, text: str) -> Optional[dict]:
+        """
+        Extract rule-like structures from natural language instructions.
+        Uses regex heuristics and (optionally) spaCy if available as self.nlp.
+        """
+        inferred = {}
+
+        # 1) RANGE PATTERNS: "0-0.49 means FAIL" or "0.0 - 0.49 : FAIL"
+        range_rule = re.findall(r'(\d+\.?\d*)\s*[-–]\s*(\d+\.?\d*)\s*(?:means|is|=|:)\s*([A-Za-z_ ]+)',
+                                text, flags=re.IGNORECASE)
+        if range_rule:
+            score_map = {}
+            for lo, hi, lbl in range_rule:
+                score_map[f"{lo}-{hi}"] = lbl.strip().upper().replace(" ", "_")
+            inferred.setdefault("range_map", {}).update(score_map)
+
+        # 2) TYPE HINTS: "verification is a float"
+        type_rule = re.findall(r'([\w\.]+)\s+(?:is|are)\s+(?:a|an)?\s*(float|int|boolean|bool|string|str|array|list|object)',
+                               text, flags=re.IGNORECASE)
+        if type_rule:
+            types = {field: t.upper() for field, t in type_rule}
+            inferred.setdefault("types", {}).update(types)
+
+        # 3) FIELD LISTS: "each object contains: id, value, status"
+        contains = re.search(r'(contain|contains|include|includes|have the following keys)\s*[:\-]\s*(.+)',
+                             text, flags=re.IGNORECASE)
+        if contains:
+            fields = [f.strip().strip('.,') for f in re.split(r',\s*|\n', contains.group(2)) if f.strip()]
+            inferred["fields"] = fields
+
+        # 4) BOOLEAN REQUIREMENTS: "summary required", "violations optional"
+        reqs = re.findall(r'([\w\.]+)\s+(required|required:|optional|optional:|must be present|must be absent)',
+                          text, flags=re.IGNORECASE)
+        if reqs:
+            requirements = {}
+            for f, rule in reqs:
+                rule_clean = rule.lower().replace(':', '').strip()
+                if 'optional' in rule_clean:
+                    requirements[f] = 'OPTIONAL'
+                else:
+                    requirements[f] = 'REQUIRED'
+            inferred.setdefault("requirements", {}).update(requirements)
+
+        # 5) spaCy-based entity extraction (if available on self)
+        try:
+            if hasattr(self, "nlp") and self.nlp is not None:
+                doc = self.nlp(text)
+                ents = [ent.text for ent in doc.ents if ent.text]
+                if ents:
+                    inferred["entities"] = ents
+        except Exception:
+            # don't fail on spaCy absence or errors
+            pass
+
+        return inferred if inferred else None
+
     def _extract_fields(self, schema: dict) -> list[OutputField]:
         fields = []
         for k, v in schema.items():
@@ -367,10 +522,11 @@ class SchemaOutputCompressor:
 
 
 class SysPromptOutputFormat:
-    def __init__(self, infer_types: bool, add_attributes: bool):
+    def __init__(self, config: SysPromptConfig):
         self.struct_compressor = SchemaOutputCompressor(
-            infer_types=infer_types,
-            add_attributes=add_attributes
+            infer_types=config.infer_types,
+            add_attributes=config.add_attrs,
+            add_examples=config.add_examples
         )
 
 
@@ -425,9 +581,9 @@ class SysPromptOutputFormat:
         if phrase_match:
             remainder = phrase_match.group(2)
             # cut off at next paragraph break
-            remainder = remainder.split('\n\n')[0]
+            remainder = remainder.split('\\n\\n')[0]
             # split on commas or newlines
-            candidates = re.split(r',\s*|\n', remainder)
+            candidates = re.split(r',\\s*|\\n', remainder)
             for c in candidates:
                 c = c.strip().strip('-').strip()
                 if c:
@@ -465,4 +621,3 @@ class SysPromptOutputFormat:
                 k, v = line.split(':', 1)
                 out[k.strip()] = v.strip()
         return out
-

@@ -44,7 +44,6 @@ class CTXEngine:
             ]
         }
 
-        # Precompile
         self.compiled_ctx = {
             ctx: [(re.compile(p, re.I), val) for p, val in pairs]
             for ctx, pairs in self.ctx_patterns.items()
@@ -53,47 +52,34 @@ class CTXEngine:
     def parse_contexts(self, text: str) -> list[Context]:
         clean = text.strip()
         text_lower = clean.lower()
+        if not self._has_ctx_intent(text_lower):
+            return []
         doc = self.nlp(clean)
 
         contexts: list[Context] = []
         added_aspects = set()
 
-        # --------------------------
-        # 1. AUDIENCE (from your rules)
-        # --------------------------
         aud = self._match_single("audience", text_lower)
         if aud:
             contexts.append(Context(aspect="AUDIENCE", value=aud))
             added_aspects.add("AUDIENCE")
 
-        # --------------------------
-        # 2. LENGTH
-        # --------------------------
         length = self._match_single("length", text_lower)
         if length:
             contexts.append(Context(aspect="LENGTH", value=length))
             added_aspects.add("LENGTH")
 
-        # --------------------------
-        # 3. STYLE (only if LENGTH not matched)
-        # --------------------------
         if "LENGTH" not in added_aspects:
             style = self._match_single("style", text_lower)
             if style:
                 contexts.append(Context(aspect="STYLE", value=style))
                 added_aspects.add("STYLE")
 
-        # --------------------------
-        # 4. TONE (co-exists)
-        # --------------------------
         tone = self._match_single("tone", text_lower)
         if tone:
             contexts.append(Context(aspect="TONE", value=tone))
             added_aspects.add("TONE")
 
-        # --------------------------
-        # 5. LANGUAGE, REGION, PRIORITY, SLA, FORMAT
-        # --------------------------
         for aspect, patterns in self.compiled_ctx.items():
             for pat, value in patterns:
                 match = pat.search(text_lower)
@@ -101,18 +87,12 @@ class CTXEngine:
                     contexts.append(Context(aspect=aspect, value=value))
                     break  # 1 match per category
 
-        # --------------------------
-        # 6. Heuristic: "As a <role>"
-        # --------------------------
         if "AUDIENCE" not in added_aspects:
             if doc[0].text.lower() == "as" and len(doc) > 2:
                 nxt = doc[2].text.lower()
                 if nxt in ("manager", "developer", "engineer", "analyst"):
                     contexts.append(Context(aspect="AUDIENCE", value="BUSINESS"))
 
-        # --------------------------
-        # 7. Remove duplicates
-        # --------------------------
         unique = []
         seen = set()
         for ctx in contexts:
@@ -122,6 +102,23 @@ class CTXEngine:
                 seen.add(key)
 
         return unique
+
+    def _has_ctx_intent(self, text: str) -> bool:
+        has_ctx_intent = any(
+            kw in text
+            for kw in [
+                "write", "give", "provide", "explain", "describe",
+                "summarize", "make it", "in a", "as a", "keep it",
+                "brief", "short", "long", "detailed", "simple", "concise"
+            ]
+        )
+
+        # Disable CTX if prompt looks like system template / scoring rubric
+        if any(marker in text for marker in [
+            "output format", "{", "}", "criteria", "scoring", "qa_", "compliance", "policy adherence"
+        ]):
+            has_ctx_intent = False
+        return has_ctx_intent
 
     def _match_single(self, category: str, text_lower: str):
         matches = [

@@ -1,0 +1,379 @@
+{
+  "patterns": [
+    {
+      "id": "PTTN_70ABD076",
+      "pattern": "[REQ:EXTRACT] [REQ:DETERMINE] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:FACT] [TARGET:DATA] [TARGET:ITEMS] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:METRICS] [TARGET:METRICS] [TARGET:FEATURES] [TARGET:CONCEPT:TOPIC=THE_CONTENTS]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.842494",
+      "last_seen": "2025-10-08T16:45:00.041432",
+      "compression_gain": 23,
+      "domains": [
+        "content_generation",
+        "data_analysis"
+      ],
+      "examples": [
+        "Describe the contents of the given Wikipedia article in one sentence.\nData and information visualization (data viz or info viz)[1] is an interdisciplinary field that deals with the graphic representation of data and information. It is a particularly efficient way of communicating when the data or information is numerous as for example a time series.[2]\n\nIt is also the study of visual representations of abstract data to reinforce human cognition. The abstract data include both numerical and non-numerical data, such as text and geographic information. It is related to infographics and scientific visualization. One distinction is that it's information visualization when the spatial representation (e.g., the page layout of a graphic design) is chosen, whereas it's scientific visualization when the spatial representation is given.[3]\n\nFrom an academic point of view, this representation can be considered as a mapping between the original data (usually numerical) and graphic elements[4] (for example, lines or points in a chart). The mapping determines how the attributes of these elements vary according to the data. In this light, a bar chart is a mapping of the length of a bar to a magnitude of a variable. Since the graphic design of the mapping can adversely affect the readability of a chart,[2] mapping is a core competency of Data visualization.[5]\n\nData and information visualization has its roots in the field of statistics, as early as the 18th century,[6] and is therefore generally considered a branch of descriptive statistics. However, because both design skills and statistical and computing skills are required to visualize effectively, it is argued by authors such as Gershon and Page that it is both an art and a science.[5]\n\nResearch into how people read and misread various types of visualizations is helping to determine what types and features of visualizations are most understandable and effective in conveying information.[7][8]"
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_04136063",
+      "pattern": "[REQ:EXTRACT] [REQ:DETERMINE] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:FACT] [TARGET:DATA] [TARGET:ITEMS] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:METRICS] [TARGET:METRICS] [TARGET:FEATURES]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.842633",
+      "last_seen": "2025-10-08T16:45:00.041433",
+      "compression_gain": 22,
+      "domains": [
+        "content_generation",
+        "data_analysis"
+      ],
+      "examples": [
+        "Describe the contents of the given Wikipedia article in one sentence.\nData and information visualization (data viz or info viz)[1] is an interdisciplinary field that deals with the graphic representation of data and information. It is a particularly efficient way of communicating when the data or information is numerous as for example a time series.[2]\n\nIt is also the study of visual representations of abstract data to reinforce human cognition. The abstract data include both numerical and non-numerical data, such as text and geographic information. It is related to infographics and scientific visualization. One distinction is that it's information visualization when the spatial representation (e.g., the page layout of a graphic design) is chosen, whereas it's scientific visualization when the spatial representation is given.[3]\n\nFrom an academic point of view, this representation can be considered as a mapping between the original data (usually numerical) and graphic elements[4] (for example, lines or points in a chart). The mapping determines how the attributes of these elements vary according to the data. In this light, a bar chart is a mapping of the length of a bar to a magnitude of a variable. Since the graphic design of the mapping can adversely affect the readability of a chart,[2] mapping is a core competency of Data visualization.[5]\n\nData and information visualization has its roots in the field of statistics, as early as the 18th century,[6] and is therefore generally considered a branch of descriptive statistics. However, because both design skills and statistical and computing skills are required to visualize effectively, it is argued by authors such as Gershon and Page that it is both an art and a science.[5]\n\nResearch into how people read and misread various types of visualizations is helping to determine what types and features of visualizations are most understandable and effective in conveying information.[7][8]"
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_5491B4D5",
+      "pattern": "[REQ:EXTRACT] [REQ:DETERMINE] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:FACT] [TARGET:DATA] [TARGET:ITEMS] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:METRICS] [TARGET:METRICS]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.842754",
+      "last_seen": "2025-10-08T16:45:00.041434",
+      "compression_gain": 21,
+      "domains": [
+        "content_generation",
+        "data_analysis"
+      ],
+      "examples": [
+        "Describe the contents of the given Wikipedia article in one sentence.\nData and information visualization (data viz or info viz)[1] is an interdisciplinary field that deals with the graphic representation of data and information. It is a particularly efficient way of communicating when the data or information is numerous as for example a time series.[2]\n\nIt is also the study of visual representations of abstract data to reinforce human cognition. The abstract data include both numerical and non-numerical data, such as text and geographic information. It is related to infographics and scientific visualization. One distinction is that it's information visualization when the spatial representation (e.g., the page layout of a graphic design) is chosen, whereas it's scientific visualization when the spatial representation is given.[3]\n\nFrom an academic point of view, this representation can be considered as a mapping between the original data (usually numerical) and graphic elements[4] (for example, lines or points in a chart). The mapping determines how the attributes of these elements vary according to the data. In this light, a bar chart is a mapping of the length of a bar to a magnitude of a variable. Since the graphic design of the mapping can adversely affect the readability of a chart,[2] mapping is a core competency of Data visualization.[5]\n\nData and information visualization has its roots in the field of statistics, as early as the 18th century,[6] and is therefore generally considered a branch of descriptive statistics. However, because both design skills and statistical and computing skills are required to visualize effectively, it is argued by authors such as Gershon and Page that it is both an art and a science.[5]\n\nResearch into how people read and misread various types of visualizations is helping to determine what types and features of visualizations are most understandable and effective in conveying information.[7][8]"
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_73061C7F",
+      "pattern": "[REQ:EXTRACT] [REQ:DETERMINE] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:FACT] [TARGET:DATA] [TARGET:ITEMS] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:METRICS]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.842876",
+      "last_seen": "2025-10-08T16:45:00.041434",
+      "compression_gain": 20,
+      "domains": [
+        "content_generation",
+        "data_analysis"
+      ],
+      "examples": [
+        "Describe the contents of the given Wikipedia article in one sentence.\nData and information visualization (data viz or info viz)[1] is an interdisciplinary field that deals with the graphic representation of data and information. It is a particularly efficient way of communicating when the data or information is numerous as for example a time series.[2]\n\nIt is also the study of visual representations of abstract data to reinforce human cognition. The abstract data include both numerical and non-numerical data, such as text and geographic information. It is related to infographics and scientific visualization. One distinction is that it's information visualization when the spatial representation (e.g., the page layout of a graphic design) is chosen, whereas it's scientific visualization when the spatial representation is given.[3]\n\nFrom an academic point of view, this representation can be considered as a mapping between the original data (usually numerical) and graphic elements[4] (for example, lines or points in a chart). The mapping determines how the attributes of these elements vary according to the data. In this light, a bar chart is a mapping of the length of a bar to a magnitude of a variable. Since the graphic design of the mapping can adversely affect the readability of a chart,[2] mapping is a core competency of Data visualization.[5]\n\nData and information visualization has its roots in the field of statistics, as early as the 18th century,[6] and is therefore generally considered a branch of descriptive statistics. However, because both design skills and statistical and computing skills are required to visualize effectively, it is argued by authors such as Gershon and Page that it is both an art and a science.[5]\n\nResearch into how people read and misread various types of visualizations is helping to determine what types and features of visualizations are most understandable and effective in conveying information.[7][8]"
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_4D3E66D0",
+      "pattern": "[REQ:OPTIMIZE] [TARGET:ITEMS] [OUT:LIST]",
+      "frequency": 156,
+      "first_seen": "2025-10-08T16:39:21.844925",
+      "last_seen": "2025-10-08T16:45:00.041435",
+      "compression_gain": 2,
+      "domains": [
+        "content_generation"
+      ],
+      "examples": [
+        "Generate a list of methods to reduce food waste.",
+        "Construct a list of tips to help reduce stress.",
+        "During the last member meeting, create a list of 5 ideas to improve the club."
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_516FF8B2",
+      "pattern": "[REQ:EXTRACT] [REQ:DETERMINE] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:FACT] [TARGET:DATA] [TARGET:ITEMS] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.842998",
+      "last_seen": "2025-10-08T16:45:00.041435",
+      "compression_gain": 19,
+      "domains": [
+        "content_generation",
+        "data_analysis"
+      ],
+      "examples": [
+        "Describe the contents of the given Wikipedia article in one sentence.\nData and information visualization (data viz or info viz)[1] is an interdisciplinary field that deals with the graphic representation of data and information. It is a particularly efficient way of communicating when the data or information is numerous as for example a time series.[2]\n\nIt is also the study of visual representations of abstract data to reinforce human cognition. The abstract data include both numerical and non-numerical data, such as text and geographic information. It is related to infographics and scientific visualization. One distinction is that it's information visualization when the spatial representation (e.g., the page layout of a graphic design) is chosen, whereas it's scientific visualization when the spatial representation is given.[3]\n\nFrom an academic point of view, this representation can be considered as a mapping between the original data (usually numerical) and graphic elements[4] (for example, lines or points in a chart). The mapping determines how the attributes of these elements vary according to the data. In this light, a bar chart is a mapping of the length of a bar to a magnitude of a variable. Since the graphic design of the mapping can adversely affect the readability of a chart,[2] mapping is a core competency of Data visualization.[5]\n\nData and information visualization has its roots in the field of statistics, as early as the 18th century,[6] and is therefore generally considered a branch of descriptive statistics. However, because both design skills and statistical and computing skills are required to visualize effectively, it is argued by authors such as Gershon and Page that it is both an art and a science.[5]\n\nResearch into how people read and misread various types of visualizations is helping to determine what types and features of visualizations are most understandable and effective in conveying information.[7][8]"
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_FBA1F88E",
+      "pattern": "[REQ:EXTRACT] [REQ:DETERMINE] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:FACT] [TARGET:DATA] [TARGET:ITEMS] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.843115",
+      "last_seen": "2025-10-08T16:45:00.041436",
+      "compression_gain": 18,
+      "domains": [
+        "content_generation",
+        "data_analysis"
+      ],
+      "examples": [
+        "Describe the contents of the given Wikipedia article in one sentence.\nData and information visualization (data viz or info viz)[1] is an interdisciplinary field that deals with the graphic representation of data and information. It is a particularly efficient way of communicating when the data or information is numerous as for example a time series.[2]\n\nIt is also the study of visual representations of abstract data to reinforce human cognition. The abstract data include both numerical and non-numerical data, such as text and geographic information. It is related to infographics and scientific visualization. One distinction is that it's information visualization when the spatial representation (e.g., the page layout of a graphic design) is chosen, whereas it's scientific visualization when the spatial representation is given.[3]\n\nFrom an academic point of view, this representation can be considered as a mapping between the original data (usually numerical) and graphic elements[4] (for example, lines or points in a chart). The mapping determines how the attributes of these elements vary according to the data. In this light, a bar chart is a mapping of the length of a bar to a magnitude of a variable. Since the graphic design of the mapping can adversely affect the readability of a chart,[2] mapping is a core competency of Data visualization.[5]\n\nData and information visualization has its roots in the field of statistics, as early as the 18th century,[6] and is therefore generally considered a branch of descriptive statistics. However, because both design skills and statistical and computing skills are required to visualize effectively, it is argued by authors such as Gershon and Page that it is both an art and a science.[5]\n\nResearch into how people read and misread various types of visualizations is helping to determine what types and features of visualizations are most understandable and effective in conveying information.[7][8]"
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_298EA73D",
+      "pattern": "[REQ:EXTRACT] [REQ:DETERMINE] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:FACT] [TARGET:DATA] [TARGET:ITEMS] [TARGET:DATA] [TARGET:DATA]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.843231",
+      "last_seen": "2025-10-08T16:45:00.041436",
+      "compression_gain": 17,
+      "domains": [
+        "content_generation",
+        "data_analysis"
+      ],
+      "examples": [
+        "Describe the contents of the given Wikipedia article in one sentence.\nData and information visualization (data viz or info viz)[1] is an interdisciplinary field that deals with the graphic representation of data and information. It is a particularly efficient way of communicating when the data or information is numerous as for example a time series.[2]\n\nIt is also the study of visual representations of abstract data to reinforce human cognition. The abstract data include both numerical and non-numerical data, such as text and geographic information. It is related to infographics and scientific visualization. One distinction is that it's information visualization when the spatial representation (e.g., the page layout of a graphic design) is chosen, whereas it's scientific visualization when the spatial representation is given.[3]\n\nFrom an academic point of view, this representation can be considered as a mapping between the original data (usually numerical) and graphic elements[4] (for example, lines or points in a chart). The mapping determines how the attributes of these elements vary according to the data. In this light, a bar chart is a mapping of the length of a bar to a magnitude of a variable. Since the graphic design of the mapping can adversely affect the readability of a chart,[2] mapping is a core competency of Data visualization.[5]\n\nData and information visualization has its roots in the field of statistics, as early as the 18th century,[6] and is therefore generally considered a branch of descriptive statistics. However, because both design skills and statistical and computing skills are required to visualize effectively, it is argued by authors such as Gershon and Page that it is both an art and a science.[5]\n\nResearch into how people read and misread various types of visualizations is helping to determine what types and features of visualizations are most understandable and effective in conveying information.[7][8]"
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_91436DA5",
+      "pattern": "[REQ:EXTRACT] [REQ:DETERMINE] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:FACT] [TARGET:DATA] [TARGET:ITEMS] [TARGET:DATA]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.843347",
+      "last_seen": "2025-10-08T16:45:00.041436",
+      "compression_gain": 16,
+      "domains": [
+        "content_generation",
+        "data_analysis"
+      ],
+      "examples": [
+        "Describe the contents of the given Wikipedia article in one sentence.\nData and information visualization (data viz or info viz)[1] is an interdisciplinary field that deals with the graphic representation of data and information. It is a particularly efficient way of communicating when the data or information is numerous as for example a time series.[2]\n\nIt is also the study of visual representations of abstract data to reinforce human cognition. The abstract data include both numerical and non-numerical data, such as text and geographic information. It is related to infographics and scientific visualization. One distinction is that it's information visualization when the spatial representation (e.g., the page layout of a graphic design) is chosen, whereas it's scientific visualization when the spatial representation is given.[3]\n\nFrom an academic point of view, this representation can be considered as a mapping between the original data (usually numerical) and graphic elements[4] (for example, lines or points in a chart). The mapping determines how the attributes of these elements vary according to the data. In this light, a bar chart is a mapping of the length of a bar to a magnitude of a variable. Since the graphic design of the mapping can adversely affect the readability of a chart,[2] mapping is a core competency of Data visualization.[5]\n\nData and information visualization has its roots in the field of statistics, as early as the 18th century,[6] and is therefore generally considered a branch of descriptive statistics. However, because both design skills and statistical and computing skills are required to visualize effectively, it is argued by authors such as Gershon and Page that it is both an art and a science.[5]\n\nResearch into how people read and misread various types of visualizations is helping to determine what types and features of visualizations are most understandable and effective in conveying information.[7][8]"
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_F755FC9D",
+      "pattern": "[REQ:EXTRACT] [REQ:DETERMINE] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:FACT] [TARGET:DATA] [TARGET:ITEMS]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.843477",
+      "last_seen": "2025-10-08T16:45:00.041437",
+      "compression_gain": 15,
+      "domains": [
+        "content_generation",
+        "data_analysis"
+      ],
+      "examples": [
+        "Describe the contents of the given Wikipedia article in one sentence.\nData and information visualization (data viz or info viz)[1] is an interdisciplinary field that deals with the graphic representation of data and information. It is a particularly efficient way of communicating when the data or information is numerous as for example a time series.[2]\n\nIt is also the study of visual representations of abstract data to reinforce human cognition. The abstract data include both numerical and non-numerical data, such as text and geographic information. It is related to infographics and scientific visualization. One distinction is that it's information visualization when the spatial representation (e.g., the page layout of a graphic design) is chosen, whereas it's scientific visualization when the spatial representation is given.[3]\n\nFrom an academic point of view, this representation can be considered as a mapping between the original data (usually numerical) and graphic elements[4] (for example, lines or points in a chart). The mapping determines how the attributes of these elements vary according to the data. In this light, a bar chart is a mapping of the length of a bar to a magnitude of a variable. Since the graphic design of the mapping can adversely affect the readability of a chart,[2] mapping is a core competency of Data visualization.[5]\n\nData and information visualization has its roots in the field of statistics, as early as the 18th century,[6] and is therefore generally considered a branch of descriptive statistics. However, because both design skills and statistical and computing skills are required to visualize effectively, it is argued by authors such as Gershon and Page that it is both an art and a science.[5]\n\nResearch into how people read and misread various types of visualizations is helping to determine what types and features of visualizations are most understandable and effective in conveying information.[7][8]"
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_44ED10D0",
+      "pattern": "[REQ:EXTRACT] [REQ:DETERMINE] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:FACT] [TARGET:DATA]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.843597",
+      "last_seen": "2025-10-08T16:45:00.041437",
+      "compression_gain": 14,
+      "domains": [
+        "content_generation",
+        "data_analysis"
+      ],
+      "examples": [
+        "Describe the contents of the given Wikipedia article in one sentence.\nData and information visualization (data viz or info viz)[1] is an interdisciplinary field that deals with the graphic representation of data and information. It is a particularly efficient way of communicating when the data or information is numerous as for example a time series.[2]\n\nIt is also the study of visual representations of abstract data to reinforce human cognition. The abstract data include both numerical and non-numerical data, such as text and geographic information. It is related to infographics and scientific visualization. One distinction is that it's information visualization when the spatial representation (e.g., the page layout of a graphic design) is chosen, whereas it's scientific visualization when the spatial representation is given.[3]\n\nFrom an academic point of view, this representation can be considered as a mapping between the original data (usually numerical) and graphic elements[4] (for example, lines or points in a chart). The mapping determines how the attributes of these elements vary according to the data. In this light, a bar chart is a mapping of the length of a bar to a magnitude of a variable. Since the graphic design of the mapping can adversely affect the readability of a chart,[2] mapping is a core competency of Data visualization.[5]\n\nData and information visualization has its roots in the field of statistics, as early as the 18th century,[6] and is therefore generally considered a branch of descriptive statistics. However, because both design skills and statistical and computing skills are required to visualize effectively, it is argued by authors such as Gershon and Page that it is both an art and a science.[5]\n\nResearch into how people read and misread various types of visualizations is helping to determine what types and features of visualizations are most understandable and effective in conveying information.[7][8]"
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_F1EB0DFA",
+      "pattern": "[REQ:EXTRACT] [REQ:DETERMINE] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:FACT]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.843729",
+      "last_seen": "2025-10-08T16:45:00.041437",
+      "compression_gain": 13,
+      "domains": [
+        "content_generation",
+        "data_analysis"
+      ],
+      "examples": [
+        "Describe the contents of the given Wikipedia article in one sentence.\nData and information visualization (data viz or info viz)[1] is an interdisciplinary field that deals with the graphic representation of data and information. It is a particularly efficient way of communicating when the data or information is numerous as for example a time series.[2]\n\nIt is also the study of visual representations of abstract data to reinforce human cognition. The abstract data include both numerical and non-numerical data, such as text and geographic information. It is related to infographics and scientific visualization. One distinction is that it's information visualization when the spatial representation (e.g., the page layout of a graphic design) is chosen, whereas it's scientific visualization when the spatial representation is given.[3]\n\nFrom an academic point of view, this representation can be considered as a mapping between the original data (usually numerical) and graphic elements[4] (for example, lines or points in a chart). The mapping determines how the attributes of these elements vary according to the data. In this light, a bar chart is a mapping of the length of a bar to a magnitude of a variable. Since the graphic design of the mapping can adversely affect the readability of a chart,[2] mapping is a core competency of Data visualization.[5]\n\nData and information visualization has its roots in the field of statistics, as early as the 18th century,[6] and is therefore generally considered a branch of descriptive statistics. However, because both design skills and statistical and computing skills are required to visualize effectively, it is argued by authors such as Gershon and Page that it is both an art and a science.[5]\n\nResearch into how people read and misread various types of visualizations is helping to determine what types and features of visualizations are most understandable and effective in conveying information.[7][8]"
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_B9A10F2D",
+      "pattern": "[REQ:EXTRACT] [REQ:DETERMINE] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.843853",
+      "last_seen": "2025-10-08T16:45:00.041439",
+      "compression_gain": 12,
+      "domains": [
+        "content_generation",
+        "data_analysis"
+      ],
+      "examples": [
+        "Describe the contents of the given Wikipedia article in one sentence.\nData and information visualization (data viz or info viz)[1] is an interdisciplinary field that deals with the graphic representation of data and information. It is a particularly efficient way of communicating when the data or information is numerous as for example a time series.[2]\n\nIt is also the study of visual representations of abstract data to reinforce human cognition. The abstract data include both numerical and non-numerical data, such as text and geographic information. It is related to infographics and scientific visualization. One distinction is that it's information visualization when the spatial representation (e.g., the page layout of a graphic design) is chosen, whereas it's scientific visualization when the spatial representation is given.[3]\n\nFrom an academic point of view, this representation can be considered as a mapping between the original data (usually numerical) and graphic elements[4] (for example, lines or points in a chart). The mapping determines how the attributes of these elements vary according to the data. In this light, a bar chart is a mapping of the length of a bar to a magnitude of a variable. Since the graphic design of the mapping can adversely affect the readability of a chart,[2] mapping is a core competency of Data visualization.[5]\n\nData and information visualization has its roots in the field of statistics, as early as the 18th century,[6] and is therefore generally considered a branch of descriptive statistics. However, because both design skills and statistical and computing skills are required to visualize effectively, it is argued by authors such as Gershon and Page that it is both an art and a science.[5]\n\nResearch into how people read and misread various types of visualizations is helping to determine what types and features of visualizations are most understandable and effective in conveying information.[7][8]"
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_2DD999A6",
+      "pattern": "[TARGET:CONTENT] [CTX:TONE=TECHNICAL] [CTX:STYLE=DETAILED] [CTX:LENGTH=DETAILED]",
+      "frequency": 64,
+      "first_seen": "2025-10-08T16:39:21.844907",
+      "last_seen": "2025-10-08T16:45:00.041439",
+      "compression_gain": 3,
+      "domains": [
+        "content_generation"
+      ],
+      "examples": [
+        "Give me a detailed overview of the framework of a web service.",
+        "Write a detailed introduction to the subject of machine learning.",
+        "Write a detailed definition of \u201cInternet of Things (IoT)\u201d"
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_E298305F",
+      "pattern": "[REQ:EXTRACT] [REQ:DETERMINE] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:DATA]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.843977",
+      "last_seen": "2025-10-08T16:45:00.041440",
+      "compression_gain": 11,
+      "domains": [
+        "content_generation",
+        "data_analysis"
+      ],
+      "examples": [
+        "Describe the contents of the given Wikipedia article in one sentence.\nData and information visualization (data viz or info viz)[1] is an interdisciplinary field that deals with the graphic representation of data and information. It is a particularly efficient way of communicating when the data or information is numerous as for example a time series.[2]\n\nIt is also the study of visual representations of abstract data to reinforce human cognition. The abstract data include both numerical and non-numerical data, such as text and geographic information. It is related to infographics and scientific visualization. One distinction is that it's information visualization when the spatial representation (e.g., the page layout of a graphic design) is chosen, whereas it's scientific visualization when the spatial representation is given.[3]\n\nFrom an academic point of view, this representation can be considered as a mapping between the original data (usually numerical) and graphic elements[4] (for example, lines or points in a chart). The mapping determines how the attributes of these elements vary according to the data. In this light, a bar chart is a mapping of the length of a bar to a magnitude of a variable. Since the graphic design of the mapping can adversely affect the readability of a chart,[2] mapping is a core competency of Data visualization.[5]\n\nData and information visualization has its roots in the field of statistics, as early as the 18th century,[6] and is therefore generally considered a branch of descriptive statistics. However, because both design skills and statistical and computing skills are required to visualize effectively, it is argued by authors such as Gershon and Page that it is both an art and a science.[5]\n\nResearch into how people read and misread various types of visualizations is helping to determine what types and features of visualizations are most understandable and effective in conveying information.[7][8]"
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_21C87F7A",
+      "pattern": "[REQ:EXTRACT] [REQ:DETERMINE] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:FACT] [TARGET:DATA] [TARGET:DATA]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.844102",
+      "last_seen": "2025-10-08T16:45:00.041440",
+      "compression_gain": 10,
+      "domains": [
+        "content_generation",
+        "data_analysis"
+      ],
+      "examples": [
+        "Describe the contents of the given Wikipedia article in one sentence.\nData and information visualization (data viz or info viz)[1] is an interdisciplinary field that deals with the graphic representation of data and information. It is a particularly efficient way of communicating when the data or information is numerous as for example a time series.[2]\n\nIt is also the study of visual representations of abstract data to reinforce human cognition. The abstract data include both numerical and non-numerical data, such as text and geographic information. It is related to infographics and scientific visualization. One distinction is that it's information visualization when the spatial representation (e.g., the page layout of a graphic design) is chosen, whereas it's scientific visualization when the spatial representation is given.[3]\n\nFrom an academic point of view, this representation can be considered as a mapping between the original data (usually numerical) and graphic elements[4] (for example, lines or points in a chart). The mapping determines how the attributes of these elements vary according to the data. In this light, a bar chart is a mapping of the length of a bar to a magnitude of a variable. Since the graphic design of the mapping can adversely affect the readability of a chart,[2] mapping is a core competency of Data visualization.[5]\n\nData and information visualization has its roots in the field of statistics, as early as the 18th century,[6] and is therefore generally considered a branch of descriptive statistics. However, because both design skills and statistical and computing skills are required to visualize effectively, it is argued by authors such as Gershon and Page that it is both an art and a science.[5]\n\nResearch into how people read and misread various types of visualizations is helping to determine what types and features of visualizations are most understandable and effective in conveying information.[7][8]"
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_A2E8AC85",
+      "pattern": "[REQ:SEARCH] [REQ:EXECUTE] [REQ:OPTIMIZE] [REQ:EXTRACT] [REQ:PREDICT] [TARGET:SUMMARY] [TARGET:FEATURES] [TARGET:FACT] [TARGET:REGIONS] [TARGET:PATTERN]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.844216",
+      "last_seen": "2025-10-08T16:45:00.041440",
+      "compression_gain": 9,
+      "domains": [
+        "general"
+      ],
+      "examples": [
+        "Provide a summary for the passage given below.\nArtificial intelligence (AI) is a broad field that seeks to mimic or augment human capabilities through information processing technology and algorithms. AI has been an area of study since the 1950s, but has gained popular attention in recent years due to vast improvements in processing power. While some fear existential threats such as a Terminator-like hypothetical AI takeover, most of the practical applications of AI are in mundane areas such as image recognition, natural language processing, and task automation. AI is used to improve or automate mundane tasks, quickly identify patterns, and predict future events."
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_50EEB19C",
+      "pattern": "[REQ:SEARCH] [REQ:EXECUTE] [REQ:OPTIMIZE] [REQ:EXTRACT] [REQ:PREDICT] [TARGET:SUMMARY] [TARGET:FEATURES] [TARGET:FACT] [TARGET:REGIONS]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.844339",
+      "last_seen": "2025-10-08T16:45:00.041441",
+      "compression_gain": 8,
+      "domains": [
+        "general"
+      ],
+      "examples": [
+        "Provide a summary for the passage given below.\nArtificial intelligence (AI) is a broad field that seeks to mimic or augment human capabilities through information processing technology and algorithms. AI has been an area of study since the 1950s, but has gained popular attention in recent years due to vast improvements in processing power. While some fear existential threats such as a Terminator-like hypothetical AI takeover, most of the practical applications of AI are in mundane areas such as image recognition, natural language processing, and task automation. AI is used to improve or automate mundane tasks, quickly identify patterns, and predict future events."
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_B55E7D73",
+      "pattern": "[REQ:EXTRACT] [TARGET:QUERY] [TARGET:QUERY] [TARGET:DATA] [TARGET:INQUIRY]",
+      "frequency": 32,
+      "first_seen": "2025-10-08T16:39:21.844782",
+      "last_seen": "2025-10-08T16:45:00.041441",
+      "compression_gain": 4,
+      "domains": [
+        "customer_support",
+        "data_analysis"
+      ],
+      "examples": [
+        "Construct a SQL query that will retrieve the first 5 records from a table called \"Customers\".",
+        "Formulate a query in SQL to retrieve the names of all authors in the database."
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_96D51561",
+      "pattern": "[REQ:ANALYZE] [TARGET:SUMMARY] [TARGET:DOCUMENT] [TARGET:PROCEDURE] [TARGET:FEATURES] [TARGET:FEATURES] [TARGET:CONCEPT:TOPIC=A_NOVEL_DEEP_LEARNING_TECHNIQUE] [EXTRACT:FEATURES]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.844442",
+      "last_seen": "2025-10-08T16:45:00.041442",
+      "compression_gain": 7,
+      "domains": [
+        "code_analysis",
+        "data_analysis"
+      ],
+      "examples": [
+        "Explain what the article is about in 1 to 2 sentences.\nSummary: This paper describes a novel deep learning technique called Generative Autowavelets (GAW) and examines its uses in natural language processing (NLP) tasks. GAW is a combination of an autoencoder and wavelet transformer, meaning it can both compress features in text and enable structured extraction of these features."
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_9139FBEF",
+      "pattern": "[REQ:ANALYZE] [TARGET:SUMMARY] [TARGET:DOCUMENT] [TARGET:PROCEDURE] [TARGET:FEATURES] [TARGET:FEATURES] [TARGET:CONCEPT:TOPIC=A_NOVEL_DEEP_LEARNING_TECHNIQUE]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.844545",
+      "last_seen": "2025-10-08T16:45:00.041442",
+      "compression_gain": 6,
+      "domains": [
+        "code_analysis",
+        "data_analysis"
+      ],
+      "examples": [
+        "Explain what the article is about in 1 to 2 sentences.\nSummary: This paper describes a novel deep learning technique called Generative Autowavelets (GAW) and examines its uses in natural language processing (NLP) tasks. GAW is a combination of an autoencoder and wavelet transformer, meaning it can both compress features in text and enable structured extraction of these features."
+      ],
+      "version": 1
+    },
+    {
+      "id": "PTTN_8D4CB8C5",
+      "pattern": "[REQ:DETERMINE] [REQ:GENERATE] [TARGET:ANSWER] [TARGET:SYSTEM] [TARGET:DATA] [TARGET:CONCEPT:TOPIC=THE_SOLUTION]",
+      "frequency": 16,
+      "first_seen": "2025-10-08T16:39:21.844651",
+      "last_seen": "2025-10-08T16:45:00.041442",
+      "compression_gain": 5,
+      "domains": [
+        "data_analysis"
+      ],
+      "examples": [
+        "Describe the solution in detail.\nWe established a system for automatically generating data for our machine learning model."
+      ],
+      "version": 1
+    }
+  ],
+  "stats": {
+    "total_patterns": 22,
+    "total_uses": 556,
+    "total_tokens_saved": 4888,
+    "avg_compression_gain": 12.5,
+    "most_used_pattern": {
+      "id": "PTTN_4D3E66D0",
+      "pattern": "[REQ:OPTIMIZE] [TARGET:ITEMS] [OUT:LIST]",
+      "frequency": 156,
+      "first_seen": "2025-10-08T16:39:21.844925",
+      "last_seen": "2025-10-08T16:45:00.041435",
+      "compression_gain": 2,
+      "domains": [
+        "content_generation"
+      ],
+      "examples": [
+        "Generate a list of methods to reduce food waste.",
+        "Construct a list of tips to help reduce stress.",
+        "During the last member meeting, create a list of 5 ideas to improve the club."
+      ],
+      "version": 1
+    }
+  }
+}

@@ -26,7 +26,6 @@ class Target(BaseModel):
         if self.attributes is None:
             self.attributes = {}
 
-
 class ExtractionField(BaseModel):
     """Represents fields to extract"""
 
@@ -37,18 +36,24 @@ class ExtractionField(BaseModel):
         if self.attributes is None:
             self.attributes = {}
 
-    def compress(self) -> str | None:
+    def build_token(self) -> str | None:
+        """
+        Format the extraction field as a semantic token.
+        Examples:
+        - [EXTRACT:NAMES,DATES]
+        - [EXTRACT:VERIFICATION,POLICY:DOMAIN=QA]
+        """
         if not self.fields:
             return None
 
-        token = ["EXTRACT"]
-        token.append("+".join(self.fields))
+        result = f"[EXTRACT:{','.join(self.fields)}"
 
         if self.attributes:
-            for k, v in self.attributes.items():
-                token.append(f"{k}={v}")
+            attr_parts = [f"{k}={v}" for k, v in self.attributes.items()]
+            result += f":{','.join(attr_parts)}"
 
-        return f"[{':'.join(token)}]"
+        result += "]"
+        return result
 
 
 class Context(BaseModel):
@@ -86,24 +91,37 @@ class OutputSchema(BaseModel):
     raw_schema: Optional[dict | str] = None
     format_hint: Optional[str] = None
 
-
     def build_token(self) -> str:
         """
-        Build token: [OUT:FORMAT:ATTR=val:...]
-        Format must be uppercase.
+        Build token in the canonical format:
+
+            [OUT_<FORMAT> : <SCHEMA> : key=value : key=value]
+
+        - SCHEMA always comes first.
+        - Other attributes (SCORE_MAP, SPECS, KEYS, etc.) follow.
+        - Order of attributes is stable: SCHEMA → KEYS → SCORE_MAP → SPECS → others.
         """
         fmt = (self.format_hint or self.format_type or "STRUCTURED").upper()
-        parts = [f"OUT_{fmt}",]
+        schema = self.attributes.get("schema", "")
+        parts = [f"OUT_{fmt}", f"{schema}"]
+        ordered_keys = []
 
-        # ensure deterministic order for attributes: KEYS first then others
         if "KEYS" in self.attributes:
-            parts.append(f"={self.attributes['KEYS']}")
-        for k in sorted(self.attributes.keys()):
-            if k == "KEYS":
-                continue
-            parts.append(f"={self.attributes[k]}")
+            ordered_keys.append("KEYS")
+        if "SCORE_MAP" in self.attributes:
+            ordered_keys.append("SCORE_MAP")
+        if "SPECS" in self.attributes:
+            ordered_keys.append("SPECS")
 
-        return f"[{':'.join(parts)}]"
+        for k in sorted(self.attributes.keys()):
+            if k not in ["schema", "KEYS", "SCORE_MAP", "SPECS"]:
+                ordered_keys.append(k)
+
+        for k in ordered_keys:
+            parts.append(f"{k}={self.attributes[k]}")
+
+        return "[" + ":".join(parts) + "]"
+
 
 class CompressionResult(BaseModel):
     """Complete compression result"""
@@ -128,4 +146,4 @@ class DetectedField(BaseModel):
 class SysPromptConfig(BaseModel):
     infer_types: Annotated[bool, Field(default=False, description="Infer types for output fields")]
     add_examples: Annotated[bool, Field(default=False, description="Add examples based on extracted ones from input if exist")]
-    add_attrs: Annotated[bool, Field(default=False, description="Add extra attributes from input prompt")]
+    add_attrs: Annotated[bool, Field(default=True, description="Add extra attributes from input prompt")]
