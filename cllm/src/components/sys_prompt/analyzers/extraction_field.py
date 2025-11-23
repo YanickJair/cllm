@@ -1,6 +1,7 @@
 import re
 from typing import Optional
 from spacy import Language
+from src.utils.vocabulary import BaseVocabulary
 
 from src.components.sys_prompt._schemas import DetectedField, ExtractionField
 from src.utils.parser_rules import Rules
@@ -19,6 +20,20 @@ class FieldExtractor:
         self.rules = Rules
 
     def extract(self, text: str) -> list[DetectedField]:
+        """
+        Extracts fields from the given text.
+
+        Args:
+            text (str): The text to extract fields from.
+
+        Returns:
+            list[DetectedField]: A list of detected fields.
+
+        Examples:
+            >>> extractor = FieldExtractor(nlp)
+            >>> extractor.extract("What are the differences between the two products?")
+            [DetectedField(name='DIFFERENCES', span=(18, 35))]
+        """
         clean = text.strip()
         text_lower = clean.lower()
         doc = self.nlp(clean)
@@ -110,24 +125,44 @@ class AttributeExtractor:
     Only returns attributes when they can be detected.
     """
 
-    @staticmethod
-    def extract(text: str, detected_fields: list[DetectedField]) -> dict[str, str] | None:
+    def __init__(self, vocab: BaseVocabulary):
+        self._vocab = vocab
+        self._list_indicators = set()
+        if "LIST" in self._vocab.REQ_TOKENS:
+            self._list_indicators.update(
+                s.lower() for s in self._vocab.REQ_TOKENS["LIST"]
+            )
+        if "ITEMS" in self._vocab.TARGET_TOKENS:
+            self._list_indicators.update(
+                s.lower() for s in self._vocab.TARGET_TOKENS["ITEMS"]
+            )
+
+    def extract(self, text: str, detected_fields: list[DetectedField]) -> dict[str, str] | None:
+        """
+        Extract optional attributes (TYPE=list|single, DOMAIN=document|code|support, etc.)
+        Only returns attributes when they can be detected.
+
+        Args:
+            text (str): The input text to extract attributes from.
+            detected_fields (list[DetectedField]): The detected fields in the text.
+
+        Returns:
+            dict[str, str] | None: The extracted attributes or None if no attributes are found.
+
+        Examples:
+            >>> extract("Extract all items", [])
+            {'TYPE': 'LIST'}
+            >>> extract("Extract items from document", [DetectedField("document", 0, 10)])
+            {'TYPE': 'LIST', 'DOMAIN': 'DOCUMENT'}
+        """
         text_lower = text.lower()
         attrs = {}
 
-        if any(word in text_lower for word in ["list", "all", "items", "extract all"]):
+        if any(indicator in text_lower for indicator in self._list_indicators):
             attrs["TYPE"] = "LIST"
 
-        domain_candidates = {
-            "support": ["issue", "sentiment", "actions", "urgency", "priority"],
-            "code": ["bug", "error", "security", "performance"],
-            "document": ["names", "dates", "amounts", "addresses", "emails", "phones"],
-            "qa": ["verification", "policy", "soft_skills", "accuracy", "compliance", "disclosures"],
-        }
-
         found = set(f.name for f in detected_fields)
-
-        for domain, keywords in domain_candidates.items():
+        for domain, keywords in self._vocab.domain_candidates.items():
             if any(k.upper() in found for k in keywords):
                 attrs["DOMAIN"] = domain.upper()
 
@@ -135,11 +170,26 @@ class AttributeExtractor:
 
 
 class ExtractionFieldParser:
-    def __init__(self, nlp: Language):
+    def __init__(self, nlp: Language, vocab: BaseVocabulary):
         self.field_extractor = FieldExtractor(nlp)
-        self.attr_extractor = AttributeExtractor()
+        self.attr_extractor = AttributeExtractor(vocab=vocab)
+        self._vocab = vocab
 
     def parse_extraction_fields(self, text: str) -> Optional[ExtractionField]:
+        """Parse extraction fields from a given text.
+
+        Args:
+            text (str): The input text to parse.
+
+        Returns:
+            Optional[ExtractionField]: The parsed extraction fields, or None if no fields are found.
+
+        Examples:
+            >>> parser = ExtractionFieldParser(nlp)
+            >>> text = "Extract bug and error fields from the document."
+            >>> parser.parse_extraction_fields(text)
+            ExtractionField(fields=['BUG', 'ERROR'], attributes={})
+        """
         detected = self.field_extractor.extract(text)
 
         if not detected:
@@ -147,7 +197,6 @@ class ExtractionFieldParser:
 
         detected_sorted = sorted(detected, key=lambda d: d.span[0])
 
-        # Deduplicate fields while preserving order of first appearance
         seen = set()
         fields_unique = []
         for d in detected_sorted:

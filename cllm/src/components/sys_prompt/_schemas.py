@@ -129,7 +129,7 @@ class CompressionResult(BaseModel):
     original: str
     compressed: str
     intents: list[Intent]
-    targets: list[Target]
+    target: Target
     extractions: Optional[ExtractionField]
     contexts: list[Context]
     output_format: Optional[OutputSchema]

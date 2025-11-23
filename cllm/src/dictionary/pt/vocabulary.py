@@ -2,6 +2,71 @@ from ...utils.vocabulary import BaseVocabulary
 
 
 class PTVocabulary(BaseVocabulary):
+    def __init__(self):
+        super().__init__()
+
+    @property
+    def QUANTIFIER_WORDS(self) -> list[str]:
+        return ["todos", "todas", "tudo", "cada", "inteiro", "completo"]
+
+    @property
+    def DEMONSTRATIVES(self) -> list[str]:
+        return ["este", "esta", "isto", "esse", "essa", "isso", "aquele", "aquela", "aquilo"]
+
+    @property
+    def COMPOUND_PHRASES(self) -> dict[str, str]:
+        return {
+            "suporte ao cliente": "TICKET",
+            "ticket de suporte": "TICKET",
+            "chamado de suporte": "TICKET",
+            "mensagem de email": "EMAIL",
+            "transcrição de chat": "TRANSCRIPT",
+            "chamada telefônica": "CALL",
+            "ligação telefônica": "CALL",
+            "código fonte": "CODE",
+            "plano de negócios": "PLAN",
+            "descrição do produto": "DESCRIPTION",
+        }
+
+    @property
+    def rank_triggers(self) -> set[str]:
+        return {
+            "classificar", "ranquear", "rankear",
+            "ordenar", "ordem", "ordenar por", "classificar por",
+            "priorizar", "topo", "superior", "primeiro",
+            "inferior", "último", "fundo", "maior", "mais alto", "menor", "mais baixo",
+            "melhor", "melhores", "pior", "piores"
+        }
+
+    @property
+    def domain_candidates(self) -> dict[str, list[str]]:
+        return {
+            "suporte": ["problema", "questão", "sentimento", "ações", "urgência", "prioridade"],
+            "código": ["bug", "erro", "segurança", "desempenho", "performance"],
+            "documento": ["nomes", "datas", "valores", "quantias", "endereços", "emails", "telefones"],
+            "qa": ["verificação", "política", "habilidades interpessoais", "soft skills", "precisão", "exatidão", "conformidade", "compliance", "divulgações"],
+        }
+
+    @property
+    def CONCEPT_INDICATORS(self) -> list[str]:
+        """Optional - can have sensible default"""
+        return ["conceito de", "ideia de", "noção de", "princípio de"]
+
+    @property
+    def MEETING_WORDS(self) -> list[str]:
+        """Optional - can have empty default"""
+        return ["reunião", "conferência", "encontro", "sessão"]
+
+    @property
+    def PROPOSAL_WORDS(self) -> list[str]:
+        """Optional - can have empty default"""
+        return ["proposta", "proposição"]
+
+    @property
+    def ARTICLES(self) -> list[str]:
+        """Optional - can have empty default"""
+        return ["o", "a", "os", "as", "um", "uma", "uns", "umas"]
+
     @property
     def REQ_TOKENS(self) -> dict[str, list[str]]:
         return {

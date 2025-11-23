@@ -12,6 +12,34 @@ class BaseVocabulary(ABC):
     """
     @property
     @abstractmethod
+    def QUANTIFIER_WORDS(self) -> list[str]:
+        """Words indicating totality/listing"""
+        raise NotImplementedError("Subclasses must implement QUANTIFIER_WORDS")
+
+    @property
+    @abstractmethod
+    def DEMONSTRATIVES(self) -> list[str]:
+        """Demonstrative pronouns/adjectives"""
+        raise NotImplementedError("Subclasses must implement DEMONSTRATIVES")
+
+    @property
+    @abstractmethod
+    def COMPOUND_PHRASES(self) -> dict[str, str]:
+        """Compound phrases that map to specific targets"""
+        raise NotImplementedError("Subclasses must implement COMPOUND_PHRASES")
+
+    @property
+    def domain_candidates(self) -> dict[str, list[str]]:
+        """Domain candidates for intent detection"""
+        raise NotImplementedError("Subclasses must implement domain_candidates")
+
+    @property
+    def rank_triggers(self) -> set:
+        # Rank triggers with token counts
+        raise NotImplementedError("Subclasses must implement rank_triggers")
+
+    @property
+    @abstractmethod
     def REQ_TOKENS(self) -> dict[str, list[str]]:
         # REQ tokens with trigger words
         raise NotImplementedError("Subclasses must implement REQ_TOKENS")
@@ -62,6 +90,30 @@ class BaseVocabulary(ABC):
     def QUESTION_WORDS(self) -> list[str]:
         """Question words for the language (what, who, where, etc.)"""
         pass
+
+    @property
+    @abstractmethod
+    def CONCEPT_INDICATORS(self) -> list[str]:
+        """Optional - can have sensible default"""
+        raise NotImplementedError("Subclasses must implement CONCEPT_INDICATORS")
+
+    @property
+    @abstractmethod
+    def MEETING_WORDS(self) -> list[str]:
+        """Optional - can have empty default"""
+        raise NotImplementedError("Subclasses must implement MEETING_WORDS")
+
+    @property
+    @abstractmethod
+    def PROPOSAL_WORDS(self) -> list[str]:
+        """Optional - can have empty default"""
+        raise NotImplementedError("Subclasses must implement PROPOSAL_WORDS")
+
+    @property
+    @abstractmethod
+    def ARTICLES(self) -> list[str]:
+        """Optional - can have empty default"""
+        raise NotImplementedError("Subclasses must implement ARTICLES")
 
     def get_req_token(self, word: str, context: str = "") -> Optional[str]:
         """
