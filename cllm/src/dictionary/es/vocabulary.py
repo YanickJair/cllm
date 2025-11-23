@@ -4,6 +4,67 @@ from ...utils.vocabulary import BaseVocabulary
 
 class ESVocabulary(BaseVocabulary):
     """CLLM token vocabulary - Spanish (Spain/Latin America)"""
+    def __init__(self):
+        super().__init__()
+
+    @property
+    def QUANTIFIER_WORDS(self) -> list[str]:
+        return ["todos", "todas", "todo", "cada", "entero", "completo"]
+
+    @property
+    def DEMONSTRATIVES(self) -> list[str]:
+        return ["este", "esta", "esto", "ese", "esa", "eso", "aquel", "aquella", "aquello"]
+
+    @property
+    def COMPOUND_PHRASES(self) -> dict[str, str]:
+        return {
+            "soporte al cliente": "TICKET",
+            "ticket de soporte": "TICKET",
+            "mensaje de correo": "EMAIL",
+            "transcripción de chat": "TRANSCRIPT",
+            "llamada telefónica": "CALL",
+            "código fuente": "CODE",
+            "plan de negocios": "PLAN",
+            "descripción del producto": "DESCRIPTION",
+        }
+
+    @property
+    def CONCEPT_INDICATORS(self) -> list[str]:
+        """Optional - can have sensible default"""
+        return ["concepto de", "idea de", "noción de", "principio de"]
+
+    @property
+    def MEETING_WORDS(self) -> list[str]:
+        """Optional - can have empty default"""
+        return ["reunión", "conferencia", "junta", "sesión"]
+
+    @property
+    def PROPOSAL_WORDS(self) -> list[str]:
+        """Optional - can have empty default"""
+        return ["propuesta", "proposición"]
+
+    @property
+    def ARTICLES(self) -> list[str]:
+        """Optional - can have empty default"""
+        return ["el", "la", "los", "las", "un", "una", "unos", "unas"]
+
+    @property
+    def domain_candidates(self) -> dict[str, list[str]]:
+        return {
+            "soporte": ["problema", "cuestión", "sentimiento", "acciones", "urgencia", "prioridad"],
+            "código": ["bug", "error", "seguridad", "rendimiento", "desempeño", "performance"],
+            "documento": ["nombres", "fechas", "montos", "cantidades", "direcciones", "emails", "correos", "teléfonos"],
+            "qa": ["verificación", "política", "habilidades blandas", "soft skills", "precisión", "exactitud", "cumplimiento", "compliance", "divulgaciones"],
+        }
+
+    @property
+    def rank_triggers(self) -> set[str]:
+        return {
+            "clasificar", "rankear", "ordenar", "orden", "ordenar por", "clasificar por",
+            "priorizar", "superior", "primero", "arriba", "top",
+            "inferior", "último", "abajo", "mayor", "más alto",
+            "menor", "más bajo", "mejor", "mejores", "peor", "peores"
+        }
 
     @property
     def REQ_TOKENS(self):

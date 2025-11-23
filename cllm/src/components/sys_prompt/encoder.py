@@ -1,6 +1,6 @@
 import re
 
-import spacy
+from spacy.language import Language
 
 from ._schemas import CompressionResult, SysPromptConfig
 from .analyzers.attribute_parser import AttributeParser
@@ -10,7 +10,7 @@ from .tokenizer import CLLMTokenizer
 from src.dictionary import vocab_map
 
 class SysPromptEncoder:
-    def __init__(self, nlp: spacy.Language, config: SysPromptConfig = SysPromptConfig()):  # type: ignore
+    def __init__(self, nlp: Language, config: SysPromptConfig = SysPromptConfig()) -> None:  # type: ignore
         """
         Initialize encode
 
@@ -18,7 +18,7 @@ class SysPromptEncoder:
             nlp: spaCy model to use (en_core_web_sm, en_core_web_md, en_core_web_lg)
         """
 
-        self.nlp: spacy.Language = nlp
+        self.nlp: Language = nlp
         self._config = config
         self._vocab = vocab_map[config.lang]
 
@@ -43,17 +43,14 @@ class SysPromptEncoder:
             print(f"Compressing: {prompt}")
             print(f"{'=' * 60}")
 
-        # Step 1: Detect intents
         intents = self.intent_detector.detect(text=prompt)
         if verbose:
             print(f"\n1. Intents detected: {[i.token for i in intents]}")
 
-        # Step 2: Extract targets
-        targets = self.target_extractor.extract(prompt)
+        target = self.target_extractor.extract(prompt)
         if verbose:
-            print(f"2. Targets detected: {[t.token for t in targets]}")
+            print(f"2. Targets detected: {target.token}")
 
-        # Step 3: Parse extraction fields and Quantifiers
         extractions = self.attribute_parser.parse_extraction_fields(prompt)
         quantifiers = self.attribute_parser.extract_quantifier(prompt)
         specifications = self.attribute_parser.extract_specifications(prompt)
@@ -61,28 +58,24 @@ class SysPromptEncoder:
             print(f"3. Extraction fields: {extractions.fields}")
             print(f"3.1 Quantifiers field: {quantifiers}")
 
-        # Step 4: Parse contexts
         contexts = self.attribute_parser.parse_contexts(prompt)
         if verbose and contexts:
             print(f"4. Contexts: {[(c.aspect, c.value) for c in contexts]}")
 
-        # Step 5: Parse output format
         output_format = self.attribute_parser.parse_output_format(prompt)
         if verbose and output_format:
             print(f"5. Output format: {output_format.format_type}")
 
-        # Step 6: Build compressed sequence
         compressed = self.tokenizer.build_sequence(
             intents=intents,
             contexts=contexts,
-            targets=targets,
+            target=target,
             output_format=output_format,
             extractions=extractions,
             quantifier=quantifiers,
             specifications=specifications,
         )
 
-        # Calculate compression ratio
         compression_ratio = round((1 - len(compressed) / len(prompt)) * 100, 1)
         doc = self.nlp(prompt)
         verbs = [token.lemma_ for token in doc if token.pos_ == "VERB"]
@@ -97,7 +90,7 @@ class SysPromptEncoder:
             original=prompt,
             compressed=compressed,
             intents=intents,
-            targets=targets,
+            target=target,
             extractions=extractions,
             contexts=contexts,
             output_format=output_format,
@@ -106,7 +99,7 @@ class SysPromptEncoder:
                 "original_length": len(prompt),
                 "compressed_length": len(compressed),
                 "num_intents": len(intents),
-                "num_targets": len(targets),
+                "num_targets": 1 if target else 0,
                 "input_tokens": len(prompt.split()),
                 "output_tokens": len(compressed.split()),
                 "verbs": verbs,

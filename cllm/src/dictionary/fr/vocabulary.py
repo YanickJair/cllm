@@ -3,6 +3,69 @@ from ...utils.vocabulary import BaseVocabulary
 
 
 class FRVocabulary(BaseVocabulary):
+    def __init__(self):
+        super().__init__()
+
+    @property
+    def QUANTIFIER_WORDS(self) -> list[str]:
+        return ["tous", "toutes", "tout", "chaque", "entier", "complet"]
+
+    @property
+    def DEMONSTRATIVES(self) -> list[str]:
+        return ["ce", "cet", "cette", "ces"]
+
+    @property
+    def COMPOUND_PHRASES(self) -> dict[str, str]:
+        return {
+            "support client": "TICKET",
+            "ticket de support": "TICKET",
+            "message email": "EMAIL",
+            "transcription de chat": "TRANSCRIPT",
+            "appel téléphonique": "CALL",
+            "code source": "CODE",
+            "plan d'affaires": "PLAN",
+            "description du produit": "DESCRIPTION",
+        }
+
+    @property
+    def domain_candidates(self) -> dict[str, list[str]]:
+        return {
+            "support": ["problème", "question", "sentiment", "actions", "urgence", "priorité"],
+            "code": ["bug", "erreur", "sécurité", "performance"],
+            "document": ["noms", "dates", "montants", "adresses", "emails", "courriels", "téléphones"],
+            "qa": ["vérification", "politique", "compétences relationnelles", "soft skills", "précision", "exactitude", "conformité", "compliance", "divulgations"],
+        }
+
+    @property
+    def rank_triggers(self) -> set[str]:
+        return {
+            "classer", "ranger", "trier", "ordonner", "ordre",
+            "ordonner par", "trier par", "classer par",
+            "prioriser", "haut", "supérieur", "premier", "top",
+            "bas", "inférieur", "dernier", "le plus haut", "le plus élevé", "maximum",
+            "le plus bas", "minimum", "meilleur", "meilleurs", "meilleures", "pire", "pires"
+        }
+
+    @property
+    def CONCEPT_INDICATORS(self) -> list[str]:
+        """Optional - can have sensible default"""
+        return ["concept de", "idée de", "notion de", "principe de"]
+
+    @property
+    def MEETING_WORDS(self) -> list[str]:
+        """Optional - can have empty default"""
+        return ["réunion", "conférence", "rencontre", "séance"]
+
+    @property
+    def PROPOSAL_WORDS(self) -> list[str]:
+        """Optional - can have empty default"""
+        return ["proposition", "propositon", "offre", "suggestion", "idée"]
+
+    @property
+    def ARTICLES(self) -> list[str]:
+        """Optional - can have empty default"""
+        return ["le", "la", "les", "l'", "un", "une", "des"]
+
     @property
     def REQ_TOKENS(self) -> dict[str, list[str]]:
         return {

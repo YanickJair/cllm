@@ -5,6 +5,65 @@ from ...utils.vocabulary import BaseVocabulary
 
 class ENVocabulary(BaseVocabulary):
     """CLLM token vocabulary with synonyms and patterns"""
+    def __init__(self):
+        super().__init__()
+
+    @property
+    def QUANTIFIER_WORDS(self) -> list[str]:
+        return ["all", "every", "everything", "each", "entire", "whole"]
+
+    @property
+    def DEMONSTRATIVES(self) -> list[str]:
+        return ["this", "that", "these", "those"]
+
+    @property
+    def CONCEPT_INDICATORS(self) -> list[str]:
+        """Optional - can have sensible default"""
+        return ["concept of", "idea of", "notion of", "principle of"]
+
+    @property
+    def MEETING_WORDS(self) -> list[str]:
+        """Optional - can have empty default"""
+        return ["meeting", "conference", "call", "session"]
+
+    @property
+    def PROPOSAL_WORDS(self) -> list[str]:
+        """Optional - can have empty default"""
+        return ["proposal", "proposition", "offer", "suggestion"]
+
+    @property
+    def ARTICLES(self) -> list[str]:
+        """Optional - can have empty default"""
+        return ["a", "an", "the"]
+
+    @property
+    def COMPOUND_PHRASES(self) -> dict[str, str]:
+        return {
+            "customer support": "TICKET",
+            "support ticket": "TICKET",
+            "email message": "EMAIL",
+            "chat transcript": "TRANSCRIPT",
+            "phone call": "CALL",
+            "source code": "CODE",
+            "business plan": "PLAN",
+            "product description": "DESCRIPTION",
+        }
+
+    @property
+    def domain_candidates(self) -> dict[str, list[str]]:
+        return {
+            "support": ["issue", "sentiment", "actions", "urgency", "priority"],
+            "code": ["bug", "error", "security", "performance"],
+            "document": ["names", "dates", "amounts", "addresses", "emails", "phones"],
+            "qa": ["verification", "policy", "soft_skills", "accuracy", "compliance", "disclosures"],
+        }
+
+    @property
+    def rank_triggers(self) -> set[str]:
+        return {
+            "rank", "sort", "order", "order by", "sort by", "prioritize",
+            "top", "bottom", "highest", "lowest", "best", "worst"
+        }
 
     @property
     def REQ_TOKENS(self) -> dict[str, list[str]]:

@@ -11,7 +11,7 @@ class CLLMTokenizer:
     @staticmethod
     def build_sequence(
             intents: list[Intent],
-            targets: list[Target],
+            target: Target,
             extractions: Optional[ExtractionField],
             contexts: list[Context],
             output_format: Optional[OutputSchema],
@@ -31,8 +31,7 @@ class CLLMTokenizer:
                 tokens.append(f"[REQ:{intent.token}]")
 
         validator = TargetValidator()
-        clean_targets = validator.deduplicate(targets)
-        target_tokens = validator.serialize_targets(clean_targets)
+        target_tokens = validator.serialize_targets(target)
         tokens.extend(target_tokens)
 
         if extractions and extractions.fields:

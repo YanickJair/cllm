@@ -15,7 +15,7 @@ from .._schemas import ExtractionField, Context, OutputSchema, SysPromptConfig
 class AttributeParser:
     """Improved AttributeParser: rule-driven, spaCy-aware, and extensible."""
 
-    def __init__(self, nlp: Language, config: SysPromptConfig, vocab: type[BaseVocabulary]) -> None:
+    def __init__(self, nlp: Language, config: SysPromptConfig, vocab: BaseVocabulary) -> None:
         self.nlp = nlp
         self.vocab = vocab
         self.rules = Rules()
@@ -40,7 +40,7 @@ class AttributeParser:
         return matches
 
     def parse_extraction_fields(self, text: str) -> Optional[ExtractionField]:
-        extraction_field = ExtractionFieldParser(self.nlp)
+        extraction_field = ExtractionFieldParser(self.nlp, self.vocab)
         return extraction_field.parse_extraction_fields(text)
 
     def parse_contexts(self, text: str) -> list[Context]:
