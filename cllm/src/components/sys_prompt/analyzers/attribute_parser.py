@@ -5,7 +5,7 @@ from spacy import Language
 from spacy.tokens import Doc
 
 from src.utils.vocabulary import BaseVocabulary
-from src.utils.parser_rules import Rules
+from src.utils.parser_rules import BaseRules
 from src.components.sys_prompt.analyzers.extraction_field import ExtractionFieldParser
 from src.components.sys_prompt.analyzers.output_format import SysPromptOutputFormat
 from .context_parser import ContextParser
@@ -13,12 +13,17 @@ from .._schemas import ExtractionField, Context, OutputSchema, SysPromptConfig
 
 
 class AttributeParser:
-    """Improved AttributeParser: rule-driven, spaCy-aware, and extensible."""
-
-    def __init__(self, nlp: Language, config: SysPromptConfig, vocab: BaseVocabulary) -> None:
+    def __init__(
+        self,
+        *,
+        nlp: Language,
+        config: SysPromptConfig,
+        vocab: BaseVocabulary,
+        rules: BaseRules,
+    ) -> None:
         self.nlp = nlp
         self.vocab = vocab
-        self.rules = Rules()
+        self.rules = rules
         self._config = config
 
     def _doc(self, text: str) -> Doc:
@@ -40,7 +45,9 @@ class AttributeParser:
         return matches
 
     def parse_extraction_fields(self, text: str) -> Optional[ExtractionField]:
-        extraction_field = ExtractionFieldParser(self.nlp, self.vocab)
+        extraction_field = ExtractionFieldParser(
+            nlp=self.nlp, vocab=self.vocab, rules=self.rules
+        )
         return extraction_field.parse_extraction_fields(text)
 
     def parse_contexts(self, text: str) -> list[Context]:
@@ -48,7 +55,7 @@ class AttributeParser:
         Independent pipelines for AUDIENCE, LENGTH, STYLE, TONE.
         Returns list[Context] (unchanged external schema).
         """
-        parser = ContextParser(self.nlp)
+        parser = ContextParser(nlp=self.nlp, rules=self.rules)
         return parser.parse(text)
 
     def extract_quantifier(self, text: str) -> Optional[tuple[str, int]]:
@@ -60,13 +67,18 @@ class AttributeParser:
          - special words (few/several/many) as negative sentinel values
         """
         clean = self._normalize_whitespace(text).lower()
-        digit_match = re.search(r"\b(\d+)\s*(tips?|items?|examples?|steps?|ways?|methods?)\b", clean)
+        digit_match = re.search(
+            r"\b(\d+)\s*(tips?|items?|examples?|steps?|ways?|methods?)\b", clean
+        )
         if digit_match:
             num = int(digit_match.group(1))
             return (f"NUM_{num}", num)
 
         for word, val in self.rules.NUMBER_WORDS.items():
-            if re.search(rf"\b{re.escape(word)}\s+(tips|items|examples|steps|ways|methods|examples?)\b", clean):
+            if re.search(
+                rf"\b{re.escape(word)}\s+(tips|items|examples|steps|ways|methods|examples?)\b",
+                clean,
+            ):
                 return (word.upper(), val)
 
         for word, val in self.rules.NUMBER_WORDS.items():
@@ -100,7 +112,6 @@ class AttributeParser:
         clean = self._normalize_whitespace(text)
         specs: dict[str, int] = {}
 
-        # digits via SPEC_PATTERNS
         for pattern, spec_name in self.rules.COMPILED["specs"]:
             m = pattern.search(clean)
             if m:
@@ -109,20 +120,19 @@ class AttributeParser:
                 except (ValueError, TypeError):
                     continue
 
-        # word-number patterns: e.g. "three tips"
-        # check each number word against likely following spec tokens
         for word, num in self.rules.NUMBER_WORDS.items():
-            # (word) (tips/examples/items/ways/methods/steps)
-            m = re.search(rf"\b{re.escape(word)}\s+(tips|examples|items|ways|methods|steps)\b", clean, re.I)
+            m = re.search(
+                rf"\b{re.escape(word)}\s+(tips|examples|items|ways|methods|steps)\b",
+                clean,
+                re.I,
+            )
             if m:
                 if "COUNT" not in specs:
                     specs["COUNT"] = num
 
-        # spaCy entity fallback for cardinal numbers followed by a noun
         doc = self._doc(clean)
         for ent in doc.ents:
             if ent.label_ in {"CARDINAL", "QUANTITY"}:
-                # find token after entity to infer spec
                 end_idx = ent.end
                 if end_idx < len(doc):
                     next_token = doc[end_idx].lemma_.lower()
@@ -131,11 +141,21 @@ class AttributeParser:
                             specs["LINES"] = int(ent.text)
                         except ValueError:
                             pass
-                    if next_token in {"example", "examples", "tip", "tips", "item", "items", "way", "ways", "step", "steps"}:
+                    if next_token in {
+                        "example",
+                        "examples",
+                        "tip",
+                        "tips",
+                        "item",
+                        "items",
+                        "way",
+                        "ways",
+                        "step",
+                        "steps",
+                    }:
                         if "COUNT" not in specs:
                             try:
                                 specs["COUNT"] = int(ent.text)
                             except ValueError:
                                 pass
-
         return specs if specs else None

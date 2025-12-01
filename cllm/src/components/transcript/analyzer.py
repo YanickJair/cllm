@@ -29,7 +29,9 @@ class TranscriptAnalyzer:
         self.sentiment_analyzer = SentimentAnalyzer()
         self.entity_extractor = EntityExtractor()
 
-    def analyze(self, transcript: str, metadata: Optional[dict] = None) -> TranscriptAnalysis:
+    def analyze(
+        self, transcript: str, metadata: Optional[dict] = None
+    ) -> TranscriptAnalysis:
         metadata = metadata or {}
         turns = self._parse_turns(transcript)
 
@@ -41,7 +43,9 @@ class TranscriptAnalyzer:
                 self.intent_detector.detect(turn.text)
             )
             turn.targets = self.target_extractor.extract(turn.text)
-            turn.sentiment, _ = self.sentiment_analyzer.analyze_turn(turn.text, turn.speaker)
+            turn.sentiment, _ = self.sentiment_analyzer.analyze_turn(
+                turn.text, turn.speaker
+            )
             turn.entities = self.entity_extractor.extract(turn.text)
 
         # Higher-level reasoning
@@ -90,7 +94,15 @@ class TranscriptAnalyzer:
                 continue
 
             action_type = self._detect_action_type(turn.text)
-            if not action_type or action_type not in ["REFUND", "CREDIT", "TROUBLESHOOT", "ESCALATE", "REPLACE", "CHARGE", "PAYMENT"]:
+            if not action_type or action_type not in [
+                "REFUND",
+                "CREDIT",
+                "TROUBLESHOOT",
+                "ESCALATE",
+                "REPLACE",
+                "CHARGE",
+                "PAYMENT",
+            ]:
                 continue
 
             result = self._determine_action_result(indexed_turns, i, turn)
@@ -146,9 +158,13 @@ class TranscriptAnalyzer:
 
         for turn in reversed(recent):
             text = turn.text.lower()
-            if self._match_any(text, ["submitted", "processed", "completed", "done", "issued", "sent"]):
+            if self._match_any(
+                text, ["submitted", "processed", "completed", "done", "issued", "sent"]
+            ):
                 res_type = "RESOLVED"
-            elif self._match_any(text, ["resolved", "fixed", "solved", "approved", "payout"]):
+            elif self._match_any(
+                text, ["resolved", "fixed", "solved", "approved", "payout"]
+            ):
                 res_type = "RESOLVED"
             elif self._match_any(text, ["replace", "replacement", "exchange"]):
                 res_type, next_steps = "PENDING", "REPLACEMENT"
@@ -182,7 +198,9 @@ class TranscriptAnalyzer:
         return None
 
     @staticmethod
-    def _determine_action_result(turns: list[Turn], action_index: int, action_turn: Turn) -> str:
+    def _determine_action_result(
+        turns: list[Turn], action_index: int, action_turn: Turn
+    ) -> str:
         """
         Priority:
         1. Check current turn for completion keywords
@@ -221,9 +239,22 @@ class TranscriptAnalyzer:
         following_turns = turns[action_index + 1 : action_index + 3]
         for t in following_turns:
             tl = t.text.lower()
-            if t.speaker == "customer" and any(word in tl for word in ["perfect", "great", "thank", "got it", "received", "appreciate"]):
+            if t.speaker == "customer" and any(
+                word in tl
+                for word in [
+                    "perfect",
+                    "great",
+                    "thank",
+                    "got it",
+                    "received",
+                    "appreciate",
+                ]
+            ):
                 return "COMPLETED"
-            if t.speaker == "agent" and any(word in tl for word in ["all set", "you're all set", "that's done", "completed"]):
+            if t.speaker == "agent" and any(
+                word in tl
+                for word in ["all set", "you're all set", "that's done", "completed"]
+            ):
                 return "COMPLETED"
 
         return "PENDING"
@@ -255,7 +286,11 @@ class TranscriptAnalyzer:
             method = "CHECK"
         elif "credit card" in text_lower or "card" in text_lower:
             method = "CARD_CREDIT"
-        elif "account credit" in text_lower or "account" in text_lower and "credit" in text_lower:
+        elif (
+            "account credit" in text_lower
+            or "account" in text_lower
+            and "credit" in text_lower
+        ):
             method = "ACCOUNT_CREDIT"
         # If nothing found, let caller decide default; return None for clarity
         return amount, method
@@ -273,11 +308,17 @@ class TranscriptAnalyzer:
             return m.group(0)
 
         # "reference number is ...", "confirmation #..."
-        if m := re.search(r"(?:reference|confirmation|ref)[^\w]{0,6}#?\s*([A-Z0-9-]{4,30})", text, re.I):
+        if m := re.search(
+            r"(?:reference|confirmation|ref)[^\w]{0,6}#?\s*([A-Z0-9-]{4,30})",
+            text,
+            re.I,
+        ):
             return m.group(1)
 
         # fallback: sequences labeled as "id" or "ticket"
-        if m := re.search(r"(?:id|ticket|case|order)[^\w]{0,6}#?\s*([A-Z0-9-]{3,30})", text, re.I):
+        if m := re.search(
+            r"(?:id|ticket|case|order)[^\w]{0,6}#?\s*([A-Z0-9-]{3,30})", text, re.I
+        ):
             return m.group(1)
 
         return None
@@ -322,7 +363,9 @@ class TranscriptAnalyzer:
                         if ent.label_ == "PERSON":
                             return ent.text
                 # fallback patterns on text
-                if match := re.search(r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)", t.text, re.I):
+                if match := re.search(
+                    r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)", t.text, re.I
+                ):
                     return match.group(1).title()
                 if match := re.search(r"thank(?:s| you),\s+([A-Z][a-z]+)", t.text):
                     return match.group(1)
@@ -338,7 +381,9 @@ class TranscriptAnalyzer:
 
     # === ISSUE DETECTION ===
     def _extract_issues(self, turns: list[Turn]) -> list[Issue]:
-        customer_text = " ".join(t.text for t in turns if t.speaker == "customer").lower()
+        customer_text = " ".join(
+            t.text for t in turns if t.speaker == "customer"
+        ).lower()
         issue_type = self._get_issue_type(customer_text)
         if not issue_type:
             return []
@@ -353,8 +398,16 @@ class TranscriptAnalyzer:
         days = self.temporal_extractor.extract(customer_text).days or []
         attrs = {"days": days} if days else {}
 
-        return [Issue(type=issue_type, severity=severity, cause=cause,
-                      plan_change=plan_change, disputed_amounts=amounts, attributes=attrs)]
+        return [
+            Issue(
+                type=issue_type,
+                severity=severity,
+                cause=cause,
+                plan_change=plan_change,
+                disputed_amounts=amounts,
+                attributes=attrs,
+            )
+        ]
 
     @staticmethod
     def _get_issue_type(text: str) -> Optional[str]:
@@ -369,9 +422,21 @@ class TranscriptAnalyzer:
     @staticmethod
     def _detect_severity(text: str) -> str:
         text = text.lower()
-        if any(x in text for x in ["critical", "urgent", "emergency", "not working at all", "can't work"]):
+        if any(
+            x in text
+            for x in [
+                "critical",
+                "urgent",
+                "emergency",
+                "not working at all",
+                "can't work",
+            ]
+        ):
             return "HIGH"
-        if any(x in text for x in ["frustrated", "annoying", "need it for work", "important"]):
+        if any(
+            x in text
+            for x in ["frustrated", "annoying", "need it for work", "important"]
+        ):
             return "MEDIUM"
         return "LOW"
 
@@ -379,7 +444,9 @@ class TranscriptAnalyzer:
     def _extract_disputed_amounts(turns: list[Turn]) -> list[str]:
         amounts = []
         for t in (t for t in turns if t.speaker == "customer"):
-            if any(k in t.text.lower() for k in ["charge", "bill", "statement", "payment"]):
+            if any(
+                k in t.text.lower() for k in ["charge", "bill", "statement", "payment"]
+            ):
                 amounts.extend(getattr(t, "entities", {}).get("money", []))
         return list(dict.fromkeys(amounts))
 
@@ -409,7 +476,13 @@ class TranscriptAnalyzer:
     def _extract_call_info(self, turns: list[Turn], metadata: dict) -> CallInfo:
         agent_name = metadata.get("agent") or self._detect_agent_name(turns)
         full_text = " ".join(t.text.lower() for t in turns)
-        call_type = "SALES" if any(x in full_text for x in ["upgrade", "pricing", "buy", "interested in"]) else "SUPPORT"
+        call_type = (
+            "SALES"
+            if any(
+                x in full_text for x in ["upgrade", "pricing", "buy", "interested in"]
+            )
+            else "SUPPORT"
+        )
         return CallInfo(
             call_id=metadata.get("call_id", "unknown"),
             type=call_type,
@@ -426,6 +499,8 @@ class TranscriptAnalyzer:
                 for ent in doc.ents:
                     if ent.label_ == "PERSON":
                         return ent.text
-            if match := re.search(r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)", t.text, re.I):
+            if match := re.search(
+                r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)", t.text, re.I
+            ):
                 return match.group(1)
         return None

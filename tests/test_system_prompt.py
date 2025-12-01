@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "cllm"))
 
 from src.core.encoder import CLLMEncoder
-
+from src.utils.schemas import CLMConfig
 
 def load_prompts() -> list[dict[str, str]]:
     data: list[dict[str, str]] = []
@@ -15,11 +15,13 @@ def load_prompts() -> list[dict[str, str]]:
     return data
 
 def main(prompts):
-    encoder = CLLMEncoder()
+    cfg = CLMConfig(
+        lang="en",
+    )
+    encoder = CLLMEncoder(cfg=cfg)
     results = []
 
     for prompt in prompts:
-        print(prompt)
         compressed = encoder.encode(prompt.get("prompt"), verbose=True)  # type: ignore
         results.append(compressed.model_dump())
 

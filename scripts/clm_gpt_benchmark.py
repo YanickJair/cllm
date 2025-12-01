@@ -155,12 +155,15 @@ class RunGPTCLMBenchmark:
         """
 
         config = CompressionConfig(
-            required_fields=["id", "title", "description", "category"], auto_detect=False
+            required_fields=["id", "title", "description", "category"],
+            auto_detect=False,
         )
         compressor = DSEncoder(config=config, catalog_name="kb")
         return compressor.encode(nbas)
 
-    def calculate_cost(self, model: str, input_tokens: int, output_tokens: int) -> float:
+    def calculate_cost(
+        self, model: str, input_tokens: int, output_tokens: int
+    ) -> float:
         """
         Calculate cost for API call.
 
@@ -181,7 +184,7 @@ class RunGPTCLMBenchmark:
         self,
         max_transcripts: int = 10,
         specific_index: Optional[int] = None,
-        models_to_test: Optional[list[str]] = None
+        models_to_test: Optional[list[str]] = None,
     ) -> None:
         """
         Run benchmark on GPT models.
@@ -302,7 +305,9 @@ Prioritize:
                         tc_output_tokens = tc_response.usage.completion_tokens  # type: ignore
                         tc_total_tokens = tc_response.usage.total_tokens  # type: ignore
                         tc_output = tc_response.choices[0].message.content  # type: ignore
-                        tc_cost = self.calculate_cost(model, tc_input_tokens, tc_output_tokens)
+                        tc_cost = self.calculate_cost(
+                            model, tc_input_tokens, tc_output_tokens
+                        )
 
                         result[model]["clm"].append(
                             {
@@ -319,13 +324,17 @@ Prioritize:
                             }
                         )
 
-                        print(f"     Tokens: {tc_total_tokens} (in: {tc_input_tokens}, out: {tc_output_tokens})")
+                        print(
+                            f"     Tokens: {tc_total_tokens} (in: {tc_input_tokens}, out: {tc_output_tokens})"
+                        )
                         print(f"     Latency: {tc_latency:.2f}s")
                         print(f"     Cost: ${tc_cost:.6f}")
 
                     except Exception as e:
                         print(f"     ❌ Error: {e}")
-                        result[model]["clm"].append({"error": str(e), "transcript_index": idx})
+                        result[model]["clm"].append(
+                            {"error": str(e), "transcript_index": idx}
+                        )
 
                     # Test Natural Language (uncompressed)
                     print("\n  🟢 Testing Natural Language (uncompressed)...")
@@ -356,7 +365,9 @@ Prioritize:
                         to_output_tokens = to_response.usage.completion_tokens  # type: ignore
                         to_total_tokens = to_response.usage.total_tokens  # type: ignore
                         to_output = to_response.choices[0].message.content  # type: ignore
-                        to_cost = self.calculate_cost(model, to_input_tokens, to_output_tokens)
+                        to_cost = self.calculate_cost(
+                            model, to_input_tokens, to_output_tokens
+                        )
 
                         result[model]["nl"].append(
                             {
@@ -372,21 +383,28 @@ Prioritize:
                             }
                         )
 
-                        print(f"     Tokens: {to_total_tokens} (in: {to_input_tokens}, out: {to_output_tokens})")
+                        print(
+                            f"     Tokens: {to_total_tokens} (in: {to_input_tokens}, out: {to_output_tokens})"
+                        )
                         print(f"     Latency: {to_latency:.2f}s")
                         print(f"     Cost: ${to_cost:.6f}")
 
                     except Exception as e:
                         print(f"     ❌ Error: {e}")
-                        result[model]["nl"].append({"error": str(e), "transcript_index": idx})
+                        result[model]["nl"].append(
+                            {"error": str(e), "transcript_index": idx}
+                        )
 
                     # Show comparison
-                    if "error" not in result[model]["clm"][-1] and "error" not in result[model]["nl"][-1]:
+                    if (
+                        "error" not in result[model]["clm"][-1]
+                        and "error" not in result[model]["nl"][-1]
+                    ):
                         token_savings = (1 - tc_total_tokens / to_total_tokens) * 100
                         latency_savings = (1 - tc_latency / to_latency) * 100
                         cost_savings = (1 - tc_cost / to_cost) * 100
 
-                        print(f"\n  💰 SAVINGS:")
+                        print("\n  💰 SAVINGS:")
                         print(f"     Tokens: {token_savings:.1f}%")
                         print(f"     Latency: {latency_savings:.1f}%")
                         print(f"     Cost: {cost_savings:.1f}%")
@@ -398,6 +416,7 @@ Prioritize:
         except Exception as e:
             print(f"\n\n❌ ERROR: {e}")
             import traceback
+
             traceback.print_exc()
         finally:
             # Always save results
@@ -433,10 +452,15 @@ Prioritize:
             latency_savings = (1 - avg_clm_latency / avg_nl_latency) * 100
             cost_savings = (1 - avg_clm_cost / avg_nl_cost) * 100
 
-            print(f"  Avg Tokens:  CLM {avg_clm_tokens:.0f} | NL {avg_nl_tokens:.0f} | Savings: {token_savings:.1f}%")
             print(
-                f"  Avg Latency: CLM {avg_clm_latency:.2f}s | NL {avg_nl_latency:.2f}s | Savings: {latency_savings:.1f}%")
-            print(f"  Avg Cost:    CLM ${avg_clm_cost:.6f} | NL ${avg_nl_cost:.6f} | Savings: {cost_savings:.1f}%")
+                f"  Avg Tokens:  CLM {avg_clm_tokens:.0f} | NL {avg_nl_tokens:.0f} | Savings: {token_savings:.1f}%"
+            )
+            print(
+                f"  Avg Latency: CLM {avg_clm_latency:.2f}s | NL {avg_nl_latency:.2f}s | Savings: {latency_savings:.1f}%"
+            )
+            print(
+                f"  Avg Cost:    CLM ${avg_clm_cost:.6f} | NL ${avg_nl_cost:.6f} | Savings: {cost_savings:.1f}%"
+            )
 
         print("=" * 70)
 

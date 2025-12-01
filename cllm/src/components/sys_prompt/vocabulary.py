@@ -9,6 +9,7 @@ class Vocabulary(object):
     Attributes:
         words (dict): A dictionary mapping words to their frequencies.
     """
+
     def __init__(self, lang: str) -> None:
         """
         Initialize the Vocabulary object with a language.

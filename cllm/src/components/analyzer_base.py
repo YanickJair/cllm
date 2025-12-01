@@ -10,7 +10,9 @@ class AnalyzerBase(ABC):
     should subclass this and implement the `analyze` method.
     """
 
-    def __init__(self, name: str, domain: str = "generic", backend: Optional[Any] = None):
+    def __init__(
+        self, name: str, domain: str = "generic", backend: Optional[Any] = None
+    ):
         self.name = name
         self.domain = domain
         self.backend = backend  # e.g., spaCy model, LLM API client, etc.

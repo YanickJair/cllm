@@ -1,7 +1,6 @@
 import re
 import spacy
-from spacy.pipeline import EntityRuler
-from spacy.matcher import Matcher
+
 
 class EntityExtractor:
     """Improved hybrid extractor using spaCy + EntityRuler"""
@@ -51,10 +50,12 @@ class EntityExtractor:
         ruler_patterns = []
         for label, patterns in domain_patterns.items():
             for pat in patterns:
-                ruler_patterns.append({
-                    "label": label,
-                    "pattern": [{"TEXT": {"REGEX": pat}}],
-                })
+                ruler_patterns.append(
+                    {
+                        "label": label,
+                        "pattern": [{"TEXT": {"REGEX": pat}}],
+                    }
+                )
         self._ruler.add_patterns(ruler_patterns)
 
         # === Regex-only fields (not ideal for EntityRuler) ===
@@ -100,7 +101,14 @@ class EntityExtractor:
                 entities["times"].append(ent.text)
             elif label == "MONEY":
                 entities["money"].append(ent.text)
-            elif label in ("ACCOUNT_NUMBER", "TRACKING_NUMBER", "CLAIM_NUMBER", "TICKET_NUMBER", "CASE_NUMBER", "PRODUCT_MODEL"):
+            elif label in (
+                "ACCOUNT_NUMBER",
+                "TRACKING_NUMBER",
+                "CLAIM_NUMBER",
+                "TICKET_NUMBER",
+                "CASE_NUMBER",
+                "PRODUCT_MODEL",
+            ):
                 key = label.lower() + "s"
                 entities[key].append(ent.text)
 

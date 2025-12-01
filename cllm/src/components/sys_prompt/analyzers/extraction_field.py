@@ -1,10 +1,9 @@
-import re
 from typing import Optional
 from spacy import Language
 from src.utils.vocabulary import BaseVocabulary
 
 from src.components.sys_prompt._schemas import DetectedField, ExtractionField
-from src.utils.parser_rules import Rules
+from src.utils.parser_rules import BaseRules
 
 
 class FieldExtractor:
@@ -15,9 +14,9 @@ class FieldExtractor:
     which are always allowed implicitly.
     """
 
-    def __init__(self, nlp: Language):
+    def __init__(self, nlp: Language, rules: BaseRules):
         self.nlp = nlp
-        self.rules = Rules
+        self.rules = rules
 
     def extract(self, text: str) -> list[DetectedField]:
         """
@@ -82,7 +81,9 @@ class FieldExtractor:
 
         has_extraction_intent = False
 
-        if any(p.search(text_lower) for p in self.rules.COMPILED["extraction_indicators"]):
+        if any(
+            p.search(text_lower) for p in self.rules.COMPILED["extraction_indicators"]
+        ):
             has_extraction_intent = True
 
         if any(p.search(text_lower) for p in self.rules.COMPILED["qa_indicators"]):
@@ -137,7 +138,9 @@ class AttributeExtractor:
                 s.lower() for s in self._vocab.TARGET_TOKENS["ITEMS"]
             )
 
-    def extract(self, text: str, detected_fields: list[DetectedField]) -> dict[str, str] | None:
+    def extract(
+        self, text: str, detected_fields: list[DetectedField]
+    ) -> dict[str, str] | None:
         """
         Extract optional attributes (TYPE=list|single, DOMAIN=document|code|support, etc.)
         Only returns attributes when they can be detected.
@@ -161,7 +164,7 @@ class AttributeExtractor:
         if any(indicator in text_lower for indicator in self._list_indicators):
             attrs["TYPE"] = "LIST"
 
-        found = set(f.name for f in detected_fields)
+        found = {f.name for f in detected_fields}
         for domain, keywords in self._vocab.domain_candidates.items():
             if any(k.upper() in found for k in keywords):
                 attrs["DOMAIN"] = domain.upper()
@@ -170,8 +173,8 @@ class AttributeExtractor:
 
 
 class ExtractionFieldParser:
-    def __init__(self, nlp: Language, vocab: BaseVocabulary):
-        self.field_extractor = FieldExtractor(nlp)
+    def __init__(self, nlp: Language, vocab: BaseVocabulary, rules: BaseRules):
+        self.field_extractor = FieldExtractor(nlp, rules)
         self.attr_extractor = AttributeExtractor(vocab=vocab)
         self._vocab = vocab
 

@@ -121,8 +121,8 @@ class TranscriptCompressionResult(BaseModel):
 class TemporalPattern(BaseModel):
     """Represents extracted temporal information"""
 
-    days: list[str] | None = None # ["monday", "tuesday"]
-    times: list[str] | None = None # ["9am", "1pm", "6pm"]
-    duration: str | None = None # "3d"
+    days: list[str] | None = None  # ["monday", "tuesday"]
+    times: list[str] | None = None  # ["9am", "1pm", "6pm"]
+    duration: str | None = None  # "3d"
     frequency: str | None = None  # "3x_daily"
-    pattern: str | None = None # "9am+1pm+6pm"
+    pattern: str | None = None  # "9am+1pm+6pm"

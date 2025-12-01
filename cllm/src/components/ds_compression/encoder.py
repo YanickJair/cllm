@@ -4,14 +4,9 @@ from . import CompressionConfig, FieldImportance
 
 
 class DSEncoder:
-    """
-    Compresses any structured catalog (NBAs, products, articles, etc.)
-
-    This implements your diagram's logic
-    """
-
     def __init__(
         self,
+        *,
         config: CompressionConfig,
         catalog_name: str = "CATALOG",
         delimiter: str = ",",
@@ -20,19 +15,6 @@ class DSEncoder:
         self._catalog_name = catalog_name
         self._done: bool = False
         self._delimiter = delimiter
-
-        self._default_importance = {
-            "id": FieldImportance.CRITICAL,
-            "name": FieldImportance.CRITICAL,
-            "title": FieldImportance.CRITICAL,
-            "description": FieldImportance.HIGH,
-            "category": FieldImportance.HIGH,
-            "type": FieldImportance.HIGH,
-            "tags": FieldImportance.MEDIUM,
-            "metadata": FieldImportance.LOW,
-            "created_at": FieldImportance.NEVER,
-            "updated_at": FieldImportance.NEVER,
-        }
 
     @property
     def delimiter(self) -> str:
@@ -56,12 +38,10 @@ class DSEncoder:
              [NBA:id:title:KEY=VALUE:KEY=VALUE]
             ]
         """
-        # Handle single dict
         if isinstance(catalog, dict):
             compressed_item = self.encode_item(catalog)
             return self._format_item_token(compressed_item)
 
-        # Compress all items
         count_catalogs = len(catalog)
         compressed_results = [
             self.encode_item(item) for item in catalog if isinstance(item, dict)
@@ -92,6 +72,7 @@ class DSEncoder:
         compressed: dict[str, Any] = {}
 
         if "id" in item:
+            # Always include the ID
             compressed["id"] = item["id"]
 
         compressed_keys: list[str] = []
@@ -118,7 +99,6 @@ class DSEncoder:
         """
         parts = []
 
-        # Separate simple fields (id, title, name) from complex fields
         simple_fields = []
         complex_fields = []
 
@@ -126,30 +106,24 @@ class DSEncoder:
             key_lower = key.lower()
             formatted_value = self._format_value(value)
 
-            # Simple fields: id, title, name, type - no key prefix
-            if key_lower in ["id", "title", "name", "type", "article_id", "product_id"]:
+            if key_lower in self._config.simple_fields:
                 simple_fields.append((key_lower, formatted_value))
             else:
-                # Complex fields: everything else - with KEY=VALUE format
                 complex_fields.append((key.upper(), formatted_value))
 
-        # Sort simple fields by importance (id first, then title/name)
-        field_order = ["id", "article_id", "product_id", "title", "name", "type"]
         simple_fields.sort(
-            key=lambda x: field_order.index(x[0]) if x[0] in field_order else 999
+            key=lambda x: self._config.default_fields_order.index(x[0])
+            if x[0] in self._config.default_fields_order
+            else 999
         )
 
-        # Add simple fields (no key prefix)
         for _, value in simple_fields:
             parts.append(value)
 
-        # Add complex fields (with KEY=VALUE)
         for key, value in complex_fields:
-            # Skip empty values
             if value and value != "":
                 parts.append(f"{value}")
 
-        # Wrap everything in [NBA:...] brackets
         return f"[{f'{self.delimiter}'.join(parts)}]"
 
     @staticmethod
@@ -167,19 +141,15 @@ class DSEncoder:
             Formatted string
         """
         if isinstance(value, list):
-            # Join list items with +
             return "+".join([str(v).replace(" ", "_") for v in value])
 
         if isinstance(value, dict):
-            # Nested dict as key=value pairs
             return "+".join([f"{v}" for k, v in value.items()])
 
         if isinstance(value, str):
-            # Clean string - remove special chars, convert to uppercase
             cleaned = value.replace(" ", "_").replace(":", "").replace("=", "")
             return cleaned.upper()
 
-        # Numbers, bools, etc
         return str(value)
 
     def _should_include_field(self, key: str, value: Any) -> bool:
@@ -212,7 +182,7 @@ class DSEncoder:
         """
         key_lower = key.lower()
 
-        for pattern, importance in self._default_importance.items():
+        for pattern, importance in self._config.default_fields_importance.items():
             if pattern in key_lower:
                 return importance
 

@@ -1,5 +1,5 @@
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
 import spacy
 from spacy.matcher import Matcher
 
@@ -15,13 +15,24 @@ class TemporalAnalyzer:
     """Temporal extractor with natural date, range, and frequency inference."""
 
     DAY_NAMES = {
-        "monday": "MON", "tuesday": "TUE", "wednesday": "WED",
-        "thursday": "THU", "friday": "FRI", "saturday": "SAT", "sunday": "SUN"
+        "monday": "MON",
+        "tuesday": "TUE",
+        "wednesday": "WED",
+        "thursday": "THU",
+        "friday": "FRI",
+        "saturday": "SAT",
+        "sunday": "SUN",
     }
 
     WORD_TO_NUM = {
-        "one": 1, "two": 2, "three": 3, "four": 4,
-        "five": 5, "six": 6, "seven": 7, "couple": 2
+        "one": 1,
+        "two": 2,
+        "three": 3,
+        "four": 4,
+        "five": 5,
+        "six": 6,
+        "seven": 7,
+        "couple": 2,
     }
 
     DAY_ORDER = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
@@ -34,20 +45,45 @@ class TemporalAnalyzer:
 
     def _init_matchers(self):
         """Define token-level temporal patterns"""
-        self.matcher.add("RECURRING", [
-            [{"LOWER": {"IN": ["every", "each"]}}, {"IS_ALPHA": True}],
-        ])
-        self.matcher.add("DURATION", [
-            [{"LOWER": {"IN": ["for", "past", "last", "over", "around"]}, "OP": "?"},
-             {"LOWER": {"IN": list(self.WORD_TO_NUM.keys()) + [str(i) for i in range(1, 10)]}},
-             {"LOWER": {"IN": ["day", "days", "week", "weeks", "month", "months"]}}]
-        ])
-        self.matcher.add("DATE_RANGE", [
-            [{"LOWER": {"IN": ["from", "between"]}},
-             {"IS_ALPHA": True, "OP": "+"},
-             {"LOWER": {"IN": ["to", "and"]}},
-             {"IS_ALPHA": True, "OP": "+"}]
-        ])
+        self.matcher.add(
+            "RECURRING",
+            [
+                [{"LOWER": {"IN": ["every", "each"]}}, {"IS_ALPHA": True}],
+            ],
+        )
+        self.matcher.add(
+            "DURATION",
+            [
+                [
+                    {
+                        "LOWER": {"IN": ["for", "past", "last", "over", "around"]},
+                        "OP": "?",
+                    },
+                    {
+                        "LOWER": {
+                            "IN": list(self.WORD_TO_NUM.keys())
+                            + [str(i) for i in range(1, 10)]
+                        }
+                    },
+                    {
+                        "LOWER": {
+                            "IN": ["day", "days", "week", "weeks", "month", "months"]
+                        }
+                    },
+                ]
+            ],
+        )
+        self.matcher.add(
+            "DATE_RANGE",
+            [
+                [
+                    {"LOWER": {"IN": ["from", "between"]}},
+                    {"IS_ALPHA": True, "OP": "+"},
+                    {"LOWER": {"IN": ["to", "and"]}},
+                    {"IS_ALPHA": True, "OP": "+"},
+                ]
+            ],
+        )
 
     # === Public API ===
     def extract(self, text: str) -> TemporalPattern:
@@ -139,7 +175,9 @@ class TemporalAnalyzer:
                     duration_days = self._day_range_length(first, second)
                     return f"{duration_days}d"
                 # Time range
-                time_matches = re.findall(r"(\d{1,2})(?::(\d{2}))?\s?(am|pm)?", span_text)
+                time_matches = re.findall(
+                    r"(\d{1,2})(?::(\d{2}))?\s?(am|pm)?", span_text
+                )
                 if len(time_matches) >= 2:
                     start_t = self._to_24h(time_matches[0])
                     end_t = self._to_24h(time_matches[1])
@@ -168,7 +206,7 @@ class TemporalAnalyzer:
         elif 2 <= abs(diff.days) <= 7:
             duration = f"{abs(diff.days)}d"
         elif abs(diff.days) > 7:
-            duration = f"{abs(diff.days)//7}w"
+            duration = f"{abs(diff.days) // 7}w"
 
         # Try to identify day of week
         day_code = self.DAY_NAMES.get(parsed.strftime("%A").lower())
