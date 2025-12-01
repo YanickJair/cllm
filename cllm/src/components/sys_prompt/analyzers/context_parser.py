@@ -1,52 +1,18 @@
 import re
 from spacy import Language
 from src.components.sys_prompt._schemas import Context
-from src.utils.parser_rules import Rules
+from src.utils.parser_rules import BaseRules
 
 
 class CTXEngine:
-    def __init__(self, nlp: Language):
+    def __init__(self, nlp: Language, rules: BaseRules):
         self.nlp = nlp
-        rules = Rules()
+        self._rules = rules
         self.compiled = rules.COMPILED
-
-        self.ctx_patterns = {
-            "LANGUAGE": [
-                (r"\benglish\b", "ENGLISH"),
-                (r"\bspanish\b", "SPANISH"),
-                (r"\bfrench\b", "FRENCH"),
-                (r"\bgerman\b", "GERMAN"),
-                (r"\bchinese\b", "CHINESE"),
-                (r"\bjapanese\b", "JAPANESE"),
-            ],
-            "REGION": [
-                (r"\b(us|usa|american)\b", "US"),
-                (r"\b(uk|british|england)\b", "UK"),
-                (r"\b(europe|eu)\b", "EU"),
-                (r"\b(apac|asia pacific)\b", "APAC"),
-                (r"\bcanada|ca\b", "CA"),
-            ],
-            "PRIORITY": [
-                (r"\burgent\b", "URGENT"),
-                (r"\bpriority\b", "HIGH_PRIORITY"),
-                (r"\basap\b", "URGENT"),
-                (r"\bimmediately\b", "URGENT"),
-            ],
-            "SLA": [
-                (r"\bwithin\s+(\d+)\s*(hours|hrs|h)\b", "SLA_HOURS"),
-                (r"\brespond by\b", "SLA_DEADLINE"),
-            ],
-            "FORMAT": [
-                (r"\bbullet(s)?\b", "BULLET_POINTS"),
-                (r"\bnumbered\b", "NUMBERED_LIST"),
-                (r"\btable\b", "TABLE"),
-                (r"\bparagraph\b", "PARAGRAPH"),
-            ]
-        }
 
         self.compiled_ctx = {
             ctx: [(re.compile(p, re.I), val) for p, val in pairs]
-            for ctx, pairs in self.ctx_patterns.items()
+            for ctx, pairs in self._rules.ctx_patterns.items()
         }
 
     def parse_contexts(self, text: str) -> list[Context]:
@@ -85,7 +51,7 @@ class CTXEngine:
                 match = pat.search(text_lower)
                 if match:
                     contexts.append(Context(aspect=aspect, value=value))
-                    break  # 1 match per category
+                    break
 
         if "AUDIENCE" not in added_aspects:
             if doc[0].text.lower() == "as" and len(doc) > 2:
@@ -106,17 +72,40 @@ class CTXEngine:
     def _has_ctx_intent(self, text: str) -> bool:
         has_ctx_intent = any(
             kw in text
+            # TODO: move to vocabulary
             for kw in [
-                "write", "give", "provide", "explain", "describe",
-                "summarize", "make it", "in a", "as a", "keep it",
-                "brief", "short", "long", "detailed", "simple", "concise"
+                "write",
+                "give",
+                "provide",
+                "explain",
+                "describe",
+                "summarize",
+                "make it",
+                "in a",
+                "as a",
+                "keep it",
+                "brief",
+                "short",
+                "long",
+                "detailed",
+                "simple",
+                "concise",
             ]
         )
 
-        # Disable CTX if prompt looks like system template / scoring rubric
-        if any(marker in text for marker in [
-            "output format", "{", "}", "criteria", "scoring", "qa_", "compliance", "policy adherence"
-        ]):
+        if any(
+            marker in text
+            for marker in [
+                "output format",
+                "{",
+                "}",
+                "criteria",
+                "scoring",
+                "qa_",
+                "compliance",
+                "policy adherence",
+            ]
+        ):
             has_ctx_intent = False
         return has_ctx_intent
 
@@ -130,7 +119,6 @@ class CTXEngine:
         if not matches:
             return None
 
-        # longest match wins (most specific)
         matches.sort(key=lambda x: x[1][1] - x[1][0], reverse=True)
         return matches[0][2]
 
@@ -140,6 +128,7 @@ class CTXEngine:
             return m.group(0), m.span(), value
         return None, None, None
 
+
 class ContextParser:
     """
     Unified entrypoint that:
@@ -147,8 +136,8 @@ class ContextParser:
     2. Compresses CTX into final token (ContextCompressor)
     """
 
-    def __init__(self, nlp: Language):
-        self._engine = CTXEngine(nlp)
+    def __init__(self, nlp: Language, rules: BaseRules):
+        self._engine = CTXEngine(nlp, rules=rules)
 
     def parse(self, text: str) -> list[Context]:
         return self._engine.parse_contexts(text)

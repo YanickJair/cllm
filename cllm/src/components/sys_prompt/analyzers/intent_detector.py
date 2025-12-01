@@ -17,6 +17,7 @@ class IntentDetector:
         - spaCy lemma matching
         - Supports multi-word synonyms
     """
+
     def __init__(self, nlp: Language, vocab: BaseVocabulary):
         self.nlp = nlp
         self.vocab = vocab
@@ -64,7 +65,9 @@ class IntentDetector:
           "analyze and summarize" -> [ANALYZE, SUMMARIZE]
           "analyze and assess"   -> [ANALYZE]  (assess maps to ANALYZE)
         """
-        parts = [p.strip() for p in re.split(r'\s+and\s+|\s*,\s*', text_lower) if p.strip()]
+        parts = [
+            p.strip() for p in re.split(r"\s+and\s+|\s*,\s*", text_lower) if p.strip()
+        ]
         if len(parts) < 2:
             return None
 
@@ -76,7 +79,9 @@ class IntentDetector:
 
             req = self._detect_direct_synonym(part, part_doc)
             if not req:
-                req = self._detect_imperative(part_doc) or self._detect_root_based(part_doc)
+                req = self._detect_imperative(part_doc) or self._detect_root_based(
+                    part_doc
+                )
 
             if not req:
                 continue
@@ -117,7 +122,9 @@ class IntentDetector:
         for syn, action in self.syn_index.items():
             if " " not in syn:
                 if re.search(rf"\b{re.escape(syn)}\b", text_lower):
-                    if action == "FORMAT" and self._should_ignore_format(doc, text_lower):
+                    if action == "FORMAT" and self._should_ignore_format(
+                        doc, text_lower
+                    ):
                         continue
                     if action == "RANK" and not self._explicit_rank(text_lower):
                         continue

@@ -1,3 +1,3 @@
-from ._schemas import Intent, Target, CompressionResult
+from ._schemas import Intent, Target, CompressionResult, SysPromptConfig
 
-__all__ = ["Intent", "Target", "CompressionResult"]
+__all__ = ["Intent", "Target", "CompressionResult", "SysPromptConfig"]

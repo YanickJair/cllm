@@ -10,9 +10,20 @@ class BaseVocabulary(ABC):
     BaseVocabulary contains all shared logic.
     Language classes define only the data (tokens, triggers, patterns).
     """
+
     @property
     @abstractmethod
-    def QUANTIFIER_WORDS(self) -> list[str]:
+    def STOPWORDS(self) -> tuple[str, ...]:
+        raise NotImplementedError("Subclasses must implement STOPWORDS")
+
+    @property
+    @abstractmethod
+    def CODE_INDICATORS(self) -> tuple[str, ...]:
+        raise NotImplementedError("Subclasses must implement CODE_INDICATORS")
+
+    @property
+    @abstractmethod
+    def QUANTIFIER_WORDS(self) -> tuple[str, ...]:
         """Words indicating totality/listing"""
         raise NotImplementedError("Subclasses must implement QUANTIFIER_WORDS")
 
@@ -24,11 +35,30 @@ class BaseVocabulary(ABC):
 
     @property
     @abstractmethod
+    def PRONOUNS(self) -> tuple[str, ...]:
+        """Compound words"""
+        raise NotImplementedError("Subclasses must implement PRONOUNS")
+
+    @property
+    @abstractmethod
+    def MODALS(self) -> tuple[str, ...]:
+        """Compound words"""
+        raise NotImplementedError("Subclasses must implement MODALS")
+
+    @property
+    @abstractmethod
+    def ACTION_VERBS(self) -> tuple[str, ...]:
+        """Compound words"""
+        raise NotImplementedError("Subclasses must implement ACTION_VERBS")
+
+    @property
+    @abstractmethod
     def COMPOUND_PHRASES(self) -> dict[str, str]:
         """Compound phrases that map to specific targets"""
         raise NotImplementedError("Subclasses must implement COMPOUND_PHRASES")
 
     @property
+    @abstractmethod
     def domain_candidates(self) -> dict[str, list[str]]:
         """Domain candidates for intent detection"""
         raise NotImplementedError("Subclasses must implement domain_candidates")
@@ -99,7 +129,7 @@ class BaseVocabulary(ABC):
 
     @property
     @abstractmethod
-    def MEETING_WORDS(self) -> list[str]:
+    def MEETING_WORDS(self) -> tuple[str, ...]:
         """Optional - can have empty default"""
         raise NotImplementedError("Subclasses must implement MEETING_WORDS")
 
@@ -122,17 +152,14 @@ class BaseVocabulary(ABC):
         """
         word_lower = word.lower()
 
-        # Filter noise verbs
         if word_lower in self.NOISE_VERBS:
             return None
 
-        # Apply context filters
         if word_lower in self.CONTEXT_FILTERS:
             for pattern in self.CONTEXT_FILTERS[word_lower]:
                 if pattern in context.lower():
                     return None
 
-        # Look up token
         for token, synonyms in self.REQ_TOKENS.items():
             if word_lower in synonyms:
                 return token

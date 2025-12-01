@@ -2,15 +2,25 @@ import re
 
 from spacy.language import Language
 
+from src.utils.parser_rules import BaseRules
+from src.utils.vocabulary import BaseVocabulary
+
 from ._schemas import CompressionResult, SysPromptConfig
 from .analyzers.attribute_parser import AttributeParser
 from .analyzers.intent_detector import IntentDetector
 from .analyzers.target import TargetExtractor
 from .tokenizer import CLLMTokenizer
-from src.dictionary import vocab_map
+
 
 class SysPromptEncoder:
-    def __init__(self, nlp: Language, config: SysPromptConfig = SysPromptConfig()) -> None:  # type: ignore
+    def __init__(
+        self,
+        *,
+        nlp: Language,
+        config: SysPromptConfig = SysPromptConfig(),
+        vocab: BaseVocabulary,
+        rules: BaseRules,
+    ) -> None:
         """
         Initialize encode
 
@@ -20,11 +30,16 @@ class SysPromptEncoder:
 
         self.nlp: Language = nlp
         self._config = config
-        self._vocab = vocab_map[config.lang]
+        self._vocab = vocab
+        self._rules = rules
 
         self.intent_detector = IntentDetector(self.nlp, vocab=self._vocab)
-        self.target_extractor = TargetExtractor(self.nlp, vocab=self._vocab)
-        self.attribute_parser = AttributeParser(self.nlp, config=config, vocab=self._vocab)
+        self.target_extractor = TargetExtractor(
+            self.nlp, vocab=self._vocab, rules=self._rules, config=config
+        )
+        self.attribute_parser = AttributeParser(
+            nlp=self.nlp, config=config, vocab=self._vocab, rules=rules
+        )
         self.tokenizer = CLLMTokenizer()
 
     def compress(self, prompt: str, verbose: bool = False) -> CompressionResult:

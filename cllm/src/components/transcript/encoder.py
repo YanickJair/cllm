@@ -20,6 +20,7 @@ class TranscriptEncoder:
 
     Philosophy: Extends CLLMTokenizer format: [CALL:metadata][ISSUE:details][ACTION:details][RESOLUTION:details]
     """
+
     def __init__(self, nlp: Language) -> None:
         self._nlp = nlp
 

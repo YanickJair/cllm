@@ -2,16 +2,46 @@ from ...utils.vocabulary import BaseVocabulary
 
 
 class PTVocabulary(BaseVocabulary):
+    @property
+    def STOPWORDS(self) -> tuple[str, ...]:
+        pass
+
+    @property
+    def CODE_INDICATORS(self) -> tuple[str, ...]:
+        pass
+
+    @property
+    def PRONOUNS(self) -> tuple[str, ...]:
+        pass
+
+    @property
+    def MODALS(self) -> tuple[str, ...]:
+        pass
+
+    @property
+    def ACTION_VERBS(self) -> tuple[str, ...]:
+        pass
+
     def __init__(self):
         super().__init__()
 
     @property
-    def QUANTIFIER_WORDS(self) -> list[str]:
-        return ["todos", "todas", "tudo", "cada", "inteiro", "completo"]
+    def QUANTIFIER_WORDS(self) -> tuple[str, ...]:
+        return ("todos", "todas", "tudo", "cada", "inteiro", "completo")
 
     @property
     def DEMONSTRATIVES(self) -> list[str]:
-        return ["este", "esta", "isto", "esse", "essa", "isso", "aquele", "aquela", "aquilo"]
+        return [
+            "este",
+            "esta",
+            "isto",
+            "esse",
+            "essa",
+            "isso",
+            "aquele",
+            "aquela",
+            "aquilo",
+        ]
 
     @property
     def COMPOUND_PHRASES(self) -> dict[str, str]:
@@ -31,20 +61,175 @@ class PTVocabulary(BaseVocabulary):
     @property
     def rank_triggers(self) -> set[str]:
         return {
-            "classificar", "ranquear", "rankear",
-            "ordenar", "ordem", "ordenar por", "classificar por",
-            "priorizar", "topo", "superior", "primeiro",
-            "inferior", "último", "fundo", "maior", "mais alto", "menor", "mais baixo",
-            "melhor", "melhores", "pior", "piores"
+            "classificar",
+            "ranquear",
+            "rankear",
+            "ordenar",
+            "ordem",
+            "ordenar por",
+            "classificar por",
+            "priorizar",
+            "topo",
+            "superior",
+            "primeiro",
+            "inferior",
+            "último",
+            "fundo",
+            "maior",
+            "mais alto",
+            "menor",
+            "mais baixo",
+            "melhor",
+            "melhores",
+            "pior",
+            "piores",
         }
 
     @property
     def domain_candidates(self) -> dict[str, list[str]]:
         return {
-            "suporte": ["problema", "questão", "sentimento", "ações", "urgência", "prioridade"],
-            "código": ["bug", "erro", "segurança", "desempenho", "performance"],
-            "documento": ["nomes", "datas", "valores", "quantias", "endereços", "emails", "telefones"],
-            "qa": ["verificação", "política", "habilidades interpessoais", "soft skills", "precisão", "exatidão", "conformidade", "compliance", "divulgações"],
+            "CODE": ["bug", "erro", "segurança", "desempenho", "performance"],
+            "ENTITIES": [
+                "nomes",
+                "datas",
+                "valores",
+                "quantias",
+                "endereços",
+                "emails",
+                "telefones",
+            ],
+            "QA": [
+                "verificação",
+                "política",
+                "habilidades interpessoais",
+                "soft skills",
+                "precisão",
+                "exatidão",
+                "conformidade",
+                "compliance",
+                "divulgações",
+            ],
+            "SUPPORT": [
+                "problema",
+                "questão",
+                "sentimento",
+                "ações",
+                "urgência",
+                "prioridade",
+                "ticket",
+                "caso",
+                "cliente",
+                "suporte",
+                "chamada",
+                "reclamação",
+                "atendente",
+                "agente",
+                "chamador",
+                "chat",
+                "consulta",
+                "solução de problemas",
+            ],
+            "TECHNICAL": [
+                "erro",
+                "bug",
+                "stacktrace",
+                "exceção",
+                "api",
+                "servidor",
+                "log",
+                "depurar",
+                "rastreamento",
+                "falha",
+                "implantação",
+                "backend",
+            ],
+            "DOCUMENT": [
+                "documento",
+                "artigo",
+                "manual",
+                "guia",
+                "doc",
+                "texto",
+                "transcrição",
+                "notas",
+                "resumo",
+                "instruções",
+            ],
+            "BUSINESS": [
+                "relatório",
+                "briefing",
+                "análise",
+                "executivo",
+                "gestão",
+                "dashboard",
+                "kpi",
+                "roi",
+                "funil",
+                "trimestral",
+                "apresentação",
+            ],
+            "LEGAL": [
+                "contrato",
+                "política",
+                "conformidade",
+                "gdpr",
+                "cláusula",
+                "advogado",
+                "acordo",
+                "termos",
+                "privacidade",
+            ],
+            "FINANCE": [
+                "fatura",
+                "cobrança",
+                "pagamento",
+                "transação",
+                "reembolso",
+                "despesa",
+                "saldo",
+                "extrato",
+                "valor",
+            ],
+            "SECURITY": [
+                "violação",
+                "risco",
+                "ameaça",
+                "alerta",
+                "malware",
+                "phishing",
+                "permissões",
+                "controle de acesso",
+                "auditoria",
+            ],
+            "MEDICAL": [
+                "paciente",
+                "diagnóstico",
+                "prescrição",
+                "clínico",
+                "prontuário",
+                "sintomas",
+                "tratamento",
+                "médico",
+            ],
+            "SALES": [
+                "lead",
+                "crm",
+                "oportunidade",
+                "pipeline",
+                "gerente de contas",
+                "prospecto",
+                "negócio",
+                "cotação",
+            ],
+            "EDUCATION": [
+                "lição",
+                "currículo",
+                "professor",
+                "aluno",
+                "treinamento",
+                "curso",
+                "aprendizagem",
+            ],
         }
 
     @property
@@ -53,9 +238,9 @@ class PTVocabulary(BaseVocabulary):
         return ["conceito de", "ideia de", "noção de", "princípio de"]
 
     @property
-    def MEETING_WORDS(self) -> list[str]:
+    def MEETING_WORDS(self) -> tuple[str, ...]:
         """Optional - can have empty default"""
-        return ["reunião", "conferência", "encontro", "sessão"]
+        return ("reunião", "conferência", "encontro", "sessão")
 
     @property
     def PROPOSAL_WORDS(self) -> list[str]:
@@ -385,11 +570,11 @@ class PTVocabulary(BaseVocabulary):
     @property
     def CONTEXT_FILTERS(self) -> dict[str, list[str]]:
         return {
-        "dar": ["dado", "dando", "dê-me", "me dê"],
-        "seguir": ["seguinte", "a seguir", "seguindo"],
-        "basear": ["baseado em", "com base em"],
-        "usar": ["útil", "usado para", "utilizado"],
-    }
+            "dar": ["dado", "dando", "dê-me", "me dê"],
+            "seguir": ["seguinte", "a seguir", "seguindo"],
+            "basear": ["baseado em", "com base em"],
+            "usar": ["útil", "usado para", "utilizado"],
+        }
 
     @property
     def TARGET_TOKENS(self) -> dict[str, list[str]]:
@@ -419,7 +604,7 @@ class PTVocabulary(BaseVocabulary):
                 "sql",
                 "consulta sql",
                 "consulta de banco",
-        ],
+            ],
             "ENDPOINT": [
                 "endpoint",
                 "api",
@@ -769,7 +954,11 @@ class PTVocabulary(BaseVocabulary):
         return [
             (["liste", "listar", "enumere", "enumerar", "itemize"], "LIST", "ITEMS"),
             (["nomeie", "nomear", "identifique", "identificar"], "GENERATE", "ITEMS"),
-            (["dê", "dar", "forneça", "fornecer", "sugira", "sugerir"], "GENERATE", "ITEMS"),
+            (
+                ["dê", "dar", "forneça", "fornecer", "sugira", "sugerir"],
+                "GENERATE",
+                "ITEMS",
+            ),
             (
                 [
                     "diga",
