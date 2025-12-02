@@ -401,10 +401,350 @@ TYPE_KEYWORDS = {
     "article": "ARTICLE",
 }
 
-# Context keywords
 CONTEXT_KEYWORDS = {
     "customer": "CUSTOMER",
     "support": "SUPPORT",
     "sales": "SALES",
     "technical": "TECHNICAL",
 }
+
+NER_DOMAIN_PATTERNS = {
+
+    "ACCOUNT_NUMBER": [
+        r"\b[A-Z]{2,4}\d{6,12}\b",
+        r"\baccount(?: number)?[:\s#]+([A-Z0-9-]+)\b",
+        r"\bacct[:\s#]+([A-Z0-9-]+)\b",
+        r"\bprofile[:\s#]+([A-Z0-9-]+)\b",
+        r"\bID[:\s#]+([A-Z0-9-]+)\b",
+    ],
+    "ORDER_NUMBER": [
+        r"\border(?: number)?[:\s#]+([A-Z0-9-]+)\b",
+        r"\bORD-?\d{5,12}\b",
+        r"\bPO-?\d{5,12}\b",
+        r"\bSO-?\d{5,12}\b",
+    ],
+    "TRACKING_NUMBER": [
+        r"\b([A-Z]{2}-\d{7,12})\b",
+        r"\bTRK\d{8,14}\b",
+        r"\btracking(?: number)?[:\s#]+([A-Z0-9-]+)\b",
+        r"\b([A-Z0-9]{8,14})\b(?=.*\b(shipped|delivered|courier|carrier)\b)",
+        r"\b([A-Z]{2}\d{9}[A-Z]{2})\b",
+    ],
+    "CLAIM_NUMBER": [
+        r"\b[A-Z]{2,4}-CLA-\d{5,10}\b",
+        r"\bCLM-?\d{5,10}\b",
+        r"\bclaim(?: number)?[:\s#]+([A-Z0-9-]+)\b",
+        r"\bwarranty[:\s#]+([A-Z0-9-]+)\b",
+    ],
+    "TICKET_NUMBER": [
+        r"\bTIC?-?\d{5,12}\b",
+        r"\bTK-?\d{5,12}\b",
+        r"\bticket(?: number)?[:\s#]+([A-Z0-9-]+)\b",
+        r"\bSR-?\d{5,12}\b",
+        r"\bINC-?\d{5,12}\b",
+    ],
+    "CASE_NUMBER": [
+        r"\bCASE-?\d{5,12}\b",
+        r"\bCS-?\d{5,12}\b",
+        r"\bcase(?: number)?[:\s#]+([A-Z0-9-]+)\b",
+        r"\bCSE-?\d{5,12}\b",
+    ],
+    "PRODUCT_MODEL": [
+        r"\b([A-Z]{2,4}-\d{3,5}[A-Z]?)\b",
+        r"\b([A-Z0-9]{3,10}-[A-Z0-9]{2,6})\b",
+        r"\b([A-Z]{3}\d{3,5})\b",
+        r"\bmodel(?: number)?[:\s#]+([A-Z0-9-]+)\b",
+        r"\bSKU[:\s#]+([A-Z0-9-]+)\b",
+    ],
+    "PACKAGE_ID": [
+        r"\bPKG-?\d{6,12}\b",
+        r"\bpackage(?: id)?[:\s#]+([A-Z0-9-]+)\b",
+        r"\bparcel[:\s#]+([A-Z0-9-]+)\b",
+    ],
+    "EMAIL": [
+        r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
+    ],
+    "PHONE_NUMBER": [
+        r"\b\+?\d{1,3}[-\s]?\(?\d{2,4}\)?[-\s]?\d{3}[-\s]?\d{3,5}\b",
+        r"\b\d{10}\b",
+    ],
+    "INVOICE_NUMBER": [
+        r"\bINV-?\d{5,12}\b",
+        r"\binvoice[:\s#]+([A-Z0-9-]+)\b",
+        r"\breceipt[:\s#]+([A-Z0-9-]+)\b",
+        r"\btxn[:\s#]+([A-Z0-9-]+)\b",
+    ],
+
+    "SUBSCRIPTION_ID": [
+        r"\bSUB-?\d{6,12}\b",
+        r"\bsubscription[:\s#]+([A-Z0-9-]+)\b",
+        r"\bplan[:\s#]+([A-Z0-9-]+)\b",
+    ],
+    "SERIAL_NUMBER": [
+        r"\bSN[:\s#-]?([A-Z0-9]{6,20})\b",
+        r"\bserial[:\s#]+([A-Z0-9-]{6,20})\b",
+        r"\bIMEI[:\s#-]?(\d{14,16})\b",
+        r"\bMAC[:\s#-]?([A-F0-9:]{12,17})\b",
+    ],
+    "POLICY_NUMBER": [
+        r"\bPOL-?\d{6,12}\b",
+        r"\bpolicy[:\s#]+([A-Z0-9-]+)\b",
+    ],
+    "MEMBER_ID": [
+        r"\bMEM-?\d{5,12}\b",
+        r"\bmember(?: id)?[:\s#]+([A-Z0-9-]+)\b",
+        r"\bloyalty[:\s#]+([A-Z0-9-]+)\b",
+    ],
+    "DEVICE_ID": [
+        r"\bDEV-?\d{6,12}\b",
+        r"\bdevice(?: id)?[:\s#]+([A-Z0-9-]+)\b",
+        r"\brouter[:\s#]+([A-Z0-9-]+)\b",
+    ],
+
+}
+
+EMOTION_KEYWORDS = {
+    "FRUSTRATED": {
+        "keywords": [
+            "frustrating",
+            "frustrated",
+            "annoying",
+            "annoyed",
+            "irritated",
+            "fed up",
+            "tired of this",
+            "sick of",
+            "can’t deal",
+            "bothered",
+        ],
+        "intensity": 0.7,
+    },
+    "ANGRY": {
+        "keywords": [
+            "angry",
+            "furious",
+            "mad",
+            "outraged",
+            "livid",
+            "enraged",
+            "infuriated",
+            "hate this",
+            "unacceptable",
+            "ridiculous",
+            "furious about",
+        ],
+        "intensity": 0.9,
+    },
+    "DISAPPOINTED": {
+        "keywords": [
+            "disappointed",
+            "let down",
+            "expected better",
+            "not happy",
+            "unsatisfied",
+            "underwhelmed",
+            "bummed",
+            "disheartening",
+            "poor experience",
+        ],
+        "intensity": 0.7,
+    },
+    "WORRIED": {
+        "keywords": [
+            "worried",
+            "concerned",
+            "anxious",
+            "nervous",
+            "uneasy",
+            "afraid",
+            "scared",
+            "fearful",
+            "uncertain",
+            "unsure",
+            "stressed about",
+        ],
+        "intensity": 0.6,
+    },
+    "CONFUSED": {
+        "keywords": [
+            "confused",
+            "unclear",
+            "don’t understand",
+            "not sure",
+            "lost",
+            "bewildered",
+            "unsure",
+            "don’t get it",
+            "need clarification",
+            "mixed up",
+        ],
+        "intensity": 0.5,
+    },
+    "GRATEFUL": {
+        "keywords": [
+            "thank",
+            "thanks",
+            "thankful",
+            "appreciate",
+            "grateful",
+            "means a lot",
+            "really helpful",
+            "much obliged",
+            "so kind",
+            "great support",
+        ],
+        "intensity": 0.6,
+    },
+    "SATISFIED": {
+        "keywords": [
+            "satisfied",
+            "happy",
+            "pleased",
+            "great",
+            "perfect",
+            "wonderful",
+            "excellent",
+            "awesome",
+            "amazing",
+            "fantastic",
+            "love it",
+            "delighted",
+        ],
+        "intensity": 0.8,
+    },
+    "RELIEVED": {
+        "keywords": [
+            "relieved",
+            "finally",
+            "good to know",
+            "glad it’s fixed",
+            "that helps",
+            "phew",
+            "thank goodness",
+            "much better now",
+        ],
+        "intensity": 0.6,
+    },
+    "IMPATIENT": {
+        "keywords": [
+            "waiting too long",
+            "still waiting",
+            "hurry up",
+            "been waiting",
+            "slow response",
+            "why is this taking",
+            "taking forever",
+            "long time",
+        ],
+        "intensity": 0.65,
+    },
+    "HOPEFUL": {
+        "keywords": [
+            "hopeful",
+            "optimistic",
+            "looking forward",
+            "expecting",
+            "believe it’ll work",
+            "trust it’ll be fine",
+            "can’t wait",
+            "excited to see",
+        ],
+        "intensity": 0.5,
+    },
+    "CALM": {
+        "keywords": [
+            "calm",
+            "relaxed",
+            "fine",
+            "no rush",
+            "take your time",
+            "no worries",
+            "it’s okay",
+            "that’s alright",
+        ],
+        "intensity": 0.4,
+    },
+    "APOLOGETIC": {
+        "keywords": [
+            "sorry",
+            "apologize",
+            "my bad",
+            "forgive me",
+            "I didn’t mean to",
+            "regret that",
+            "please excuse",
+            "didn’t realize",
+            "won’t happen again",
+        ],
+        "intensity": 0.5,
+    },
+    "GRATEFUL_POSITIVE": {
+        "keywords": [
+            "thank you so much",
+            "really appreciate it",
+            "you’ve been amazing",
+            "incredible help",
+            "couldn’t have done it without you",
+        ],
+        "intensity": 0.7,
+    },
+    "RESENTFUL": {
+        "keywords": [
+            "resent",
+            "fed up with",
+            "done with this",
+            "sick of dealing with",
+            "can’t stand",
+            "this always happens",
+            "same issue again",
+            "every time",
+        ],
+        "intensity": 0.75,
+    },
+    "SURPRISED": {
+        "keywords": [
+            "surprised",
+            "shocked",
+            "didn’t expect",
+            "wow",
+            "unbelievable",
+            "didn’t think that would happen",
+        ],
+        "intensity": 0.6,
+    },
+    "APATHETIC": {
+        "keywords": [
+            "whatever",
+            "doesn’t matter",
+            "I don’t care",
+            "meh",
+            "it’s fine",
+            "not a big deal",
+            "whatever you say",
+        ],
+        "intensity": 0.3,
+    },
+}
+
+DAY_NAMES = {
+    "monday": "MON",
+    "tuesday": "TUE",
+    "wednesday": "WED",
+    "thursday": "THU",
+    "friday": "FRI",
+    "saturday": "SAT",
+    "sunday": "SUN",
+}
+
+WORD_TO_NUM = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "couple": 2,
+}
+
+DAY_ORDER = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
