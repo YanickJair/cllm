@@ -1,10 +1,96 @@
 from typing import Optional
 
-from src.utils.vocabulary import Vocabulary
+from src.utils.vocabulary import BaseVocabulary
 
 
-class TranscriptVocabulary(Vocabulary):
-    DOMAIN_TOKENS = {
+class TranscriptVocabulary(BaseVocabulary):
+    @property
+    def STOPWORDS(self) -> tuple[str, ...]:
+        raise NotImplementedError
+
+    @property
+    def CODE_INDICATORS(self) -> tuple[str, ...]:
+        raise NotImplementedError
+
+    @property
+    def QUANTIFIER_WORDS(self) -> tuple[str, ...]:
+        raise NotImplementedError
+
+    @property
+    def DEMONSTRATIVES(self) -> list[str]:
+        raise NotImplementedError
+
+    @property
+    def PRONOUNS(self) -> tuple[str, ...]:
+        raise NotImplementedError
+
+    @property
+    def MODALS(self) -> tuple[str, ...]:
+        raise NotImplementedError
+
+    @property
+    def ACTION_VERBS(self) -> tuple[str, ...]:
+        raise NotImplementedError
+
+    @property
+    def COMPOUND_PHRASES(self) -> dict[str, str]:
+        raise NotImplementedError
+
+    @property
+    def domain_candidates(self) -> dict[str, list[str]]:
+        raise NotImplementedError
+
+    @property
+    def REQ_TOKENS(self) -> dict[str, list[str]]:
+        raise NotImplementedError
+
+    @property
+    def TARGET_TOKENS(self) -> dict:
+        raise NotImplementedError
+
+    @property
+    def NOISE_VERBS(self) -> set:
+        raise NotImplementedError
+
+    @property
+    def CONTEXT_FILTERS(self) -> dict[str, list[str]]:
+        raise NotImplementedError
+
+    @property
+    def EXTRACT_FIELDS(self) -> tuple[str, ...]:
+        raise NotImplementedError
+
+    @property
+    def OUTPUT_FORMATS(self) -> dict[str, list[str]]:
+        raise NotImplementedError
+
+    @property
+    def IMPERATIVE_PATTERNS(self) -> list[tuple[list[str], str, str]]:
+        raise NotImplementedError
+
+    @property
+    def QUESTION_WORDS(self) -> list[str]:
+        raise NotImplementedError
+
+    @property
+    def CONCEPT_INDICATORS(self) -> list[str]:
+        raise NotImplementedError
+
+    @property
+    def MEETING_WORDS(self) -> tuple[str, ...]:
+        raise NotImplementedError
+
+    @property
+    def PROPOSAL_WORDS(self) -> list[str]:
+        raise NotImplementedError
+
+    @property
+    def ARTICLES(self) -> list[str]:
+        raise NotImplementedError
+
+    @property
+    def DOMAIN_TOKENS(self) -> dict[str, list[str]]:
+        return {
         "SUPPORT": [
             "support",
             "customer service",
@@ -184,43 +270,48 @@ class TranscriptVocabulary(Vocabulary):
         ],
     }
 
-    CALL_TOKENS = {
-        "CALL": {
-            "type": [
-                "SUPPORT",
-                "SALES",
-                "BILLING",
-                "TECHNICAL",
-                "RETENTION",
-                "LOGISTICS",
-                "ACCOUNT_MANAGEMENT",
-                "FEEDBACK",
-                "RETURNS",
-            ],
-            "channel": ["VOICE", "CHAT", "EMAIL", "SOCIAL", "SMS", "VIDEO", "PORTAL"],
-            "duration": int,  # minutes
-            "agent": str,
-            "customer": str,
+
+    @property
+    def CALL_TOKENS(self) -> dict[str, dict]:
+        return {
+            "CALL": {
+                "type": [
+                    "SUPPORT",
+                    "SALES",
+                    "BILLING",
+                    "TECHNICAL",
+                    "RETENTION",
+                    "LOGISTICS",
+                    "ACCOUNT_MANAGEMENT",
+                    "FEEDBACK",
+                    "RETURNS",
+                ],
+                "channel": ["VOICE", "CHAT", "EMAIL", "SOCIAL", "SMS", "VIDEO", "PORTAL"],
+                "duration": int,
+                "agent": str,
+                "customer": str,
+            }
         }
-    }
-    ISSUE_TOKENS = {
-        # Connectivity & Technical Issues
-        "INTERNET_OUTAGE": [
-            "internet",
-            "connection",
-            "outage",
-            "dropping",
-            "disconnect",
-            "no signal",
-        ],
-        "SLOW_INTERNET": ["slow", "lagging", "buffering", "low speed", "latency"],
-        "WIFI_ISSUE": ["wifi", "router", "modem", "network", "ssid"],
-        "DEVICE_NOT_SYNCING": ["sync", "pairing", "bluetooth", "connect device"],
-        "APP_CRASH": [
-            "app crash",
-            "application stopped",
-            "not opening",
-            "bug",
+
+    @property
+    def ISSUE_TOKENS(self) -> dict[str, list[str]]:
+        return {
+            "INTERNET_OUTAGE": [
+                "internet",
+                "connection",
+                "outage",
+                "dropping",
+                "disconnect",
+                "no signal",
+            ],
+            "SLOW_INTERNET": ["slow", "lagging", "buffering", "low speed", "latency"],
+            "WIFI_ISSUE": ["wifi", "router", "modem", "network", "ssid"],
+            "DEVICE_NOT_SYNCING": ["sync", "pairing", "bluetooth", "connect device"],
+            "APP_CRASH": [
+                "app crash",
+                "application stopped",
+                "not opening",
+                "bug",
             "freeze",
         ],
         "SOFTWARE_UPDATE_ERROR": [
@@ -260,7 +351,6 @@ class TranscriptVocabulary(Vocabulary):
             "spam",
             "missing email",
         ],
-        # Billing & Payments
         "BILLING_DISPUTE": [
             "billing",
             "charge",
@@ -295,7 +385,6 @@ class TranscriptVocabulary(Vocabulary):
         "INVOICE_REQUEST": ["invoice", "receipt", "billing statement"],
         "CREDIT_CARD_UPDATE": ["update card", "expired card", "new card details"],
         "AUTO_RENEWAL_ISSUE": ["auto renewal", "auto charge", "subscription renew"],
-        # Orders & Shipping
         "DELIVERY_DELAY": ["delivery", "shipping", "delayed", "late", "not arrived"],
         "LOST_PACKAGE": ["lost package", "missing order", "did not receive"],
         "DAMAGED_PACKAGE": ["damaged", "broken item", "crushed", "leaking"],
@@ -305,7 +394,6 @@ class TranscriptVocabulary(Vocabulary):
         "ORDER_CANCELLATION": ["cancel order", "stop shipment", "undo purchase"],
         "TRACKING_ISSUE": ["tracking", "status update", "shipment id"],
         "CUSTOMS_HOLD": ["customs", "held", "import fee", "clearance delay"],
-        # Product & Hardware
         "PRODUCT_DEFECT": ["broken", "defect", "damaged", "not working", "faulty"],
         "PRODUCT_NOT_RECEIVED": ["not received", "missing product", "no delivery"],
         "INSTALLATION_ISSUE": ["install", "setup", "installation", "configuration"],
@@ -325,7 +413,6 @@ class TranscriptVocabulary(Vocabulary):
         "SCREEN_ISSUE": ["display", "screen flicker", "dead pixels", "black screen"],
         "AUDIO_PROBLEM": ["no sound", "audio issue", "mic not working", "speaker"],
         "CAMERA_PROBLEM": ["camera", "photo blurry", "not opening camera"],
-        # Account Management
         "ACCOUNT_LOCKED": ["locked account", "cannot access", "suspended"],
         "ACCOUNT_HACKED": [
             "unauthorized access",
@@ -345,23 +432,19 @@ class TranscriptVocabulary(Vocabulary):
             "merge accounts",
             "multiple profiles",
         ],
-        # Customer Service
         "RUDE_AGENT": ["rude", "unhelpful", "bad service", "agent behavior"],
         "LONG_WAIT_TIME": ["waiting", "on hold", "queue too long", "delay response"],
         "CALL_DISCONNECTED": ["call dropped", "cut off", "disconnect call"],
         "NO_CALLBACK": ["no callback", "promised call", "didn't call back"],
         "INCORRECT_INFO": ["wrong info", "misinformed", "wrong instructions"],
         "ESCALATION_REQUEST": ["supervisor", "manager", "escalate", "complaint"],
-        # Returns & Refunds
         "RETURN_REFUSED": ["return denied", "return rejected"],
         "EXPIRED_RETURN_WINDOW": ["return window closed", "too late to return"],
         "REFUND_DELAY": ["refund delayed", "refund taking too long"],
-        # Logistics & Fulfillment
         "ADDRESS_CHANGE": ["change address", "wrong address", "update address"],
         "WAREHOUSE_DELAY": ["warehouse", "processing delay", "fulfillment issue"],
         "OUT_OF_STOCK": ["out of stock", "backorder", "unavailable product"],
         "PREORDER_DELAY": ["preorder delay", "release postponed"],
-        # SaaS / Software Issues
         "LICENSE_ERROR": ["license", "activation key", "invalid key"],
         "ACCOUNT_SYNC_ERROR": ["sync issue", "data not syncing", "integration failed"],
         "API_ERROR": ["api", "endpoint", "request failed", "response error"],
@@ -372,7 +455,6 @@ class TranscriptVocabulary(Vocabulary):
             "inbox sync",
             "mail connector",
         ],
-        # Banking & Financial
         "CARD_DECLINED": ["card declined", "transaction failed", "payment rejected"],
         "UNAUTHORIZED_TRANSACTION": ["fraud", "unauthorized", "unknown charge"],
         "MISSING_STATEMENT": [
@@ -382,27 +464,22 @@ class TranscriptVocabulary(Vocabulary):
         ],
         "ACCOUNT_FREEZE": ["frozen account", "hold", "restricted"],
         "KYC_VERIFICATION": ["kyc", "id verification", "identity document"],
-        # Insurance & Claims
         "CLAIM_REJECTION": ["claim rejected", "denied", "refused"],
         "CLAIM_STATUS": ["claim status", "pending claim", "check claim"],
         "POLICY_RENEWAL": ["renew policy", "extend coverage", "policy expiry"],
         "PREMIUM_PAYMENT_ISSUE": ["premium", "payment failed", "late payment"],
-        # Utilities / Telecom
         "POWER_OUTAGE": ["power outage", "no electricity", "blackout"],
         "MOBILE_DATA_ISSUE": ["mobile data", "4g", "5g", "no signal"],
         "SIM_NOT_WORKING": ["sim card", "no service", "invalid sim"],
         "VOICEMAIL_PROBLEM": ["voicemail", "messages missing", "not recording"],
         "ROAMING_ISSUE": ["roaming", "international charges", "no service abroad"],
-        # E-commerce / Subscription
         "COUPON_NOT_APPLIED": ["promo code", "discount not applied"],
         "GIFT_CARD_ISSUE": ["gift card", "voucher not working"],
         "LOYALTY_POINTS_MISSING": ["points missing", "rewards not added"],
         "SUBSCRIPTION_RENEWAL_ISSUE": ["auto renew", "renewal failed"],
-        # Support Process
         "CASE_NOT_UPDATED": ["no update", "status unknown", "ticket pending"],
         "DUPLICATE_TICKET": ["duplicate ticket", "multiple cases"],
         "INCORRECT_ESCALATION": ["wrong team", "misrouted case"],
-        # Miscellaneous
         "FEEDBACK_SUBMISSION": ["feedback", "review", "survey"],
         "ACCESSIBILITY_ISSUE": ["screen reader", "contrast", "accessibility"],
         "LANGUAGE_BARRIER": ["language issue", "translation", "not understood"],
@@ -415,21 +492,23 @@ class TranscriptVocabulary(Vocabulary):
         ],
     }
 
-    ACTION_TOKENS = {
-        "TROUBLESHOOT": [
-            "troubleshoot",
-            "diagnose",
-            "check",
-            "test",
-            "inspect",
-            "analyze",
-            "investigate",
-            "look into",
-            "run diagnostics",
-            "perform a check",
-            "verify",
-            "review",
-            "run a test",
+    @property
+    def ACTION_TOKENS(self) -> dict[str, list[str]]:
+        return {
+            "TROUBLESHOOT": [
+                "troubleshoot",
+                "diagnose",
+                "check",
+                "test",
+                "inspect",
+                "analyze",
+                "investigate",
+                "look into",
+                "run diagnostics",
+                "perform a check",
+                "verify",
+                "review",
+                "run a test",
             "reset",
             "reboot",
             "restart",
@@ -803,30 +882,32 @@ class TranscriptVocabulary(Vocabulary):
         ],
     }
 
-    RESOLUTION_TOKENS = {
-        "RESOLVED": [
-            "resolved",
-            "fixed",
-            "solved",
-            "sorted",
-            "taken care of",
-            "completed",
-            "all set",
-            "issue cleared",
-            "working now",
-            "restored",
-            "addressed",
-            "done",
-            "problem gone",
-            "handled",
-            "successfully resolved",
-        ],
-        "PENDING": [
-            "pending",
-            "waiting",
-            "scheduled",
-            "in progress",
-            "under review",
+    @property
+    def RESOLUTION_TOKENS(self) -> dict[str, list[str]]:
+        return {
+            "RESOLVED": [
+                "resolved",
+                "fixed",
+                "solved",
+                "sorted",
+                "taken care of",
+                "completed",
+                "all set",
+                "issue cleared",
+                "working now",
+                "restored",
+                "addressed",
+                "done",
+                "problem gone",
+                "handled",
+                "successfully resolved",
+            ],
+            "PENDING": [
+                "pending",
+                "waiting",
+                "scheduled",
+                "in progress",
+                "under review",
             "being worked on",
             "queued",
             "awaiting response",
@@ -877,29 +958,31 @@ class TranscriptVocabulary(Vocabulary):
         ],
     }
 
-    SENTIMENT_TOKENS = {
-        "FRUSTRATED": [
-            "frustrated",
-            "annoyed",
-            "upset",
-            "disappointed",
-            "irritated",
-            "fed up",
-            "tired of this",
-            "this is ridiculous",
-            "this keeps happening",
-            "I’ve had enough",
-            "getting frustrated",
-            "really annoyed",
-        ],
-        "ANGRY": [
-            "angry",
-            "furious",
-            "mad",
-            "outraged",
-            "furious about this",
-            "this is unacceptable",
-            "I’m done",
+    @property
+    def SENTIMENT_TOKENS(self) -> dict[str, list[str]]:
+        return {
+            "FRUSTRATED": [
+                "frustrated",
+                "annoyed",
+                "upset",
+                "disappointed",
+                "irritated",
+                "fed up",
+                "tired of this",
+                "this is ridiculous",
+                "this keeps happening",
+                "I’ve had enough",
+                "getting frustrated",
+                "really annoyed",
+            ],
+            "ANGRY": [
+                "angry",
+                "furious",
+                "mad",
+                "outraged",
+                "furious about this",
+                "this is unacceptable",
+                "I’m done",
             "I want to speak to a manager",
             "this is the last straw",
             "you guys messed up",
@@ -966,30 +1049,32 @@ class TranscriptVocabulary(Vocabulary):
         ],
     }
 
-    FREQUENCY_TOKENS = {
-        "ONCE": [
-            "once",
-            "one time",
-            "just once",
-            "happened once",
-            "only once",
-            "the first time",
-            "single occurrence",
-        ],
-        "TWICE": [
-            "twice",
-            "two times",
-            "a couple of times",
-            "happened twice",
-            "second time",
-            "this happened again",
-            "a few days apart",
-        ],
-        "OCCASIONAL": [
-            "occasional",
-            "sometimes",
-            "every now and then",
-            "from time to time",
+    @property
+    def FREQUENCY_TOKENS(self) -> dict[str, list[str]]:
+        return {
+            "ONCE": [
+                "once",
+                "one time",
+                "just once",
+                "happened once",
+                "only once",
+                "the first time",
+                "single occurrence",
+            ],
+            "TWICE": [
+                "twice",
+                "two times",
+                "a couple of times",
+                "happened twice",
+                "second time",
+                "this happened again",
+                "a few days apart",
+            ],
+            "OCCASIONAL": [
+                "occasional",
+                "sometimes",
+                "every now and then",
+                "from time to time",
             "off and on",
             "now and then",
             "once in a while",
@@ -1090,29 +1175,26 @@ class TranscriptVocabulary(Vocabulary):
         ],
     }
 
-    @classmethod
-    def get_issue_token(cls, text: str) -> Optional[str]:
+    def get_issue_token(self, text: str) -> Optional[str]:
         """Find issue type from text"""
         text_lower = text.lower()
-        for issue_type, keywords in cls.ISSUE_TOKENS.items():
+        for issue_type, keywords in self.ISSUE_TOKENS.items():
             if any(keyword in text_lower for keyword in keywords):
                 return issue_type
         return None
 
-    @classmethod
-    def get_action_token(cls, text: str) -> Optional[str]:
+    def get_action_token(self, text: str) -> Optional[str]:
         """Find action type from text"""
         text_lower = text.lower()
-        for action_type, keywords in cls.ACTION_TOKENS.items():
+        for action_type, keywords in self.ACTION_TOKENS.items():
             if any(keyword in text_lower for keyword in keywords):
                 return action_type
         return None
 
-    @classmethod
-    def get_sentiment_token(cls, text: str) -> Optional[str]:
+    def get_sentiment_token(self, text: str) -> Optional[str]:
         """Find sentiment from text"""
         text_lower = text.lower()
-        for sentiment, keywords in cls.SENTIMENT_TOKENS.items():
+        for sentiment, keywords in self.SENTIMENT_TOKENS.items():
             if any(keyword in text_lower for keyword in keywords):
                 return sentiment
         return None

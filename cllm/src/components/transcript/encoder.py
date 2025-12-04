@@ -1,92 +1,95 @@
-# transcript_encoder.py - NEW file
 from typing import Optional
+
 from spacy import Language
+from src.components.transcript.analyzer import TranscriptAnalyzer
+
+from src.dictionary.en.patterns import NER_ADDRESS_ABBREVIATIONS
 
 from . import (
-    Resolution,
-    SentimentTrajectory,
+    Action,
     CallInfo,
     CustomerProfile,
     Issue,
-    Action,
+    Resolution,
+    SentimentTrajectory,
     TranscriptAnalysis,
     Turn,
 )
+from src.utils.singleton import SingletonMeta
+from ...utils.parser_rules import BaseRules
+from ...utils.vocabulary import BaseVocabulary
 
 
-class TranscriptEncoder:
+class TranscriptEncoder(metaclass=SingletonMeta):
     """
     Encodes transcript analysis into compressed tokens
 
     Philosophy: Extends CLLMTokenizer format: [CALL:metadata][ISSUE:details][ACTION:details][RESOLUTION:details]
     """
-    def __init__(self, nlp: Language) -> None:
-        self._nlp = nlp
 
-    def encode(self, analysis: TranscriptAnalysis, verbose: bool = False) -> str:
+    def __init__(self, nlp: Language,vocab: BaseVocabulary, rules: BaseRules) -> None:
+        self._nlp = nlp
+        self._analyzer = TranscriptAnalyzer(nlp=nlp, vocab=vocab, rules=rules)
+        self.analysis: TranscriptAnalysis | None = None
+
+    def encode(self, *, transcript: str, metadata: dict, verbose: bool = False) -> str:
         """
         Encode transcript analysis to compressed format
 
         Format Design:
         [CALL:type:key=value:...]
         [CUSTOMER:key=value:...]
-        [ID:key=value:...]                          ← NEW: All identifiers in one token
-        [CONTACT:key=value:...]                     ← NEW: Contact information
+        [ID:key=value:...]
+        [CONTACT:key=value:...]
         [ISSUE:type:key=value:...]
         [ACTION:type:key=value:...]
         [RESOLUTION:type:key=value:...]
         [SENTIMENT:start→end]
         """
+        self.analysis = self._analyzer.analyze(transcript, metadata)
+
         tokens = []
 
-        # 1. Call info
-        call_token = self._encode_call_info(analysis.call_info)
+        call_token = self._encode_call_info(self.analysis.call_info)
         tokens.append(call_token)
         if verbose:
             print(f"Call: {call_token}")
 
-        # 2. Customer profile
-        customer_token = self._encode_customer(analysis.customer)
+        customer_token = self._encode_customer(self.analysis.customer)
         tokens.append(customer_token)
         if verbose:
             print(f"Customer: {customer_token}")
 
-        # 3. Identifiers (tracking, claim, product, order, ticket, case)
-        identifiers = self._encode_identifiers(analysis)
+        identifiers = self._encode_identifiers(self.analysis)
         if identifiers:
             tokens.append(identifiers)
             if verbose:
                 print(f"Identifiers: {identifiers}")
 
-        # 4. Contact info (email, phone)
-        contact = self._encode_contact_info(analysis)
+        contact = self._encode_contact_info(self.analysis)
         if contact:
             tokens.append(contact)
             if verbose:
                 print(f"Contact: {contact}")
 
-        # 5. Issues (with full temporal details and money)
-        for issue in analysis.issues:
-            issue_token = self._encode_issue(issue, analysis.turns)
+        for issue in self.analysis.issues:
+            issue_token = self._encode_issue(issue, self.analysis.turns)
             tokens.append(issue_token)
             if verbose:
                 print(f"Issue: {issue_token}")
 
-        # 6. Actions (with amounts for refunds)
-        for action in analysis.actions:
+        for action in self.analysis.actions:
             action_token = self._encode_action(action)
             tokens.append(action_token)
             if verbose:
                 print(f"Action: {action_token}")
 
-        # 7. Resolution
-        resolution_token = self._encode_resolution(analysis.resolution)
+        resolution_token = self._encode_resolution(self.analysis.resolution)
         tokens.append(resolution_token)
         if verbose:
             print(f"Resolution: {resolution_token}")
 
-        # 8. Sentiment trajectory
-        sentiment_token = self._encode_sentiment(analysis.sentiment_trajectory)
+        sentiment_token = self._encode_sentiment(self.analysis.sentiment_trajectory)
         tokens.append(sentiment_token)
         if verbose:
             print(f"Sentiment: {sentiment_token}")
@@ -95,7 +98,8 @@ class TranscriptEncoder:
 
     def _encode_call_info(self, call: CallInfo) -> str:
         """
-        Encode call metadata
+        Encode call metadata.
+        Convert turns to approximate minutes (assume 2 turns/minute)
 
         Format: [CALL:TYPE:ATTR=VALUE:...]
         Example: [CALL:SUPPORT:AGENT=Sarah:DURATION=8m]
@@ -106,7 +110,6 @@ class TranscriptEncoder:
             parts.append(f"AGENT={call.agent}")
 
         if call.duration:
-            # Convert turns to approximate minutes (assume 2 turns/minute)
             minutes = max(1, call.duration // 2)
             parts.append(f"DURATION={minutes}m")
 
@@ -133,21 +136,16 @@ class TranscriptEncoder:
         if customer.tenure:
             parts.append(f"TENURE={customer.tenure}")
 
-        # Add address if present
         if customer.attributes and "address" in customer.attributes:
-            # Compress address: "123 Main Street" → "123_Main_St"
             address = customer.attributes["address"]
             address_compressed = self._compress_address(address)
             parts.append(f"ADDRESS={address_compressed}")
 
-        # Add organization if present
         if customer.attributes and "organization" in customer.attributes:
             org = customer.attributes["organization"]
-            # Compress organization name
             org_compressed = org.replace(" ", "_")
             parts.append(f"ORG={org_compressed}")
 
-        # Add location if present
         if customer.attributes and "location" in customer.attributes:
             location = customer.attributes["location"]
             parts.append(f"LOCATION={location}")
@@ -170,7 +168,6 @@ class TranscriptEncoder:
         - CASE: Case numbers
         """
 
-        # Collect all identifiers from all turns
         identifiers: dict = {
             "tracking_numbers": [],
             "claim_numbers": [],
@@ -185,15 +182,12 @@ class TranscriptEncoder:
                 for key in identifiers:
                     identifiers[key].extend(turn.entities.get(key, []))
 
-        # Deduplicate all
         for key in identifiers:
             identifiers[key] = list(set(identifiers[key]))
 
-        # Build identifier token
         parts = []
 
         if identifiers["tracking_numbers"]:
-            # Join multiple with comma (rare but possible)
             parts.append(f"TRACKING={','.join(identifiers['tracking_numbers'])}")
 
         if identifiers["claim_numbers"]:
@@ -224,7 +218,6 @@ class TranscriptEncoder:
         Example: [CONTACT:EMAIL=user@example.com:PHONE=555-123-4567]
         """
 
-        # Collect contact info from all turns
         emails = []
         phone_numbers = []
 
@@ -233,15 +226,11 @@ class TranscriptEncoder:
                 emails.extend(turn.entities.get("emails", []))
                 phone_numbers.extend(turn.entities.get("phone_numbers", []))
 
-        # Deduplicate
         emails = list(set(emails))
         phone_numbers = list(set(phone_numbers))
 
-        # Build contact token
         parts = []
-
         if emails:
-            # Usually just one email, but support multiple
             parts.append(f"EMAIL={','.join(emails)}")
 
         if phone_numbers:
@@ -262,7 +251,6 @@ class TranscriptEncoder:
         """
         parts = ["ISSUE", issue.type]
 
-        # Money amounts for billing issues
         if issue.type in [
             "BILLING_DISPUTE",
             "UNEXPECTED_CHARGE",
@@ -274,30 +262,24 @@ class TranscriptEncoder:
                     amounts = "+".join(turn.entities.get("money", []))
                     parts.append(f"AMOUNTS={amounts}")
 
-        # Severity
         if issue.severity:
             parts.append(f"SEVERITY={issue.severity}")
 
-        # Frequency
         if issue.frequency:
             parts.append(f"FREQ={issue.frequency}")
 
-        # Duration
         if issue.duration:
             parts.append(f"DURATION={issue.duration}")
 
-        # Pattern (times)
         if issue.pattern:
             parts.append(f"PATTERN={issue.pattern}")
 
-        # Days (if available in attributes)
         if issue.attributes and "days" in issue.attributes:
             days = issue.attributes["days"]
             if days and len(days) > 0:  # Only if not empty
                 days_str = "+".join(days)
                 parts.append(f"DAYS={days_str}")
 
-        # Impact
         if issue.impact:
             parts.append(f"IMPACT={issue.impact}")
 
@@ -317,7 +299,6 @@ class TranscriptEncoder:
         if action.step:
             parts.append(f"STEP={action.step}")
 
-        # Add reference number if present
         if (
             action.attributes
             and "reference" in action.attributes
@@ -325,7 +306,6 @@ class TranscriptEncoder:
         ):
             parts.append(f"REFERENCE={action.attributes['reference']}")
 
-        # Add timeline if present
         if (
             action.attributes
             and "timeline" in action.attributes
@@ -333,11 +313,9 @@ class TranscriptEncoder:
         ):
             parts.append(f"TIMELINE={action.attributes['timeline']}")
 
-        # Add amount for financial actions
         if action.amount:
             parts.append(f"AMOUNT={action.amount}")
 
-        # Add payment method
         if action.payment_method:
             parts.append(f"METHOD={action.payment_method}")
 
@@ -363,7 +341,6 @@ class TranscriptEncoder:
             parts.append(f"TICKET={resolution.ticket_id}")
 
         if resolution.next_steps:
-            # Compress next steps
             steps_compressed = resolution.next_steps.replace(" ", "_")
             parts.append(f"NEXT={steps_compressed}")
 
@@ -373,24 +350,28 @@ class TranscriptEncoder:
         """
         Encode sentiment trajectory
 
-        Format: [SENTIMENT:START→END]
-        Example: [SENTIMENT:FRUSTRATED→SATISFIED]
+        Args:
+            sentiment (SentimentTrajectory): The sentiment trajectory to encode.
 
-        With turning points: [SENTIMENT:FRUSTRATED→NEUTRAL→SATISFIED]
+        Returns:
+            str: The encoded sentiment trajectory.
+
+        Example:
+            Format: [SENTIMENT:START→END]
+            Example: [SENTIMENT:FRUSTRATED→SATISFIED]
+            With turning points: [SENTIMENT:FRUSTRATED→NEUTRAL→SATISFIED]
         """
         checked_sentiment = set()
         if not sentiment.turning_points:
             return f"[SENTIMENT:{sentiment.start}→{sentiment.end}]"
 
-        # Build trajectory with turning points
         trajectory = [sentiment.start]
         for _, emotion in sentiment.turning_points:
             if emotion != trajectory[-1] and emotion not in checked_sentiment:
                 checked_sentiment.add(emotion)
                 trajectory.append(emotion)
 
-        # Ensure end state is included
-        if trajectory[-1] != sentiment.end:
+        if trajectory[-1] != sentiment.end and sentiment.end is not None:
             trajectory.append(sentiment.end)
 
         trajectory_str = "→".join(trajectory)
@@ -400,27 +381,20 @@ class TranscriptEncoder:
         """
         Compress address
 
+        Args:
+            address (str): The address to compress.
+
+        Returns:
+            str: The compressed address.
+
         Examples:
         - "123 Main Street" → "123_Main_St"
         - "456 Oak Avenue" → "456_Oak_Ave"
         - "41 Riverbend Lane" → "41_Riverbend_Ln"
         """
-        # Replace spaces with underscores
         compressed = address.replace(" ", "_")
 
-        # Abbreviate common words
-        abbreviations = {
-            "Street": "St",
-            "Avenue": "Ave",
-            "Road": "Rd",
-            "Drive": "Dr",
-            "Lane": "Ln",
-            "Boulevard": "Blvd",
-            "Court": "Ct",
-            "Place": "Pl",
-        }
-
-        for full, abbrev in abbreviations.items():
+        for full, abbrev in NER_ADDRESS_ABBREVIATIONS.items():
             compressed = compressed.replace(full, abbrev)
 
         return compressed
