@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "cllm"))
 
 from src.core.encoder import CLLMEncoder
-from src.utils.schemas import CLMConfig
+from src.config.schemas import CLMConfig
 
 def load_prompts() -> list[dict[str, str]]:
     data: list[dict[str, str]] = []

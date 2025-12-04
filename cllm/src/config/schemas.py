@@ -3,8 +3,8 @@ from pydantic import BaseModel, Field, computed_field, ConfigDict
 
 from src.utils.parser_rules import BaseRules
 from src.utils.vocabulary import BaseVocabulary
-from ..components.ds_compression import CompressionConfig
-from ..components.sys_prompt import SysPromptConfig
+from src.components.ds_compression import CompressionConfig
+from src.components.sys_prompt import SysPromptConfig
 from src.dictionary import rules_map, vocab_map
 
 type LANG = Literal["en", "fr", "de", "es", "it", "pt", "ru", "ja", "zh", "ko"]
