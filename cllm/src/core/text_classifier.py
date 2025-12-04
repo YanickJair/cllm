@@ -29,7 +29,7 @@ class DataClassifier:
             "you must",
             "you should",
             "your role is",
-            "instructions:",    
+            "instructions:",
             "please analyze",
             "please extract",
             "the following",  # Often in system prompts
