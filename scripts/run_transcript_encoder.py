@@ -1,10 +1,13 @@
 import json
 import os
 import sys
+import json
+import sys
+from pathlib import Path
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, str(Path(__file__).parent.parent / "cllm"))
+from src.config.schemas import CLMConfig
 
-from src.components.transcript.analyzer import TranscriptAnalyzer
 from src.components.transcript.encoder import TranscriptEncoder
 
 
@@ -278,12 +281,11 @@ def show_comparison(transcript: str, metadata: dict):
     print("\nLoading spaCy model...")
     nlp = spacy.load("en_core_web_sm")
 
-    print("Analyzing transcript...")
-    analyzer = TranscriptAnalyzer(nlp)
-    analysis = analyzer.analyze(transcript, metadata)
-
-    encoder = TranscriptEncoder(nlp)
-    new_result = encoder.encode(analysis)
+    cfg = CLMConfig(
+        lang="en",
+    )
+    encoder = TranscriptEncoder(nlp=nlp, vocab=cfg.vocab, rules=cfg.rules)
+    new_result = encoder.encode(transcript=transcript, metadata=metadata)
 
     # INFORMATION PRESERVATION CHECK
     print("\n" + "=" * 70)
@@ -317,7 +319,7 @@ def show_comparison(transcript: str, metadata: dict):
     print(f"🗜️  Compression Ratio: {(1 - new_chars / original_chars) * 100:.1f}%")
 
     print("\n✅ Ready for production use!")
-    return analysis.to_dict(), new_result
+    return encoder.analysis.to_dict(), new_result
 
 
 if __name__ == "__main__":

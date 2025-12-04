@@ -409,7 +409,6 @@ CONTEXT_KEYWORDS = {
 }
 
 NER_DOMAIN_PATTERNS = {
-
     "ACCOUNT_NUMBER": [
         r"\b[A-Z]{2,4}\d{6,12}\b",
         r"\baccount(?: number)?[:\s#]+([A-Z0-9-]+)\b",
@@ -474,7 +473,6 @@ NER_DOMAIN_PATTERNS = {
         r"\breceipt[:\s#]+([A-Z0-9-]+)\b",
         r"\btxn[:\s#]+([A-Z0-9-]+)\b",
     ],
-
     "SUBSCRIPTION_ID": [
         r"\bSUB-?\d{6,12}\b",
         r"\bsubscription[:\s#]+([A-Z0-9-]+)\b",
@@ -500,7 +498,6 @@ NER_DOMAIN_PATTERNS = {
         r"\bdevice(?: id)?[:\s#]+([A-Z0-9-]+)\b",
         r"\brouter[:\s#]+([A-Z0-9-]+)\b",
     ],
-
 }
 
 EMOTION_KEYWORDS = {
@@ -748,3 +745,14 @@ WORD_TO_NUM = {
 }
 
 DAY_ORDER = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+
+NER_ADDRESS_ABBREVIATIONS = {
+    "Street": "St",
+    "Avenue": "Ave",
+    "Road": "Rd",
+    "Drive": "Dr",
+    "Lane": "Ln",
+    "Boulevard": "Blvd",
+    "Court": "Ct",
+    "Place": "Pl",
+}

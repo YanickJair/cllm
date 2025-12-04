@@ -7,8 +7,8 @@ from src.utils.vocabulary import BaseVocabulary
 
 from ._schemas import CompressionResult, SysPromptConfig
 from .analyzers.attribute_parser import AttributeParser
-from .analyzers.intent_detector import IntentDetector
-from .analyzers.target import TargetExtractor
+from src.components.intent_detector import IntentDetector
+from src.components.target_extractor import TargetExtractor
 from .tokenizer import CLLMTokenizer
 
 
@@ -35,7 +35,7 @@ class SysPromptEncoder:
 
         self.intent_detector = IntentDetector(self.nlp, vocab=self._vocab)
         self.target_extractor = TargetExtractor(
-            self.nlp, vocab=self._vocab, rules=self._rules, config=config
+            self.nlp, vocab=self._vocab, rules=self._rules
         )
         self.attribute_parser = AttributeParser(
             nlp=self.nlp, config=config, vocab=self._vocab, rules=rules

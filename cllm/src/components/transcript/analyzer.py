@@ -15,16 +15,23 @@ from .utils.named_entity import EntityExtractor
 from .utils.sentiment_analyzer import SentimentAnalyzer
 from .utils.temporal_analyzer import TemporalAnalyzer
 from .vocabulary import TranscriptVocabulary
-from ..sys_prompt.analyzers.intent_detector import IntentDetector
-from ..sys_prompt.analyzers.target import TargetExtractor
+from src.components.intent_detector import IntentDetector
+from src.components.target_extractor import TargetExtractor
+from ...utils.parser_rules import BaseRules
+from ...utils.vocabulary import BaseVocabulary
 
 
 class TranscriptAnalyzer:
-    def __init__(self, nlp: spacy.Language):
+    def __init__(
+        self,
+        nlp: spacy.Language,
+        vocab: BaseVocabulary,
+        rules: BaseRules,
+    ):
         self.nlp = nlp
         self.vocab = TranscriptVocabulary()
-        self.intent_detector = IntentDetector(nlp)
-        self.target_extractor = TargetExtractor(nlp)
+        self.intent_detector = IntentDetector(nlp=nlp, vocab=vocab)
+        self.target_extractor = TargetExtractor(nlp, vocab=vocab, rules=rules)
         self.temporal_extractor = TemporalAnalyzer()
         self.sentiment_analyzer = SentimentAnalyzer()
         self.entity_extractor = EntityExtractor()
@@ -41,7 +48,7 @@ class TranscriptAnalyzer:
             turn.intent = self.intent_detector.get_primary_intent(
                 self.intent_detector.detect(turn.text)
             )
-            turn.targets = self.target_extractor.extract(turn.text)
+            turn.targets.append(self.target_extractor.extract(text=turn.text))
             turn.sentiment, _ = self.sentiment_analyzer.analyze_turn(
                 turn.text, turn.speaker
             )

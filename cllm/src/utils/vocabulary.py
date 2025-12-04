@@ -12,6 +12,64 @@ class BaseVocabulary(ABC):
     """
 
     @property
+    def domains_priority(self) -> tuple[str, ...]:
+        """Priority domains for the prompt
+        If these are present in the prompt, they will be prioritized over the default ones.
+        """
+        return (
+            "SUPPORT",
+            "TECHNICAL",
+            "FINANCE",
+            "SECURITY",
+            "LEGAL",
+            "BUSINESS",
+            "DOCUMENT",
+            "SALES",
+            "EDUCATION",
+            "MEDICAL",
+        )
+
+    @property
+    def default_technical_lemmas(self) -> tuple[str, ...]:
+        """Verbs strongly associated with TECHNICAL domain actions."""
+        return (
+            "debug",
+            "fix",
+            "deploy",
+            "compile",
+            "restart",
+            "crash",
+            "configure",
+            "reboot",
+            "patch",
+        )
+
+    @property
+    def default_finance_lemmas(self) -> tuple[str, ...]:
+        """Verbs commonly used in FINANCE-related interactions."""
+        return (
+            "refund",
+            "pay",
+            "charge",
+            "invoice",
+            "bill",
+            "dispute",
+            "deduct",
+        )
+
+    @property
+    def default_support_lemmas(self) -> tuple[str, ...]:
+        """Verbs typical in SUPPORT operations."""
+        return (
+            "escalate",
+            "assist",
+            "help",
+            "verify",
+            "resolve",
+            "troubleshoot",
+        )
+
+    @property
     @abstractmethod
     def STOPWORDS(self) -> tuple[str, ...]:
         raise NotImplementedError("Subclasses must implement STOPWORDS")

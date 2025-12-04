@@ -1,29 +1,38 @@
 from typing import Optional
+
 from spacy import Language
+from src.components.transcript.analyzer import TranscriptAnalyzer
+
+from src.dictionary.en.patterns import NER_ADDRESS_ABBREVIATIONS
 
 from . import (
-    Resolution,
-    SentimentTrajectory,
+    Action,
     CallInfo,
     CustomerProfile,
     Issue,
-    Action,
+    Resolution,
+    SentimentTrajectory,
     TranscriptAnalysis,
     Turn,
 )
+from src.utils.singleton import SingletonMeta
+from ...utils.parser_rules import BaseRules
+from ...utils.vocabulary import BaseVocabulary
 
 
-class TranscriptEncoder:
+class TranscriptEncoder(metaclass=SingletonMeta):
     """
     Encodes transcript analysis into compressed tokens
 
     Philosophy: Extends CLLMTokenizer format: [CALL:metadata][ISSUE:details][ACTION:details][RESOLUTION:details]
     """
 
-    def __init__(self, nlp: Language) -> None:
+    def __init__(self, nlp: Language,vocab: BaseVocabulary, rules: BaseRules) -> None:
         self._nlp = nlp
+        self._analyzer = TranscriptAnalyzer(nlp=nlp, vocab=vocab, rules=rules)
+        self.analysis: TranscriptAnalysis | None = None
 
-    def encode(self, analysis: TranscriptAnalysis, verbose: bool = False) -> str:
+    def encode(self, *, transcript: str, metadata: dict, verbose: bool = False) -> str:
         """
         Encode transcript analysis to compressed format
 
@@ -37,48 +46,50 @@ class TranscriptEncoder:
         [RESOLUTION:type:key=value:...]
         [SENTIMENT:start→end]
         """
+        self.analysis = self._analyzer.analyze(transcript, metadata)
+
         tokens = []
 
-        call_token = self._encode_call_info(analysis.call_info)
+        call_token = self._encode_call_info(self.analysis.call_info)
         tokens.append(call_token)
         if verbose:
             print(f"Call: {call_token}")
 
-        customer_token = self._encode_customer(analysis.customer)
+        customer_token = self._encode_customer(self.analysis.customer)
         tokens.append(customer_token)
         if verbose:
             print(f"Customer: {customer_token}")
 
-        identifiers = self._encode_identifiers(analysis)
+        identifiers = self._encode_identifiers(self.analysis)
         if identifiers:
             tokens.append(identifiers)
             if verbose:
                 print(f"Identifiers: {identifiers}")
 
-        contact = self._encode_contact_info(analysis)
+        contact = self._encode_contact_info(self.analysis)
         if contact:
             tokens.append(contact)
             if verbose:
                 print(f"Contact: {contact}")
 
-        for issue in analysis.issues:
-            issue_token = self._encode_issue(issue, analysis.turns)
+        for issue in self.analysis.issues:
+            issue_token = self._encode_issue(issue, self.analysis.turns)
             tokens.append(issue_token)
             if verbose:
                 print(f"Issue: {issue_token}")
 
-        for action in analysis.actions:
+        for action in self.analysis.actions:
             action_token = self._encode_action(action)
             tokens.append(action_token)
             if verbose:
                 print(f"Action: {action_token}")
 
-        resolution_token = self._encode_resolution(analysis.resolution)
+        resolution_token = self._encode_resolution(self.analysis.resolution)
         tokens.append(resolution_token)
         if verbose:
             print(f"Resolution: {resolution_token}")
 
-        sentiment_token = self._encode_sentiment(analysis.sentiment_trajectory)
+        sentiment_token = self._encode_sentiment(self.analysis.sentiment_trajectory)
         tokens.append(sentiment_token)
         if verbose:
             print(f"Sentiment: {sentiment_token}")
@@ -339,10 +350,16 @@ class TranscriptEncoder:
         """
         Encode sentiment trajectory
 
-        Format: [SENTIMENT:START→END]
-        Example: [SENTIMENT:FRUSTRATED→SATISFIED]
+        Args:
+            sentiment (SentimentTrajectory): The sentiment trajectory to encode.
 
-        With turning points: [SENTIMENT:FRUSTRATED→NEUTRAL→SATISFIED]
+        Returns:
+            str: The encoded sentiment trajectory.
+
+        Example:
+            Format: [SENTIMENT:START→END]
+            Example: [SENTIMENT:FRUSTRATED→SATISFIED]
+            With turning points: [SENTIMENT:FRUSTRATED→NEUTRAL→SATISFIED]
         """
         checked_sentiment = set()
         if not sentiment.turning_points:
@@ -354,7 +371,7 @@ class TranscriptEncoder:
                 checked_sentiment.add(emotion)
                 trajectory.append(emotion)
 
-        if trajectory[-1] != sentiment.end:
+        if trajectory[-1] != sentiment.end and sentiment.end is not None:
             trajectory.append(sentiment.end)
 
         trajectory_str = "→".join(trajectory)
@@ -364,6 +381,12 @@ class TranscriptEncoder:
         """
         Compress address
 
+        Args:
+            address (str): The address to compress.
+
+        Returns:
+            str: The compressed address.
+
         Examples:
         - "123 Main Street" → "123_Main_St"
         - "456 Oak Avenue" → "456_Oak_Ave"
@@ -371,18 +394,7 @@ class TranscriptEncoder:
         """
         compressed = address.replace(" ", "_")
 
-        abbreviations = {
-            "Street": "St",
-            "Avenue": "Ave",
-            "Road": "Rd",
-            "Drive": "Dr",
-            "Lane": "Ln",
-            "Boulevard": "Blvd",
-            "Court": "Ct",
-            "Place": "Pl",
-        }
-
-        for full, abbrev in abbreviations.items():
+        for full, abbrev in NER_ADDRESS_ABBREVIATIONS.items():
             compressed = compressed.replace(full, abbrev)
 
         return compressed

@@ -3,7 +3,7 @@ from typing import List, Optional
 from spacy import Language
 from spacy.tokens import Doc
 from src.utils.vocabulary import BaseVocabulary
-from .. import Intent
+from src.components.sys_prompt import Intent
 
 
 class IntentDetector:

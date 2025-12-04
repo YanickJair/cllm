@@ -6,7 +6,7 @@ from ..components.ds_compression import DSEncoder
 from ..components.sys_prompt.encoder import SysPromptEncoder
 from ..components.transcript.encoder import TranscriptEncoder
 from .text_classifier import DataClassifier, DataTypes
-from ..utils.schemas import CLMConfig
+from src.config.schemas import CLMConfig
 
 
 class CLLMEncoder:
@@ -24,7 +24,7 @@ class CLLMEncoder:
         self._cfg = cfg
         self._nlp: spacy.Language = spacy.load("en_core_web_sm")
         self._ds_encoder = DSEncoder(config=self._cfg.ds_config)
-        self._ts_encoder = TranscriptEncoder(self._nlp)
+        self._ts_encoder = TranscriptEncoder(nlp=self._nlp, vocab=self._cfg.vocab, rules=self._cfg.rules)
         self._sys_prompt_encoder = SysPromptEncoder(
             nlp=self._nlp,
             config=self._cfg.sys_prompt_config,
