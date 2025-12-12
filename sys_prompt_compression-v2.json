@@ -1,1 +1,1424 @@
-[{"original": "You are a Call QA & Compliance Scoring System for customer service operations.\n\nTASK:\nAnalyze the transcript and score the agent\u2019s compliance across required QA categories.\n\nANALYSIS CRITERIA:\n\nMandatory disclosures and verification steps\n\nPolicy adherence\n\nSoft-skill behaviors (empathy, clarity, ownership)\n\nProcess accuracy\n\nCompliance violations or risks\n\nCustomer sentiment trajectory\n\nOUTPUT FORMAT:\n\n{\n  \"summary\": \"short_summary\",\n  \"qa_scores\": {\n    \"verification\": 0.0,\n    \"policy_adherence\": 0.0,\n    \"soft_skills\": 0.0,\n    \"accuracy\": 0.0,\n    \"compliance\": 0.0\n  },\n  \"violations\": [\"list_any_detected\"],\n  \"recommendations\": [\"improvement_suggestions\"]\n}\n\n\nSCORING:\n0.00\u20130.49: Fail\n0.50\u20130.74: Needs Improvement\n0.75\u20130.89: Good\n0.90\u20131.00: Excellent", "compressed": "[REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=QA] [EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS,ACCURACY,SENTIMENT:TYPE=LIST,DOMAIN=LEGAL] [OUT_JSON:{summary,qa_scores:{verification,policy_adherence,soft_skills,accuracy,compliance},violations,recommendations}:SCORE_MAP={FAIL:0.00-0.49,NEEDS_IMPROVEMENT:0.50-0.74,GOOD:0.75-0.89,EXCELLENT:0.90-1.00}]", "intents": [{"token": "ANALYZE", "confidence": 0.95, "trigger_word": "analyze", "modifier": null, "unmatched_verbs": []}], "target": {"token": "TRANSCRIPT", "domain": "QA", "attributes": {"DOMAIN": "QA"}, "unmatched_nouns": []}, "extractions": {"fields": ["COMPLIANCE", "DISCLOSURES", "VERIFICATION", "POLICY", "SOFT_SKILLS", "ACCURACY", "SENTIMENT"], "attributes": {"TYPE": "LIST", "DOMAIN": "LEGAL"}}, "contexts": [], "output_format": {"format_type": "JSON", "fields": [{"name": "summary", "type": null, "description": null, "required": true, "nested": null}, {"name": "qa_scores", "type": "object", "description": null, "required": true, "nested": [{"name": "verification", "type": null, "description": null, "required": true, "nested": null}, {"name": "policy_adherence", "type": null, "description": null, "required": true, "nested": null}, {"name": "soft_skills", "type": null, "description": null, "required": true, "nested": null}, {"name": "accuracy", "type": null, "description": null, "required": true, "nested": null}, {"name": "compliance", "type": null, "description": null, "required": true, "nested": null}]}, {"name": "violations", "type": "array", "description": "['list_any_detected']", "required": true, "nested": null}, {"name": "recommendations", "type": "array", "description": "['improvement_suggestions']", "required": true, "nested": null}], "attributes": {"schema": "{summary,qa_scores:{verification,policy_adherence,soft_skills,accuracy,compliance},violations,recommendations}", "SCORE_MAP": "{FAIL:0.00-0.49,NEEDS_IMPROVEMENT:0.50-0.74,GOOD:0.75-0.89,EXCELLENT:0.90-1.00}"}, "raw_schema": {"summary": "short_summary", "qa_scores": {"verification": 0.0, "policy_adherence": 0.0, "soft_skills": 0.0, "accuracy": 0.0, "compliance": 0.0}, "violations": ["list_any_detected"], "recommendations": ["improvement_suggestions"]}, "format_hint": null}, "compression_ratio": 52.6, "metadata": {"original_length": 764, "compressed_length": 362, "num_intents": 1, "num_targets": 1, "input_tokens": 82, "output_tokens": 4, "verbs": ["analyze", "score", "require", "CRITERIA", "qa_score", "list_any_detecte", "need"], "noun_chunks": ["You", "a Call QA & Compliance Scoring System", "customer service operations", "TASK", "the transcript", "the agent\u2019s compliance", "required QA categories", "ANALYSIS", "Mandatory disclosures and verification steps\n\nPolicy adherence", "Soft-skill behaviors", "empathy", "clarity", "ownership", "Process accuracy\n\nCompliance violations", "risks", "Customer sentiment trajectory\n\nOUTPUT FORMAT", "{\n  \"summary", "\"short_summary\",\n  \"qa_scores\": {\n    \"verification", ",\n    \"soft_skills", "\"accuracy", "\"compliance", ",\n  \"violations", "[\"improvement_suggestions\"]\n}\n\n\nSCORING", "0.00\u20130.49", "Fail", "Good\n0.90\u20131.00: Excellent"], "language": "en", "has_numbers": true, "has_urls": false, "has_code_indicators": false, "unmatched_verbs": ["score", "require", "CRITERIA", "qa_score", "list_any_detecte", "need"]}}, {"original": "You are a Customer Sentiment & Escalation Risk Predictor.\n\nTASK:\nAnalyze the conversation and predict customer sentiment and likelihood of escalation within the next 24 hours.\n\nANALYSIS CRITERIA:\n\nEmotion signals\n\nRepeated issues or unresolved concerns\n\nResponse tone and tempo\n\nFrustration markers\n\nClear asks vs unmet expectations\n\nOUTPUT FORMAT:\n\n{\n  \"sentiment\": \"positive | neutral | negative\",\n  \"escalation_risk\": 0.0,\n  \"drivers\": [\"factors_affecting_risk\"],\n  \"recommended_actions\": [\"steps_to_reduce_risk\"]\n}\n", "compressed": "[REQ:ANALYZE] [REQ:PREDICT] [REQ:COMPARE] [TARGET:TRANSCRIPT:DOMAIN=SUPPORT:DURATION=1440] [OUT_JSON:{sentiment,escalation_risk,drivers,recommended_actions}]", "intents": [{"token": "ANALYZE", "confidence": 0.95, "trigger_word": "analyze", "modifier": null, "unmatched_verbs": []}, {"token": "PREDICT", "confidence": 0.95, "trigger_word": "predict", "modifier": null, "unmatched_verbs": []}, {"token": "COMPARE", "confidence": 0.95, "trigger_word": "vs", "modifier": null, "unmatched_verbs": []}], "target": {"token": "TRANSCRIPT", "domain": "SUPPORT", "attributes": {"DOMAIN": "SUPPORT", "DURATION": "1440"}, "unmatched_nouns": []}, "extractions": null, "contexts": [], "output_format": {"format_type": "JSON", "fields": [{"name": "sentiment", "type": null, "description": null, "required": true, "nested": null}, {"name": "escalation_risk", "type": null, "description": null, "required": true, "nested": null}, {"name": "drivers", "type": "array", "description": "['factors_affecting_risk']", "required": true, "nested": null}, {"name": "recommended_actions", "type": "array", "description": "['steps_to_reduce_risk']", "required": true, "nested": null}], "attributes": {"schema": "{sentiment,escalation_risk,drivers,recommended_actions}"}, "raw_schema": {"sentiment": "positive | neutral | negative", "escalation_risk": 0.0, "drivers": ["factors_affecting_risk"], "recommended_actions": ["steps_to_reduce_risk"]}, "format_hint": null}, "compression_ratio": 69.7, "metadata": {"original_length": 519, "compressed_length": 157, "num_intents": 3, "num_targets": 1, "input_tokens": 62, "output_tokens": 5, "verbs": ["analyze", "predict", "signal", "repeat", "tempo", "ask"], "noun_chunks": ["You", "a Customer Sentiment & Escalation Risk Predictor", "TASK", "the conversation", "customer sentiment", "likelihood", "escalation", "the next 24 hours", "ANALYSIS", "Repeated issues", "unresolved concerns\n\nResponse tone", "Frustration markers\n\nClear", "unmet expectations\n\nOUTPUT FORMAT", "{\n  \"sentiment", "positive | neutral |", "\"escalation_risk", "\"drivers", "[\"factors_affecting_risk\"],\n  \"recommended_actions", "[\"steps_to_reduce_risk"], "language": "en", "has_numbers": true, "has_urls": false, "has_code_indicators": false, "unmatched_verbs": ["signal", "repeat", "tempo", "ask"]}}, {"original": "You are an IT Incident Root Cause & Impact Analyzer.\n\nTASK:\nIngest the incident report and determine the most probable root cause and business impact.\n\nANALYSIS CRITERIA:\n\nError logs and patterns\n\nSystem dependencies\n\nKnown issues or repeated failures\n\nBlast radius (services, teams affected)\n\nSeverity and operational impact\n\nOUTPUT FORMAT:\n\n{\n  \"root_cause\": \"likely_cause\",\n  \"impact_summary\": \"services_affected\",\n  \"severity_level\": \"SEV-1 | SEV-2 | SEV-3\",\n  \"recommended_fixes\": [\"fix1\", \"fix2\"],\n  \"confidence\": 0.0\n}", "compressed": "[REQ:DETERMINE] [REQ:FORMAT] [TARGET:REPORT:DOMAIN=TECHNICAL:TOPIC=IT_INCIDENT_ROOT_CAUSE] [OUT_JSON:{root_cause,impact_summary,severity_level,recommended_fixes,confidence}]", "intents": [{"token": "DETERMINE", "confidence": 0.95, "trigger_word": "determine", "modifier": null, "unmatched_verbs": []}, {"token": "FORMAT", "confidence": 0.88, "trigger_word": "format", "modifier": null, "unmatched_verbs": []}], "target": {"token": "REPORT", "domain": "TECHNICAL", "attributes": {"DOMAIN": "TECHNICAL", "TOPIC": "IT_INCIDENT_ROOT_CAUSE"}, "unmatched_nouns": []}, "extractions": null, "contexts": [], "output_format": {"format_type": "JSON", "fields": [{"name": "root_cause", "type": null, "description": null, "required": true, "nested": null}, {"name": "impact_summary", "type": null, "description": null, "required": true, "nested": null}, {"name": "severity_level", "type": null, "description": null, "required": true, "nested": null}, {"name": "recommended_fixes", "type": "array", "description": "['fix1', 'fix2']", "required": true, "nested": null}, {"name": "confidence", "type": null, "description": null, "required": true, "nested": null}], "attributes": {"schema": "{root_cause,impact_summary,severity_level,recommended_fixes,confidence}"}, "raw_schema": {"root_cause": "likely_cause", "impact_summary": "services_affected", "severity_level": "SEV-1 | SEV-2 | SEV-3", "recommended_fixes": ["fix1", "fix2"], "confidence": 0.0}, "format_hint": null}, "compression_ratio": 67.0, "metadata": {"original_length": 525, "compressed_length": 173, "num_intents": 2, "num_targets": 1, "input_tokens": 66, "output_tokens": 4, "verbs": ["ingest", "determine", "CRITERIA", "dependencie", "know", "repeat", "affect", "services_affecte"], "noun_chunks": ["You", "an IT Incident Root Cause", "Impact Analyzer", "TASK", "the incident report", "the most probable root cause", "business impact", "ANALYSIS", "Error", "patterns\n\nSystem", "Known issues", "repeated failures\n\nBlast radius", "services", "teams", "Severity and operational impact\n\nOUTPUT FORMAT", "root_cause", "\"severity_level", "SEV-1 | SEV-2", "| SEV-3", "recommended_fixes", "[\"fix1", "\"fix2", "\"confidence"], "language": "en", "has_numbers": true, "has_urls": false, "has_code_indicators": false, "unmatched_verbs": ["ingest", "CRITERIA", "dependencie", "know", "repeat", "affect", "services_affecte"]}}, {"original": "You are an Employee Relations Case Classification System.\n\nTASK:\nReview the HR case description and classify the case with recommended next steps.\n\nANALYSIS CRITERIA:\n\nCase category (performance, misconduct, attendance, harassment, policy violation, etc.)\n\nSeverity and urgency\n\nEvidence provided\n\nRequired HR/legal steps\n\nRisk to company\n\nOUTPUT FORMAT:\n\n{\n  \"case_type\": \"category\",\n  \"risk_level\": \"low | medium | high\",\n  \"recommended_actions\": [\"next_steps\"],\n  \"required_documentation\": [\"docs_needed\"]\n}\n", "compressed": "[REQ:ANALYZE] [REQ:CLASSIFY] [TARGET:TICKET:DOMAIN=SUPPORT] [OUT_JSON:{case_type,risk_level,recommended_actions,required_documentation}]", "intents": [{"token": "ANALYZE", "confidence": 0.95, "trigger_word": "review", "modifier": null, "unmatched_verbs": []}, {"token": "CLASSIFY", "confidence": 0.95, "trigger_word": "classify", "modifier": null, "unmatched_verbs": []}], "target": {"token": "TICKET", "domain": "SUPPORT", "attributes": {"DOMAIN": "SUPPORT"}, "unmatched_nouns": []}, "extractions": null, "contexts": [], "output_format": {"format_type": "JSON", "fields": [{"name": "case_type", "type": null, "description": null, "required": true, "nested": null}, {"name": "risk_level", "type": null, "description": null, "required": true, "nested": null}, {"name": "recommended_actions", "type": "array", "description": "['next_steps']", "required": true, "nested": null}, {"name": "required_documentation", "type": "array", "description": "['docs_needed']", "required": true, "nested": null}], "attributes": {"schema": "{case_type,risk_level,recommended_actions,required_documentation}"}, "raw_schema": {"case_type": "category", "risk_level": "low | medium | high", "recommended_actions": ["next_steps"], "required_documentation": ["docs_needed"]}, "format_hint": null}, "compression_ratio": 73.4, "metadata": {"original_length": 511, "compressed_length": 136, "num_intents": 2, "num_targets": 1, "input_tokens": 60, "output_tokens": 4, "verbs": ["review", "classify", "recommend", "CRITERIA", "provide", "require", "company", "docs_neede"], "noun_chunks": ["You", "an Employee Relations Case Classification System", "TASK", "the HR case description", "the case", "recommended next steps", "ANALYSIS", "Case category", "performance", "misconduct", "attendance", "harassment", "policy violation", "Severity and urgency\n\nEvidence", "Required HR/legal steps\n\nRisk", "OUTPUT FORMAT", "\"case_type", "\"category", "risk_level", "low | medium", "\"recommended_actions", "[\"next_steps", "\"required_documentation"], "language": "en", "has_numbers": false, "has_urls": false, "has_code_indicators": true, "unmatched_verbs": ["recommend", "CRITERIA", "provide", "require", "company", "docs_neede"]}}, {"original": "You are an Automated Expense Audit Validator.\n\nTASK:\nAnalyze submitted expenses and determine legitimacy, policy compliance, and anomalies.\n\nANALYSIS CRITERIA:\n\nPolicy compliance per item\n\nReceipt validation\n\nFraud or duplicate indicators\n\nDaily/weekly spending patterns\n\nRequired approvals\n\nOUTPUT FORMAT:\n\n{\n  \"total_amount\": 0.0,\n  \"flagged_items\": [\n    { \"item\": \"name\", \"reason\": \"policy_violation\" }\n  ],\n  \"compliance_score\": 0.0,\n  \"approval_recommendation\": \"approve | reject | partial\",\n  \"notes\": \"summary\"\n}", "compressed": "[REQ:ANALYZE] [REQ:DETERMINE] [REQ:GENERATE] [TARGET:REPORT:DOMAIN=LEGAL:TOPIC=AUTOMATED_EXPENSE_AUDIT_VALIDATOR] [EXTRACT:POLICY,COMPLIANCE,NAMES:TYPE=LIST,DOMAIN=LEGAL] [OUT_JSON:{total_amount,flagged_items:[{item,reason}],compliance_score,approval_recommendation,notes}]", "intents": [{"token": "ANALYZE", "confidence": 0.95, "trigger_word": "audit", "modifier": null, "unmatched_verbs": []}, {"token": "DETERMINE", "confidence": 0.95, "trigger_word": "determine", "modifier": null, "unmatched_verbs": []}, {"token": "GENERATE", "confidence": 0.95, "trigger_word": "name", "modifier": null, "unmatched_verbs": []}], "target": {"token": "REPORT", "domain": "LEGAL", "attributes": {"DOMAIN": "LEGAL", "TOPIC": "AUTOMATED_EXPENSE_AUDIT_VALIDATOR"}, "unmatched_nouns": []}, "extractions": {"fields": ["POLICY", "COMPLIANCE", "NAMES"], "attributes": {"TYPE": "LIST", "DOMAIN": "LEGAL"}}, "contexts": [], "output_format": {"format_type": "JSON", "fields": [{"name": "total_amount", "type": null, "description": null, "required": true, "nested": null}, {"name": "flagged_items", "type": "array", "description": "[{'item': 'name', 'reason': 'policy_violation'}]", "required": true, "nested": null}, {"name": "compliance_score", "type": null, "description": null, "required": true, "nested": null}, {"name": "approval_recommendation", "type": null, "description": null, "required": true, "nested": null}, {"name": "notes", "type": null, "description": null, "required": true, "nested": null}], "attributes": {"schema": "{total_amount,flagged_items:[{item,reason}],compliance_score,approval_recommendation,notes}"}, "raw_schema": {"total_amount": 0.0, "flagged_items": [{"item": "name", "reason": "policy_violation"}], "compliance_score": 0.0, "approval_recommendation": "approve | reject | partial", "notes": "summary"}, "format_hint": null}, "compression_ratio": 47.5, "metadata": {"original_length": 520, "compressed_length": 273, "num_intents": 3, "num_targets": 1, "input_tokens": 60, "output_tokens": 6, "verbs": ["submit", "determine", "require", "reject", "note", "summary"], "noun_chunks": ["You", "an Automated Expense Audit Validator", "TASK", "Analyze", "expenses", "legitimacy", "policy compliance", "anomalies", "ANALYSIS", "item\n\nReceipt validation\n\nFraud", "duplicate indicators", "Required approvals\n\nOUTPUT FORMAT", "{\n  \"total_amount", "\"flagged_items", "[\n    { \"item", "\"name", "\"reason", "\"policy_violation", "compliance_score", "approval_recommendation"], "language": "en", "has_numbers": true, "has_urls": false, "has_code_indicators": false, "unmatched_verbs": ["submit", "require", "reject", "note", "summary"]}}, {"original": "You are a Project Delivery Risk & Delay Forecasting System.\n\nTASK:\nAnalyze project updates and identify risk levels, blockers, and expected delays.\n\nANALYSIS CRITERIA:\n\nTask progress vs timeline\n\nResource constraints\n\nDependencies blocked\n\nBudget variance\n\nQuality concerns\n\nTeam sentiment\n\nOUTPUT FORMAT:\n\n{\n  \"overall_risk\": \"low | medium | high\",\n  \"delay_probability\": 0.0,\n  \"key_drivers\": [\"factors\"],\n  \"recommended_interventions\": [\"actions\"]\n}", "compressed": "[REQ:PREDICT] [REQ:DETECT] [REQ:COMPARE] [TARGET:REPORT:DOMAIN=SECURITY:TOPIC=PROJECT_DELIVERY_RISK_&_DELAY_FORECASTING_SYSTEM] [EXTRACT:SENTIMENT,ACTIONS:DOMAIN=SUPPORT] [OUT_JSON:{overall_risk,delay_probability,key_drivers,recommended_interventions}]", "intents": [{"token": "PREDICT", "confidence": 0.95, "trigger_word": "project", "modifier": null, "unmatched_verbs": []}, {"token": "DETECT", "confidence": 0.95, "trigger_word": "identify", "modifier": null, "unmatched_verbs": []}, {"token": "COMPARE", "confidence": 0.95, "trigger_word": "vs", "modifier": null, "unmatched_verbs": []}], "target": {"token": "REPORT", "domain": "SECURITY", "attributes": {"DOMAIN": "SECURITY", "TOPIC": "PROJECT_DELIVERY_RISK_&_DELAY_FORECASTING_SYSTEM"}, "unmatched_nouns": []}, "extractions": {"fields": ["SENTIMENT", "ACTIONS"], "attributes": {"DOMAIN": "SUPPORT"}}, "contexts": [], "output_format": {"format_type": "JSON", "fields": [{"name": "overall_risk", "type": null, "description": null, "required": true, "nested": null}, {"name": "delay_probability", "type": null, "description": null, "required": true, "nested": null}, {"name": "key_drivers", "type": "array", "description": "['factors']", "required": true, "nested": null}, {"name": "recommended_interventions", "type": "array", "description": "['actions']", "required": true, "nested": null}], "attributes": {"schema": "{overall_risk,delay_probability,key_drivers,recommended_interventions}"}, "raw_schema": {"overall_risk": "low | medium | high", "delay_probability": 0.0, "key_drivers": ["factors"], "recommended_interventions": ["actions"]}, "format_hint": null}, "compression_ratio": 44.2, "metadata": {"original_length": 452, "compressed_length": 252, "num_intents": 3, "num_targets": 1, "input_tokens": 54, "output_tokens": 6, "verbs": ["update", "identify", "expect", "CRITERIA", "block", "concern"], "noun_chunks": ["You", "a Project Delivery Risk & Delay Forecasting System", "TASK", "risk levels", "blockers", "delays", "ANALYSIS", "Task progress", "timeline\n\nResource constraints\n\nDependencies", "Budget variance\n\nQuality", "Team sentiment\n\nOUTPUT FORMAT", "{\n  \"overall_risk", "\"delay_probability", "\"key_drivers", "[\"factors", "\"recommended_interventions", "[\"actions"], "language": "en", "has_numbers": true, "has_urls": false, "has_code_indicators": false, "unmatched_verbs": ["update", "expect", "CRITERIA", "block", "concern"]}}, {"original": "You are a Legal Contract Risk Identification System.\n\nTASK:\nSummarize the contract and highlight clauses with risk, obligations, and red flags.\n\nANALYSIS CRITERIA:\n\nLiability and indemnity terms\n\nTermination rights\n\nPayment obligations\n\nCompliance requirements\n\nHigh-risk clauses\n\nOUTPUT FORMAT:\n\n{\n  \"summary\": \"short_summary\",\n  \"key_obligations\": [\"list\"],\n  \"risks\": [\n    { \"clause\": \"reference\", \"risk\": \"description\" }\n  ],\n  \"recommendations\": [\"mitigations\"]\n}", "compressed": "[REQ:SUMMARIZE] [REQ:LIST] [TARGET:REPORT:DOMAIN=LEGAL:TOPIC=LEGAL_CONTRACT_RISK_IDENTIFICATION_SYSTEM] [EXTRACT:COMPLIANCE:TYPE=LIST,DOMAIN=LEGAL] [OUT_JSON:{summary,key_obligations,risks:[{clause,risk}],recommendations}]", "intents": [{"token": "SUMMARIZE", "confidence": 0.95, "trigger_word": "summarize", "modifier": null, "unmatched_verbs": []}, {"token": "LIST", "confidence": 0.95, "trigger_word": "list", "modifier": null, "unmatched_verbs": []}], "target": {"token": "REPORT", "domain": "LEGAL", "attributes": {"DOMAIN": "LEGAL", "TOPIC": "LEGAL_CONTRACT_RISK_IDENTIFICATION_SYSTEM"}, "unmatched_nouns": []}, "extractions": {"fields": ["COMPLIANCE"], "attributes": {"TYPE": "LIST", "DOMAIN": "LEGAL"}}, "contexts": [], "output_format": {"format_type": "JSON", "fields": [{"name": "summary", "type": null, "description": null, "required": true, "nested": null}, {"name": "key_obligations", "type": "array", "description": "['list']", "required": true, "nested": null}, {"name": "risks", "type": "array", "description": "[{'clause': 'reference', 'risk': 'description'}]", "required": true, "nested": null}, {"name": "recommendations", "type": "array", "description": "['mitigations']", "required": true, "nested": null}], "attributes": {"schema": "{summary,key_obligations,risks:[{clause,risk}],recommendations}"}, "raw_schema": {"summary": "short_summary", "key_obligations": ["list"], "risks": [{"clause": "reference", "risk": "description"}], "recommendations": ["mitigations"]}, "format_hint": null}, "compression_ratio": 52.7, "metadata": {"original_length": 469, "compressed_length": 222, "num_intents": 2, "num_targets": 1, "input_tokens": 54, "output_tokens": 5, "verbs": ["summarize", "highlight", "CRITERIA"], "noun_chunks": ["You", "a Legal Contract Risk Identification System", "TASK", "the contract", "clauses", "risk", "obligations", "red flags", "ANALYSIS", "Liability and indemnity terms\n\nTermination rights\n\nPayment obligations\n\nCompliance requirements", "High-risk clauses", "OUTPUT FORMAT", "{\n  \"summary", "short_summary", "\"key_obligations", "[\"list", ",\n  \"risks", "[\n    { \"clause", "\"reference", "\"risk", ": \"description", ",\n  \"recommendations", "[\"mitigations"], "language": "en", "has_numbers": false, "has_urls": false, "has_code_indicators": false, "unmatched_verbs": ["highlight", "CRITERIA"]}}, {"original": "You are a B2B Lead Qualification Scoring System.\n\nTASK:\nEvaluate the sales conversation/notes and score the lead based on buying potential.\n\nANALYSIS CRITERIA:\n\nBudget, authority, need, timeline (BANT)\n\nBuying signals\n\nPain points\n\nCompetition mentions\n\nEngagement level\n\nOUTPUT FORMAT:\n\n{\n  \"qualification_score\": 0.0,\n  \"stage\": \"cold | warm | hot\",\n  \"key_indicators\": [\"signals\"],\n  \"recommended_next_actions\": [\"actions\"]\n}", "compressed": "[REQ:DETERMINE] [REQ:FORMAT] [TARGET:TRANSCRIPT:DOMAIN=SALES] [EXTRACT:ACTIONS:DOMAIN=SUPPORT] [OUT_JSON:{qualification_score,stage,key_indicators,recommended_next_actions}]", "intents": [{"token": "DETERMINE", "confidence": 0.95, "trigger_word": "evaluate", "modifier": null, "unmatched_verbs": []}, {"token": "FORMAT", "confidence": 0.88, "trigger_word": "format", "modifier": null, "unmatched_verbs": []}], "target": {"token": "TRANSCRIPT", "domain": "SALES", "attributes": {"DOMAIN": "SALES"}, "unmatched_nouns": []}, "extractions": {"fields": ["ACTIONS"], "attributes": {"DOMAIN": "SUPPORT"}}, "contexts": [], "output_format": {"format_type": "JSON", "fields": [{"name": "qualification_score", "type": null, "description": null, "required": true, "nested": null}, {"name": "stage", "type": null, "description": null, "required": true, "nested": null}, {"name": "key_indicators", "type": "array", "description": "['signals']", "required": true, "nested": null}, {"name": "recommended_next_actions", "type": "array", "description": "['actions']", "required": true, "nested": null}], "attributes": {"schema": "{qualification_score,stage,key_indicators,recommended_next_actions}"}, "raw_schema": {"qualification_score": 0.0, "stage": "cold | warm | hot", "key_indicators": ["signals"], "recommended_next_actions": ["actions"]}, "format_hint": null}, "compression_ratio": 59.6, "metadata": {"original_length": 428, "compressed_length": 173, "num_intents": 2, "num_targets": 1, "input_tokens": 52, "output_tokens": 5, "verbs": ["evaluate", "score", "base", "buy", "mention"], "noun_chunks": ["You", "a B2B Lead Qualification Scoring System", "TASK", "the sales conversation/notes", "the lead", "potential", "ANALYSIS", "Budget", "authority", "need", "timeline", "BANT", "Buying signals", "Competition", "Engagement level\n\nOUTPUT FORMAT", "{\n  \"qualification_score\": 0.0,\n  \"stage", "\"key_indicators", "[\"signals", "[\"actions"], "language": "en", "has_numbers": true, "has_urls": false, "has_code_indicators": false, "unmatched_verbs": ["score", "base", "buy", "mention"]}}, {"original": "You are a Supply Chain Delay Root Cause Analyzer.\n\nTASK:\nRead the shipment or logistics report and identify the root cause of delays.\n\nANALYSIS CRITERIA:\n\nSupplier performance\n\nTransport issues\n\nCustoms/clearance delays\n\nInventory shortages\n\nInternal workflow bottlenecks\n\nOUTPUT FORMAT:\n\n{\n  \"delay_cause\": \"root_cause\",\n  \"impact\": \"business_impact_summary\",\n  \"expected_recovery_time_days\": 0,\n  \"recommended_actions\": [\"actions\"]\n}", "compressed": "[REQ:DETECT] [TARGET:REPORT:DOMAIN=BUSINESS:TOPIC=SUPPLY_CHAIN_DELAY_ROOT_CAUSE_ANALYZER] [EXTRACT:PERFORMANCE,ISSUE,ACTIONS:DOMAIN=SUPPORT] [OUT_JSON:{delay_cause,impact,expected_recovery_time_days,recommended_actions}]", "intents": [{"token": "DETECT", "confidence": 0.95, "trigger_word": "identify", "modifier": null, "unmatched_verbs": []}], "target": {"token": "REPORT", "domain": "BUSINESS", "attributes": {"DOMAIN": "BUSINESS", "TOPIC": "SUPPLY_CHAIN_DELAY_ROOT_CAUSE_ANALYZER"}, "unmatched_nouns": []}, "extractions": {"fields": ["PERFORMANCE", "ISSUE", "ACTIONS"], "attributes": {"DOMAIN": "SUPPORT"}}, "contexts": [], "output_format": {"format_type": "JSON", "fields": [{"name": "delay_cause", "type": null, "description": null, "required": true, "nested": null}, {"name": "impact", "type": null, "description": null, "required": true, "nested": null}, {"name": "expected_recovery_time_days", "type": null, "description": null, "required": true, "nested": null}, {"name": "recommended_actions", "type": "array", "description": "['actions']", "required": true, "nested": null}], "attributes": {"schema": "{delay_cause,impact,expected_recovery_time_days,recommended_actions}"}, "raw_schema": {"delay_cause": "root_cause", "impact": "business_impact_summary", "expected_recovery_time_days": 0, "recommended_actions": ["actions"]}, "format_hint": null}, "compression_ratio": 49.4, "metadata": {"original_length": 435, "compressed_length": 220, "num_intents": 1, "num_targets": 1, "input_tokens": 48, "output_tokens": 4, "verbs": ["read", "identify"], "noun_chunks": ["You", "a Supply Chain Delay Root Cause Analyzer", "TASK", "the shipment or logistics report", "the root cause", "delays", "ANALYSIS", "Supplier performance\n\nTransport issues", "Customs/clearance delays", "Inventory shortages", "Internal workflow bottlenecks\n\nOUTPUT FORMAT", "{\n  \"delay_cause", ": \"root_cause\",\n  \"impact", "\"business_impact_summary\",\n  \"expected_recovery_time_days", "\"recommended_actions", "[\"actions"], "language": "en", "has_numbers": true, "has_urls": false, "has_code_indicators": false, "unmatched_verbs": ["read"]}}, {"original": "You are a Product Feedback Aggregation & Theme Detection System.\n\nTASK:\nAnalyze customer feedback and extract the top themes and opportunities.\n\nANALYSIS CRITERIA:\n\nRepeated topics\n\nSentiment polarity by theme\n\nUrgency / severity\n\nProduct feature mapping\n\nImprovement or feature requests\n\nOUTPUT FORMAT:\n\n{\n  \"top_themes\": [\n    { \"theme\": \"name\", \"frequency\": 0, \"sentiment\": \"positive|neutral|negative\" }\n  ],\n  \"opportunities\": [\"list_of_suggestions\"],\n  \"critical_issues\": [\"list\"]\n}\n", "compressed": "[REQ:ANALYZE] [REQ:GENERATE] [REQ:LIST] [TARGET:REPORT:DOMAIN=SUPPORT:SUBJECT=FEATURE:TOPIC=PRODUCT_FEEDBACK_AGGREGATION_&_THEME_DETECTION_SYSTEM] [EXTRACT:SENTIMENT,URGENCY,NAMES:TYPE=LIST,DOMAIN=SUPPORT] [OUT_JSON:{top_themes:[{theme,frequency,sentiment}],opportunities,critical_issues}]", "intents": [{"token": "ANALYZE", "confidence": 0.95, "trigger_word": "analyze", "modifier": null, "unmatched_verbs": []}, {"token": "EXTRACT", "confidence": 0.95, "trigger_word": "extract", "modifier": null, "unmatched_verbs": []}, {"token": "GENERATE", "confidence": 0.95, "trigger_word": "name", "modifier": null, "unmatched_verbs": []}, {"token": "LIST", "confidence": 0.95, "trigger_word": "list", "modifier": null, "unmatched_verbs": []}], "target": {"token": "REPORT", "domain": "SUPPORT", "attributes": {"DOMAIN": "SUPPORT", "SUBJECT": "FEATURE", "TOPIC": "PRODUCT_FEEDBACK_AGGREGATION_&_THEME_DETECTION_SYSTEM"}, "unmatched_nouns": []}, "extractions": {"fields": ["SENTIMENT", "URGENCY", "NAMES"], "attributes": {"TYPE": "LIST", "DOMAIN": "SUPPORT"}}, "contexts": [], "output_format": {"format_type": "JSON", "fields": [{"name": "top_themes", "type": "array", "description": "[{'theme': 'name', 'frequency': 0, 'sentiment': 'positive|neutral|negative'}]", "required": true, "nested": null}, {"name": "opportunities", "type": "array", "description": "['list_of_suggestions']", "required": true, "nested": null}, {"name": "critical_issues", "type": "array", "description": "['list']", "required": true, "nested": null}], "attributes": {"schema": "{top_themes:[{theme,frequency,sentiment}],opportunities,critical_issues}"}, "raw_schema": {"top_themes": [{"theme": "name", "frequency": 0, "sentiment": "positive|neutral|negative"}], "opportunities": ["list_of_suggestions"], "critical_issues": ["list"]}, "format_hint": null}, "compression_ratio": 40.8, "metadata": {"original_length": 488, "compressed_length": 289, "num_intents": 4, "num_targets": 1, "input_tokens": 58, "output_tokens": 6, "verbs": ["analyze", "extract", "repeat"], "noun_chunks": ["You", "a Product Feedback Aggregation & Theme Detection System", "TASK", "customer feedback", "the top themes", "opportunities", "ANALYSIS", "Repeated topics\n\nSentiment polarity", "theme\n\nUrgency / severity\n\nProduct feature mapping\n\nImprovement or feature requests", "OUTPUT FORMAT", "{\n  \"top_themes", ": \"name", "\"frequency", "\"sentiment", "[\"list_of_suggestions\"],\n  \"critical_issues", "[\"list"], "language": "en", "has_numbers": true, "has_urls": false, "has_code_indicators": false, "unmatched_verbs": ["repeat"]}}]
+[
+    {
+        "original": "You are a Call QA & Compliance Scoring System for customer service operations.\n\nTASK:\nAnalyze the transcript and score the agent\u2019s compliance across required QA categories.\n\nANALYSIS CRITERIA:\n\nMandatory disclosures and verification steps\n\nPolicy adherence\n\nSoft-skill behaviors (empathy, clarity, ownership)\n\nProcess accuracy\n\nCompliance violations or risks\n\nCustomer sentiment trajectory\n\nOUTPUT FORMAT:\n\n{\n  \"summary\": \"short_summary\",\n  \"qa_scores\": {\n    \"verification\": 0.0,\n    \"policy_adherence\": 0.0,\n    \"soft_skills\": 0.0,\n    \"accuracy\": 0.0,\n    \"compliance\": 0.0\n  },\n  \"violations\": [\"list_any_detected\"],\n  \"recommendations\": [\"improvement_suggestions\"]\n}\n\n\nSCORING:\n0.00\u20130.49: Fail\n0.50\u20130.74: Needs Improvement\n0.75\u20130.89: Good\n0.90\u20131.00: Excellent",
+        "component": "System Prompt",
+        "compressed": "[REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=QA] [EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS,ACCURACY,SENTIMENT:TYPE=LIST,DOMAIN=LEGAL] [OUT_JSON:{summary,qa_scores:{verification,policy_adherence,soft_skills,accuracy,compliance},violations,recommendations}:SCORE_MAP={FAIL:0.00-0.49,NEEDS_IMPROVEMENT:0.50-0.74,GOOD:0.75-0.89,EXCELLENT:0.90-1.00}]",
+        "metadata": {
+            "original_length": 764,
+            "compressed_length": 362,
+            "num_intents": 1,
+            "num_targets": 1,
+            "input_tokens": 82,
+            "output_tokens": 4,
+            "verbs": [
+                "analyze",
+                "score",
+                "require",
+                "CRITERIA",
+                "qa_score",
+                "list_any_detecte",
+                "need"
+            ],
+            "intents": [
+                {
+                    "token": "ANALYZE",
+                    "confidence": 0.95,
+                    "trigger_word": "analyze",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                }
+            ],
+            "target": {
+                "token": "TRANSCRIPT",
+                "domain": "QA",
+                "attributes": {
+                    "DOMAIN": "QA"
+                },
+                "unmatched_nouns": []
+            },
+            "extractions": {
+                "fields": [
+                    "COMPLIANCE",
+                    "DISCLOSURES",
+                    "VERIFICATION",
+                    "POLICY",
+                    "SOFT_SKILLS",
+                    "ACCURACY",
+                    "SENTIMENT"
+                ],
+                "attributes": {
+                    "TYPE": "LIST",
+                    "DOMAIN": "LEGAL"
+                }
+            },
+            "contexts": [],
+            "output_format": {
+                "format_type": "JSON",
+                "fields": [
+                    {
+                        "name": "summary",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "qa_scores",
+                        "type": "object",
+                        "description": null,
+                        "required": true,
+                        "nested": [
+                            {
+                                "name": "verification",
+                                "type": null,
+                                "description": null,
+                                "required": true,
+                                "nested": null
+                            },
+                            {
+                                "name": "policy_adherence",
+                                "type": null,
+                                "description": null,
+                                "required": true,
+                                "nested": null
+                            },
+                            {
+                                "name": "soft_skills",
+                                "type": null,
+                                "description": null,
+                                "required": true,
+                                "nested": null
+                            },
+                            {
+                                "name": "accuracy",
+                                "type": null,
+                                "description": null,
+                                "required": true,
+                                "nested": null
+                            },
+                            {
+                                "name": "compliance",
+                                "type": null,
+                                "description": null,
+                                "required": true,
+                                "nested": null
+                            }
+                        ]
+                    },
+                    {
+                        "name": "violations",
+                        "type": "array",
+                        "description": "['list_any_detected']",
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "recommendations",
+                        "type": "array",
+                        "description": "['improvement_suggestions']",
+                        "required": true,
+                        "nested": null
+                    }
+                ],
+                "attributes": {
+                    "schema": "{summary,qa_scores:{verification,policy_adherence,soft_skills,accuracy,compliance},violations,recommendations}",
+                    "SCORE_MAP": "{FAIL:0.00-0.49,NEEDS_IMPROVEMENT:0.50-0.74,GOOD:0.75-0.89,EXCELLENT:0.90-1.00}"
+                },
+                "raw_schema": {
+                    "summary": "short_summary",
+                    "qa_scores": {
+                        "verification": 0.0,
+                        "policy_adherence": 0.0,
+                        "soft_skills": 0.0,
+                        "accuracy": 0.0,
+                        "compliance": 0.0
+                    },
+                    "violations": [
+                        "list_any_detected"
+                    ],
+                    "recommendations": [
+                        "improvement_suggestions"
+                    ]
+                },
+                "format_hint": null
+            },
+            "noun_chunks": [
+                "You",
+                "a Call QA & Compliance Scoring System",
+                "customer service operations",
+                "TASK",
+                "the transcript",
+                "the agent\u2019s compliance",
+                "required QA categories",
+                "ANALYSIS",
+                "Mandatory disclosures and verification steps\n\nPolicy adherence",
+                "Soft-skill behaviors",
+                "empathy",
+                "clarity",
+                "ownership",
+                "Process accuracy\n\nCompliance violations",
+                "risks",
+                "Customer sentiment trajectory\n\nOUTPUT FORMAT",
+                "{\n  \"summary",
+                "\"short_summary\",\n  \"qa_scores\": {\n    \"verification",
+                ",\n    \"soft_skills",
+                "\"accuracy",
+                "\"compliance",
+                ",\n  \"violations",
+                "[\"improvement_suggestions\"]\n}\n\n\nSCORING",
+                "0.00\u20130.49",
+                "Fail",
+                "Good\n0.90\u20131.00: Excellent"
+            ],
+            "language": "en",
+            "has_numbers": true,
+            "has_urls": false,
+            "has_code_indicators": false,
+            "unmatched_verbs": [
+                "score",
+                "require",
+                "CRITERIA",
+                "qa_score",
+                "list_any_detecte",
+                "need"
+            ]
+        },
+        "compression_ratio": 52.6
+    },
+    {
+        "original": "You are a Customer Sentiment & Escalation Risk Predictor.\n\nTASK:\nAnalyze the conversation and predict customer sentiment and likelihood of escalation within the next 24 hours.\n\nANALYSIS CRITERIA:\n\nEmotion signals\n\nRepeated issues or unresolved concerns\n\nResponse tone and tempo\n\nFrustration markers\n\nClear asks vs unmet expectations\n\nOUTPUT FORMAT:\n\n{\n  \"sentiment\": \"positive | neutral | negative\",\n  \"escalation_risk\": 0.0,\n  \"drivers\": [\"factors_affecting_risk\"],\n  \"recommended_actions\": [\"steps_to_reduce_risk\"]\n}\n",
+        "component": "System Prompt",
+        "compressed": "[REQ:ANALYZE] [REQ:PREDICT] [REQ:COMPARE] [TARGET:TRANSCRIPT:DOMAIN=SUPPORT:DURATION=1440] [OUT_JSON:{sentiment,escalation_risk,drivers,recommended_actions}]",
+        "metadata": {
+            "original_length": 519,
+            "compressed_length": 157,
+            "num_intents": 3,
+            "num_targets": 1,
+            "input_tokens": 62,
+            "output_tokens": 5,
+            "verbs": [
+                "analyze",
+                "predict",
+                "signal",
+                "repeat",
+                "tempo",
+                "ask"
+            ],
+            "intents": [
+                {
+                    "token": "ANALYZE",
+                    "confidence": 0.95,
+                    "trigger_word": "analyze",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                },
+                {
+                    "token": "PREDICT",
+                    "confidence": 0.95,
+                    "trigger_word": "predict",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                },
+                {
+                    "token": "COMPARE",
+                    "confidence": 0.95,
+                    "trigger_word": "vs",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                }
+            ],
+            "target": {
+                "token": "TRANSCRIPT",
+                "domain": "SUPPORT",
+                "attributes": {
+                    "DOMAIN": "SUPPORT",
+                    "DURATION": "1440"
+                },
+                "unmatched_nouns": []
+            },
+            "extractions": null,
+            "contexts": [],
+            "output_format": {
+                "format_type": "JSON",
+                "fields": [
+                    {
+                        "name": "sentiment",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "escalation_risk",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "drivers",
+                        "type": "array",
+                        "description": "['factors_affecting_risk']",
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "recommended_actions",
+                        "type": "array",
+                        "description": "['steps_to_reduce_risk']",
+                        "required": true,
+                        "nested": null
+                    }
+                ],
+                "attributes": {
+                    "schema": "{sentiment,escalation_risk,drivers,recommended_actions}"
+                },
+                "raw_schema": {
+                    "sentiment": "positive | neutral | negative",
+                    "escalation_risk": 0.0,
+                    "drivers": [
+                        "factors_affecting_risk"
+                    ],
+                    "recommended_actions": [
+                        "steps_to_reduce_risk"
+                    ]
+                },
+                "format_hint": null
+            },
+            "noun_chunks": [
+                "You",
+                "a Customer Sentiment & Escalation Risk Predictor",
+                "TASK",
+                "the conversation",
+                "customer sentiment",
+                "likelihood",
+                "escalation",
+                "the next 24 hours",
+                "ANALYSIS",
+                "Repeated issues",
+                "unresolved concerns\n\nResponse tone",
+                "Frustration markers\n\nClear",
+                "unmet expectations\n\nOUTPUT FORMAT",
+                "{\n  \"sentiment",
+                "positive | neutral |",
+                "\"escalation_risk",
+                "\"drivers",
+                "[\"factors_affecting_risk\"],\n  \"recommended_actions",
+                "[\"steps_to_reduce_risk"
+            ],
+            "language": "en",
+            "has_numbers": true,
+            "has_urls": false,
+            "has_code_indicators": false,
+            "unmatched_verbs": [
+                "signal",
+                "repeat",
+                "tempo",
+                "ask"
+            ]
+        },
+        "compression_ratio": 69.7
+    },
+    {
+        "original": "You are an IT Incident Root Cause & Impact Analyzer.\n\nTASK:\nIngest the incident report and determine the most probable root cause and business impact.\n\nANALYSIS CRITERIA:\n\nError logs and patterns\n\nSystem dependencies\n\nKnown issues or repeated failures\n\nBlast radius (services, teams affected)\n\nSeverity and operational impact\n\nOUTPUT FORMAT:\n\n{\n  \"root_cause\": \"likely_cause\",\n  \"impact_summary\": \"services_affected\",\n  \"severity_level\": \"SEV-1 | SEV-2 | SEV-3\",\n  \"recommended_fixes\": [\"fix1\", \"fix2\"],\n  \"confidence\": 0.0\n}",
+        "component": "System Prompt",
+        "compressed": "[REQ:DETERMINE] [REQ:FORMAT] [TARGET:REPORT:DOMAIN=TECHNICAL:TOPIC=IT_INCIDENT_ROOT_CAUSE] [OUT_JSON:{root_cause,impact_summary,severity_level,recommended_fixes,confidence}]",
+        "metadata": {
+            "original_length": 525,
+            "compressed_length": 173,
+            "num_intents": 2,
+            "num_targets": 1,
+            "input_tokens": 66,
+            "output_tokens": 4,
+            "verbs": [
+                "ingest",
+                "determine",
+                "CRITERIA",
+                "dependencie",
+                "know",
+                "repeat",
+                "affect",
+                "services_affecte"
+            ],
+            "intents": [
+                {
+                    "token": "DETERMINE",
+                    "confidence": 0.95,
+                    "trigger_word": "determine",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                },
+                {
+                    "token": "FORMAT",
+                    "confidence": 0.88,
+                    "trigger_word": "format",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                }
+            ],
+            "target": {
+                "token": "REPORT",
+                "domain": "TECHNICAL",
+                "attributes": {
+                    "DOMAIN": "TECHNICAL",
+                    "TOPIC": "IT_INCIDENT_ROOT_CAUSE"
+                },
+                "unmatched_nouns": []
+            },
+            "extractions": null,
+            "contexts": [],
+            "output_format": {
+                "format_type": "JSON",
+                "fields": [
+                    {
+                        "name": "root_cause",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "impact_summary",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "severity_level",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "recommended_fixes",
+                        "type": "array",
+                        "description": "['fix1', 'fix2']",
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "confidence",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    }
+                ],
+                "attributes": {
+                    "schema": "{root_cause,impact_summary,severity_level,recommended_fixes,confidence}"
+                },
+                "raw_schema": {
+                    "root_cause": "likely_cause",
+                    "impact_summary": "services_affected",
+                    "severity_level": "SEV-1 | SEV-2 | SEV-3",
+                    "recommended_fixes": [
+                        "fix1",
+                        "fix2"
+                    ],
+                    "confidence": 0.0
+                },
+                "format_hint": null
+            },
+            "noun_chunks": [
+                "You",
+                "an IT Incident Root Cause",
+                "Impact Analyzer",
+                "TASK",
+                "the incident report",
+                "the most probable root cause",
+                "business impact",
+                "ANALYSIS",
+                "Error",
+                "patterns\n\nSystem",
+                "Known issues",
+                "repeated failures\n\nBlast radius",
+                "services",
+                "teams",
+                "Severity and operational impact\n\nOUTPUT FORMAT",
+                "root_cause",
+                "\"severity_level",
+                "SEV-1 | SEV-2",
+                "| SEV-3",
+                "recommended_fixes",
+                "[\"fix1",
+                "\"fix2",
+                "\"confidence"
+            ],
+            "language": "en",
+            "has_numbers": true,
+            "has_urls": false,
+            "has_code_indicators": false,
+            "unmatched_verbs": [
+                "ingest",
+                "CRITERIA",
+                "dependencie",
+                "know",
+                "repeat",
+                "affect",
+                "services_affecte"
+            ]
+        },
+        "compression_ratio": 67.0
+    },
+    {
+        "original": "You are an Employee Relations Case Classification System.\n\nTASK:\nReview the HR case description and classify the case with recommended next steps.\n\nANALYSIS CRITERIA:\n\nCase category (performance, misconduct, attendance, harassment, policy violation, etc.)\n\nSeverity and urgency\n\nEvidence provided\n\nRequired HR/legal steps\n\nRisk to company\n\nOUTPUT FORMAT:\n\n{\n  \"case_type\": \"category\",\n  \"risk_level\": \"low | medium | high\",\n  \"recommended_actions\": [\"next_steps\"],\n  \"required_documentation\": [\"docs_needed\"]\n}\n",
+        "component": "System Prompt",
+        "compressed": "[REQ:ANALYZE] [REQ:CLASSIFY] [TARGET:TICKET:DOMAIN=SUPPORT] [OUT_JSON:{case_type,risk_level,recommended_actions,required_documentation}]",
+        "metadata": {
+            "original_length": 511,
+            "compressed_length": 136,
+            "num_intents": 2,
+            "num_targets": 1,
+            "input_tokens": 60,
+            "output_tokens": 4,
+            "verbs": [
+                "review",
+                "classify",
+                "recommend",
+                "CRITERIA",
+                "provide",
+                "require",
+                "company",
+                "docs_neede"
+            ],
+            "intents": [
+                {
+                    "token": "ANALYZE",
+                    "confidence": 0.95,
+                    "trigger_word": "review",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                },
+                {
+                    "token": "CLASSIFY",
+                    "confidence": 0.95,
+                    "trigger_word": "classify",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                }
+            ],
+            "target": {
+                "token": "TICKET",
+                "domain": "SUPPORT",
+                "attributes": {
+                    "DOMAIN": "SUPPORT"
+                },
+                "unmatched_nouns": []
+            },
+            "extractions": null,
+            "contexts": [],
+            "output_format": {
+                "format_type": "JSON",
+                "fields": [
+                    {
+                        "name": "case_type",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "risk_level",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "recommended_actions",
+                        "type": "array",
+                        "description": "['next_steps']",
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "required_documentation",
+                        "type": "array",
+                        "description": "['docs_needed']",
+                        "required": true,
+                        "nested": null
+                    }
+                ],
+                "attributes": {
+                    "schema": "{case_type,risk_level,recommended_actions,required_documentation}"
+                },
+                "raw_schema": {
+                    "case_type": "category",
+                    "risk_level": "low | medium | high",
+                    "recommended_actions": [
+                        "next_steps"
+                    ],
+                    "required_documentation": [
+                        "docs_needed"
+                    ]
+                },
+                "format_hint": null
+            },
+            "noun_chunks": [
+                "You",
+                "an Employee Relations Case Classification System",
+                "TASK",
+                "the HR case description",
+                "the case",
+                "recommended next steps",
+                "ANALYSIS",
+                "Case category",
+                "performance",
+                "misconduct",
+                "attendance",
+                "harassment",
+                "policy violation",
+                "Severity and urgency\n\nEvidence",
+                "Required HR/legal steps\n\nRisk",
+                "OUTPUT FORMAT",
+                "\"case_type",
+                "\"category",
+                "risk_level",
+                "low | medium",
+                "\"recommended_actions",
+                "[\"next_steps",
+                "\"required_documentation"
+            ],
+            "language": "en",
+            "has_numbers": false,
+            "has_urls": false,
+            "has_code_indicators": true,
+            "unmatched_verbs": [
+                "recommend",
+                "CRITERIA",
+                "provide",
+                "require",
+                "company",
+                "docs_neede"
+            ]
+        },
+        "compression_ratio": 73.4
+    },
+    {
+        "original": "You are an Automated Expense Audit Validator.\n\nTASK:\nAnalyze submitted expenses and determine legitimacy, policy compliance, and anomalies.\n\nANALYSIS CRITERIA:\n\nPolicy compliance per item\n\nReceipt validation\n\nFraud or duplicate indicators\n\nDaily/weekly spending patterns\n\nRequired approvals\n\nOUTPUT FORMAT:\n\n{\n  \"total_amount\": 0.0,\n  \"flagged_items\": [\n    { \"item\": \"name\", \"reason\": \"policy_violation\" }\n  ],\n  \"compliance_score\": 0.0,\n  \"approval_recommendation\": \"approve | reject | partial\",\n  \"notes\": \"summary\"\n}",
+        "component": "System Prompt",
+        "compressed": "[REQ:ANALYZE] [REQ:DETERMINE] [REQ:GENERATE] [TARGET:REPORT:DOMAIN=LEGAL:TOPIC=AUTOMATED_EXPENSE_AUDIT_VALIDATOR] [EXTRACT:POLICY,COMPLIANCE,NAMES:TYPE=LIST,DOMAIN=LEGAL] [OUT_JSON:{total_amount,flagged_items:[{item,reason}],compliance_score,approval_recommendation,notes}]",
+        "metadata": {
+            "original_length": 520,
+            "compressed_length": 273,
+            "num_intents": 3,
+            "num_targets": 1,
+            "input_tokens": 60,
+            "output_tokens": 6,
+            "verbs": [
+                "submit",
+                "determine",
+                "require",
+                "reject",
+                "note",
+                "summary"
+            ],
+            "intents": [
+                {
+                    "token": "ANALYZE",
+                    "confidence": 0.95,
+                    "trigger_word": "audit",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                },
+                {
+                    "token": "DETERMINE",
+                    "confidence": 0.95,
+                    "trigger_word": "determine",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                },
+                {
+                    "token": "GENERATE",
+                    "confidence": 0.95,
+                    "trigger_word": "name",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                }
+            ],
+            "target": {
+                "token": "REPORT",
+                "domain": "LEGAL",
+                "attributes": {
+                    "DOMAIN": "LEGAL",
+                    "TOPIC": "AUTOMATED_EXPENSE_AUDIT_VALIDATOR"
+                },
+                "unmatched_nouns": []
+            },
+            "extractions": {
+                "fields": [
+                    "POLICY",
+                    "COMPLIANCE",
+                    "NAMES"
+                ],
+                "attributes": {
+                    "TYPE": "LIST",
+                    "DOMAIN": "LEGAL"
+                }
+            },
+            "contexts": [],
+            "output_format": {
+                "format_type": "JSON",
+                "fields": [
+                    {
+                        "name": "total_amount",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "flagged_items",
+                        "type": "array",
+                        "description": "[{'item': 'name', 'reason': 'policy_violation'}]",
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "compliance_score",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "approval_recommendation",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "notes",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    }
+                ],
+                "attributes": {
+                    "schema": "{total_amount,flagged_items:[{item,reason}],compliance_score,approval_recommendation,notes}"
+                },
+                "raw_schema": {
+                    "total_amount": 0.0,
+                    "flagged_items": [
+                        {
+                            "item": "name",
+                            "reason": "policy_violation"
+                        }
+                    ],
+                    "compliance_score": 0.0,
+                    "approval_recommendation": "approve | reject | partial",
+                    "notes": "summary"
+                },
+                "format_hint": null
+            },
+            "noun_chunks": [
+                "You",
+                "an Automated Expense Audit Validator",
+                "TASK",
+                "Analyze",
+                "expenses",
+                "legitimacy",
+                "policy compliance",
+                "anomalies",
+                "ANALYSIS",
+                "item\n\nReceipt validation\n\nFraud",
+                "duplicate indicators",
+                "Required approvals\n\nOUTPUT FORMAT",
+                "{\n  \"total_amount",
+                "\"flagged_items",
+                "[\n    { \"item",
+                "\"name",
+                "\"reason",
+                "\"policy_violation",
+                "compliance_score",
+                "approval_recommendation"
+            ],
+            "language": "en",
+            "has_numbers": true,
+            "has_urls": false,
+            "has_code_indicators": false,
+            "unmatched_verbs": [
+                "submit",
+                "require",
+                "reject",
+                "note",
+                "summary"
+            ]
+        },
+        "compression_ratio": 47.5
+    },
+    {
+        "original": "You are a Project Delivery Risk & Delay Forecasting System.\n\nTASK:\nAnalyze project updates and identify risk levels, blockers, and expected delays.\n\nANALYSIS CRITERIA:\n\nTask progress vs timeline\n\nResource constraints\n\nDependencies blocked\n\nBudget variance\n\nQuality concerns\n\nTeam sentiment\n\nOUTPUT FORMAT:\n\n{\n  \"overall_risk\": \"low | medium | high\",\n  \"delay_probability\": 0.0,\n  \"key_drivers\": [\"factors\"],\n  \"recommended_interventions\": [\"actions\"]\n}",
+        "component": "System Prompt",
+        "compressed": "[REQ:PREDICT] [REQ:DETECT] [REQ:COMPARE] [TARGET:REPORT:DOMAIN=SECURITY:TOPIC=PROJECT_DELIVERY_RISK_&_DELAY_FORECASTING_SYSTEM] [EXTRACT:SENTIMENT,ACTIONS:DOMAIN=SUPPORT] [OUT_JSON:{overall_risk,delay_probability,key_drivers,recommended_interventions}]",
+        "metadata": {
+            "original_length": 452,
+            "compressed_length": 252,
+            "num_intents": 3,
+            "num_targets": 1,
+            "input_tokens": 54,
+            "output_tokens": 6,
+            "verbs": [
+                "update",
+                "identify",
+                "expect",
+                "CRITERIA",
+                "block",
+                "concern"
+            ],
+            "intents": [
+                {
+                    "token": "PREDICT",
+                    "confidence": 0.95,
+                    "trigger_word": "project",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                },
+                {
+                    "token": "DETECT",
+                    "confidence": 0.95,
+                    "trigger_word": "identify",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                },
+                {
+                    "token": "COMPARE",
+                    "confidence": 0.95,
+                    "trigger_word": "vs",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                }
+            ],
+            "target": {
+                "token": "REPORT",
+                "domain": "SECURITY",
+                "attributes": {
+                    "DOMAIN": "SECURITY",
+                    "TOPIC": "PROJECT_DELIVERY_RISK_&_DELAY_FORECASTING_SYSTEM"
+                },
+                "unmatched_nouns": []
+            },
+            "extractions": {
+                "fields": [
+                    "SENTIMENT",
+                    "ACTIONS"
+                ],
+                "attributes": {
+                    "DOMAIN": "SUPPORT"
+                }
+            },
+            "contexts": [],
+            "output_format": {
+                "format_type": "JSON",
+                "fields": [
+                    {
+                        "name": "overall_risk",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "delay_probability",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "key_drivers",
+                        "type": "array",
+                        "description": "['factors']",
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "recommended_interventions",
+                        "type": "array",
+                        "description": "['actions']",
+                        "required": true,
+                        "nested": null
+                    }
+                ],
+                "attributes": {
+                    "schema": "{overall_risk,delay_probability,key_drivers,recommended_interventions}"
+                },
+                "raw_schema": {
+                    "overall_risk": "low | medium | high",
+                    "delay_probability": 0.0,
+                    "key_drivers": [
+                        "factors"
+                    ],
+                    "recommended_interventions": [
+                        "actions"
+                    ]
+                },
+                "format_hint": null
+            },
+            "noun_chunks": [
+                "You",
+                "a Project Delivery Risk & Delay Forecasting System",
+                "TASK",
+                "risk levels",
+                "blockers",
+                "delays",
+                "ANALYSIS",
+                "Task progress",
+                "timeline\n\nResource constraints\n\nDependencies",
+                "Budget variance\n\nQuality",
+                "Team sentiment\n\nOUTPUT FORMAT",
+                "{\n  \"overall_risk",
+                "\"delay_probability",
+                "\"key_drivers",
+                "[\"factors",
+                "\"recommended_interventions",
+                "[\"actions"
+            ],
+            "language": "en",
+            "has_numbers": true,
+            "has_urls": false,
+            "has_code_indicators": false,
+            "unmatched_verbs": [
+                "update",
+                "expect",
+                "CRITERIA",
+                "block",
+                "concern"
+            ]
+        },
+        "compression_ratio": 44.2
+    },
+    {
+        "original": "You are a Legal Contract Risk Identification System.\n\nTASK:\nSummarize the contract and highlight clauses with risk, obligations, and red flags.\n\nANALYSIS CRITERIA:\n\nLiability and indemnity terms\n\nTermination rights\n\nPayment obligations\n\nCompliance requirements\n\nHigh-risk clauses\n\nOUTPUT FORMAT:\n\n{\n  \"summary\": \"short_summary\",\n  \"key_obligations\": [\"list\"],\n  \"risks\": [\n    { \"clause\": \"reference\", \"risk\": \"description\" }\n  ],\n  \"recommendations\": [\"mitigations\"]\n}",
+        "component": "System Prompt",
+        "compressed": "[REQ:SUMMARIZE] [REQ:LIST] [TARGET:REPORT:DOMAIN=LEGAL:TOPIC=LEGAL_CONTRACT_RISK_IDENTIFICATION_SYSTEM] [EXTRACT:COMPLIANCE:TYPE=LIST,DOMAIN=LEGAL] [OUT_JSON:{summary,key_obligations,risks:[{clause,risk}],recommendations}]",
+        "metadata": {
+            "original_length": 469,
+            "compressed_length": 222,
+            "num_intents": 2,
+            "num_targets": 1,
+            "input_tokens": 54,
+            "output_tokens": 5,
+            "verbs": [
+                "summarize",
+                "highlight",
+                "CRITERIA"
+            ],
+            "intents": [
+                {
+                    "token": "SUMMARIZE",
+                    "confidence": 0.95,
+                    "trigger_word": "summarize",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                },
+                {
+                    "token": "LIST",
+                    "confidence": 0.95,
+                    "trigger_word": "list",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                }
+            ],
+            "target": {
+                "token": "REPORT",
+                "domain": "LEGAL",
+                "attributes": {
+                    "DOMAIN": "LEGAL",
+                    "TOPIC": "LEGAL_CONTRACT_RISK_IDENTIFICATION_SYSTEM"
+                },
+                "unmatched_nouns": []
+            },
+            "extractions": {
+                "fields": [
+                    "COMPLIANCE"
+                ],
+                "attributes": {
+                    "TYPE": "LIST",
+                    "DOMAIN": "LEGAL"
+                }
+            },
+            "contexts": [],
+            "output_format": {
+                "format_type": "JSON",
+                "fields": [
+                    {
+                        "name": "summary",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "key_obligations",
+                        "type": "array",
+                        "description": "['list']",
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "risks",
+                        "type": "array",
+                        "description": "[{'clause': 'reference', 'risk': 'description'}]",
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "recommendations",
+                        "type": "array",
+                        "description": "['mitigations']",
+                        "required": true,
+                        "nested": null
+                    }
+                ],
+                "attributes": {
+                    "schema": "{summary,key_obligations,risks:[{clause,risk}],recommendations}"
+                },
+                "raw_schema": {
+                    "summary": "short_summary",
+                    "key_obligations": [
+                        "list"
+                    ],
+                    "risks": [
+                        {
+                            "clause": "reference",
+                            "risk": "description"
+                        }
+                    ],
+                    "recommendations": [
+                        "mitigations"
+                    ]
+                },
+                "format_hint": null
+            },
+            "noun_chunks": [
+                "You",
+                "a Legal Contract Risk Identification System",
+                "TASK",
+                "the contract",
+                "clauses",
+                "risk",
+                "obligations",
+                "red flags",
+                "ANALYSIS",
+                "Liability and indemnity terms\n\nTermination rights\n\nPayment obligations\n\nCompliance requirements",
+                "High-risk clauses",
+                "OUTPUT FORMAT",
+                "{\n  \"summary",
+                "short_summary",
+                "\"key_obligations",
+                "[\"list",
+                ",\n  \"risks",
+                "[\n    { \"clause",
+                "\"reference",
+                "\"risk",
+                ": \"description",
+                ",\n  \"recommendations",
+                "[\"mitigations"
+            ],
+            "language": "en",
+            "has_numbers": false,
+            "has_urls": false,
+            "has_code_indicators": false,
+            "unmatched_verbs": [
+                "highlight",
+                "CRITERIA"
+            ]
+        },
+        "compression_ratio": 52.7
+    },
+    {
+        "original": "You are a B2B Lead Qualification Scoring System.\n\nTASK:\nEvaluate the sales conversation/notes and score the lead based on buying potential.\n\nANALYSIS CRITERIA:\n\nBudget, authority, need, timeline (BANT)\n\nBuying signals\n\nPain points\n\nCompetition mentions\n\nEngagement level\n\nOUTPUT FORMAT:\n\n{\n  \"qualification_score\": 0.0,\n  \"stage\": \"cold | warm | hot\",\n  \"key_indicators\": [\"signals\"],\n  \"recommended_next_actions\": [\"actions\"]\n}",
+        "component": "System Prompt",
+        "compressed": "[REQ:DETERMINE] [REQ:FORMAT] [TARGET:TRANSCRIPT:DOMAIN=SALES] [EXTRACT:ACTIONS:DOMAIN=SUPPORT] [OUT_JSON:{qualification_score,stage,key_indicators,recommended_next_actions}]",
+        "metadata": {
+            "original_length": 428,
+            "compressed_length": 173,
+            "num_intents": 2,
+            "num_targets": 1,
+            "input_tokens": 52,
+            "output_tokens": 5,
+            "verbs": [
+                "evaluate",
+                "score",
+                "base",
+                "buy",
+                "mention"
+            ],
+            "intents": [
+                {
+                    "token": "DETERMINE",
+                    "confidence": 0.95,
+                    "trigger_word": "evaluate",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                },
+                {
+                    "token": "FORMAT",
+                    "confidence": 0.88,
+                    "trigger_word": "format",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                }
+            ],
+            "target": {
+                "token": "TRANSCRIPT",
+                "domain": "SALES",
+                "attributes": {
+                    "DOMAIN": "SALES"
+                },
+                "unmatched_nouns": []
+            },
+            "extractions": {
+                "fields": [
+                    "ACTIONS"
+                ],
+                "attributes": {
+                    "DOMAIN": "SUPPORT"
+                }
+            },
+            "contexts": [],
+            "output_format": {
+                "format_type": "JSON",
+                "fields": [
+                    {
+                        "name": "qualification_score",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "stage",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "key_indicators",
+                        "type": "array",
+                        "description": "['signals']",
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "recommended_next_actions",
+                        "type": "array",
+                        "description": "['actions']",
+                        "required": true,
+                        "nested": null
+                    }
+                ],
+                "attributes": {
+                    "schema": "{qualification_score,stage,key_indicators,recommended_next_actions}"
+                },
+                "raw_schema": {
+                    "qualification_score": 0.0,
+                    "stage": "cold | warm | hot",
+                    "key_indicators": [
+                        "signals"
+                    ],
+                    "recommended_next_actions": [
+                        "actions"
+                    ]
+                },
+                "format_hint": null
+            },
+            "noun_chunks": [
+                "You",
+                "a B2B Lead Qualification Scoring System",
+                "TASK",
+                "the sales conversation/notes",
+                "the lead",
+                "potential",
+                "ANALYSIS",
+                "Budget",
+                "authority",
+                "need",
+                "timeline",
+                "BANT",
+                "Buying signals",
+                "Competition",
+                "Engagement level\n\nOUTPUT FORMAT",
+                "{\n  \"qualification_score\": 0.0,\n  \"stage",
+                "\"key_indicators",
+                "[\"signals",
+                "[\"actions"
+            ],
+            "language": "en",
+            "has_numbers": true,
+            "has_urls": false,
+            "has_code_indicators": false,
+            "unmatched_verbs": [
+                "score",
+                "base",
+                "buy",
+                "mention"
+            ]
+        },
+        "compression_ratio": 59.6
+    },
+    {
+        "original": "You are a Supply Chain Delay Root Cause Analyzer.\n\nTASK:\nRead the shipment or logistics report and identify the root cause of delays.\n\nANALYSIS CRITERIA:\n\nSupplier performance\n\nTransport issues\n\nCustoms/clearance delays\n\nInventory shortages\n\nInternal workflow bottlenecks\n\nOUTPUT FORMAT:\n\n{\n  \"delay_cause\": \"root_cause\",\n  \"impact\": \"business_impact_summary\",\n  \"expected_recovery_time_days\": 0,\n  \"recommended_actions\": [\"actions\"]\n}",
+        "component": "System Prompt",
+        "compressed": "[REQ:DETECT] [TARGET:REPORT:DOMAIN=BUSINESS:TOPIC=SUPPLY_CHAIN_DELAY_ROOT_CAUSE_ANALYZER] [EXTRACT:PERFORMANCE,ISSUE,ACTIONS:DOMAIN=SUPPORT] [OUT_JSON:{delay_cause,impact,expected_recovery_time_days,recommended_actions}]",
+        "metadata": {
+            "original_length": 435,
+            "compressed_length": 220,
+            "num_intents": 1,
+            "num_targets": 1,
+            "input_tokens": 48,
+            "output_tokens": 4,
+            "verbs": [
+                "read",
+                "identify"
+            ],
+            "intents": [
+                {
+                    "token": "DETECT",
+                    "confidence": 0.95,
+                    "trigger_word": "identify",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                }
+            ],
+            "target": {
+                "token": "REPORT",
+                "domain": "BUSINESS",
+                "attributes": {
+                    "DOMAIN": "BUSINESS",
+                    "TOPIC": "SUPPLY_CHAIN_DELAY_ROOT_CAUSE_ANALYZER"
+                },
+                "unmatched_nouns": []
+            },
+            "extractions": {
+                "fields": [
+                    "PERFORMANCE",
+                    "ISSUE",
+                    "ACTIONS"
+                ],
+                "attributes": {
+                    "DOMAIN": "SUPPORT"
+                }
+            },
+            "contexts": [],
+            "output_format": {
+                "format_type": "JSON",
+                "fields": [
+                    {
+                        "name": "delay_cause",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "impact",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "expected_recovery_time_days",
+                        "type": null,
+                        "description": null,
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "recommended_actions",
+                        "type": "array",
+                        "description": "['actions']",
+                        "required": true,
+                        "nested": null
+                    }
+                ],
+                "attributes": {
+                    "schema": "{delay_cause,impact,expected_recovery_time_days,recommended_actions}"
+                },
+                "raw_schema": {
+                    "delay_cause": "root_cause",
+                    "impact": "business_impact_summary",
+                    "expected_recovery_time_days": 0,
+                    "recommended_actions": [
+                        "actions"
+                    ]
+                },
+                "format_hint": null
+            },
+            "noun_chunks": [
+                "You",
+                "a Supply Chain Delay Root Cause Analyzer",
+                "TASK",
+                "the shipment or logistics report",
+                "the root cause",
+                "delays",
+                "ANALYSIS",
+                "Supplier performance\n\nTransport issues",
+                "Customs/clearance delays",
+                "Inventory shortages",
+                "Internal workflow bottlenecks\n\nOUTPUT FORMAT",
+                "{\n  \"delay_cause",
+                ": \"root_cause\",\n  \"impact",
+                "\"business_impact_summary\",\n  \"expected_recovery_time_days",
+                "\"recommended_actions",
+                "[\"actions"
+            ],
+            "language": "en",
+            "has_numbers": true,
+            "has_urls": false,
+            "has_code_indicators": false,
+            "unmatched_verbs": [
+                "read"
+            ]
+        },
+        "compression_ratio": 49.4
+    },
+    {
+        "original": "You are a Product Feedback Aggregation & Theme Detection System.\n\nTASK:\nAnalyze customer feedback and extract the top themes and opportunities.\n\nANALYSIS CRITERIA:\n\nRepeated topics\n\nSentiment polarity by theme\n\nUrgency / severity\n\nProduct feature mapping\n\nImprovement or feature requests\n\nOUTPUT FORMAT:\n\n{\n  \"top_themes\": [\n    { \"theme\": \"name\", \"frequency\": 0, \"sentiment\": \"positive|neutral|negative\" }\n  ],\n  \"opportunities\": [\"list_of_suggestions\"],\n  \"critical_issues\": [\"list\"]\n}\n",
+        "component": "System Prompt",
+        "compressed": "[REQ:ANALYZE] [REQ:GENERATE] [REQ:LIST] [TARGET:REPORT:DOMAIN=SUPPORT:SUBJECT=FEATURE:TOPIC=PRODUCT_FEEDBACK_AGGREGATION_&_THEME_DETECTION_SYSTEM] [EXTRACT:SENTIMENT,URGENCY,NAMES:TYPE=LIST,DOMAIN=SUPPORT] [OUT_JSON:{top_themes:[{theme,frequency,sentiment}],opportunities,critical_issues}]",
+        "metadata": {
+            "original_length": 488,
+            "compressed_length": 289,
+            "num_intents": 4,
+            "num_targets": 1,
+            "input_tokens": 58,
+            "output_tokens": 6,
+            "verbs": [
+                "analyze",
+                "extract",
+                "repeat"
+            ],
+            "intents": [
+                {
+                    "token": "ANALYZE",
+                    "confidence": 0.95,
+                    "trigger_word": "analyze",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                },
+                {
+                    "token": "EXTRACT",
+                    "confidence": 0.95,
+                    "trigger_word": "extract",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                },
+                {
+                    "token": "GENERATE",
+                    "confidence": 0.95,
+                    "trigger_word": "name",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                },
+                {
+                    "token": "LIST",
+                    "confidence": 0.95,
+                    "trigger_word": "list",
+                    "modifier": null,
+                    "unmatched_verbs": []
+                }
+            ],
+            "target": {
+                "token": "REPORT",
+                "domain": "SUPPORT",
+                "attributes": {
+                    "DOMAIN": "SUPPORT",
+                    "SUBJECT": "FEATURE",
+                    "TOPIC": "PRODUCT_FEEDBACK_AGGREGATION_&_THEME_DETECTION_SYSTEM"
+                },
+                "unmatched_nouns": []
+            },
+            "extractions": {
+                "fields": [
+                    "SENTIMENT",
+                    "URGENCY",
+                    "NAMES"
+                ],
+                "attributes": {
+                    "TYPE": "LIST",
+                    "DOMAIN": "SUPPORT"
+                }
+            },
+            "contexts": [],
+            "output_format": {
+                "format_type": "JSON",
+                "fields": [
+                    {
+                        "name": "top_themes",
+                        "type": "array",
+                        "description": "[{'theme': 'name', 'frequency': 0, 'sentiment': 'positive|neutral|negative'}]",
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "opportunities",
+                        "type": "array",
+                        "description": "['list_of_suggestions']",
+                        "required": true,
+                        "nested": null
+                    },
+                    {
+                        "name": "critical_issues",
+                        "type": "array",
+                        "description": "['list']",
+                        "required": true,
+                        "nested": null
+                    }
+                ],
+                "attributes": {
+                    "schema": "{top_themes:[{theme,frequency,sentiment}],opportunities,critical_issues}"
+                },
+                "raw_schema": {
+                    "top_themes": [
+                        {
+                            "theme": "name",
+                            "frequency": 0,
+                            "sentiment": "positive|neutral|negative"
+                        }
+                    ],
+                    "opportunities": [
+                        "list_of_suggestions"
+                    ],
+                    "critical_issues": [
+                        "list"
+                    ]
+                },
+                "format_hint": null
+            },
+            "noun_chunks": [
+                "You",
+                "a Product Feedback Aggregation & Theme Detection System",
+                "TASK",
+                "customer feedback",
+                "the top themes",
+                "opportunities",
+                "ANALYSIS",
+                "Repeated topics\n\nSentiment polarity",
+                "theme\n\nUrgency / severity\n\nProduct feature mapping\n\nImprovement or feature requests",
+                "OUTPUT FORMAT",
+                "{\n  \"top_themes",
+                ": \"name",
+                "\"frequency",
+                "\"sentiment",
+                "[\"list_of_suggestions\"],\n  \"critical_issues",
+                "[\"list"
+            ],
+            "language": "en",
+            "has_numbers": true,
+            "has_urls": false,
+            "has_code_indicators": false,
+            "unmatched_verbs": [
+                "repeat"
+            ]
+        },
+        "compression_ratio": 40.8
+    }
+]

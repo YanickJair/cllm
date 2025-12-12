@@ -20,7 +20,7 @@ import os
 import sys
 from typing import Optional
 
-from src.components.ds_compression import CompressionConfig, DSEncoder
+from components.ds_compression import CompressionConfig, DSEncoder
 
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

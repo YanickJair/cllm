@@ -9,14 +9,14 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).parent))
-from src.core.encoder import CLLMEncoder
+from core import CLMEncoder
 
 
 class TrainingDataGenerator:
     """Generates training data for CLLM Model Core"""
 
     def __init__(self):
-        self.encoder = CLLMEncoder("en_core_web_sm")
+        self.encoder = CLMEncoder("en_core_web_sm")
         self.examples = []
 
     def generate_instruction_response_pairs(
@@ -288,7 +288,7 @@ class TrainingDataGenerator:
         }
 
         # Load vocabulary from your encode
-        from src.utils.vocabulary import Vocabulary
+        from utils.vocabulary import Vocabulary
 
         v = Vocabulary()
 

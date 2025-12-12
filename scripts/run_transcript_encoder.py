@@ -1,14 +1,11 @@
 import json
-import os
-import sys
-import json
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "cllm"))
-from src.config.schemas import CLMConfig
+from config import CLMConfig
 
-from src.components.transcript.encoder import TranscriptEncoder
+from components.transcript.encoder import TranscriptEncoder
 
 
 CX_TRANSCRIPTS = [

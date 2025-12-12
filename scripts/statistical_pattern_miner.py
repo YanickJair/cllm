@@ -3,9 +3,9 @@
 # Load your validation results
 import json
 
-from src.core.compressors.statistical.pattern_db import PatternDatabase
-from src.core.compressors.statistical.pattern_matcher import StatisticalCompressor
-from src.core.compressors.statistical.pattern_trainer import StatisticalTrainer
+from core.compressors.statistical.pattern_db import PatternDatabase
+from core.compressors.statistical.pattern_matcher import StatisticalCompressor
+from core.compressors.statistical.pattern_trainer import StatisticalTrainer
 
 with open("validation_results_100.json", "r") as f:
     validation_data = json.load(f)
