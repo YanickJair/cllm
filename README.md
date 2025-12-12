@@ -1,5 +1,5 @@
 <p align="center" style="margin: 0 0 10px">
-  <img width="350" height="208" src="https://raw.githubusercontent.com/YanickJar/cllm/master/docs/img/clm-logo.png" alt='CLM'>
+  <img width="350" height="208" src="https://raw.githubusercontent.com/YanickJar/cllm/main/docs/img/cllm_logo_mythological.svg" alt='CLM'>
 </p>
 
 <h1 align="center" style="font-size: 3rem; margin: -15px 0">
