@@ -1,13 +1,13 @@
 import json
 
-from src.core.compressors.statistical.pattern_db import PatternDatabase
-from src.core.compressors.statistical.pattern_matcher import StatisticalCompressor
-from src.core.compressors.statistical.pattern_trainer import StatisticalTrainer
-from src.core.encoder import CLLMEncoder
+from core.compressors.statistical.pattern_db import PatternDatabase
+from core.compressors.statistical.pattern_matcher import StatisticalCompressor
+from core.compressors.statistical.pattern_trainer import StatisticalTrainer
+from core import CLMEncoder
 
 
 def main():
-    encoder = CLLMEncoder()
+    encoder = CLMEncoder()
 
     test_prompts = [
         "Analyze this Python code and identify any potential bugs or security vulnerabilities.",

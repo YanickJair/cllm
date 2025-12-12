@@ -3,7 +3,7 @@ import time
 import os
 import sys
 
-from src.core.encoder import CLLMEncoder
+from core import CLMEncoder
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -58,7 +58,7 @@ PRIORITIZATION:
 class RunCLMBenchmark:
     def __init__(self) -> None:
         self.client = anthropic.Anthropic()
-        self.encoder = CLLMEncoder()
+        self.encoder = CLMEncoder()
         self._claude_models: tuple[str, str] = (
             "claude-haiku-4-5-20251001",
             "claude-opus-4-1-20250805",

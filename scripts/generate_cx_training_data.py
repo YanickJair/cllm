@@ -10,14 +10,14 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from src.core.encoder import CLLMEncoder
+from core import CLMEncoder
 
 
 class CXTrainingDataGenerator:
     """Generates CX-specific training data for CLLM"""
 
     def __init__(self):
-        self.encoder = CLLMEncoder("en_core_web_sm")
+        self.encoder = CLMEncoder("en_core_web_sm")
 
         # CX-specific instruction templates
         self.cx_instructions = {
