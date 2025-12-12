@@ -1,6 +1,6 @@
 import json
 
-from src.core.encoder import CLLMEncoder
+from core import CLMEncoder
 
 system_prompt = """
 You are a Customer Experience (CX) intelligence agent designed to assist contact center operations.
@@ -39,7 +39,7 @@ Expected output:
 ["nba_002"]"""
 
 if __name__ == "__main__":
-    encoder = CLLMEncoder()
+    encoder = CLMEncoder()
     result = encoder.compress(system_prompt, verbose=True)
 
     has_req = len(result.intents) > 0

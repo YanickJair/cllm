@@ -9,7 +9,7 @@ Usage:
 import json
 from typing import List, Dict
 from collections import defaultdict
-from src.core.encoder import CLLMEncoder
+from core import CLMEncoder
 
 
 def load_all_prompts() -> List[Dict]:
@@ -60,7 +60,7 @@ def load_alpaca_prompts() -> list[dict]:
 class ValidationRunner:
     """Runs comprehensive validation on 100+ prompts"""
 
-    def __init__(self, encoder: CLLMEncoder):
+    def __init__(self, encoder: CLMEncoder):
         self.encoder = encoder
         self.results = []
         self.stats = defaultdict(int)
@@ -315,7 +315,7 @@ def main():
 
     # Initialize encode
     print("\nInitializing encode...")
-    encoder = CLLMEncoder()
+    encoder = CLMEncoder()
 
     # Load prompts
     print("Loading 100 test prompts...")

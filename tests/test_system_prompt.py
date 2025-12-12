@@ -2,11 +2,9 @@ import json
 import sys
 from pathlib import Path
 
-# Add the cllm directory to the path
-sys.path.insert(0, str(Path(__file__).parent.parent / "cllm"))
 
-from src.core.encoder import CLLMEncoder
-from src.config.schemas import CLMConfig
+from cllm import CLMEncoder
+from cllm import CLMConfig
 
 def load_prompts() -> list[dict[str, str]]:
     data: list[dict[str, str]] = []
@@ -18,7 +16,7 @@ def main(prompts):
     cfg = CLMConfig(
         lang="en",
     )
-    encoder = CLLMEncoder(cfg=cfg)
+    encoder = CLMEncoder(cfg=cfg)
     results = []
 
     for prompt in prompts:

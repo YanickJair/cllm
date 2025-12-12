@@ -1,6 +1,6 @@
 import json
 
-from src.components.ds_compression import CompressionConfig, DSEncoder
+from components.ds_compression import CompressionConfig, DSEncoder
 
 
 def load_nbas() -> list[dict]:

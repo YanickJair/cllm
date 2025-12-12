@@ -1,6 +1,6 @@
 import spacy
 
-from src.components._target import TargetExtractor
+from components._target import TargetExtractor
 
 
 prompt = "Summarize this 30-minute customer call transcript briefly."

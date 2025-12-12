@@ -1,6 +1,6 @@
 import json
 
-from src.components.sys_prompt.analyzers.output_format import SysPromptOutputFormat
+from components.sys_prompt.analyzers.output_format import SysPromptOutputFormat
 
 
 def demo():
