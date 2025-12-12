@@ -10,11 +10,11 @@ CLM
 
 <div align="center">
 <p>
-<a href="https://github.com/encode/httpx/actions">
-    <img src="https://github.com/encode/httpx/workflows/Test%20Suite/badge.svg" alt="Test Suite">
+<a href="https://github.com/encode/cllm/actions">
+    <img src="https://github.com/YanickJair/cllm/workflows/" alt="Test Suite">
 </a>
-<a href="https://pypi.org/project/clm/">
-    <img src="https://badge.fury.io/py/httpx.svg" alt="Package version">
+<a href="https://pypi.org/project/cllm/">
+    <img src="" alt="Package version">
 </a>
 </p>
 
