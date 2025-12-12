@@ -92,12 +92,12 @@ def run_full_evaluation():
 
     try:
         from evaluate_real_world_performance import RealWorldEvaluator
-        from src.core.encoder import CLLMEncoder
+        from core import CLMEncoder
         import spacy
 
         print("Initializing encode...")
         nlp = spacy.load("en_core_web_sm")
-        encoder = CLLMEncoder(nlp)
+        encoder = CLMEncoder(nlp)
 
         eval3 = RealWorldEvaluator(encoder)
         metrics3 = eval3.evaluate_all()

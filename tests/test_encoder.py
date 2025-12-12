@@ -403,11 +403,11 @@ def main():
 
     try:
         # Import the encode
-        from src.core.encoder import CLLMEncoder
+        from core import CLMEncoder
 
         # Initialize encode
         print("Initializing encode...")
-        encoder = CLLMEncoder()
+        encoder = CLMEncoder()
 
         # Create test harness
         tester = EncoderTester()

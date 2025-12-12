@@ -9,7 +9,7 @@ import re
 from typing import Dict, List
 from pathlib import Path
 
-from src.core.encoder import CLLMEncoder
+from core import CLMEncoder
 
 
 class RealWorldTestCase:
@@ -33,7 +33,7 @@ class RealWorldTestCase:
 class RealWorldEvaluator:
     """Evaluates CLLM on real-world scenarios"""
 
-    def __init__(self, encoder: CLLMEncoder):
+    def __init__(self, encoder: CLMEncoder):
         """
         Args:
             encoder: The CLLMEncoder instance
@@ -381,11 +381,11 @@ def main():
 
     sys.path.insert(0, str(Path(__file__).parent))
 
-    from src.core.encoder import CLLMEncoder
+    from core import CLMEncoder
 
     # Initialize encode
     print("Initializing CLLM Encoder...\n")
-    encoder = CLLMEncoder("en_core_web_sm")
+    encoder = CLMEncoder("en_core_web_sm")
 
     # Create evaluator
     evaluator = RealWorldEvaluator(encoder)

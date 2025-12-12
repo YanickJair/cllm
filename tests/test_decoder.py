@@ -6,7 +6,7 @@ import os
 # Add the parent directory to sys.path to allow imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.core.decoder import CLLMDecoder
+from core.decoder import CLLMDecoder
 
 
 def load_compress_prompts() -> list[dict]:
