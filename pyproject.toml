@@ -58,7 +58,7 @@ dependencies = [
 ]
 
 [tool.hatch.version]
-path = "cllm/__version__.py"
+path = "__version__.py"
 
 [tool.hatch.build.targets.sdist]
 include = [
