@@ -6,7 +6,6 @@ build-backend = "hatchling.build"
 name = "cllm"
 dynamic = ["readme", "version"]
 description = "Natural Language compressor for LLMs (Compressed Language Model)."
-readme = "README.md"
 license = "BSD-3-Clause"
 requires-python = ">=3.9"
 
