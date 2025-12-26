@@ -58,7 +58,7 @@ dependencies = [
 ]
 
 [tool.hatch.version]
-path = "__version__.py"
+path = "cllm/__version__.py"
 
 [tool.hatch.build.targets.sdist]
 include = [
@@ -77,11 +77,11 @@ path = "README.md"
 # REMOVED CHANGELOG FRAGMENTS - Add back when CHANGELOG.md is ready
 # [[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
 # text = "\n## Release Information\n\n"
-# 
+#
 # [[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
 # path = "CHANGELOG.md"
 # pattern = "\n(###.+?\n)## "
-# 
+#
 # [[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
 # text = "\n---\n\n[Full changelog](https://github.com/YanickJair/cllm/blob/master/CHANGELOG.md)\n"
 
