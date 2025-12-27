@@ -1,6 +1,7 @@
 import json
 
-from components.ds_compression import CompressionConfig, DSEncoder
+from components.ds_compression import DSEncoder
+from clm_core.types import SDCompressionConfig
 
 
 def load_nbas() -> list[dict]:
@@ -12,7 +13,7 @@ def load_nbas() -> list[dict]:
 def nba_compression():
     nbas = load_nbas()
 
-    config_blue = CompressionConfig(
+    config_blue = SDCompressionConfig(
         required_fields=["id", "title", "description", "category"], auto_detect=False
     )
 
@@ -35,7 +36,7 @@ def example_kb_article_encoding():
         }
     ]
 
-    config = CompressionConfig(
+    config = SDCompressionConfig(
         dataset_name="ARTICLE",
         auto_detect=True,
         required_fields=["article_id", "title"],
@@ -78,7 +79,7 @@ def example_product_encoding():
             "warehouse_location": "B-15-2",
         },
     ]
-    config = CompressionConfig(
+    config = SDCompressionConfig(
         dataset_name="PRODUCT",
         auto_detect=True,
         required_fields=["product_id", "name", "price"],

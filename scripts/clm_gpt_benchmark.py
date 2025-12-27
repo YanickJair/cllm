@@ -20,7 +20,8 @@ import os
 import sys
 from typing import Optional
 
-from components.ds_compression import CompressionConfig, DSEncoder
+from components.ds_compression import DSEncoder
+from clm_core.types import SDCompressionConfig
 
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -154,7 +155,7 @@ class RunGPTCLMBenchmark:
             Compressed string representation
         """
 
-        config = CompressionConfig(
+        config = SDCompressionConfig(
             required_fields=["id", "title", "description", "category"],
             auto_detect=False,
         )
