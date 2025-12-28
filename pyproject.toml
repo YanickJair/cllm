@@ -1,10 +1,12 @@
 [build-system]
-requires = ["hatchling", "hatch-fancy-pypi-readme"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
 name = "clm-core"
-dynamic = ["readme", "version"]
+version = "0.0.4"
+# dynamic = ["readme", "version"]
+readme = "README.md"
 description = "Natural Language compressor for LLMs (Compressed Language Model)."
 license = "BSD-3-Clause"
 requires-python = ">=3.9"
