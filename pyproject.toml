@@ -3,7 +3,7 @@ requires = ["hatchling", "hatch-fancy-pypi-readme"]
 build-backend = "hatchling.build"
 
 [project]
-name = "cllm"
+name = "clm-core"
 dynamic = ["readme", "version"]
 description = "Natural Language compressor for LLMs (Compressed Language Model)."
 license = "BSD-3-Clause"
@@ -42,26 +42,23 @@ classifiers = [
     "Topic :: Text Processing :: Linguistic",
 ]
 dependencies = [
-    "coverage>=7.10.7",
-    "hatch>=1.15.1",
-    "mypy>=1.19.0",
-    "ruff>=0.14.8",
     "spacy>=3.8.7",
-    "twine>=6.2.0",
-    "uvicorn>=0.38.0",
-    "wheel>=0.45.1",
+    "pydantic>=2.12.5",
 ]
 
 [tool.hatch.version]
-path = "cllm/__version__.py"
+path = "clm_core/__version__.py"
 
 [tool.hatch.build.targets.sdist]
 include = [
     "/README.md",
     "/CHANGELOG.md",
-    "/cllm",
+    "/clm_core",
     "/tests",
 ]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.metadata.hooks.fancy-pypi-readme]
 content-type = "text/markdown"
@@ -94,13 +91,6 @@ combine-as-imports = true
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F403", "F405"]
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["cllm*"]
-
-[tool.setuptools.package-dir]
-"" = "."
-
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
@@ -113,4 +103,4 @@ python_functions = ["test_*"]
 
 [tool.coverage.run]
 omit = ["venv/*", ".venv/*", "scripts/*"]
-include = ["cllm/*", "tests/*"]
+include = ["clm_core/*", "tests/*"]

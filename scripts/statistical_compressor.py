@@ -1,7 +1,7 @@
 import json
 
-from cllm.core.compressors.statistical.pattern_db import PatternDatabase
-from cllm.core.compressors.statistical.pattern_matcher import StatisticalCompressor
+from clm_core.core.compressors.statistical.pattern_db import PatternDatabase
+from clm_core.core.compressors.statistical.pattern_matcher import StatisticalCompressor
 
 def run():
     try:

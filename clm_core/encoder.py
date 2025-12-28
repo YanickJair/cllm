@@ -1,0 +1,52 @@
+from typing import Any, Optional
+
+import spacy
+
+from clm_core.components.ds_compression import DSEncoder
+from clm_core.components.sys_prompt.encoder import SysPromptEncoder
+from clm_core.components.transcript.encoder import TranscriptEncoder
+from clm_core.core.text_classifier import DataClassifier, DataTypes
+from clm_core.config.schemas import CLMConfig
+from clm_core.types import CLMOutput
+
+
+class CLMEncoder:
+    def __init__(self, *, cfg: CLMConfig):
+        """
+        Initialize encode
+
+        Args:
+            model: spaCy model to use (en_core_web_sm, en_core_web_md, en_core_web_lg)
+        """
+        print(f"Loading spaCy model here: {cfg.lang}...")
+
+        self._cfg = cfg
+        self._nlp: spacy.Language = spacy.load("en_core_web_sm")
+        self._ds_encoder = DSEncoder(config=self._cfg.ds_config)
+        self._ts_encoder = TranscriptEncoder(
+            nlp=self._nlp, vocab=self._cfg.vocab, rules=self._cfg.rules
+        )
+        self._sys_prompt_encoder = SysPromptEncoder(
+            nlp=self._nlp,
+            config=self._cfg.sys_prompt_config,
+            vocab=self._cfg.vocab,
+            rules=self._cfg.rules,
+        )
+        self._classifier = DataClassifier()
+
+    def encode(self, input_: Any, verbose: bool = False, metadata: Optional[dict] = None) -> CLMOutput:
+        class_ = self._classifier.classifier(input_=input_)
+
+        if verbose:
+            print(f"Data Type Classified as - {class_}")
+
+        if class_ == DataTypes.UNK:
+            print("Unknown Data Type. Can't compress")
+            return None
+
+        if class_ == DataTypes.STRUCTURED_DATA:
+            return self._ds_encoder.encode(input_)
+
+        if class_ == DataTypes.TRANSCRIPT:
+            return self._ts_encoder.encode(transcript=input_, verbose=verbose, metadata=metadata)
+        return self._sys_prompt_encoder.compress(input_, verbose)
