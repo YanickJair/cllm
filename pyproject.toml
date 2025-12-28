@@ -62,11 +62,11 @@ include = [
 [tool.hatch.metadata]
 allow-direct-references = true
 
-[tool.hatch.metadata.hooks.fancy-pypi-readme]
-content-type = "text/markdown"
+# [tool.hatch.metadata.hooks.fancy-pypi-readme]
+# content-type = "text/markdown"
 
-[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
-path = "README.md"
+# [[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+# path = "README.md"
 
 # REMOVED CHANGELOG FRAGMENTS - Add back when CHANGELOG.md is ready
 # [[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
@@ -79,9 +79,9 @@ path = "README.md"
 # [[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
 # text = "\n---\n\n[Full changelog](https://github.com/YanickJair/cllm/blob/master/CHANGELOG.md)\n"
 
-[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
-pattern = 'src="(docs/img/.*?)"'
-replacement = 'src="https://raw.githubusercontent.com/YanickJair/cllm/master/\1"'
+# [[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
+# pattern = 'src="(docs/img/.*?)"'
+# replacement = 'src="https://raw.githubusercontent.com/YanickJair/cllm/master/\1"'
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "PIE"]
