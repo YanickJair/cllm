@@ -278,9 +278,7 @@ class SchemaOutputCompressor:
         attributes = {"schema": schema_encoded}
 
         if self._add_attributes:
-            enums = self._extract_enums(extra_text)
-            print("ENUMS", enums)
-            if enums:
+            if enums := self._extract_enums(extra_text):
                 attributes["ENUMS"] = json.dumps(enums)
 
             if self._add_specs_attr:
@@ -577,6 +575,8 @@ class SchemaOutputCompressor:
 
     def _extract_fields(self, schema: dict) -> list[OutputField]:
         fields = []
+        if isinstance(schema, str):
+            return fields
         for k, v in schema.items():
             if isinstance(v, dict):
                 nested = self._extract_fields(v)
