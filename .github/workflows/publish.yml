@@ -35,19 +35,26 @@ jobs:
       - name: Build package
         run: hatch build
 
+      - name: Debug - List built files
+        run: |
+          echo "=== Contents of dist/ ==="
+          ls -lah dist/
+          echo ""
+          echo "=== Checking wheel metadata ==="
+          unzip -l dist/*.whl | grep -E "(METADATA|PKG-INFO)" || echo "No metadata found!"
+          echo ""
+          echo "=== Showing METADATA content ==="
+          unzip -p dist/*.whl "*-*/METADATA" || echo "Cannot extract metadata"
+
       - name: Publish to TestPyPI
         if: github.event_name == 'push'
         uses: pypa/gh-action-pypi-publish@v1.8.11
         with:
           repository-url: https://test.pypi.org/legacy/
           skip-existing: true
-          user: __token__
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
 
       - name: Publish to PyPI
         if: github.event_name == 'release'
         uses: pypa/gh-action-pypi-publish@v1.8.11
         with:
           skip-existing: false
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
