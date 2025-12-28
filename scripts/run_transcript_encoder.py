@@ -2,7 +2,7 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "cllm"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "clm_core"))
 from config import CLMConfig
 
 from components.transcript.encoder import TranscriptEncoder

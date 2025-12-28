@@ -1,10 +1,7 @@
 import json
-import sys
-from pathlib import Path
 
-
-from cllm import CLMEncoder
-from cllm import CLMConfig
+from clm_core import CLMEncoder
+from clm_core import CLMConfig
 
 def load_prompts() -> list[dict[str, str]]:
     data: list[dict[str, str]] = []
