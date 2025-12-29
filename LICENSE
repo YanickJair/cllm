@@ -1,61 +1,51 @@
-site_name: CLM
-site_description: Natural Language Compressor for LLM.
-site_url:
+GNU AFFERO GENERAL PUBLIC LICENSE
+Version 3, 19 November 2007
 
-theme:
-    name: 'material'
-    custom_dir: 'docs/overrides'
-    palette:
-      - scheme: 'default'
-        media: '(prefers-color-scheme: light)'
-        toggle:
-          icon: 'material/lightbulb'
-          name: "Switch to dark mode"
-      - scheme: 'slate'
-        media: '(prefers-color-scheme: dark)'
-        primary: 'blue'
-        toggle:
-          icon: 'material/lightbulb-outline'
-          name: 'Switch to light mode'
+Copyright (C) 2025 Yanick Andrade
 
-repo_name: YanickJair/cllm
-repo_url: https://github.com/YanickJair/cllm
-edit_uri: ""
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-nav:
-    - Introduction: 'index.md'
-    - QuickStart: 'quickstart.md'
-    - Advanced:
-        - Clients: 'advanced/clients.md'
-        - Authentication: 'advanced/authentication.md'
-        - SSL: 'advanced/ssl.md'
-        - Proxies: 'advanced/proxies.md'
-        - Timeouts: 'advanced/timeouts.md'
-        - Resource Limits: 'advanced/resource-limits.md'
-        - Event Hooks: 'advanced/event-hooks.md'
-        - Transports: 'advanced/transports.md'
-        - Text Encodings: 'advanced/text-encodings.md'
-        - Extensions: 'advanced/extensions.md'
-    - Guides:
-        - Async Support: 'async.md'
-        - HTTP/2 Support: 'http2.md'
-        - Logging: 'logging.md'
-        - Requests Compatibility: 'compatibility.md'
-        - Troubleshooting: 'troubleshooting.md'
-    - API Reference:
-        - Developer Interface: 'api.md'
-        - Exceptions: 'exceptions.md'
-        - Environment Variables: 'environment_variables.md'
-    - Community:
-        - Third Party Packages: 'third_party_packages.md'
-        - Contributing: 'contributing.md'
-        - Code of Conduct: 'code_of_conduct.md'
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
 
-markdown_extensions:
-  - admonition
-  - codehilite:
-      css_class: highlight
-  - mkautodoc
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-extra_css:
-    - css/custom.css
+For the full license text, see: https://www.gnu.org/licenses/agpl-3.0.html
+
+---
+
+Additional Terms:
+
+PATENT GRANT
+
+Subject to the terms and conditions of this License, Licensor hereby grants
+to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free,
+irrevocable (except as stated in this section) patent license to make, have
+made, use, offer to sell, sell, import, and otherwise transfer CLLM, where
+such license applies only to those patent claims licensable by Licensor that
+are necessarily infringed by CLLM alone or by combination of CLLM with other
+software.
+
+If You institute patent litigation against any entity (including a cross-claim
+or counterclaim in a lawsuit) alleging that CLLM or a contribution incorporated
+within CLLM constitutes direct or contributory patent infringement, then any
+patent licenses granted to You under this License for CLLM shall terminate as
+of the date such litigation is filed.
+
+---
+
+COMMERCIAL LICENSING
+
+For use cases that do not comply with the AGPL-3.0 terms (including but not
+limited to: proprietary software, closed-source SaaS, or any use where you
+cannot or do not want to release your source code), commercial licenses are
+available.
+
+Contact: license@cllm.io
+Website: https://cllm.io/license

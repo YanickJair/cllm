@@ -1,6 +1,6 @@
 import json
 
-from components.ds_compression import DSEncoder
+from clm_core import CLMEncoder, CLMConfig
 from clm_core.types import SDCompressionConfig
 
 
@@ -13,11 +13,13 @@ def load_nbas() -> list[dict]:
 def nba_compression():
     nbas = load_nbas()
 
-    config_blue = SDCompressionConfig(
-        required_fields=["id", "title", "description", "category"], auto_detect=False
+    config_blue = CLMConfig(
+        ds_config=SDCompressionConfig(
+            required_fields=["id", "title", "description", "category"], auto_detect=False
+        )
     )
 
-    compressor = DSEncoder(config=config_blue, catalog_name="nba")
+    compressor = CLMEncoder(cfg=config_blue)
     return compressor.encode(nbas)
 
 
@@ -35,15 +37,17 @@ def example_kb_article_encoding():
             "last_updated": "2024-10-15",
         }
     ]
-
-    config = SDCompressionConfig(
-        dataset_name="ARTICLE",
-        auto_detect=True,
-        required_fields=["article_id", "title"],
-        field_importance={"tags": 0.8, "content": 0.9},
-        max_field_length=100,  # Longer for articles
+    config = CLMConfig(
+        ds_config=SDCompressionConfig(
+            dataset_name="ARTICLE",
+            auto_detect=True,
+            required_fields=["article_id", "title"],
+            field_importance={"tags": 0.8, "content": 0.9},
+            max_field_length=100,  # Longer for articles
+        )
     )
-    compressor = DSEncoder(config=config, catalog_name="kb")
+
+    compressor = CLMEncoder(cfg=config)
     compressed = compressor.encode(kb_catalog)
     print("\n" + "=" * 70)
     print("KB ARTICLE ENCODING")
@@ -79,13 +83,15 @@ def example_product_encoding():
             "warehouse_location": "B-15-2",
         },
     ]
-    config = SDCompressionConfig(
-        dataset_name="PRODUCT",
-        auto_detect=True,
-        required_fields=["product_id", "name", "price"],
-        excluded_fields=["warehouse_location", "created_date"],
+    config = CLMConfig(
+        ds_config=SDCompressionConfig(
+            dataset_name="PRODUCT",
+            auto_detect=True,
+            required_fields=["product_id", "name", "price"],
+            excluded_fields=["warehouse_location", "created_date"],
+        )
     )
-    compressor = DSEncoder(config=config, catalog_name="kb")
+    compressor = CLMEncoder(cfg=config)
     compressed = compressor.encode(product_catalog)
     print("\n" + "=" * 70)
     print("PRODUCT CATALOG ENCODING")

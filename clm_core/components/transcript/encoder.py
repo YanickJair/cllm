@@ -109,6 +109,7 @@ class TranscriptEncoder(metaclass=SingletonMeta):
             component=COMPONENT,
             metadata={
                 **metadata,
+                "analysis": self.analysis.to_dict(),
                 "original_length": len(transcript),
                 "compressed_length": len(compressed),
                 "verbs": [token.lemma_ for token in doc if token.pos_ == "VERB"],
