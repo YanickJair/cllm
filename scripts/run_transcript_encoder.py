@@ -2,11 +2,9 @@ import json
 import sys
 from pathlib import Path
 
+from clm_core import CLMEncoder, CLMConfig
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "clm_core"))
-from config import CLMConfig
-
-from components.transcript.encoder import TranscriptEncoder
-
 
 CX_TRANSCRIPTS = [
     {
@@ -273,16 +271,9 @@ def show_comparison(transcript: str, metadata: dict):
     print("-" * 70)
     print(f"\nLength: {len(transcript)} characters")
 
-    import spacy
-
-    print("\nLoading spaCy model...")
-    nlp = spacy.load("en_core_web_sm")
-
-    cfg = CLMConfig(
-        lang="en",
-    )
-    encoder = TranscriptEncoder(nlp=nlp, vocab=cfg.vocab, rules=cfg.rules)
-    new_result = encoder.encode(transcript=transcript, metadata=metadata)
+    cfg = CLMConfig(lang="en",)
+    encoder = CLMEncoder(cfg=cfg)
+    new_result = encoder.encode(input_=transcript, metadata=metadata)
 
     # INFORMATION PRESERVATION CHECK
     print("\n" + "=" * 70)
@@ -295,7 +286,7 @@ def show_comparison(transcript: str, metadata: dict):
     print("=" * 70)
 
     original_chars = len(transcript)
-    new_chars = len(new_result)
+    new_chars = len(new_result.compressed)
 
     print("\nCharacter count:")
     print(f"  Original:  {original_chars:>6} chars")
@@ -305,7 +296,7 @@ def show_comparison(transcript: str, metadata: dict):
 
     # Token count estimate
     original_tokens = len(transcript.split())
-    new_tokens = len(new_result.split())
+    new_tokens = len(new_result.compressed)
 
     print("\nToken count (approximate):")
     print(f"  Original:  {original_tokens:>6} tokens")
@@ -316,7 +307,7 @@ def show_comparison(transcript: str, metadata: dict):
     print(f"🗜️  Compression Ratio: {(1 - new_chars / original_chars) * 100:.1f}%")
 
     print("\n✅ Ready for production use!")
-    return encoder.analysis.to_dict(), new_result
+    return new_result.metadata.get("analysis"), new_result.compressed
 
 
 if __name__ == "__main__":
@@ -331,6 +322,8 @@ if __name__ == "__main__":
             analysis, new_result = show_comparison(
                 transcript.get("transcript"), metadata=transcript.get("metadata")
             )
+            print(transcript)
+            print(new_result)
             result.append(
                 {
                     **analysis,
@@ -338,5 +331,6 @@ if __name__ == "__main__":
                     "original": transcript.get("transcript"),
                 }
             )
+        break
     with open("transcript_analysis.json", "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False)
