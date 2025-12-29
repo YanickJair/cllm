@@ -278,10 +278,9 @@ class SchemaOutputCompressor:
         attributes = {"schema": schema_encoded}
 
         if self._add_attributes:
-            if enums := self._extract_enums(extra_text):
+            enums = self._extract_enums(extra_text)
+            if enums:
                 attributes["ENUMS"] = json.dumps(enums)
-
-            if self._add_specs_attr:
                 specs_attr = self._extract_specs(extra_text)
                 if specs_attr is not None:
                     attributes["SPECS"] = specs_attr
@@ -343,7 +342,7 @@ class SchemaOutputCompressor:
                 return self._infer_type(obj)
             return ""
 
-    def _extract_enums(self, text: str) -> Optional[str]:
+    def _extract_enums(self, text: str) -> Optional[dict]:
         """
         Extract enum-like constraints from prompt text.
         Supports:
@@ -363,7 +362,8 @@ class SchemaOutputCompressor:
         if not text:
             return None
 
-        enums = []
+        enums = {}
+        range_enums = []
 
         matches = re.findall(
             r"(\d+\.?\d*)\s*[-–]\s*(\d+\.?\d*)\s*(?:means|is|=|:)\s*([A-Za-z_ ]+)",
@@ -372,14 +372,17 @@ class SchemaOutputCompressor:
         )
 
         for lo, hi, label in matches:
-            enums.append(
+            range_enums.append(
                 {
                     "min": float(lo),
                     "max": float(hi),
                     "label": label.strip().upper().replace(" ", "_"),
                 }
             )
-
+        
+        if range_enums:
+            enums["ranges"] = range_enums
+        
         inline_enum_matches = re.findall(
             r"([\w\.]+)\s*\(([^)]+\|[^)]+)\)",
             text,
@@ -393,8 +396,10 @@ class SchemaOutputCompressor:
                 if v.strip()
             ]
             if len(values) >= 2:
-                enums.extend(values)
-
+                enums[field] = {
+                    "kind": "categorical",
+                    "values": values,
+                }
         block_pattern = re.compile(
             r"([\w\s]+):\s*\n((?:\s*[-*]\s*[A-Za-z0-9_ ]+\n?)+)",
             flags=re.IGNORECASE,
@@ -407,7 +412,11 @@ class SchemaOutputCompressor:
                 if line.strip()
             ]
             if len(values) >= 2:
-                enums.extend(values)
+                field = header.strip().lower().replace(" ", "_")
+                enums[field] = {
+                    "kind": "categorical",
+                    "values": values,
+                }
 
         return enums if enums else None
 
