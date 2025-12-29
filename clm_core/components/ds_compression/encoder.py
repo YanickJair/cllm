@@ -41,6 +41,7 @@ class DSEncoder:
         if isinstance(catalog, dict):
             compressed_item = self._format_item_token(self.encode_item(catalog))
             return CLMOutput(
+                component="ds_compression",
                 compressed=compressed_item,
                 original=catalog,
                 metadata={
@@ -68,17 +69,19 @@ class DSEncoder:
                 item_token = self._format_item_token(compressed)
                 lines.append(f" {item_token}")
 
-            compressed_item = ("\n".join(lines),)
+            compressed_item = "\n".join(lines)
             return CLMOutput(
+                component="ds_compression",
                 compressed=compressed_item,
                 original=catalog,
                 metadata={
                     "original_length": len(catalog),
                     "compressed_length": len(compressed_item),
-                    "output_tokens": len(compressed_item.split()),
+                    "output_tokens": len(compressed_item),
                 },
             )
         return CLMOutput(
+            component="ds_compression",
             compressed="",
             original=catalog,
             metadata={
