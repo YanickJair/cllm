@@ -1,15 +1,13 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-fancy-pypi-readme"]
 build-backend = "hatchling.build"
 
 [project]
 name = "clm-core"
-version = "0.0.4"
-# dynamic = ["readme", "version"]
-readme = "README.md"
+dynamic = ["version", "readme"]
 description = "Natural Language compressor for LLMs (Compressed Language Model)."
 license = "BSD-3-Clause"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 
 authors = [
     { name = "Yanick Andrade", email = "yanick.jair.ta@gmail.com" },
@@ -62,11 +60,11 @@ include = [
 [tool.hatch.metadata]
 allow-direct-references = true
 
-# [tool.hatch.metadata.hooks.fancy-pypi-readme]
-# content-type = "text/markdown"
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = "text/markdown"
 
-# [[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
-# path = "README.md"
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+path = "README.md"
 
 # REMOVED CHANGELOG FRAGMENTS - Add back when CHANGELOG.md is ready
 # [[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
