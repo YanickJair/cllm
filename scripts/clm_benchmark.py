@@ -3,7 +3,7 @@ import time
 import os
 import sys
 
-from core import CLMEncoder
+from clm_core import CLMEncoder
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
