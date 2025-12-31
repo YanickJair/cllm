@@ -1,4 +1,4 @@
-from typing import Optional, Annotated
+from typing import Optional, Annotated, Any
 from pydantic import BaseModel, Field, computed_field
 
 DEFAULT_DOMAIN_MAP = {
@@ -138,7 +138,7 @@ class OutputSchema(BaseModel):
 
     format_type: str = Field(..., description="Format type of the schema")
     fields: list[OutputField] = Field(..., description="Fields of the schema")
-    attributes: dict[str, str] = Field(..., description="Attributes of the schema")
+    attributes: dict[str, Any] = Field(..., description="Attributes of the schema")
     raw_schema: Optional[dict | str] = Field(None, description="Raw schema")
     format_hint: Optional[str] = Field(None, description="Format hint")
 
@@ -161,8 +161,6 @@ class OutputSchema(BaseModel):
             ordered_keys.append("KEYS")
         if "ENUMS" in self.attributes:
             ordered_keys.append("ENUMS")
-        if "SPECS" in self.attributes:
-            ordered_keys.append("SPECS")
 
         for k in sorted(self.attributes.keys()):
             if k not in ["schema", "KEYS", "ENUMS", "SPECS"]:
@@ -211,5 +209,5 @@ class SysPromptConfig(BaseModel):
         description="Add examples based on extracted ones from input if exist",
     )
     add_attrs: Optional[bool] = Field(
-        default=True, description="Add extra attributes from input prompt"
+        default=True, description="Add extra attributes from input prompt. This can be specifications found in prompt, enums/constraints values defined"
     )

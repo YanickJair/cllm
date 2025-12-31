@@ -1,10 +1,58 @@
-div.autodoc-docstring {
-  padding-left: 20px;
-  margin-bottom: 30px;
-  border-left: 5px solid rgba(230, 230, 230);
+:root {
+  /* Bronze/Gold from logo gradient */
+  --md-primary-fg-color: #d4af37;
+  --md-primary-fg-color--light: #c9a959;
+  --md-primary-fg-color--dark: #b8964f;
+
+  /* Accent colors */
+  --md-accent-fg-color: #f59e0b;
+  --md-accent-fg-color--transparent: rgba(245, 158, 11, 0.1);
+
+  /* Stone grey accents */
+  --md-default-fg-color--light: #9ca3af;
+  --md-default-fg-color--lighter: #6b7280;
 }
 
-div.autodoc-members {
-  padding-left: 20px;
-  margin-bottom: 15px;
+/* Dark mode overrides */
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #d4af37;
+  --md-primary-fg-color--light: #c9a959;
+  --md-primary-fg-color--dark: #b8964f;
+
+  --md-accent-fg-color: #fbbf24;
+  --md-accent-fg-color--transparent: rgba(251, 191, 36, 0.1);
+
+  /* Darker background for ancient feel */
+  --md-default-bg-color: #1c1917;
+  --md-default-bg-color--light: #292524;
+}
+
+/* Header styling with bronze gradient */
+.md-header {
+  background: linear-gradient(135deg, #d4af37 0%, #c9a959 50%, #b8964f 100%);
+}
+
+/* Links with gold accent */
+.md-typeset a {
+  color: #d4af37;
+}
+
+.md-typeset a:hover {
+  color: #f59e0b;
+}
+
+/* Code blocks with subtle bronze accent */
+.md-typeset code {
+  border-left: 3px solid #d4af37;
+}
+
+/* Buttons with bronze styling */
+.md-button--primary {
+  background-color: #d4af37;
+  border-color: #d4af37;
+}
+
+.md-button--primary:hover {
+  background-color: #c9a959;
+  border-color: #c9a959;
 }

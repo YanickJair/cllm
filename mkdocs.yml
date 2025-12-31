@@ -1,5 +1,5 @@
-site_name: HTTPX
-site_description: Natural Language compressor for LLM.
+site_name: CLLM
+site_description: Semantic Natural Language Compressor for LLM.
 site_url: https://github.com/YanickJair/cllm
 
 theme:
@@ -8,23 +8,38 @@ theme:
     palette:
       - scheme: 'default'
         media: '(prefers-color-scheme: light)'
+        primary: 'amber'
+        accent: 'deep orange'
         toggle:
           icon: 'material/lightbulb'
           name: "Switch to dark mode"
       - scheme: 'slate'
         media: '(prefers-color-scheme: dark)'
-        primary: 'blue'
+        primary: 'amber'
+        accent: 'deep orange'
         toggle:
           icon: 'material/lightbulb-outline'
           name: 'Switch to light mode'
 
-repo_name: encode/httpx
-repo_url: https://github.com/encode/httpx/
+repo_name: YanickJair/cllm
+repo_url: https://github.com/YanickJair/cllm
 edit_uri: ""
 
 nav:
     - Introduction: 'index.md'
-    - QuickStart: 'quickstart.md'
+    - Components:
+        - Transcript Encoder: 'transcript_encoder.md'
+        - System Prompt Encoder: 'sys_prompt_encoder.md'
+        - Structured Data Encoder: 'sd_encoder.md'
+    - Advanced:
+        - CLM Configuration: 'advanced/clm_configuration.md'
+        - CLM Output: 'advanced/clm_output.md'
+        - CLM Dictionary: 'advanced/clm_dictionary.md'
+        - CLM Tokenization: 'advanced/clm_tokenization.md'
+    - Community:
+        - Third Party Packages: 'third_party_packages.md'
+        - Contributing: 'contributing.md'
+        - Code of Conduct: 'code_of_conduct.md'
 
 markdown_extensions:
   - admonition
