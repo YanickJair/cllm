@@ -263,7 +263,14 @@ transcript = "Customer: Hi Raj, I noticed an extra charge on my card for my plan
 cfg = CLMConfig(lang="en")
 encoder = CLMEncoder(cfg=cfg)
 compressed = encoder.encode(input_=transcript, metadata={'call_id': 'CX-0001', 'agent': 'Raj', 'duration': '9m', 'channel': 'voice', 'issue_type': 'Billing Dispute'})
-# [CALL:SUPPORT:AGENT=Raj:DURATION=7m:CHANNEL=voice] [CUSTOMER] [CONTACT:EMAIL=MELISSA.JORDAN@EXAMPLE.COM] [ISSUE:BILLING_DISPUTE:SEVERITY=LOW] [ACTION:TROUBLESHOOT:RESULT=COMPLETED] [ACTION:REFUND:REFERENCE=RFD-908712:TIMELINE=TODAY:RESULT=COMPLETED] [RESOLUTION:RESOLVED:TIMELINE=TODAY] [SENTIMENT:NEUTRAL→SATISFIED→GRATEFUL]
+```
+↓
+```text
+[CALL:SUPPORT:AGENT=Raj:DURATION=7m:CHANNEL=voice] 
+[CUSTOMER] [CONTACT:EMAIL=MELISSA.JORDAN@EXAMPLE.COM] 
+[ISSUE:BILLING_DISPUTE:SEVERITY=LOW] [ACTION:TROUBLESHOOT:RESULT=COMPLETED] 
+[ACTION:REFUND:REFERENCE=RFD-908712:TIMELINE=TODAY:RESULT=COMPLETED] 
+[RESOLUTION:RESOLVED:TIMELINE=TODAY] [SENTIMENT:NEUTRAL→SATISFIED→GRATEFUL]
 ```
 
 ### 2. Structured Data Compression (Enterprise)
@@ -298,7 +305,11 @@ config = CLMConfig(
 
 compressor = CLMEncoder(cfg=config)
 compressed = compressor.encode(kb_catalog)
-# '[KB_CATALOG:1]{ARTICLE_ID,TITLE,CONTENT,CATEGORY,VIEWS,LAST_UPDATED}\\n [KB-001,HOW_TO_RESET_PASSWORD,TO_RESET_YOUR_PASSWORD,_GO_TO_THE_LOGIN_PAGE_AND_CLICK...,ACCOUNT,1523,2024-10-15]'
+```
+↓
+```text
+[KB_CATALOG:1]{ARTICLE_ID,TITLE,CONTENT,CATEGORY,VIEWS,LAST_UPDATED}
+[KB-001,HOW_TO_RESET_PASSWORD,TO_RESET_YOUR_PASSWORD,GO_TO_THE_LOGIN_PAGE_AND_CLICK...,ACCOUNT,1523,2024-10-15]
 ```
 
 ### 3. System Prompt Compression (Enterprise)
@@ -306,21 +317,16 @@ compressed = compressor.encode(kb_catalog)
 Streamline agent instructions and role definitions:
 
 ```python
-# Agent Role Definition
 compressed = encoder.encode(
-    "You are a technical support specialist. Analyze customer issues, "
-    "identify root causes, and provide step-by-step solutions."
+    "You are a Call QA & Compliance Scoring System for customer service operations.\n\nTASK:\nAnalyze the transcript and score the agent’s compliance across required QA categories.\n\nANALYSIS CRITERIA:\n\nMandatory disclosures and verification steps\n\nPolicy adherence\n\nSoft-skill behaviors (empathy, clarity, ownership)\n\nProcess accuracy\n\nCompliance violations or risks\n\nCustomer sentiment trajectory\n\nOUTPUT FORMAT:\n\n{\n  \"summary\": \"short_summary\",\n  \"qa_scores\": {\n    \"verification\": 0.0,\n    \"policy_adherence\": 0.0,\n    \"soft_skills\": 0.0,\n    \"accuracy\": 0.0,\n    \"compliance\": 0.0\n  },\n  \"violations\": [\"list_any_detected\"],\n  \"recommendations\": [\"improvement_suggestions\"]\n}\n\n\nSCORING:\n0.00–0.49: Fail\n0.50–0.74: Needs Improvement\n0.75–0.89: Good\n0.90–1.00: Excellent"
 )
-# [ROLE:TECH_SUPPORT][REQ:ANALYZE,DIAGNOSE,SOLVE][OUT:STEPS]
-
-# Quality Analysis Instructions
-compressed = encoder.encode(
-    "Review the transcript for compliance with data privacy regulations, "
-    "professional tone, and correct problem resolution."
-)
-# [REQ:REVIEW][TARGET:TRANSCRIPT][EXTRACT:COMPLIANCE:TYPE=PRIVACY,TONE,RESOLUTION]
 ```
-
+↓
+```text
+[REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=QA] 
+[EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS,ACCURACY,SENTIMENT:TYPE=LIST,DOMAIN=LEGAL] 
+[OUT_JSON:{summary,qa_scores:{verification,policy_adherence,soft_skills,accuracy,compliance},violations,recommendations}:ENUMS={"ranges": [{"min": 0.0, "max": 0.49, "label": "FAIL"}, {"min": 0.5, "max": 0.74, "label": "NEEDS_IMPROVEMENT"}, {"min": 0.75, "max": 0.89, "label": "GOOD"}, {"min": 0.9, "max": 1.0, "label": "EXCELLENT"}]}]
+```
 ---
 
 ## 🧪 Testing
@@ -411,7 +417,7 @@ CLLM includes patent-pending technology:
 - AGPL-3.0 users receive a royalty-free patent license for AGPL-compliant use
 - Commercial licensees receive full patent rights per license agreement
 
-For questions about patents or licensing: legal@cllm.io
+For questions about patents or licensing: yanick.jair.ta@gmail.com
 
 ---
 
@@ -426,13 +432,13 @@ For questions about patents or licensing: legal@cllm.io
 | SaaS/API service | Commercial |
 | Enterprise deployment | Commercial |
 
-**Not sure?** Contact us at license@cllm.io - we're happy to help!
+**Not sure?** Contact us at yanick.jair.ta@gmail.com - we're happy to help!
 
 ---
 
 ## 🔗 Links
 
-- **Documentation**: [docs.cllm.io](https://docs.cllm.io) (coming soon)
+- **Documentation**: [docs.cllm.io](https://yanickjair.github.io/cllm/) (coming soon)
 - **PyPI**: [pypi.org/project/cllm](https://pypi.org/project/cllm)
 - **Issues**: [GitHub Issues](https://github.com/YanickJar/cllm/issues)
 - **Changelog**: [CHANGELOG.md](CHANGELOG.md)
@@ -446,7 +452,7 @@ If you use CLLM in your research or production systems, please cite:
 ```bibtex
 @software{cllm2025,
   title = {CLLM: Compressed Language Models via Semantic Token Encoding},
-  author = {Jarry, Yanick},
+  author = {Andrade, Yanick},
   year = {2025},
   url = {https://github.com/YanickJar/cllm}
 }

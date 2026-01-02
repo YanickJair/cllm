@@ -7,7 +7,7 @@ from clm_core.types import SDCompressionConfig
 from clm_core.components.sys_prompt import SysPromptConfig
 from clm_core.dictionary import rules_map, vocab_map
 
-type LANG = Literal["en", "fr", "de", "es", "it", "pt", "ru", "ja", "zh", "ko"]
+type LANG = Literal["en", "fr", "es", "pt"]
 
 
 class CLMConfig(BaseModel):

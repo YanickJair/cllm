@@ -1,6 +1,6 @@
 import json
 
-from clm_core import CLMEncoder
+from clm_core import CLMEncoder, SysPromptConfig
 from clm_core import CLMConfig
 
 def load_prompts() -> list[dict[str, str]]:
@@ -10,20 +10,44 @@ def load_prompts() -> list[dict[str, str]]:
     return data
 
 def single_prompt():
-    nl_spec = """Your response must be a list of dictionaries, where each dictionary represents an insight.
-    Every dictionary should contain the following keys:
-    • "insight" → a short description of the observation
-    • "evidence" → the exact quote or behavior from the transcript supporting it
-    • "impact" → a natural-language explanation of why it matters
+    nl_spec = """
+    You are a Document Analysis Agent specialized in invoice processing.
 
-    Do not use JSON, code blocks, or headings in the output.
-    Just return the list of dictionaries directly as plain text."""
+TASK:
+Extract key information from invoice documents and return structured data.
+
+REQUIRED FIELDS:
+- Vendor name and address
+- Invoice number and date
+- Line items (description, quantity, unit price, total)
+- Subtotal, tax, and grand total
+- Payment terms and due date
+
+OPTIONAL FIELDS:
+- Purchase order number
+- Shipping information
+- Billing contact
+
+OUTPUT:
+Return as JSON with nested objects for line items. Include confidence scores 
+for each extracted field (0.0-1.0). Flag any missing required fields.
+
+VALIDATION RULES:
+- Invoice number must be unique
+- Dates must be in ISO format (YYYY-MM-DD)
+- All monetary values as decimals
+- Line item totals must match subtotal
+    """
     cfg = CLMConfig(
         lang="en",
+        sys_prompt_config=SysPromptConfig(
+            infer_types=True,
+            add_attrs=True,
+        )
     )
     encoder = CLMEncoder(cfg=cfg)
     compressed = encoder.encode(nl_spec, verbose=False)
-    print(compressed.compressed)
+    print(compressed.compressed, compressed.compression_ratio)
 
 def main(prompts):
     cfg = CLMConfig(

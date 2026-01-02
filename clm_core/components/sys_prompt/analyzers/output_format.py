@@ -452,7 +452,6 @@ class SchemaOutputCompressor:
             parsed = self._parse_specs_block(raw)
             return parsed if parsed else None
 
-        # No explicit block found -> use NL inference
         nl_parsed = self._extract_specs_from_nl(text)
         return nl_parsed if nl_parsed else None
 

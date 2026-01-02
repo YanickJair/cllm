@@ -1,5 +1,6 @@
 from clm_core.config.schemas import CLMConfig
-from clm_core.types import CLMOutput
+from clm_core.types import CLMOutput, SDCompressionConfig
+from clm_core.components.sys_prompt import SysPromptConfig
 from .encoder import CLMEncoder
 
 from .__version__ import __description__, __title__, __version__
@@ -11,6 +12,8 @@ __all__ = [
     "CLMEncoder",
     "CLMConfig",
     "CLMOutput",
+    "SysPromptConfig",
+    "SDCompressionConfig"
 ]
 
 __locals = locals()
