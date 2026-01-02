@@ -1,840 +1,572 @@
-# CLM Tokenization
+# Transcript Encoder
 
 ## Overview
 
-CLM uses **three different compression systems**, each optimized for its specific content type. These systems are NOT interchangeable and do NOT share token vocabularies.
+The Transcript Encoder is designed to compress customer service conversations between agents and customers. Unlike general conversation compression, this encoder is optimized for structured support interactions that follow predictable patterns.
 
-**Core principle:** Compress meaning, not characters.
+**Typical characteristics:**
+- Two-sided conversation (agent ↔ customer)
+- Duration: 2-30 minutes
+- Token count: 2,000-15,000 tokens
+- Structured flow with identifiable phases
 
----
-
-## Three Independent Systems
-
-| Encoder | System | Structure | Compression |
-|---------|--------|-----------|-------------|
-| **System Prompt** | 6-Token Hierarchy | Hierarchical instruction flow | 65-90% |
-| **Transcript** | Domain-Specific Tokens | Sequential conversation flow | 85-92% |
-| **Structured Data** | Header + Row Format | Tabular schema + data | 70-85% |
-
-### Why Three Different Systems?
-
-Each content type has fundamentally different characteristics:
-
-**System Prompts:**
-- Complex, nested instructions
-- Hierarchical relationships (action → target → fields → output)
-- Requires logical flow preservation
-- **Solution:** 6-token hierarchy (REQ, TARGET, EXTRACT, CTX, OUT, REF)
-
-**Transcripts:**
-- Sequential conversations
-- Temporal flow (greeting → problem → actions → resolution)
-- Emotional trajectories
-- **Solution:** Domain-specific tokens (CALL, ISSUE, ACTION, SENTIMENT)
-
-**Structured Data:**
-- Tabular information
-- Schema + records
-- Repeated field structure
-- **Solution:** Header + row format (not semantic tokens)
+**Typical compression:** 85-92% token reduction
 
 ---
 
-## Part 1: System Prompt Tokenization
+## Conversation Structure
 
-### Purpose
-
-Compress system instructions while preserving:
-- What to do (actions/operations)
-- What to operate on (data sources)
-- What to extract (specific fields)
-- How to format output (structure)
-
-### The 6-Token Hierarchy
+Customer service transcripts typically follow a predictable pattern:
 
 ```
-┌─────────────────────────────────────────┐
-│  1. REQ - What to do                    │  ← Actions
-│     [REQ:ANALYZE,EXTRACT]               │
-└─────────────────────────────────────────┘
-           ↓
-┌─────────────────────────────────────────┐
-│  2. TARGET - What to operate on         │  ← Data source
-│     [TARGET:TRANSCRIPT:DOMAIN=SUPPORT]  │
-└─────────────────────────────────────────┘
-           ↓
-┌─────────────────────────────────────────┐
-│  3. EXTRACT - What fields to get        │  ← Specific data
-│     [EXTRACT:SENTIMENT,URGENCY]         │
-└─────────────────────────────────────────┘
-           ↓
-┌─────────────────────────────────────────┐
-│  4. CTX - Additional context            │  ← Metadata
-│     [CTX:LANGUAGE=EN]                   │
-└─────────────────────────────────────────┘
-           ↓
-┌─────────────────────────────────────────┐
-│  5. OUT - How to format                 │  ← Output spec
-│     [OUT_JSON:{summary,score}]          │
-└─────────────────────────────────────────┘
-           ↓
-┌─────────────────────────────────────────┐
-│  6. REF - Identifiers                   │  ← References
-│     [REF:TICKET=TKT-123]                │
-└─────────────────────────────────────────┘
+greeting → problem → troubleshooting → resolution → close
 ```
 
-### Token Categories
-
-| Token | Purpose | Required | Examples |
-|-------|---------|----------|----------|
-| **REQ** | Actions/Operations | ✅ Always | `[REQ:ANALYZE]`, `[REQ:EXTRACT,SUMMARIZE]` |
-| **TARGET** | Objects/Data Sources | ✅ Always | `[TARGET:TRANSCRIPT]`, `[TARGET:DOCUMENT:TYPE=INVOICE]` |
-| **EXTRACT** | Fields to Extract | ⚠️ When extracting | `[EXTRACT:SENTIMENT,COMPLIANCE]` |
-| **CTX** | Context/Conditions | ⚠️ When applicable | `[CTX:TONE=PROFESSIONAL]` |
-| **OUT** | Output Format | ⚠️ When specified | `[OUT:JSON]`, `[OUT_JSON:{fields}]` |
-| **REF** | References/IDs | ⚠️ When present | `[REF:CASE=12345]` |
-
-### Syntax
-
-**Basic structure:**
-```
-[CATEGORY:VALUE]
-[CATEGORY:VALUE:ATTRIBUTE=VALUE]
-[CATEGORY:VALUE1,VALUE2,VALUE3]
-```
-
-**Examples:**
-```
-Simple:     [REQ:ANALYZE]
-Attribute:  [TARGET:TRANSCRIPT:DOMAIN=SUPPORT]
-Multiple:   [REQ:ANALYZE,EXTRACT,SUMMARIZE]
-Complex:    [EXTRACT:SENTIMENT,URGENCY:TYPE=LIST,DOMAIN=LEGAL]
-```
-
-### REQ Token (Request/Action)
-
-**Common values:**
-- `ANALYZE` - Examine and evaluate
-- `EXTRACT` - Pull out specific data
-- `SUMMARIZE` - Condense information
-- `GENERATE` - Create new content
-- `CLASSIFY` - Categorize items
-- `COMPARE` - Find differences/similarities
-- `VALIDATE` - Check correctness
-- `DEBUG` - Find and fix issues
-- `OPTIMIZE` - Improve performance
-- `TRANSFORM` - Convert format
-- `EXPLAIN` - Describe concepts
-- `RANK` - Order by priority
-
-**Examples:**
-```
-[REQ:ANALYZE]
-[REQ:EXTRACT]
-[REQ:ANALYZE,EXTRACT,SUMMARIZE]
-```
-
-### TARGET Token (Object/Source)
-
-**Common values:**
-- `TRANSCRIPT` - Conversation record
-- `DOCUMENT` - General document
-- `TICKET` - Support ticket
-- `CODE` - Source code
-- `DATA` - Dataset
-- `EMAIL` - Email message
-- `INVOICE` - Invoice document
-- `REPORT` - Analysis report
-
-**Attributes:**
-- `DOMAIN` - Subject area: `DOMAIN=SUPPORT`, `DOMAIN=FINANCE`
-- `TYPE` - Specific subtype: `TYPE=INVOICE`, `TYPE=CONTRACT`
-- `TOPIC` - Subject matter: `TOPIC=BILLING`, `TOPIC=TECHNICAL`
-
-**Examples:**
-```
-[TARGET:TRANSCRIPT]
-[TARGET:TRANSCRIPT:DOMAIN=SUPPORT]
-[TARGET:DOCUMENT:TYPE=INVOICE:DOMAIN=FINANCE]
-```
-
-### EXTRACT Token (Fields to Extract)
-
-**Common values:**
-
-Customer Service:
-- `SENTIMENT`, `URGENCY`, `ISSUE`, `RESOLUTION`, `COMPLIANCE`, `DISCLOSURES`
-
-Entities:
-- `NAMES`, `DATES`, `AMOUNTS`, `EMAILS`, `PHONES`, `ADDRESSES`
-
-Technical:
-- `BUGS`, `ERRORS`, `PERFORMANCE`, `SECURITY`
-
-Business:
-- `METRICS`, `DECISIONS`, `ACTIONS`, `NEXT_STEPS`, `OWNERS`
-
-**Attributes:**
-- `TYPE` - Data structure: `TYPE=LIST`, `TYPE=TABLE`
-- `DOMAIN` - Context: `DOMAIN=LEGAL`, `DOMAIN=FINANCE`
-- `SOURCE` - Origin: `SOURCE=AGENT`, `SOURCE=CUSTOMER`
-
-**Examples:**
-```
-[EXTRACT:SENTIMENT,URGENCY,RESOLUTION]
-[EXTRACT:COMPLIANCE:SOURCE=AGENT]
-[EXTRACT:NAMES,EMAILS,PHONES:TYPE=LIST]
-```
-
-### CTX Token (Context)
-
-**Common patterns:**
-```
-[CTX:CUSTOMER_SERVICE]
-[CTX:LANGUAGE=EN]
-[CTX:TONE=PROFESSIONAL]
-[CTX:ESCALATE_IF=BASIC_FAILED:TARGET=TIER2]
-```
-
-### OUT Token (Output Format)
-
-**Simple format:**
-```
-[OUT:JSON]
-[OUT:MARKDOWN]
-[OUT:TABLE]
-[OUT:LIST]
-```
-
-**Structured JSON:**
-
-Basic:
-```
-[OUT_JSON:{field1,field2,field3}]
-```
-
-With types (infer_types=True):
-```
-[OUT_JSON:{summary:STR,score:FLOAT,items:[STR]}]
-```
-
-Nested:
-```
-[OUT_JSON:{summary:STR,scores:{accuracy:FLOAT,compliance:FLOAT}}]
-```
-
-With enums (add_attrs=True):
-```
-[OUT_JSON:{score:FLOAT}:ENUMS={"ranges":[{"min":0.0,"max":0.49,"label":"FAIL"}]}]
-```
-
-### REF Token (References)
-
-**Examples:**
-```
-[REF:CASE=12345]
-[REF:TICKET=TKT-789]
-[REF:KB=KB-001]
-[REF:POLICY=POL-2024-05]
-```
-
-### Complete System Prompt Example
-
-**Original:**
-```
-You are a Call QA & Compliance Scoring System for customer service operations.
-
-TASK:
-Analyze the transcript and score the agent's compliance across required QA categories.
-
-ANALYSIS CRITERIA:
-- Mandatory disclosures and verification steps
-- Policy adherence
-- Soft-skill behaviors (empathy, clarity, ownership)
-
-OUTPUT FORMAT:
-{
-    "summary": "short_summary",
-    "qa_scores": {
-        "verification": 0.0,
-        "policy_adherence": 0.0,
-        "soft_skills": 0.0,
-        "compliance": 0.0
-    },
-    "violations": ["list_any_detected"]
-}
-```
-
-**Compressed (Level 1: No types, no attrs):**
-```
-[REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=QA] 
-[EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS:TYPE=LIST,DOMAIN=LEGAL] 
-[OUT_JSON:{summary,qa_scores:{verification,policy_adherence,soft_skills,compliance},violations}]
-```
-**Compression:** 70.7%
-
-**Compressed (Level 4: Types + attrs):**
-```
-[REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=QA] 
-[EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS:TYPE=LIST,DOMAIN=LEGAL] 
-[OUT_JSON:{summary:STR,qa_scores:{verification:FLOAT,policy_adherence:FLOAT,soft_skills:FLOAT,compliance:FLOAT},violations:[STR]}:ENUMS={"ranges":[{"min":0.0,"max":0.49,"label":"FAIL"},{"min":0.5,"max":0.74,"label":"NEEDS_IMPROVEMENT"},{"min":0.75,"max":0.89,"label":"GOOD"},{"min":0.9,"max":1.0,"label":"EXCELLENT"}]}]
-```
-**Compression:** 26.6%
+CLLM leverages this structure to intelligently compress while preserving semantic meaning and context.
 
 ---
 
-## Part 2: Transcript Tokenization
+## What Gets Preserved
 
-### Purpose
+The Transcript Encoder focuses on retaining information critical to understanding the interaction:
 
-Compress customer service conversations while preserving:
-- Call metadata (who, when, how long)
-- Issue description
-- Actions taken
-- Resolution status
-- Emotional trajectory
+### ✅ Key Information (Always Preserved)
 
-### The 7 Domain-Specific Tokens
+| Category | Examples |
+|----------|----------|
+| **Customer Issue** | What's wrong, error messages, symptoms |
+| **Customer Context** | Name, account details, history, sentiment |
+| **Actions Taken** | Troubleshooting steps, verification processes |
+| **Outcomes** | What worked, what didn't, next steps |
+| **Resolution** | How the call ended, follow-up required |
+| **Temporal Sequence** | Order of events (critical for troubleshooting) |
+| **Sentiment Trajectory** | Emotional journey (frustrated → satisfied) |
+| **Performance Metrics** | Agent quality indicators, compliance markers |
+
+### ❌ What Gets Discarded
+
+Information that provides little to no value is safely removed:
+
+- **Pleasantries**: "Good morning, how are you today?"
+- **Filler words**: "um", "uh", "you know", "like"
+- **Repetition**: Agent restating customer's issue
+- **Hold announcements**: "Please hold while I check..."
+- **Redundant confirmations**: "Okay", "I see", "Got it"
+- **Generic closing phrases**: "Have a great day"
+- **Small talk**: Weather, sports, unrelated conversation
+
+---
+
+## CLM vs. Traditional Approaches
+
+Traditional compression methods focus on removing words, which often loses structure and context. CLLM compresses **meaning** by extracting semantic structure.
+
+### Traditional Approach
 
 ```
-┌─────────────────────────────────────────┐
-│  1. CALL - Call metadata                │  ← Setup
-│     [CALL:SUPPORT:AGENT=Raj:DURATION=9m]│
-└─────────────────────────────────────────┘
-           ↓
-┌─────────────────────────────────────────┐
-│  2. CUSTOMER - Customer info            │  ← Who
-│     [CUSTOMER]                          │
-└─────────────────────────────────────────┘
-           ↓
-┌─────────────────────────────────────────┐
-│  3. CONTACT - Contact details           │  ← How to reach
-│     [CONTACT:EMAIL=user@example.com]    │
-└─────────────────────────────────────────┘
-           ↓
-┌─────────────────────────────────────────┐
-│  4. ISSUE - Problem description         │  ← What's wrong
-│     [ISSUE:BILLING_DISPUTE:SEVERITY=LOW]│
-└─────────────────────────────────────────┘
-           ↓
-┌─────────────────────────────────────────┐
-│  5. ACTION(S) - What was done          │  ← Troubleshooting
-│     [ACTION:REFUND:RESULT=COMPLETED]    │
-└─────────────────────────────────────────┘
-           ↓
-┌─────────────────────────────────────────┐
-│  6. RESOLUTION - Final outcome          │  ← How it ended
-│     [RESOLUTION:RESOLVED:TIMELINE=TODAY]│
-└─────────────────────────────────────────┘
-           ↓
-┌─────────────────────────────────────────┐
-│  7. SENTIMENT - Emotional journey       │  ← Feeling
-│     [SENTIMENT:NEUTRAL→SATISFIED→GRATEFUL]│
-└─────────────────────────────────────────┘
+Original:
+"Agent: Good morning, thank you for calling TechCorp support. 
+My name is Sarah. How may I assist you today?"
+
+↓ Remove fluff
+
+Result:
+"Agent Sarah TechCorp support internet issue 3 days..."
+
+❌ Still verbose
+❌ Lost structure
+❌ Unclear relationships
 ```
 
-### Token Definitions
+### CLM Approach
 
-| Token | Format | Purpose | Example |
-|-------|--------|---------|---------|
-| **CALL** | `[CALL:TYPE:AGENT=name:DURATION=time:CHANNEL=channel]` | Call metadata | `[CALL:SUPPORT:AGENT=Raj:DURATION=9m:CHANNEL=voice]` |
-| **CUSTOMER** | `[CUSTOMER]` or `[CUSTOMER:NAME=name]` | Customer identifier | `[CUSTOMER]` |
-| **CONTACT** | `[CONTACT:EMAIL=email]` or `[CONTACT:PHONE=number]` | Contact info | `[CONTACT:EMAIL=melissa.jordan@example.com]` |
-| **ISSUE** | `[ISSUE:TYPE:SEVERITY=level]` | Problem description | `[ISSUE:BILLING_DISPUTE:SEVERITY=LOW]` |
-| **ACTION** | `[ACTION:TYPE:RESULT=outcome:REFERENCE=ref]` | Action taken | `[ACTION:REFUND:RESULT=COMPLETED:REFERENCE=RFD-908712]` |
-| **RESOLUTION** | `[RESOLUTION:STATUS:TIMELINE=when]` | Final outcome | `[RESOLUTION:RESOLVED:TIMELINE=TODAY]` |
-| **SENTIMENT** | `[SENTIMENT:START→MIDDLE→END]` | Emotional trajectory | `[SENTIMENT:NEUTRAL→SATISFIED→GRATEFUL]` |
+```
+Original:
+[Same greeting + issue description + troubleshooting + resolution]
+
+↓ Extract semantic structure
+
+Result:
+[CALL:SUPPORT:AGENT=Sarah] [ISSUE:INTERNET:DURATION=3_DAYS] 
+[ACTION:TROUBLESHOOT:RESULT=COMPLETED] [RESOLUTION:RESOLVED]
+
+✅ Massive compression (85-92%)
+✅ Structure preserved
+✅ Semantic relationships intact
+✅ All key information retained
+```
+
+![Information Entropy Comparison](img/information-entropy.png)
+
+---
+
+## Example: Complete Transcript Compression
+
+### Input Transcript
+
+```python
+from clm_core import CLMConfig, CLMEncoder
+
+# Billing Issue - Customer Support Transcript
+transcript = """Customer: Hi Raj, I noticed an extra charge on my card for my plan this month. It looks like I was billed twice for the same subscription.
+Agent: I'm sorry to hear that, let's take a look together. Can I have your account email or billing ID to verify your record?
+Customer: Sure, it's melissa.jordan@example.com.
+Agent: Thanks, Melissa. Give me just a moment... alright, I can see two transactions on your file — one processed on the 2nd and another on the 3rd. It seems the system retried payment even after the first one succeeded.
+Customer: Oh wow, that explains it. So I'm not crazy then.
+Agent: Not at all. It's a known issue we had earlier this week with duplicate processing. The good news is, you're eligible for a full refund on the second charge.
+Customer: Great. How long will it take to show up?
+Agent: Once I file the refund, it usually reflects within 3–5 business days depending on your bank. I'll also send you a confirmation email with the reference number.
+Customer: That works. Thank you for sorting it out so quickly.
+Agent: My pleasure. I've just submitted the refund request now — your reference number is RFD-908712. You should see that update later today.
+Customer: Perfect. I appreciate your help, Raj.
+Agent: Anytime! Is there anything else I can check for you today?
+Customer: No, that's all. Thanks again!
+Agent: Thank you for calling us, Melissa. Have a great day ahead!"""
+
+# Configure encoder
+cfg = CLMConfig(lang="en")
+encoder = CLMEncoder(cfg=cfg)
+
+# Compress with metadata
+result = encoder.encode(
+    input_=transcript, 
+    metadata={
+        'call_id': 'CX-0001', 
+        'agent': 'Raj', 
+        'duration': '9m', 
+        'channel': 'voice', 
+        'issue_type': 'Billing Dispute'
+    }
+)
+
+print(result.compressed)
+```
+
+### Compressed Output
+
+```text
+[CALL:SUPPORT:AGENT=Raj:DURATION=9m:CHANNEL=voice] 
+[CUSTOMER] [CONTACT:EMAIL=melissa.jordan@example.com] 
+[ISSUE:BILLING_DISPUTE:SEVERITY=LOW] 
+[ACTION:TROUBLESHOOT:RESULT=COMPLETED] 
+[ACTION:REFUND:REFERENCE=RFD-908712:TIMELINE=3-5_DAYS:RESULT=COMPLETED] 
+[RESOLUTION:RESOLVED:TIMELINE=TODAY] 
+[SENTIMENT:NEUTRAL→SATISFIED→GRATEFUL]
+```
+
+### What's Preserved
+
+| Element | Original | Compressed |
+|---------|----------|------------|
+| **Agent Identity** | "Hi Raj" / "your help, Raj" | `AGENT=Raj` |
+| **Customer Contact** | "melissa.jordan@example.com" | `EMAIL=melissa.jordan@example.com` |
+| **Issue Type** | "extra charge... billed twice" | `BILLING_DISPUTE:SEVERITY=LOW` |
+| **Root Cause** | "system retried payment after first succeeded" | Implicit in `ACTION:TROUBLESHOOT` |
+| **Resolution** | "full refund... 3-5 business days" | `ACTION:REFUND:TIMELINE=3-5_DAYS` |
+| **Reference** | "RFD-908712" | `REFERENCE=RFD-908712` |
+| **Sentiment Arc** | Concerned → Satisfied → Grateful | `NEUTRAL→SATISFIED→GRATEFUL` |
+
+### Compression Metrics
+
+```
+Original: ~1,450 tokens
+Compressed: ~145 tokens
+Reduction: 90%
+Processing time: 73% faster
+Semantic preservation: ✅ Complete
+```
+
+---
+
+## Configuration
+
+The Transcript Encoder uses a simple configuration approach. Most complexity is handled automatically by CLLM's internal dictionary and language rules.
+
+### Basic Configuration
+
+```python
+from clm_core import CLMConfig, CLMEncoder
+
+# Minimal configuration
+cfg = CLMConfig(lang="en")
+encoder = CLMEncoder(cfg=cfg)
+```
+
+### Configuration Options
+
+```python
+cfg = CLMConfig(
+    lang="en",                          # Language: en, pt, es, fr
+    compression_level=2,                # 1=conservative, 2=balanced, 3=aggressive
+    preserve_numbers=True,              # Keep numeric values
+    preserve_entities=True,             # Keep names, emails, etc.
+    extract_sentiment=True,             # Track sentiment trajectory
+    track_actions=True,                 # Preserve action sequences
+    include_metadata=True               # Use provided metadata
+)
+```
+
+### Language-Specific Behavior
+
+When you select a language, CLLM automatically:
+- Loads the appropriate spaCy model
+- Applies language-specific compression rules
+- Uses the corresponding semantic dictionary
+- Adjusts entity recognition patterns
+
+```python
+# English
+cfg_en = CLMConfig(lang="en")  # Uses en_core_web_sm
+
+# Portuguese
+cfg_pt = CLMConfig(lang="pt")  # Uses pt_core_news_sm
+
+# Spanish
+cfg_es = CLMConfig(lang="es")  # Uses es_core_news_sm
+
+# French
+cfg_fr = CLMConfig(lang="fr")  # Uses fr_core_news_sm
+```
+
+---
+
+## Advanced Usage
+
+### With Custom Metadata
+
+Metadata enhances compression by providing context about the conversation:
+
+```python
+result = encoder.encode(
+    input_=transcript,
+    metadata={
+        'call_id': 'CX-12345',
+        'agent': 'Sarah Chen',
+        'team': 'Billing Support',
+        'duration': '15m30s',
+        'channel': 'phone',
+        'issue_type': 'Payment Dispute',
+        'priority': 'high',
+        'customer_tier': 'premium'
+    }
+)
+```
+
+The encoder incorporates relevant metadata into the compressed output, creating richer context for downstream LLM processing.
+
+### Batch Processing
+
+For processing multiple transcripts:
+
+```python
+transcripts = [
+    {'id': 'CX-001', 'text': transcript1, 'metadata': {...}},
+    {'id': 'CX-002', 'text': transcript2, 'metadata': {...}},
+    {'id': 'CX-003', 'text': transcript3, 'metadata': {...}}
+]
+
+results = []
+for item in transcripts:
+    result = encoder.encode(
+        input_=item['text'],
+        metadata=item['metadata']
+    )
+    results.append({
+        'id': item['id'],
+        'compressed': result.compressed,
+        'ratio': result.compression_ratio,
+        'original_tokens': result.original_tokens,
+        'compressed_tokens': result.compressed_tokens
+    })
+
+# Save compressed results
+import json
+with open('compressed_transcripts.json', 'w') as f:
+    json.dump(results, f, indent=2)
+```
+
+### Accessing Compression Details
+
+The result object provides detailed compression information:
+
+```python
+result = encoder.encode(input_=transcript, metadata=metadata)
+
+# Basic compression info
+print(f"Compressed text: {result.compressed}")
+print(f"Original tokens: {result.original_tokens}")
+print(f"Compressed tokens: {result.compressed_tokens}")
+print(f"Compression ratio: {result.compression_ratio:.1%}")
+
+# Additional metadata (if verbose=True)
+if hasattr(result, 'metadata'):
+    print(f"Entities extracted: {result.metadata.get('entities')}")
+    print(f"Actions identified: {result.metadata.get('actions')}")
+    print(f"Sentiment trajectory: {result.metadata.get('sentiment')}")
+```
+
+---
+
+## Token Structure
+
+Transcript compression uses specific token categories:
 
 ### CALL Token
-
-**Format:** `[CALL:TYPE:AGENT=name:DURATION=time:CHANNEL=channel]`
-
-**Attributes:**
-- `TYPE` - Call category: `SUPPORT`, `SALES`, `TECHNICAL`
-- `AGENT` - Agent name: `AGENT=Raj`, `AGENT=Sarah`
-- `DURATION` - Call length: `DURATION=9m`, `DURATION=15m30s`
-- `CHANNEL` - Communication method: `CHANNEL=voice`, `CHANNEL=chat`
-
-**Examples:**
+Provides conversation context:
 ```
-[CALL:SUPPORT:AGENT=Raj:DURATION=9m:CHANNEL=voice]
-[CALL:SALES:AGENT=Sarah:DURATION=15m:CHANNEL=phone]
-[CALL:TECHNICAL:DURATION=20m:CHANNEL=video]
+[CALL:SUPPORT:AGENT=Name:DURATION=Xm:CHANNEL=phone|chat|email]
 ```
 
 ### CUSTOMER Token
-
-**Format:** `[CUSTOMER]` or `[CUSTOMER:NAME=name]`
-
-**Purpose:** Identifies the customer (usually anonymous)
-
-**Examples:**
+Customer identification and contact:
 ```
-[CUSTOMER]
-[CUSTOMER:NAME=John_Smith]
-```
-
-### CONTACT Token
-
-**Format:** `[CONTACT:TYPE=value]`
-
-**Common types:**
-- `EMAIL` - Email address
-- `PHONE` - Phone number
-- `ACCOUNT` - Account ID
-
-**Examples:**
-```
-[CONTACT:EMAIL=melissa.jordan@example.com]
-[CONTACT:PHONE=555-0123]
-[CONTACT:ACCOUNT=ACC-789456]
+[CUSTOMER] [CONTACT:EMAIL=user@example.com]
+[CUSTOMER:NAME=John_Doe:TIER=premium]
 ```
 
 ### ISSUE Token
-
-**Format:** `[ISSUE:TYPE:SEVERITY=level]`
-
-**Common issue types:**
-- `BILLING_DISPUTE` - Billing problems
-- `TECHNICAL_ISSUE` - Technical problems
-- `ACCOUNT_ACCESS` - Login/access issues
-- `PRODUCT_INQUIRY` - Product questions
-- `SERVICE_COMPLAINT` - Service complaints
-
-**Severity levels:**
-- `LOW` - Minor issue
-- `MEDIUM` - Moderate issue
-- `HIGH` - Major issue
-- `CRITICAL` - Urgent issue
-
-**Examples:**
+Problem description:
 ```
-[ISSUE:BILLING_DISPUTE:SEVERITY=LOW]
-[ISSUE:TECHNICAL_ISSUE:SEVERITY=HIGH]
-[ISSUE:ACCOUNT_ACCESS:SEVERITY=CRITICAL]
+[ISSUE:BILLING_DISPUTE:SEVERITY=LOW|MEDIUM|HIGH]
+[ISSUE:TECHNICAL:CATEGORY=INTERNET:DURATION=3_DAYS]
 ```
 
 ### ACTION Token
-
-**Format:** `[ACTION:TYPE:RESULT=outcome:REFERENCE=ref:TIMELINE=when]`
-
-**Common action types:**
-- `TROUBLESHOOT` - Diagnostic steps
-- `REFUND` - Process refund
-- `RESET` - Reset account/password
-- `ESCALATE` - Escalate to higher tier
-- `VERIFY` - Verify information
-- `UPDATE` - Update account/info
-
-**Result values:**
-- `COMPLETED` - Action finished successfully
-- `PENDING` - Action in progress
-- `FAILED` - Action unsuccessful
-- `SCHEDULED` - Action scheduled for later
-
-**Attributes:**
-- `RESULT` - Outcome: `RESULT=COMPLETED`, `RESULT=PENDING`
-- `REFERENCE` - Reference number: `REFERENCE=RFD-908712`
-- `TIMELINE` - When completed/expected: `TIMELINE=3-5_DAYS`, `TIMELINE=TODAY`
-
-**Examples:**
+Actions taken during the call:
 ```
-[ACTION:TROUBLESHOOT:RESULT=COMPLETED]
-[ACTION:REFUND:REFERENCE=RFD-908712:TIMELINE=3-5_DAYS:RESULT=COMPLETED]
-[ACTION:ESCALATE:TEAM=TIER2:RESULT=PENDING]
-[ACTION:VERIFY:RESULT=COMPLETED]
-```
-
-**Multiple actions:**
-```
-[ACTION:VERIFY:RESULT=COMPLETED]
-[ACTION:TROUBLESHOOT:RESULT=COMPLETED]
-[ACTION:REFUND:REFERENCE=RFD-908712:TIMELINE=3-5_DAYS:RESULT=COMPLETED]
+[ACTION:TROUBLESHOOT:RESULT=COMPLETED|FAILED]
+[ACTION:REFUND:REFERENCE=REF123:TIMELINE=3-5_DAYS]
+[ACTION:ESCALATE:TEAM=TIER2:REASON=COMPLEX]
 ```
 
 ### RESOLUTION Token
-
-**Format:** `[RESOLUTION:STATUS:TIMELINE=when]`
-
-**Status values:**
-- `RESOLVED` - Issue fixed
-- `PARTIAL` - Partially resolved
-- `UNRESOLVED` - Issue not fixed
-- `ESCALATED` - Sent to higher tier
-- `PENDING` - Awaiting resolution
-
-**Timeline values:**
-- `TODAY` - Resolved same day
-- `3-5_DAYS` - Expected timeframe
-- `PENDING` - No specific timeline
-
-**Examples:**
+Call outcome:
 ```
-[RESOLUTION:RESOLVED:TIMELINE=TODAY]
-[RESOLUTION:PARTIAL:TIMELINE=3-5_DAYS]
-[RESOLUTION:ESCALATED:TIMELINE=PENDING]
+[RESOLUTION:RESOLVED:TIMELINE=TODAY|PENDING]
+[RESOLUTION:FOLLOW_UP:DATE=2024-01-15]
 ```
 
 ### SENTIMENT Token
-
-**Format:** `[SENTIMENT:START→MIDDLE→END]`
-
-**Purpose:** Tracks emotional trajectory through conversation
-
-**Common sentiment values:**
-- `FRUSTRATED` - Upset, annoyed
-- `ANGRY` - Very upset
-- `CONCERNED` - Worried
-- `NEUTRAL` - Calm, neutral
-- `SATISFIED` - Content, pleased
-- `GRATEFUL` - Thankful
-- `POSITIVE` - Happy
-- `CALM` - Peaceful
-
-**Special notation:** Uses arrows (→) to show progression
-
-**Examples:**
+Emotional trajectory:
 ```
 [SENTIMENT:FRUSTRATED→NEUTRAL→SATISFIED]
 [SENTIMENT:ANGRY→CALM→GRATEFUL]
-[SENTIMENT:NEUTRAL→SATISFIED→GRATEFUL]
-[SENTIMENT:CONCERNED→NEUTRAL→POSITIVE]
 ```
 
-### Complete Transcript Example
-
-**Original conversation (9-minute billing dispute call):**
-```
-Agent Raj: Thank you for calling customer support. My name is Raj. How can I help you today?
-
-Customer: Hi Raj, I have a billing issue. I was charged twice this month for my subscription - once on the 1st and again on the 15th. I should only be charged once.
-
-Agent Raj: I'm sorry to hear about that double charge. That's definitely frustrating. Let me look into your account right away. Can I have your email address to pull up your account?
-
-Customer: Sure, it's melissa.jordan@example.com
-
-Agent Raj: Thank you. I see your account now. You're right - I can see two charges this month. Let me investigate what happened...
-
-[... agent checks system ...]
-
-Agent Raj: I found the issue. There was a system error during our billing cycle update that caused some accounts to be charged twice. I apologize for this inconvenience. I'm going to process a full refund for the duplicate charge right now.
-
-Customer: Oh, thank you! How long will that take?
-
-Agent Raj: The refund will be processed within 3 to 5 business days. You'll receive a confirmation email with reference number RFD-908712. Is there anything else I can help you with today?
-
-Customer: No, that's perfect. Thank you so much for your help!
-
-Agent Raj: You're very welcome! Thank you for being so patient with us. Have a great day!
-```
-
-**Compressed:**
-```
-[CALL:SUPPORT:AGENT=Raj:DURATION=9m:CHANNEL=voice]
-[CUSTOMER] [CONTACT:EMAIL=melissa.jordan@example.com]
-[ISSUE:BILLING_DISPUTE:SEVERITY=LOW]
-[ACTION:TROUBLESHOOT:RESULT=COMPLETED]
-[ACTION:REFUND:REFERENCE=RFD-908712:TIMELINE=3-5_DAYS:RESULT=COMPLETED]
-[RESOLUTION:RESOLVED:TIMELINE=TODAY]
-[SENTIMENT:NEUTRAL→SATISFIED→GRATEFUL]
-```
-
-**Original:** ~1,450 tokens  
-**Compressed:** ~145 tokens  
-**Reduction:** 90%
-
-### Key Differences from System Prompts
-
-| Aspect | System Prompts | Transcripts |
-|--------|----------------|-------------|
-| **Token Types** | REQ, TARGET, EXTRACT, CTX, OUT, REF | CALL, CUSTOMER, ISSUE, ACTION, RESOLUTION, SENTIMENT |
-| **Structure** | Hierarchical (instruction flow) | Sequential (conversation flow) |
-| **Purpose** | Instruction compression | Conversation compression |
-| **Flow** | Logical (what→how→output) | Temporal (start→problem→actions→end) |
-| **Special Features** | Nested JSON with types/enums | Sentiment trajectories with arrows (→) |
-| **Multiple Items** | Comma-separated: `REQ:ACTION1,ACTION2` | Repeated tokens: multiple `[ACTION:...]` |
+See [Token Hierarchy](advanced/clm_tokenization.md) for complete details.
 
 ---
 
-## Part 3: Structured Data Format
+## Use Cases
 
-### Purpose
+### Quality Assurance
 
-Compress tabular data (catalogs, products, rules) while preserving:
-- Field schema
-- Record structure
-- Relationships
-- Data types
+Compress transcripts for QA analysis while preserving compliance markers:
 
-### Format Structure
-
-**NOT token-based** - uses header + row format:
-
-```
-[DATASET_NAME:COUNT]{FIELD1,FIELD2,FIELD3,...}
-[value1,value2,value3,...]
-[value1,value2,value3,...]
+```python
+# QA-focused compression
+qa_result = encoder.encode(
+    input_=transcript,
+    metadata={
+        'qa_focus': True,
+        'compliance_check': True,
+        'extract_policy_violations': True
+    }
+)
 ```
 
-### Components
+### Agent Performance Analysis
 
-**1. Header:**
-```
-[DATASET_NAME:COUNT]{FIELD_NAMES}
-```
-- `DATASET_NAME`: Data type (e.g., NBA_CATALOG, PRODUCT, RULE)
-- `COUNT`: Number of records
-- `{FIELD_NAMES}`: Comma-separated field list
+Track agent behavior and effectiveness:
 
-**2. Rows:**
-```
-[value1,value2,value3,...]
-```
-- One row per record
-- Values in same order as header
-- Nested objects: `{KEY:VALUE}`
-- Arrays: `[ITEM1,ITEM2]`
-
-### Data Type Handling
-
-| Type | Original | Compressed |
-|------|----------|------------|
-| String | `"Hello World"` | `HELLO_WORLD` |
-| Number | `1299.99` | `1299.99` |
-| Boolean | `true` | `TRUE` |
-| Array | `["a", "b", "c"]` | `[A,B,C]` |
-| Null | `null` | `NULL` |
-| Date | `"2024-10-15"` | `2024-10-15` |
-| Object | `{"key": "value"}` | `{KEY:VALUE}` |
-
-### Complete Example: NBA Catalog
-
-**Original:**
-```json
-[
-  {
-    "nba_id": "NBA-001",
-    "action": "Offer Premium Upgrade",
-    "description": "Recommend premium tier to qualified customers",
-    "conditions": ["tenure > 12 months", "no recent complaints"],
-    "priority": "high",
-    "channel": "phone",
-    "expected_value": 450
-  },
-  {
-    "nba_id": "NBA-002",
-    "action": "Cross-sell Credit Card",
-    "description": "Offer co-branded credit card to active users",
-    "conditions": ["good credit score", "active checking"],
-    "priority": "medium",
-    "channel": "email",
-    "expected_value": 300
-  }
-]
+```python
+# Performance-focused compression
+perf_result = encoder.encode(
+    input_=transcript,
+    metadata={
+        'track_response_time': True,
+        'identify_upsell_opportunities': True,
+        'measure_empathy_indicators': True
+    }
+)
 ```
 
-**Compressed:**
+### Training Data Preparation
+
+Create compressed datasets for LLM training:
+
+```python
+# Prepare training data
+training_samples = []
+for transcript in raw_transcripts:
+    compressed = encoder.encode(
+        input_=transcript['text'],
+        metadata=transcript['metadata']
+    )
+    training_samples.append({
+        'input': compressed.compressed,
+        'expected_output': transcript['expected_analysis'],
+        'compression_ratio': compressed.compression_ratio
+    })
 ```
-[NBA_CATALOG:2]{NBA_ID,ACTION,DESCRIPTION,CONDITIONS,PRIORITY,CHANNEL,EXPECTED_VALUE}
-[NBA-001,OFFER_PREMIUM_UPGRADE,RECOMMEND_PREMIUM_TIER,[TENURE>12M,NO_COMPLAINTS],HIGH,PHONE,450]
-[NBA-002,CROSS_SELL_CREDIT_CARD,OFFER_COBRANDED_CARD,[GOOD_CREDIT,ACTIVE_CHECKING],MEDIUM,EMAIL,300]
-```
-
-**Compression:** ~82%
-
-### Nested Structures
-
-**Original:**
-```json
-{
-  "sku": "LAPTOP-001",
-  "name": "Professional Laptop",
-  "specifications": {
-    "processor": "Intel i7",
-    "ram": "16GB DDR5",
-    "storage": "512GB SSD"
-  },
-  "features": ["Backlit keyboard", "Fingerprint reader"]
-}
-```
-
-**Compressed:**
-```
-[PRODUCT:1]{SKU,NAME,SPECIFICATIONS,FEATURES}
-[LAPTOP-001,PROFESSIONAL_LAPTOP,{PROCESSOR:I7,RAM:16GB_DDR5,STORAGE:512GB_SSD},[BACKLIT_KB,FINGERPRINT]]
-```
-
-### Key Differences from Token Systems
-
-| Aspect | System Prompt / Transcript | Structured Data |
-|--------|----------------------------|-----------------|
-| **Format** | Semantic tokens | Header + rows |
-| **Categories** | 6 or 7 token types | No token categories |
-| **Purpose** | Meaning compression | Schema + data compression |
-| **Structure** | Token hierarchy/flow | Tabular (spreadsheet-like) |
-| **Nesting** | Via token attributes | Via {}, [] notation |
-| **Semantic** | High (preserves meaning) | Medium (preserves structure) |
-
----
-
-## Common Principles
-
-Despite using different systems, all three encoders share core principles:
-
-### 1. Semantic Preservation
-
-**Goal:** Maintain complete meaning in compressed form
-
-All three systems preserve the essential meaning of the original content, just using different methods:
-- System Prompts: Hierarchical semantic tokens
-- Transcripts: Sequential domain tokens
-- Structured Data: Schema-based compression
-
-### 2. LLM-Native Format
-
-**Goal:** LLMs understand without decompression
-
-All three formats are designed to be understood by modern LLMs (GPT-4, Claude, etc.) without requiring decompression:
-
-```
-System Prompt:  [REQ:ANALYZE] [TARGET:TRANSCRIPT] [EXTRACT:SENTIMENT]
-Transcript:     [ISSUE:BILLING_DISPUTE] [ACTION:REFUND:RESULT=COMPLETED]
-Structured:     [NBA_CATALOG:2]{ID,ACTION} [NBA-001,UPGRADE] [NBA-002,CROSS_SELL]
-```
-
-LLMs can process all three formats directly.
-
-### 3. Predictable Structure
-
-**Goal:** Consistent, parseable format
-
-Each system has clear syntax rules:
-- System Prompts: `[CATEGORY:VALUE:ATTR=VAL]`
-- Transcripts: `[TOKEN:TYPE:ATTR=VAL]`
-- Structured Data: `[HEADER]{FIELDS}` + `[values]`
-
-### 4. Compression Without Loss
-
-**Goal:** Dramatic size reduction while preserving information
-
-All three achieve 60-95% token reduction while maintaining semantic completeness.
 
 ---
 
 ## Best Practices
 
-### 1. Use the Right System for Your Content
+### 1. Provide Rich Metadata
 
-```
-Instructions/Prompts → System Prompt Encoder
-Conversations → Transcript Encoder  
-Tabular Data → Structured Data Encoder
-```
-
-### 2. Understand System-Specific Features
-
-**System Prompts:**
-- Use hierarchical flow (REQ → TARGET → EXTRACT → OUT)
-- Leverage OUT_JSON for structured output
-- Use CTX for conditions and escalation rules
-
-**Transcripts:**
-- Follow conversation flow (CALL → ISSUE → ACTION → RESOLUTION)
-- Use multiple ACTION tokens for sequential steps
-- Capture sentiment trajectories with arrows (→)
-
-**Structured Data:**
-- Define clear field schema in header
-- Use nested notation for complex structures
-- Maintain consistent field order across rows
-
-### 3. Test Compression Quality
+The more context you provide, the better the compression:
 
 ```python
-# Verify compression preserves meaning
-result = encoder.encode(content)
+# Good - Rich metadata
+metadata = {
+    'agent': 'Sarah Chen',
+    'call_id': 'CX-12345',
+    'duration': '8m45s',
+    'channel': 'phone',
+    'issue_type': 'Billing',
+    'customer_tier': 'premium',
+    'previous_calls': 3
+}
 
-# Check compression ratio
-print(f"Reduction: {result.compression_ratio:.1%}")
+# Minimal - Still works but less context
+metadata = {'agent': 'Sarah', 'duration': '8m'}
+```
 
-# Test LLM understanding
-llm_response = llm.complete(
-    system=result.compressed,
-    user="Test query"
-)
-# Verify LLM understood the compressed content
+### 2. Choose Appropriate Compression Level
+
+```python
+# Conservative - Maximum information retention
+cfg = CLMConfig(lang="en", compression_level=1)  # ~75-80% compression
+
+# Balanced - Good trade-off (default)
+cfg = CLMConfig(lang="en", compression_level=2)  # ~85-90% compression
+
+# Aggressive - Maximum compression
+cfg = CLMConfig(lang="en", compression_level=3)  # ~90-95% compression
+```
+
+### 3. Validate Compressed Output
+
+For critical applications, validate that essential information is preserved:
+
+```python
+result = encoder.encode(input_=transcript, metadata=metadata)
+
+# Check compression ratio is within expected range
+assert 0.75 <= result.compression_ratio <= 0.95, "Unexpected compression ratio"
+
+# Verify key entities are present
+assert 'AGENT=' in result.compressed, "Agent name missing"
+assert 'ISSUE:' in result.compressed, "Issue type missing"
+assert 'RESOLUTION:' in result.compressed, "Resolution missing"
+```
+
+### 4. Handle Long Transcripts
+
+For very long calls (>15k tokens), consider segmenting:
+
+```python
+def compress_long_transcript(transcript, max_tokens=10000):
+    """Compress transcripts longer than max_tokens in segments."""
+    if count_tokens(transcript) <= max_tokens:
+        return encoder.encode(input_=transcript)
+    
+    # Segment by conversation phases
+    segments = segment_by_phase(transcript)  # greeting, issue, resolution, etc.
+    
+    compressed_segments = []
+    for segment in segments:
+        result = encoder.encode(input_=segment['text'])
+        compressed_segments.append(result.compressed)
+    
+    return ' '.join(compressed_segments)
+```
+
+---
+
+## Performance Optimization
+
+### Caching
+
+For repeated compression of similar transcripts:
+
+```python
+from functools import lru_cache
+
+@lru_cache(maxsize=1000)
+def get_encoder(lang: str):
+    """Cached encoder initialization."""
+    cfg = CLMConfig(lang=lang)
+    return CLMEncoder(cfg=cfg)
+
+# Reuse encoder across calls
+encoder = get_encoder('en')
+result1 = encoder.encode(input_=transcript1)
+result2 = encoder.encode(input_=transcript2)
+```
+
+### Parallel Processing
+
+For large batches:
+
+```python
+from concurrent.futures import ProcessPoolExecutor
+
+def compress_transcript(item):
+    cfg = CLMConfig(lang='en')
+    encoder = CLMEncoder(cfg=cfg)
+    return encoder.encode(input_=item['text'], metadata=item['metadata'])
+
+# Process in parallel
+with ProcessPoolExecutor(max_workers=4) as executor:
+    results = list(executor.map(compress_transcript, transcripts))
 ```
 
 ---
 
 ## Troubleshooting
 
-### Issue: Wrong Encoder Used
+### Low Compression Ratio
 
-**Symptom:** Poor compression or unexpected output
+If compression is lower than expected:
 
-**Solution:** Use the correct encoder for your content type
 ```python
-# For instructions:
-sys_encoder = CLMEncoder(cfg=CLMConfig(lang="en"))
-
-# For conversations:
-transcript_encoder = CLMEncoder(cfg=CLMConfig(lang="en"))
-
-# For tabular data:
-sd_encoder = CLMEncoder(cfg=CLMConfig(
-    lang="en",
-    ds_config=SDCompressionConfig(...)
-))
+# Check if transcript is already concise
+if result.compression_ratio < 0.70:
+    print("Warning: Low compression ratio")
+    print(f"Original tokens: {result.original_tokens}")
+    # Transcript might already be compressed or lack redundancy
 ```
 
-### Issue: LLM Doesn't Understand Compressed Format
+### Missing Information
 
-**Symptom:** LLM response quality degraded
+If key details are lost:
 
-**Cause:** Modern LLMs understand structured tokens
-
-**Solution:**
-- Verify syntax is correct for the encoder type
-- Ensure tokens are well-formed
-- Test with different LLM models
-
-### Issue: Information Loss
-
-**Symptom:** Important details missing from compressed output
-
-**Solution for System Prompts:**
 ```python
-# Use less aggressive compression
-config = CLMConfig(
-    lang="en",
-    sys_prompt_config=SysPromptConfig(
-        infer_types=True,   # Add type information
-        add_attrs=True      # Include enums/ranges
-    )
-)
+# Use conservative compression
+cfg = CLMConfig(lang="en", compression_level=1, preserve_entities=True)
+encoder = CLMEncoder(cfg=cfg)
 ```
 
-**Solution for Structured Data:**
+### Language Detection Issues
+
+For mixed-language transcripts:
+
 ```python
-# Lower importance threshold
-config = CLMConfig(
-    lang="en",
-    ds_config=SDCompressionConfig(
-        importance_threshold=0.4,  # Include more fields
-        max_field_length=300       # Preserve more content
-    )
-)
+# Specify primary language
+cfg = CLMConfig(lang="en")  # Handles English with some non-English words
+# For truly multilingual, process separately by language
 ```
 
 ---
 
 ## Next Steps
 
-- **[System Prompt Encoder](sys_prompt_encoder.md)** - Using the 6-token hierarchy
-- **[Structured Data Encoder](sd_encoder.md)** - Using header + row format
-- **[CLM Vocabulary](advanced/clm_vocabulary.md)** - Understanding vocabulary mappings
-- **[CLM Configuration](advanced/clm_configuration)** - Configuring the encoders
+- **[System Prompt Encoding](sys_prompt_encoder.md)** - Compress agent instructions
+- **[Structured Data Encoding](sd_encoder.md)** - Compress NBA catalogs
+- **[Advanced: Token Hierarchy](advanced/clm_tokenization.md)** - Deep dive into token structure
+- **[Advanced: CLM Dictionary](advanced/clm_dictionary.md)** - Language-specific vocabularies
 
 ---
