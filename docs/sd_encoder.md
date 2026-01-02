@@ -778,10 +778,9 @@ config = SDCompressionConfig(
 
 ## Next Steps
 
-- **[System Prompt Encoding](sys_prompt_encoder.md)** - Compress agent instructions
 - **[Transcript Encoding](transcript_encoder.md)** - Compress conversations
 - **[Advanced: Token Hierarchy](advanced/clm_tokenization.md)** - Understanding semantic tokens
-- **[Advanced: CLM Dictionary](advanced/clm_dictionary.md)** - Language vocabularies
+- **[Advanced: CLM Dictionary](advanced/clm_vocabulary.md)** - Language vocabularies
 
 ---
 

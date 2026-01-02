@@ -314,7 +314,7 @@ Based on production testing with 5,000+ samples:
 CLM is dual-licensed:
 
 - **AGPL-3.0** for open source projects ([details](https://github.com/YanickJar/cllm/blob/main/LICENSE-AGPL))
-- **Commercial License** for proprietary use ([contact us](yanick.jair.ta@gmail.com))
+- **Commercial License** for proprietary use ([contact us](mailto:yanick.jair.ta@gmail.com))
 
 See our [Licensing Guide](https://github.com/YanickJar/cllm/blob/main/LICENSING.md) for details.
 
