@@ -832,10 +832,9 @@ config = CLMConfig(
 
 ## Next Steps
 
-- **[System Prompt Encoder](../sys_prompt_encoder.md)** - Using the 6-token hierarchy
-- **[Transcript Encoder](../transcript_encoder.md)** - Using domain-specific tokens
-- **[Structured Data Encoder](../sd_encoder.md)** - Using header + row format
-- **[CLM Vocabulary](clm_vocabulary.md)** - Understanding vocabulary mappings
-- **[CLM Configuration](clm_configuration.md)** - Configuring the encoders
+- **[System Prompt Encoder](sys_prompt_encoder.md)** - Using the 6-token hierarchy
+- **[Structured Data Encoder](sd_encoder.md)** - Using header + row format
+- **[CLM Vocabulary](advanced/clm_vocabulary.md)** - Understanding vocabulary mappings
+- **[CLM Configuration](advanced/clm_configuration)** - Configuring the encoders
 
 ---

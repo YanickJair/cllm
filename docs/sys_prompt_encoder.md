@@ -1062,7 +1062,7 @@ result2 = encoder.encode(prompt)  # Consistent
 - **[Transcript Encoding](transcript_encoder.md)** - Compress customer service conversations
 - **[Structured Data Encoding](sd_encoder.md)** - Compress catalogs and configurations
 - **[Advanced: Token Hierarchy](advanced/clm_tokenization.md)** - Deep dive into semantic tokens
-- **[Advanced: CLM Dictionary](advanced/clm_dictionary.md)** - Language-specific vocabularies
+- **[Advanced: CLM Dictionary](advanced/clm_vocabulary.md)** - Language-specific vocabularies
 
 ---
 
