@@ -11,38 +11,32 @@ def load_prompts() -> list[dict[str, str]]:
 
 def single_prompt():
     nl_spec = """
-    You are a Call QA & Compliance Scoring System for customer service operations.
+    You are a Document Analysis Agent specialized in invoice processing.
 
-    TASK:
-    Analyze the transcript and score the agent's compliance across required QA categories.
-    
-    ANALYSIS CRITERIA:
-    - Mandatory disclosures and verification steps
-    - Policy adherence
-    - Soft-skill behaviors (empathy, clarity, ownership)
-    - Process accuracy
-    - Compliance violations or risks
-    - Customer sentiment trajectory
-    
-    OUTPUT FORMAT:
-    {
-        "summary": "short_summary",
-        "qa_scores": {
-            "verification": 0.0,
-            "policy_adherence": 0.0,
-            "soft_skills": 0.0,
-            "accuracy": 0.0,
-            "compliance": 0.0
-        },
-        "violations": ["list_any_detected"],
-        "recommendations": ["improvement_suggestions"]
-    }
-    
-    SCORING:
-    0.00–0.49: Fail
-    0.50–0.74: Needs Improvement
-    0.75–0.89: Good
-    0.90–1.00: Excellent
+TASK:
+Extract key information from invoice documents and return structured data.
+
+REQUIRED FIELDS:
+- Vendor name and address
+- Invoice number and date
+- Line items (description, quantity, unit price, total)
+- Subtotal, tax, and grand total
+- Payment terms and due date
+
+OPTIONAL FIELDS:
+- Purchase order number
+- Shipping information
+- Billing contact
+
+OUTPUT:
+Return as JSON with nested objects for line items. Include confidence scores 
+for each extracted field (0.0-1.0). Flag any missing required fields.
+
+VALIDATION RULES:
+- Invoice number must be unique
+- Dates must be in ISO format (YYYY-MM-DD)
+- All monetary values as decimals
+- Line item totals must match subtotal
     """
     cfg = CLMConfig(
         lang="en",

@@ -113,12 +113,6 @@ In production environments, system prompts create significant overhead:
 | **Chatbot Service** | 10,000 concurrent users × 50 interactions/day | 500K prompt tokens/day |
 | **Enterprise Tool** | 500 employees × 100 queries/day | 50K prompt tokens/day |
 
-At **$0.25 per 1M tokens** (input):
-- Contact center: **$5,000/day** = **$1.8M/year** in system prompt costs alone
-- 75% compression saves: **$1.35M/year**
-
-### Beyond Cost
-
 Compression provides additional benefits:
 
 **⚡ Faster Processing**
@@ -143,15 +137,15 @@ Compression provides additional benefits:
 
 ---
 
-## CLLM Compression Strategy
+## CLM Compression Strategy
 
-**CLLM semantic encoding**:
+**CLM semantic encoding**:
 - ✅ Models understand compressed tokens natively
 - ✅ No decompression needed
 - ✅ Semantic meaning preserved
 - ✅ Structured, predictable format
 
-### How CLLM Compresses
+### How CLM Compresses
 
 1. **Intent Detection**: Identifies primary action (analyze, extract, generate)
 2. **Role Extraction**: Captures agent identity and domain
@@ -295,7 +289,6 @@ The configuration choice depends on your specific requirements:
 
 **Example use case:**
 ```python
-# 20,000 calls/day - maximize cost savings
 cfg = CLMConfig(
     lang="en",
     sys_prompt_config=SysPromptConfig(infer_types=False, add_attrs=False)
@@ -490,7 +483,7 @@ cfg = CLMConfig(
 ```text
 [REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=QA] 
 [EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS,ACCURACY,SENTIMENT:TYPE=LIST,DOMAIN=LEGAL] 
-[OUT_JSON:{summary,qa_scores:{verification,policy_adherence,soft_skills,accuracy,compliance},violations,recommendations}:ENUMS={"ranges":[{"min":0.0,"max":0.49,"label":"FAIL"},{"min":0.5,"max":0.74,"label":"NEEDS_IMPROVEMENT"},{"min":0.75,"max":0.89,"label":"GOOD"},{"min":0.9,"max":1.0,"label":"EXCELLENT"}],"analysis_criteria":{"kind":"categorical","values":["MANDATORY DISCLOSURES AND VERIFICATION STEPS","POLICY ADHERENCE","SOFT-SKILL BEHAVIORS"]}}]
+[OUT_JSON:{summary,qa_scores:{verification,policy_adherence,soft_skills,accuracy,compliance},violations,recommendations}:ENUMS={"ranges": [{"min": 0.0, "max": 0.49, "label": "FAIL"}, {"min": 0.5, "max": 0.74, "label": "NEEDS_IMPROVEMENT"}, {"min": 0.75, "max": 0.89, "label": "GOOD"}, {"min": 0.9, "max": 1.0, "label": "EXCELLENT"}], "analysis_criteria": {"kind": "categorical", "values": ["MANDATORY DISCLOSURES AND VERIFICATION STEPS", "POLICY ADHERENCE", "SOFT-SKILL BEHAVIORS"]}}]
 ```
 
 **Compressed tokens:** 195 tokens  
@@ -515,7 +508,7 @@ cfg = CLMConfig(
 ```text
 [REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=QA] 
 [EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS,ACCURACY,SENTIMENT:TYPE=LIST,DOMAIN=LEGAL] 
-[OUT_JSON:{summary:STR,qa_scores:{verification:FLOAT,policy_adherence:FLOAT,soft_skills:FLOAT,accuracy:FLOAT,compliance:FLOAT},violations:[STR],recommendations:[STR]}:ENUMS={"ranges":[{"min":0.0,"max":0.49,"label":"FAIL"},{"min":0.5,"max":0.74,"label":"NEEDS_IMPROVEMENT"},{"min":0.75,"max":0.89,"label":"GOOD"},{"min":0.9,"max":1.0,"label":"EXCELLENT"}],"analysis_criteria":{"kind":"categorical","values":["MANDATORY DISCLOSURES AND VERIFICATION STEPS","POLICY ADHERENCE","SOFT-SKILL BEHAVIORS"]}}]
+[OUT_JSON:{summary:STR,qa_scores:{verification:FLOAT,policy_adherence:FLOAT,soft_skills:FLOAT,accuracy:FLOAT,compliance:FLOAT},violations:[STR],recommendations:[STR]}:ENUMS={"ranges": [{"min": 0.0, "max": 0.49, "label": "FAIL"}, {"min": 0.5, "max": 0.74, "label": "NEEDS_IMPROVEMENT"}, {"min": 0.75, "max": 0.89, "label": "GOOD"}, {"min": 0.9, "max": 1.0, "label": "EXCELLENT"}], "analysis_criteria": {"kind": "categorical", "values": ["MANDATORY DISCLOSURES AND VERIFICATION STEPS", "POLICY ADHERENCE", "SOFT-SKILL BEHAVIORS"]}}]
 ```
 
 **Compressed tokens:** 209 tokens  
@@ -563,17 +556,15 @@ Output should be:
 
 **Compressed:**
 ```text
-[ROLE:TECH_SUPPORT:DOMAIN=NETWORK] 
-[REQ:DIAGNOSE,TROUBLESHOOT,ESCALATE,DOCUMENT] 
-[ACTIONS:CHECK_PHYSICAL,VERIFY_ADAPTER,TEST_DEVICE,RESET_ROUTER,CHECK_OUTAGE] 
-[OUT_STEPS:NUMBERED,SIMPLE_LANG,TIME_EST,SUCCESS_CRITERIA] 
-[CTX:ESCALATE_IF=BASIC_FAILED:TARGET=TIER2]
+[REQ:DEBUG] [REQ:PREDICT] 
+[TARGET:TICKET:DOMAIN=SUPPORT] 
+[OUT_JSON:STR:ENUMS={"document_all_steps_taken\n____\n____troubleshooting_steps": {"kind": "categorical", "values": ["CHECK PHYSICAL CONNECTIONS", "VERIFY NETWORK ADAPTER SETTINGS", "TEST WITH DIFFERENT DEVICES", "RESET ROUTER"]}}]
 ```
 
 **Metrics:**
 - Original: 165 tokens
 - Compressed: 52 tokens
-- Reduction: 68.5%
+- Reduction: 57.4%
 
 ---
 
@@ -611,18 +602,15 @@ VALIDATION RULES:
 
 **Compressed:**
 ```text
-[ROLE:DOC_ANALYZER:DOMAIN=INVOICE] 
-[REQ:EXTRACT] [TARGET:DOCUMENT:TYPE=INVOICE] 
-[EXTRACT:VENDOR_NAME,VENDOR_ADDR,INV_NUM,INV_DATE,LINE_ITEMS:{DESC,QTY,UNIT_PRICE,TOTAL},SUBTOTAL,TAX,GRAND_TOTAL,PAYMENT_TERMS,DUE_DATE:REQUIRED=TRUE] 
-[EXTRACT:PO_NUM,SHIPPING,BILLING_CONTACT:REQUIRED=FALSE] 
-[OUT_JSON:NESTED,CONFIDENCE:RANGE=0.0-1.0,FLAG_MISSING] 
-[VALIDATE:INV_NUM=UNIQUE,DATES=ISO,MONEY=DECIMAL,TOTALS=MATCH]
+[REQ:RANK] [TARGET:REPORT:DOMAIN=FINANCE:TOPIC=ANALYSIS_AGENT] 
+[EXTRACT:NAMES,ADDRESSES,DATES:TYPE=LIST,DOMAIN=ENTITIES] 
+[OUT_JSON:STR:ENUMS={"required_fields": {"kind": "categorical", "values": ["VENDOR NAME AND ADDRESS", "INVOICE NUMBER AND DATE", "LINE ITEMS"]}, "payment_terms_and_due_date\n\noptional_fields": {"kind": "categorical", "values": ["PURCHASE ORDER NUMBER", "SHIPPING INFORMATION", "BILLING CONTACT"]}, "validation_rules": {"kind": "categorical", "values": ["INVOICE NUMBER MUST BE UNIQUE", "DATES MUST BE IN ISO FORMAT"]}}]
 ```
 
 **Metrics:**
 - Original: 245 tokens
 - Compressed: 98 tokens
-- Reduction: 60.0%
+- Reduction: 28.3%
 
 ---
 
@@ -1082,7 +1070,7 @@ result2 = encoder.encode(prompt)  # Consistent
 
 Questions about system prompt compression?
 
-- 📖 **Documentation**: [docs.cllm.io](https://docs.cllm.io)
+- 📖 **Documentation**: [docs.cllm.io](https://yanickjair.github.io/cllm/)
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/YanickJar/cllm/discussions)
 - 🐛 **Issues**: [GitHub Issues](https://github.com/YanickJar/cllm/issues)
 - 📧 **Email**: support@cllm.io
