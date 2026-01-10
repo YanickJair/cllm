@@ -1,4 +1,6 @@
 from typing import Annotated, Literal
+
+import spacy
 from pydantic import BaseModel, Field, computed_field, ConfigDict
 
 from clm_core.utils.parser_rules import BaseRules
@@ -25,6 +27,21 @@ class CLMConfig(BaseModel):
     @property
     def vocab(self) -> BaseVocabulary:
         return vocab_map[self.lang]
+
+    @computed_field
+    @property
+    def nlp_model(self) -> spacy.Language:
+        """
+        Load spaCy model for the configured language
+        Returns
+        -------
+
+        """
+        match self.lang:
+            case "en":
+                return spacy.load("en_core_web_sm")
+            case _:
+                raise NotImplementedError(f"Model for language {self.lang} not supported yet")
 
     @computed_field
     @property

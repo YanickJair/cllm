@@ -18,7 +18,8 @@ class TemporalAnalyzer:
     def __init__(self):
         # TODO: receive nlp as argument instead of loading here
         self._nlp = spacy.load("en_core_web_sm", disable=["ner", "parser", "textcat"])
-        self._nlp.add_pipe("sentencizer")
+        if "sentencizer" not in self._nlp.pipe_names:
+            self._nlp.add_pipe("sentencizer")
         self.matcher = Matcher(self._nlp.vocab)
         self._init_matchers()
 

@@ -27,20 +27,44 @@ FORMAT_HINTS = {
     "dict": ["dictionary", "dict", "object"],
     "yaml": ["yaml", "yml"],
 }
+NON_ENUM_KEYWORDS = {
+    "output",
+    "format",
+    "instruction",
+    "instructions",
+    "requirement",
+    "requirements",
+    "responsibilities",
+    "responsibility",
+    "document",
+    "documentation",
+    "ensure",
+    "provide",
+}
+
+ENUM_HINT_KEYWORDS = {
+    "steps",
+    "types",
+    "values",
+    "options",
+    "levels",
+    "statuses",
+    "categories",
+}
 FIELD_LINE_PATTERNS = [
-    # 1. "key": description
+    # "key": description
     re.compile(
         r'["\'](?P<key>[\w\-\_ ]{1,80})["\']\s*[:\-–—]\s*(?P<desc>.+)', re.IGNORECASE
     ),
-    # 2. key -> description OR key -> description (unicode arrow normalized earlier)
+    # key -> description OR key -> description (unicode arrow normalized earlier)
     re.compile(r"(?P<key>[\w\-\_ ]{1,80})\s*->\s*(?P<desc>.+)", re.IGNORECASE),
-    # 3. - key — description or - key - description (bulleted)
+    # key — description or - key - description (bulleted)
     re.compile(
         r"^\s*-\s*(?P<key>[\w\-\_ ]{1,80})\s*[-:–—]\s*(?P<desc>.+)", re.IGNORECASE
     ),
-    # 4. key: description (bare)
+    # key: description (bare)
     re.compile(r"(?P<key>[\w\-\_ ]{1,80})\s*:\s*(?P<desc>.+)", re.IGNORECASE),
-    # 5. key (short description)
+    # key (short description)
     re.compile(r"(?P<key>[\w\-\_ ]{1,80})\s*\((?P<desc>[^\)]+)\)", re.IGNORECASE),
 ]
 
@@ -278,12 +302,14 @@ class SchemaOutputCompressor:
         attributes = {"schema": schema_encoded}
 
         if self._add_attributes:
-            enums = self._extract_enums(extra_text)
-            if enums:
+            enums_and_constraints = self._extract_enums(extra_text)
+            if enums := enums_and_constraints.get("enums"):
                 attributes["ENUMS"] = json.dumps(enums)
                 specs_attr = self._extract_specs(extra_text)
                 if specs_attr is not None:
                     attributes["SPECS"] = specs_attr
+            if constraints := enums_and_constraints.get("constraints"):
+                attributes["CONSTRAINTS"] = json.dumps(constraints)
 
         fields = self._extract_fields(schema)
         return OutputSchema(
@@ -342,47 +368,34 @@ class SchemaOutputCompressor:
                 return self._infer_type(obj)
             return ""
 
-    def _extract_enums(self, text: str) -> Optional[dict]:
+    def _extract_enums(self, text: str) -> dict:
         """
-        Extract enum-like constraints from prompt text.
-        Supports:
-          - Numeric ranges mapped to labels
-          - Discrete categorical value lists
-          - Inline enum declarations (A | B | C)
-          - Bullet-style enum blocks
-
-        Parameters
-        ----------
-        text
-
-        Returns
-        -------
-
+        Extract:
+          - ENUMS: selectable categorical values
+          - CONSTRAINTS: imperative output / behavior requirements
         """
         if not text:
-            return None
+            return {}
 
         enums = {}
-        range_enums = []
+        constraints = {}
 
-        matches = re.findall(
+        range_matches = re.findall(
             r"(\d+\.?\d*)\s*[-–]\s*(\d+\.?\d*)\s*(?:means|is|=|:)\s*([A-Za-z_ ]+)",
             text,
             flags=re.IGNORECASE,
         )
 
-        for lo, hi, label in matches:
-            range_enums.append(
+        if range_matches:
+            enums["ranges"] = [
                 {
                     "min": float(lo),
                     "max": float(hi),
                     "label": label.strip().upper().replace(" ", "_"),
                 }
-            )
-        
-        if range_enums:
-            enums["ranges"] = range_enums
-        
+                for lo, hi, label in range_matches
+            ]
+
         inline_enum_matches = re.findall(
             r"([\w\.]+)\s*\(([^)]+\|[^)]+)\)",
             text,
@@ -390,52 +403,67 @@ class SchemaOutputCompressor:
         )
 
         for field, body in inline_enum_matches:
-            values = [
-                v.strip().upper()
-                for v in body.split("|")
-                if v.strip()
-            ]
+            values = [v.strip().upper() for v in body.split("|") if v.strip()]
             if len(values) >= 2:
-                enums[field] = {
+                enums[field.lower()] = {
                     "kind": "categorical",
                     "values": values,
                 }
+
         block_pattern = re.compile(
-            r"([\w\s]+):\s*\n((?:\s*[-*]\s*[A-Za-z0-9_ ]+\n?)+)",
+            r"([^\n:]{1,80}):\s*\n((?:\s*[-*]\s*[^\n]+\n?)+)",
             flags=re.IGNORECASE,
         )
 
         for header, block in block_pattern.findall(text):
-            values = [
-                line.strip().lstrip("-* ").upper()
+            header_clean = re.sub(r"\s+", " ", header.strip().lower())
+
+            items = [
+                line.strip().lstrip("-* ")
                 for line in block.splitlines()
                 if line.strip()
             ]
-            if len(values) >= 2:
-                field = header.strip().lower().replace(" ", "_")
-                enums[field] = {
+
+            if len(items) < 2:
+                continue
+
+            if self._is_imperative_header(header_clean):
+                constraints[header_clean.replace(" ", "_")] = {
+                    "kind": "required",
+                    "items": items,
+                }
+                continue
+
+            if self._is_enum_candidate(header_clean):
+                enums[header_clean.replace(" ", "_")] = {
                     "kind": "categorical",
-                    "values": values,
+                    "values": [i.upper() for i in items],
                 }
 
-        return enums if enums else None
+        if not enums and not constraints:
+            return {}
+
+        return {
+            "enums": enums or None,
+            "constraints": constraints or None,
+        }
 
     @staticmethod
-    def _infer_enum_field_name(text: str, fallback: str) -> str:
-        """
-        Attempts to infer the field name for an enum by looking
-        for phrases like:
-          - "<field> is one of"
-          - "<field> must be"
-        """
-        m = re.search(
-            r"([\w\.]+)\s+(?:is|are|must be|can be|one of)",
-            text,
-            flags=re.IGNORECASE,
-        )
-        if m:
-            return m.group(1)
-        return fallback
+    def _is_imperative_header(header: str) -> bool:
+        header = header.lower().strip()
+
+        if any(word in header for word in ("should", "must", "required")):
+            return True
+
+        if any(header.startswith(k) for k in NON_ENUM_KEYWORDS):
+            return True
+
+        return False
+
+    @staticmethod
+    def _is_enum_candidate(header: str) -> bool:
+        header = header.lower()
+        return any(k in header for k in ENUM_HINT_KEYWORDS)
 
     def _extract_specs(self, text: str) -> Optional[dict]:
         """

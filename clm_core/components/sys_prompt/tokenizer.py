@@ -19,9 +19,17 @@ class CLLMTokenizer:
     ) -> str:
         tokens = []
 
+        exclude_extract_token = False
         for intent in intents:
             if intent.token == "EXTRACT" and extractions and extractions.fields:
-                continue
+                exclude_extract_token = True
+                extract_req = f"[REQ:{intent.token}:{','.join(extractions.fields)}"
+                if extractions.attributes:
+                    attr_parts = [f"{k}={v}" for k, v in extractions.attributes.items()]
+                    extract_req += f":{','.join(attr_parts)}"
+                extract_req += "]"
+                tokens.append(extract_req)
+                break
 
             if intent.modifier:
                 tokens.append(f"[REQ:{intent.token}:{intent.modifier}]")
@@ -30,7 +38,7 @@ class CLLMTokenizer:
 
         tokens.append(target.build_token())
 
-        if extractions and extractions.fields:
+        if extractions and extractions.fields and not exclude_extract_token:
             tokens.append(extractions.build_token())
 
         for ctx in contexts:

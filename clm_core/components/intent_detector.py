@@ -1,5 +1,6 @@
 import re
 from typing import List, Optional
+
 from spacy import Language
 from spacy.tokens import Doc
 from clm_core.utils.vocabulary import BaseVocabulary
