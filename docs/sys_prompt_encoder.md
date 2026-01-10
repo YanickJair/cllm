@@ -558,13 +558,14 @@ Output should be:
 ```text
 [REQ:DEBUG] [REQ:PREDICT] 
 [TARGET:TICKET:DOMAIN=SUPPORT] 
-[OUT_JSON:STR:ENUMS={"document_all_steps_taken\n____\n____troubleshooting_steps": {"kind": "categorical", "values": ["CHECK PHYSICAL CONNECTIONS", "VERIFY NETWORK ADAPTER SETTINGS", "TEST WITH DIFFERENT DEVICES", "RESET ROUTER"]}}]
+[REQ:DEBUG] [REQ:PREDICT] [TARGET:TICKET:DOMAIN=SUPPORT] 
+[OUT_JSON:STR:ENUMS={"troubleshooting_steps": {"kind": "categorical", "values": ["CHECK PHYSICAL CONNECTIONS", "VERIFY NETWORK ADAPTER SETTINGS", "TEST WITH DIFFERENT DEVICES", "RESET ROUTER/MODEM", "CHECK FOR SERVICE OUTAGES"]}}:CONSTRAINTS={"output_should_be": {"kind": "required", "items": ["Clear, numbered steps", "Non-technical language", "Estimated time for each step", "Success criteria for each step"]}}]
 ```
 
 **Metrics:**
-- Original: 165 tokens
-- Compressed: 52 tokens
-- Reduction: 57.4%
+- Original: ~160 tokens
+- Compressed: ~100 tokens
+- Reduction: 37–40%
 
 ---
 

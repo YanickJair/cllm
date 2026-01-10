@@ -14,14 +14,9 @@ class CLMEncoder:
     def __init__(self, *, cfg: CLMConfig):
         """
         Initialize encode
-
-        Args:
-            model: spaCy model to use (en_core_web_sm, en_core_web_md, en_core_web_lg)
         """
-        print(f"Loading spaCy model here: {cfg.lang}...")
-
         self._cfg = cfg
-        self._nlp: spacy.Language = spacy.load("en_core_web_sm")
+        self._nlp: spacy.Language = cfg.nlp_model
         self._ds_encoder = DSEncoder(config=self._cfg.ds_config)
         self._ts_encoder = TranscriptEncoder(
             nlp=self._nlp, vocab=self._cfg.vocab, rules=self._cfg.rules

@@ -44,6 +44,7 @@ classifiers = [
 dependencies = [
     "spacy>=3.8.7",
     "pydantic>=2.12.5",
+    "pytest-mock>=3.15.1",
 ]
 
 [tool.hatch.version]
@@ -100,6 +101,9 @@ check_untyped_defs = true
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
 
 [tool.coverage.run]
 omit = ["venv/*", ".venv/*", "scripts/*"]

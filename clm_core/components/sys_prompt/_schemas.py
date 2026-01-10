@@ -129,7 +129,7 @@ class OutputField(BaseModel):
     name: str = Field(..., description="Name of the field")
     type: Optional[str] = Field(None, description="Type of the field")
     description: Optional[str] = Field(None, description="Description of the field")
-    required: bool = Field(True, description="Whether the field is required")
+    required: Optional[bool] = Field(True, description="Whether the field is required")
     nested: Optional[list["OutputField"]] = Field(None, description="Nested fields")
 
 
@@ -161,9 +161,11 @@ class OutputSchema(BaseModel):
             ordered_keys.append("KEYS")
         if "ENUMS" in self.attributes:
             ordered_keys.append("ENUMS")
+        if "CONSTRAINTS" in self.attributes:
+            ordered_keys.append("CONSTRAINTS")
 
         for k in sorted(self.attributes.keys()):
-            if k not in ["schema", "KEYS", "ENUMS", "SPECS"]:
+            if k not in ["schema", "KEYS", "ENUMS", "SPECS", "CONSTRAINTS"]:
                 ordered_keys.append(k)
 
         for k in ordered_keys:

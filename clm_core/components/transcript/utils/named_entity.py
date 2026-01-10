@@ -14,7 +14,8 @@ class EntityExtractor:
 
     def __init__(self, model: str = "en_core_web_sm"):
         self._nlp = spacy.load(model, disable=["parser", "textcat"])
-        self._nlp.add_pipe("sentencizer")
+        if "sentencizer" not in self._nlp.pipe_names:
+            self._nlp.add_pipe("sentencizer")
 
         if "entity_ruler" not in self._nlp.pipe_names:
             self._ruler = self._nlp.add_pipe("entity_ruler", before="ner")
