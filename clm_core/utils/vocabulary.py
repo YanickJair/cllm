@@ -71,6 +71,11 @@ class BaseVocabulary(ABC):
 
     @property
     @abstractmethod
+    def EPISTEMIC_KEYWORDS(self) -> dict[str, list[str]]:
+        raise NotImplementedError("Subclasses must implement EPISTEMIC_KEYWORDS")
+
+    @property
+    @abstractmethod
     def STOPWORDS(self) -> tuple[str, ...]:
         raise NotImplementedError("Subclasses must implement STOPWORDS")
 

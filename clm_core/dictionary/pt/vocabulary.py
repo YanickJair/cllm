@@ -7,6 +7,10 @@ class PTVocabulary(BaseVocabulary):
         pass
 
     @property
+    def EPISTEMIC_KEYWORDS(self) -> dict[str, list[str]]:
+        pass
+
+    @property
     def CODE_INDICATORS(self) -> tuple[str, ...]:
         pass
 

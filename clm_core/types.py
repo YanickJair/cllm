@@ -9,7 +9,9 @@ class CLMOutput(BaseModel):
     original: ORIGINAL_INPUT = Field(
         ..., description="A generic original input. It can be a str, list, or dict"
     )
-    component: str = Field(..., description="Component's name (i.e. Transcript, SD, System Prompt)")
+    component: str = Field(
+        ..., description="Component's name (i.e. Transcript, SD, System Prompt)"
+    )
     compressed: str = Field(..., description="Compressed output.")
     metadata: dict = Field(
         ...,
@@ -21,6 +23,7 @@ class CLMOutput(BaseModel):
     def compression_ratio(self) -> float:
         """Compression ratio of the input"""
         return round((1 - len(self.compressed) / len(self.original)) * 100, 1)
+
 
 class FieldImportance(Enum):
     """Field importance levels
@@ -83,7 +86,7 @@ class SDCompressionConfig(BaseModel):
             "type",
         ],
         description="Order for default fields. IDs take precedence over other fields. "
-                    "If a field is not in this list, it will be placed at the end.",
+        "If a field is not in this list, it will be placed at the end.",
     )
     default_fields_importance: dict[str, FieldImportance] = Field(
         default_factory=lambda: {

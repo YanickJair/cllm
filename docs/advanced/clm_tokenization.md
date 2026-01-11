@@ -6,6 +6,16 @@ CLM uses **three different compression systems**, each optimized for its specifi
 
 **Core principle:** Compress meaning, not characters.
 
+### Automatic Intent Detection
+
+CLM features **IntentDetectorV2**, an intelligent system that automatically determines the correct REQ (request/action) token from natural language input. The detector analyzes:
+- **Signals** - Vocabulary-based phrase matching
+- **Artifacts** - Structural patterns in the text
+- **Epistemic grounding** - Context for prediction vs generation
+- **SPEC detection** - Domain-specific output types
+
+This means you can write natural language prompts and CLM will automatically compress them into the optimal token format.
+
 ---
 
 ## Three Independent Systems
@@ -114,25 +124,483 @@ Complex:    [EXTRACT:SENTIMENT,URGENCY:TYPE=LIST,DOMAIN=LEGAL]
 
 ### REQ Token (Request/Action)
 
-**Common values:**
-- `ANALYZE` - Examine and evaluate
-- `EXTRACT` - Pull out specific data
-- `SUMMARIZE` - Condense information
-- `GENERATE` - Create new content
-- `CLASSIFY` - Categorize items
-- `COMPARE` - Find differences/similarities
-- `VALIDATE` - Check correctness
+The REQ token represents the **primary action or operation** to be performed. It is the most critical token in the system prompt hierarchy as it determines the fundamental task type.
+
+#### REQ Categorization Taxonomy
+
+REQ tokens are organized into **six fundamental categories** based on their purpose and what they produce:
+
+##### A. ANALYSIS / EVALUATION
+**Purpose:** Interpret, assess, or explain something.
+**Produces:** Insight, judgment, reasoning.
+
+**Examples:**
+- Code review
+- Risk assessment
+- Performance evaluation
+- Root cause analysis
+
+**Canonical REQs:** `ANALYZE`, `EVALUATE`, `ASSESS`, `DIAGNOSE`
+
+⚠️ **Use sparingly** — this is the most generic bucket.
+
+##### B. GENERATION / CREATION
+**Purpose:** Create a new artifact.
+**Produces:** Text, data, structure, plans, content.
+
+**Examples:**
+- Write a report
+- Generate a schema
+- Produce odds
+- Draft an email
+
+**Canonical REQs:** `GENERATE_REPORT`, `GENERATE_SCHEMA`, `GENERATE_BETTING_ODDS`, `GENERATE_SUMMARY`
+
+ℹ️ **This is where most business prompts land.**
+
+##### C. PREDICTION / FORECASTING
+**Purpose:** Estimate future outcomes or probabilities.
+**Produces:** Probabilities, forecasts, predictions.
+
+**Examples:**
+- Match outcome probabilities
+- Sales forecast
+- Risk likelihood
+
+**Canonical REQs:** `PREDICT_OUTCOME`, `FORECAST_METRIC`, `ESTIMATE_PROBABILITY`
+
+⚠️ **Often overlaps with GENERATION** — choose the dominant intent.
+
+**For betting:**
+- Outcome = odds → GENERATION wins
+- Time series forecast → PREDICTION wins
+
+##### D. DECISION / RECOMMENDATION
+**Purpose:** Choose or advise among options.
+**Produces:** A decision, ranking, or recommendation.
+
+**Examples:**
+- Best investment option
+- Recommended action
+- Prioritized list
+
+**Canonical REQs:** `RECOMMEND_ACTION`, `SELECT_OPTION`, `RANK_ALTERNATIVES`
+
+##### E. EXTRACTION / TRANSFORMATION
+**Purpose:** Convert or extract from existing input.
+**Produces:** Structured data from unstructured input.
+
+**Examples:**
+- Extract entities
+- Parse schema
+- Normalize text
+
+**Canonical REQs:** `EXTRACT_FIELDS`, `TRANSFORM_SCHEMA`, `NORMALIZE_TEXT`
+
+ℹ️ **This is often machine-facing, not user-facing.**
+
+##### F. VALIDATION / VERIFICATION
+**Purpose:** Check correctness, compliance, or consistency.
+**Produces:** Pass/fail, issues, validation results.
+
+**Examples:**
+- Policy compliance
+- Schema validation
+- Constraint checking
+
+**Canonical REQs:** `VALIDATE_OUTPUT`, `VERIFY_COMPLIANCE`, `CHECK_CONSISTENCY`
+
+---
+
+#### REQ Token Values & Category Mapping
+
+The following REQ tokens are available in CLM, organized by their category:
+
+**Category A: ANALYSIS / EVALUATION**
+- `ANALYZE` - Examine and evaluate content
+- `CLASSIFY` - Categorize items (now mapped via ANALYZE)
 - `DEBUG` - Find and fix issues
-- `OPTIMIZE` - Improve performance
-- `TRANSFORM` - Convert format
-- `EXPLAIN` - Describe concepts
-- `RANK` - Order by priority
+
+**Category B: GENERATION / CREATION**
+- `GENERATE` - Create new content (reports, summaries, structured data)
+- `SUMMARIZE` - Condense information (now mapped via GENERATE)
+
+**Category C: PREDICTION / FORECASTING**
+- `PREDICT` - Make future projections based on uncertainty and real-world grounding
+
+**Category D: DECISION / RECOMMENDATION**
+- `RECOMMEND` - Provide recommendations (deprecated, use RANK)
+- `RANK` - Order items by priority or preference
+
+**Category E: EXTRACTION / TRANSFORMATION**
+- `EXTRACT` - Pull out specific data or entities
+- `TRANSFORM` - Convert format or restructure data
+- `FORMAT` - Reformat without changing meaning
+
+**Category F: VALIDATION / VERIFICATION**
+- `VALIDATE` - Check correctness, compliance, or verification
+
+**Utility / Other:**
+- `SEARCH` - Search or find information
+- `EXECUTE` - Execute operations or commands
 
 **Examples:**
 ```
 [REQ:ANALYZE]
 [REQ:EXTRACT]
-[REQ:ANALYZE,EXTRACT,SUMMARIZE]
+[REQ:GENERATE:SPECS:REPORT]
+[REQ:VALIDATE]
+[REQ:PREDICT:SPECS:FORECAST]
+```
+
+### How REQ Tokens are Automatically Detected
+
+CLM uses **IntentDetectorV2** to automatically determine the correct REQ token from natural language input. The detection system analyzes three key dimensions:
+
+#### 1. Signals (Vocabulary-Based Detection)
+
+Signals are detected by matching phrases from the input text against a vocabulary dictionary:
+
+| Signal | Trigger Words | Maps to REQ |
+|--------|--------------|-------------|
+| **ANALYSIS** | analyze, assess, review, evaluate | `ANALYZE` |
+| **EXTRACTION** | extract, pull, get, retrieve | `EXTRACT` |
+| **GENERATION** | generate, create, produce, summarize, list | `GENERATE` |
+| **PREDICTION** | predict, forecast, calculate, project | `PREDICT` |
+| **TRANSFORMATION** | transform, convert, restructure | `TRANSFORM` |
+| **FORMATTING** | format, reformat, style | `FORMAT` |
+| **VALIDATION** | validate, verify, check, ensure | `VALIDATE` |
+| **RANKING** | rank, order, prioritize, best | `RANK` |
+| **DEBUGGING** | debug, troubleshoot, fix | `DEBUG` |
+| **SEARCH** | search, find, lookup | `SEARCH` |
+| **EXECUTION** | execute, run, perform | `EXECUTE` |
+
+#### 2. Artifacts (Pattern-Based Detection)
+
+Artifacts are structural patterns detected in the text that indicate what type of output is expected:
+
+| Artifact | Detection Pattern | Indicates |
+|----------|------------------|-----------|
+| **STRUCTURED** | JSON objects: `{...}` | Structured data output |
+| **PROBABILITY** | Keywords: probability, odds, chance, likelihood | Probabilistic output |
+| **LIST** | Markdown lists: `- item` or `* item` | List output |
+| **VALIDATION** | Keywords: validate, verify, check compliance, ensure | Validation task |
+| **DECISION** | Keywords: recommend, best option, choose, decision | Decision/ranking task |
+| **TEXT** | Keywords: report, analysis | Text-based output |
+
+#### 3. Epistemic Grounding (Context-Based Detection)
+
+For probabilistic tasks, the system distinguishes between **GENERATE** and **PREDICT** based on epistemic grounding:
+
+**PREDICT is chosen when:**
+- **Uncertainty indicators** are present: "likely", "probably", "might", "could"
+- **AND** either:
+  - **Future indicators**: "will", "tomorrow", "next year", "forecast"
+  - **OR Real-world indicators**: "weather", "market", "election", "outcome"
+
+**GENERATE is chosen when:**
+- Probability artifacts exist but without epistemic grounding
+- Example: "Generate probability distribution" (synthetic data)
+
+**Examples:**
+```
+"What's the likelihood it will rain tomorrow?"
+→ PREDICT (uncertainty + future + real-world)
+
+"Generate a probability distribution for dice rolls"
+→ GENERATE (probability but synthetic, no real-world grounding)
+```
+
+#### 4. REQ Resolution Decision Tree
+
+The system resolves the final REQ token using this priority order:
+
+```
+1. VALIDATE
+   └─ If: (Artifact.VALIDATION OR Signal.VALIDATION)
+      AND has_validation_target (STRUCTURED, TEXT, or DECISION artifacts)
+
+2. EXTRACT
+   └─ If: Signal.EXTRACTION
+      AND NOT Artifact.PROBABILITY
+
+3. TRANSFORM
+   └─ If: Signal.TRANSFORMATION
+      AND has_transform_target (STRUCTURED or TEXT artifacts)
+
+4. FORMAT
+   └─ If: Signal.FORMATTING
+
+5. PREDICT
+   └─ If: Artifact.PROBABILITY
+      AND epistemic_grounding (uncertainty + future/real-world)
+
+6. GENERATE
+   └─ If: Artifact.PROBABILITY (without epistemic grounding)
+      OR Artifact.STRUCTURED
+      OR Artifact.TEXT
+      OR Artifact.LIST
+
+7. RANK
+   └─ If: Signal.RANKING
+      OR Artifact.DECISION
+
+8. DEBUG
+   └─ If: Signal.DEBUGGING
+
+9. SEARCH
+   └─ If: Signal.SEARCH
+
+10. EXECUTE
+    └─ If: Signal.EXECUTION
+
+11. ANALYZE (default)
+    └─ If: None of the above
+```
+
+#### 5. SPEC Detection (Output Specialization)
+
+In addition to REQ detection, IntentDetectorV2 also detects **SPEC** (specification) which refines what type of output is being generated/predicted/extracted:
+
+**SPEC detection uses three methods (scored):**
+
+| Method | Score | Description |
+|--------|-------|-------------|
+| **Explicit patterns** | 3 points | Phrases like "generate a REPORT", "return a SUMMARY" |
+| **Artifact mapping** | 2 points | Artifact.VALIDATION → VALIDATION_RESULT, Artifact.DECISION → RECOMMENDATION |
+| **Keyword matching** | 1 point | Domain-specific keywords (see below) |
+
+**SPEC Ontology (domain artifacts):**
+- `SUPPORT_RESPONSE` - Customer support responses
+- `TROUBLESHOOTING_GUIDE` - Step-by-step troubleshooting
+- `BETTING_ODDS` - Betting or odds information
+- `PROBABILITY_DISTRIBUTION` - Statistical distributions (excluded as non-domain)
+- `FORECAST` - Future projections
+- `REPORT` - Analysis reports
+- `SUMMARY` - Condensed summaries
+- `RECOMMENDATION` - Recommendations or decisions
+- `RANKING` - Ordered lists
+- `JSON_OBJECT` / `JSON_SCHEMA` - (excluded as format, not domain)
+- `FIELDS` - Field extraction
+- `ENTITIES` - Entity extraction
+- `VALIDATION_RESULT` - Validation outcomes
+
+**SPEC keyword mappings:**
+```
+BETTING_ODDS: ["odds", "betting", "bookmaker"]
+FORECAST: ["forecast", "projection"]
+SUMMARY: ["summary", "recap", "overview"]
+REPORT: ["report", "analysis document"]
+SUPPORT_RESPONSE: ["support", "ticket", "issue", "incident"]
+TROUBLESHOOTING_GUIDE: ["troubleshoot", "troubleshooting", "steps"]
+```
+
+**How SPEC appears in tokens:**
+```
+[REQ:GENERATE:SPECS:REPORT]
+[REQ:PREDICT:SPECS:FORECAST]
+[REQ:VALIDATE:SPECS:VALIDATION_RESULT]
+```
+
+#### Complete Detection Example
+
+**Input:**
+```
+"Analyze this customer support transcript and generate a detailed report
+with sentiment analysis. Check if the agent followed compliance guidelines."
+```
+
+**Detection process:**
+
+1. **Signals detected:**
+   - "analyze" → Signal.ANALYSIS
+   - "generate" → Signal.GENERATION
+
+2. **Artifacts detected:**
+   - "report" → Artifact.TEXT
+   - "check" / "compliance" → Artifact.VALIDATION
+
+3. **REQ resolution:**
+   - Has validation signal + has validation target (TEXT)
+   - **Result: REQ.VALIDATE** (validation takes priority)
+
+4. **SPEC detection:**
+   - "generate a...report" → explicit pattern (3 points) → "REPORT"
+   - "compliance" keywords → "VALIDATION_RESULT"
+   - Highest scorer: **REPORT**
+
+**Final output:**
+```
+[REQ:VALIDATE:SPECS:REPORT]
+```
+
+#### More Real-World Examples
+
+**Example 1: Weather Prediction**
+```
+Input: "What's the probability it will rain tomorrow in Seattle?"
+
+Signals: PREDICTION (predict)
+Artifacts: PROBABILITY (probability)
+Epistemic: Yes (probability + will + real-world:weather)
+REQ: PREDICT
+SPEC: FORECAST (forecast implied)
+
+Output: [REQ:PREDICT:SPECS:FORECAST]
+```
+
+**Example 2: Data Extraction**
+```
+Input: "Extract all email addresses and phone numbers from this document"
+
+Signals: EXTRACTION (extract)
+Artifacts: None (no JSON/list patterns in prompt)
+REQ: EXTRACT
+SPEC: ENTITIES (email addresses, phone numbers are entities)
+
+Output: [REQ:EXTRACT:SPECS:ENTITIES]
+```
+
+**Example 3: Compliance Validation**
+```
+Input: "Verify that the agent followed all required disclosure steps and
+validate compliance with company policies"
+
+Signals: VALIDATION (verify, validate)
+Artifacts: VALIDATION (verify, validate, compliance keywords)
+Has validation target: Yes (implied TEXT)
+REQ: VALIDATE
+SPEC: VALIDATION_RESULT (validation context)
+
+Output: [REQ:VALIDATE:SPECS:VALIDATION_RESULT]
+```
+
+**Example 4: Report Generation**
+```
+Input: "Create a summary report of customer feedback trends from Q4"
+
+Signals: GENERATION (create, summary)
+Artifacts: TEXT (report)
+REQ: GENERATE (has TEXT artifact)
+SPEC: REPORT (report explicitly mentioned)
+
+Output: [REQ:GENERATE:SPECS:REPORT]
+```
+
+**Example 5: Probability Distribution (Synthetic)**
+```
+Input: "Generate a probability distribution for rolling two dice"
+
+Signals: GENERATION (generate)
+Artifacts: PROBABILITY (probability)
+Epistemic: No (synthetic scenario, not real-world prediction)
+REQ: GENERATE (probability without epistemic grounding)
+SPEC: None (PROBABILITY_DISTRIBUTION excluded as non-domain)
+
+Output: [REQ:GENERATE]
+```
+
+**Example 6: Data Transformation**
+```
+Input: "Convert this CSV data to JSON format {csv_data}"
+
+Signals: TRANSFORMATION (convert)
+Artifacts: STRUCTURED (JSON mentioned, {csv_data} pattern)
+Has transform target: Yes (STRUCTURED)
+REQ: TRANSFORM
+SPEC: None
+
+Output: [REQ:TRANSFORM]
+```
+
+**Example 7: Recommendation/Ranking**
+```
+Input: "Rank these candidates by best fit for the senior engineer position"
+
+Signals: RANKING (rank)
+Artifacts: DECISION (best)
+REQ: RANK
+SPEC: RANKING
+
+Output: [REQ:RANK:SPECS:RANKING]
+```
+
+**Example 8: Troubleshooting Guide**
+```
+Input: "Generate troubleshooting steps for network connectivity issues"
+
+Signals: GENERATION (generate)
+Artifacts: TEXT (guide implied), LIST (steps)
+REQ: GENERATE
+SPEC: TROUBLESHOOTING_GUIDE (troubleshooting keyword)
+
+Output: [REQ:GENERATE:SPECS:TROUBLESHOOTING_GUIDE]
+```
+
+#### Key Takeaways
+
+1. **REQ detection is hierarchical** - certain REQs take priority (VALIDATE > EXTRACT > TRANSFORM > PREDICT > GENERATE)
+2. **Signals + Artifacts + Context** all contribute to the final decision
+3. **SPEC adds domain specificity** to the output type (REPORT, FORECAST, VALIDATION_RESULT, etc.)
+4. **Epistemic grounding distinguishes PREDICT from GENERATE** for probabilistic tasks
+5. **Default is ANALYZE** when no clear signals are detected
+
+#### Complete Vocabulary Reference
+
+The complete trigger phrase vocabularies are defined in language-specific vocabulary files:
+
+**Location:** `clm_core/dictionary/{lang}/vocabulary.py`
+
+**Available languages:**
+- `en` - English (ENVocabulary)
+- `es` - Spanish (ESVocabulary)
+- `pt` - Portuguese (PTVocabulary)
+- `fr` - French (FRVocabulary)
+
+**Key vocabulary properties:**
+
+1. **REQ_TOKENS** - Maps REQ types to trigger phrases:
+   ```python
+   "ANALYZE": ["analyze", "review", "examine", "evaluate", "assess", ...]
+   "EXTRACT": ["extract", "pull out", "identify", "find", "retrieve", ...]
+   "GENERATE": ["generate", "create", "write", "draft", "compose", ...]
+   "VALIDATE": ["validate", "verify", "check", "confirm", "ensure", ...]
+   "TRANSFORM": ["convert", "transform", "change", "rewrite", ...]
+   "FORMAT": ["format", "structure", "organize", "layout", ...]
+   "DEBUG": ["debug", "troubleshoot", "diagnose", "fix bug", ...]
+   "SEARCH": ["search", "query", "lookup", "find", "look for", ...]
+   "RANK": ["prioritize", "order", "sort by", "rate", "rank", ...]
+   "PREDICT": ["predict", "forecast", "project", "estimate future", ...]
+   "CALCULATE": ["calculate", "compute", "figure out", "quantify", ...]
+   "EXECUTE": ["use", "apply", "implement", "run", "perform", ...]
+   ```
+
+2. **EPISTEMIC_KEYWORDS** - Keywords for epistemic grounding:
+   ```python
+   "future": ["next", "upcoming", "future", "will", "expected", "forecast", ...]
+   "uncertainty": ["chance", "likelihood", "probability", "odds", "risk", ...]
+   "real_world": ["match", "season", "weather", "election", "market", ...]
+   ```
+
+3. **Other useful vocabularies:**
+   - `ACTION_VERBS` - General action verbs
+   - `COMPOUND_PHRASES` - Multi-word phrases (e.g., "customer support" → "TICKET")
+   - `TYPE_MAP` - Document type mappings
+   - `CONTEXT_MAP` - Domain context mappings
+
+**Example usage:**
+```python
+from clm_core.dictionary.en.vocabulary import ENVocabulary
+
+vocab = ENVocabulary()
+
+# Get all trigger phrases for EXTRACT
+extract_phrases = vocab.REQ_TOKENS["EXTRACT"]
+# ["extract", "pull out", "identify", "find", ...]
+
+# Get epistemic keywords
+future_keywords = vocab.EPISTEMIC_KEYWORDS["future"]
+# ["next", "upcoming", "future", "will", ...]
 ```
 
 ### TARGET Token (Object/Source)
@@ -238,6 +706,71 @@ With enums (add_attrs=True):
 [REF:KB=KB-001]
 [REF:POLICY=POL-2024-05]
 ```
+
+### Intent Detection in the Encoding Pipeline
+
+The IntentDetectorV2 is the **first step** in the system prompt encoding pipeline:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  1. INTENT DETECTION (IntentDetectorV2)                     │
+│     Input: Natural language prompt                          │
+│     Output: Intent (REQ + SPEC)                             │
+│                                                              │
+│     Process:                                                 │
+│     • Detect signals from vocabulary                        │
+│     • Detect artifacts from patterns                        │
+│     • Check epistemic grounding                             │
+│     • Resolve REQ token (priority-based)                    │
+│     • Extract SPEC (scoring-based)                          │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│  2. TARGET DETECTION                                         │
+│     Extract what the operation targets (TRANSCRIPT, etc.)   │
+│     Output: [TARGET:TRANSCRIPT:DOMAIN=SUPPORT]              │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│  3. EXTRACTION FIELD DETECTION                               │
+│     Identify fields to extract (SENTIMENT, URGENCY, etc.)   │
+│     Output: [EXTRACT:SENTIMENT,URGENCY,RESOLUTION]          │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│  4. CONTEXT DETECTION                                        │
+│     Extract context and conditions                          │
+│     Output: [CTX:LANGUAGE=EN]                               │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│  5. OUTPUT FORMAT DETECTION                                  │
+│     Parse output schema and format requirements             │
+│     Output: [OUT_JSON:{field:TYPE,...}:ENUMS={...}]         │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│  6. REFERENCE DETECTION                                      │
+│     Extract IDs and references                              │
+│     Output: [REF:TICKET=TKT-123]                            │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│  FINAL COMPRESSED OUTPUT:                                    │
+│  [REQ:VALIDATE:SPECS:REPORT]                                │
+│  [TARGET:TRANSCRIPT:DOMAIN=SUPPORT]                         │
+│  [EXTRACT:SENTIMENT,URGENCY,RESOLUTION]                     │
+│  [CTX:LANGUAGE=EN]                                           │
+│  [OUT_JSON:{summary:STR,scores:{...}}:ENUMS={...}]          │
+│  [REF:TICKET=TKT-123]                                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Key points:**
+- Intent detection happens **first** and determines the REQ token
+- REQ token guides the rest of the encoding process
+- SPEC provides additional domain context for the output
+- All components work together to form the complete compressed prompt
 
 ### Complete System Prompt Example
 

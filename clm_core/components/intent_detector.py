@@ -32,7 +32,7 @@ class IntentDetector:
                 index[syn] = action
         return index
 
-    def detect(self, text: str, context: str = "") -> List[Intent]:
+    def detect(self, text: str, context: str = "") -> list[Intent]:
         text_lower = text.lower().strip()
         doc = self.nlp(text_lower)
 

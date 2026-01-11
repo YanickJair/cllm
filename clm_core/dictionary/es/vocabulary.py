@@ -5,6 +5,10 @@ class ESVocabulary(BaseVocabulary):
     """CLLM token vocabulary - Spanish (Spain/Latin America)"""
 
     @property
+    def EPISTEMIC_KEYWORDS(self) -> dict[str, list[str]]:
+        pass
+
+    @property
     def STOPWORDS(self) -> tuple[str, ...]:
         pass
 

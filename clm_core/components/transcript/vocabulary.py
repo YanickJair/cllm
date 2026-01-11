@@ -5,6 +5,10 @@ from clm_core.utils.vocabulary import BaseVocabulary
 
 class TranscriptVocabulary(BaseVocabulary):
     @property
+    def EPISTEMIC_KEYWORDS(self) -> dict[str, list[str]]:
+        pass
+
+    @property
     def STOPWORDS(self) -> tuple[str, ...]:
         raise NotImplementedError
 

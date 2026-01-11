@@ -29,7 +29,9 @@ class CLMEncoder:
         )
         self._classifier = DataClassifier()
 
-    def encode(self, input_: Any, verbose: bool = False, metadata: Optional[dict] = None) -> CLMOutput:
+    def encode(
+        self, input_: Any, verbose: bool = False, metadata: Optional[dict] = None
+    ) -> CLMOutput:
         class_ = self._classifier.classifier(input_=input_)
 
         if verbose:
@@ -43,5 +45,7 @@ class CLMEncoder:
             return self._ds_encoder.encode(input_)
 
         if class_ == DataTypes.TRANSCRIPT:
-            return self._ts_encoder.encode(transcript=input_, verbose=verbose, metadata=metadata)
+            return self._ts_encoder.encode(
+                transcript=input_, verbose=verbose, metadata=metadata
+            )
         return self._sys_prompt_encoder.compress(input_, verbose)

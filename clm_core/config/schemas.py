@@ -41,7 +41,9 @@ class CLMConfig(BaseModel):
             case "en":
                 return spacy.load("en_core_web_sm")
             case _:
-                raise NotImplementedError(f"Model for language {self.lang} not supported yet")
+                raise NotImplementedError(
+                    f"Model for language {self.lang} not supported yet"
+                )
 
     @computed_field
     @property
@@ -51,4 +53,3 @@ class CLMConfig(BaseModel):
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
     )
-

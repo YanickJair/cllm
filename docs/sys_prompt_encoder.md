@@ -90,14 +90,14 @@ Note: Odds must sum to 1.0. Consider all factors before providing final odds.
 ### Compressed System Prompt
 
 ```text
-[ROLE:BETTING_ANALYST:DOMAIN=SOCCER] 
-[REQ:ANALYZE] [TARGET:MATCH_PERFORMANCE:METRICS=RECENT_FORM,HOME_AWAY,H2H,INJURIES,LEAGUE_POS,OFF_DEF_STATS] 
-[CTX:SEASON_DATA:GAMES=10] 
-[OUT_JSON:{win:FLOAT,draw:FLOAT,lose:FLOAT}:CONSTRAINT=SUM=1.0]
+[REQ:PREDICT:SPECS:BETTING_ODDS] 
+[TARGET:REPORT:DOMAIN=BUSINESS:TOPIC=BETTING_ANALYSIS_AGENT] 
+[EXTRACT:PERFORMANCE,ACCURACY:DOMAIN=QA] 
+[OUT_JSON:{win:FLOAT,draw:FLOAT,lose:FLOAT}]
 ```
 
 **Token count:** ~45 tokens  
-**Compression:** 75% reduction
+**Compression:** 82.0% reduction
 
 ---
 
@@ -174,11 +174,10 @@ for compliance violations and sentiment issues in agent responses.
 
 result = encoder.encode(system_prompt)
 print(result.compressed)
-# Output: [ROLE:QA_ANALYST:DOMAIN=SERVICE] [REQ:ANALYZE] [TARGET:TRANSCRIPT] 
-#         [EXTRACT:COMPLIANCE,SENTIMENT:SOURCE=AGENT]
+# Output: [REQ:ANALYZE] [TARGET:TICKET:DOMAIN=SUPPORT] [EXTRACT:COMPLIANCE,SENTIMENT,ISSUE:DOMAIN=LEGAL] [OUT_JSON:STR]
 
 print(f"Compression: {result.compression_ratio:.1%}")
-# Output: Compression: 72.3%
+# Output: Compression: 25.3%
 ```
 
 ### Configuration Options
@@ -431,13 +430,13 @@ cfg = CLMConfig(
 
 **Compressed:**
 ```text
-[REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=QA] 
+[REQ:GENERATE:SPECS:SUMMARY] [TARGET:TRANSCRIPT:DOMAIN=QA] 
 [EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS,ACCURACY,SENTIMENT:TYPE=LIST,DOMAIN=LEGAL] 
 [OUT_JSON:{summary,qa_scores:{verification,policy_adherence,soft_skills,accuracy,compliance},violations,recommendations}]
 ```
 
 **Compressed tokens:** 83 tokens  
-**Reduction:** 70.7%  
+**Reduction:** 69.1%  
 **Use case:** High-volume, cost-sensitive operations
 
 ---
@@ -456,13 +455,13 @@ cfg = CLMConfig(
 
 **Compressed:**
 ```text
-[REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=QA] 
+[REQ:GENERATE:SPECS:SUMMARY] [TARGET:TRANSCRIPT:DOMAIN=QA] 
 [EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS,ACCURACY,SENTIMENT:TYPE=LIST,DOMAIN=LEGAL] 
-[OUT_JSON:{summary:STR,qa_scores:{verification:FLOAT,policy_adherence:FLOAT,soft_skills:FLOAT,accuracy:FLOAT,compliance:FLOAT},violations:[STR],recommendations:[STR]}]
+[OUT_JSON:{summary:STR,qa_scores:{verification:FLOAT,policy_adherence:FLOAT,soft_skills:FLOAT,accuracy:FLOAT,compliance:FLOAT},violations:[STR],recommendations:[STR]}
 ```
 
 **Compressed tokens:** 98 tokens  
-**Reduction:** 65.7%  
+**Reduction:** 64.1%  
 **Use case:** When LLM needs explicit type hints for JSON generation
 
 ---
@@ -481,13 +480,13 @@ cfg = CLMConfig(
 
 **Compressed:**
 ```text
-[REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=QA] 
+[REQ:GENERATE:SPECS:SUMMARY] [TARGET:TRANSCRIPT:DOMAIN=QA] 
 [EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS,ACCURACY,SENTIMENT:TYPE=LIST,DOMAIN=LEGAL] 
-[OUT_JSON:{summary,qa_scores:{verification,policy_adherence,soft_skills,accuracy,compliance},violations,recommendations}:ENUMS={"ranges": [{"min": 0.0, "max": 0.49, "label": "FAIL"}, {"min": 0.5, "max": 0.74, "label": "NEEDS_IMPROVEMENT"}, {"min": 0.75, "max": 0.89, "label": "GOOD"}, {"min": 0.9, "max": 1.0, "label": "EXCELLENT"}], "analysis_criteria": {"kind": "categorical", "values": ["MANDATORY DISCLOSURES AND VERIFICATION STEPS", "POLICY ADHERENCE", "SOFT-SKILL BEHAVIORS"]}}]
+[OUT_JSON:{summary,qa_scores:{verification,policy_adherence,soft_skills,accuracy,compliance},violations,recommendations}:ENUMS={"ranges": [{"min": 0.0, "max": 0.49, "label": "FAIL"}, {"min": 0.5, "max": 0.74, "label": "NEEDS_IMPROVEMENT"}, {"min": 0.75, "max": 0.89, "label": "GOOD"}, {"min": 0.9, "max": 1.0, "label": "EXCELLENT"}]}
 ```
 
 **Compressed tokens:** 195 tokens  
-**Reduction:** 31.6%  
+**Reduction:** 46.1%  
 **Use case:** Complex validation rules and compliance requirements
 
 ---
@@ -506,13 +505,13 @@ cfg = CLMConfig(
 
 **Compressed:**
 ```text
-[REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=QA] 
+[REQ:GENERATE:SPECS:SUMMARY] [TARGET:TRANSCRIPT:DOMAIN=QA] 
 [EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS,ACCURACY,SENTIMENT:TYPE=LIST,DOMAIN=LEGAL] 
-[OUT_JSON:{summary:STR,qa_scores:{verification:FLOAT,policy_adherence:FLOAT,soft_skills:FLOAT,accuracy:FLOAT,compliance:FLOAT},violations:[STR],recommendations:[STR]}:ENUMS={"ranges": [{"min": 0.0, "max": 0.49, "label": "FAIL"}, {"min": 0.5, "max": 0.74, "label": "NEEDS_IMPROVEMENT"}, {"min": 0.75, "max": 0.89, "label": "GOOD"}, {"min": 0.9, "max": 1.0, "label": "EXCELLENT"}], "analysis_criteria": {"kind": "categorical", "values": ["MANDATORY DISCLOSURES AND VERIFICATION STEPS", "POLICY ADHERENCE", "SOFT-SKILL BEHAVIORS"]}}]
+[OUT_JSON:{summary:STR,qa_scores:{verification:FLOAT,policy_adherence:FLOAT,soft_skills:FLOAT,accuracy:FLOAT,compliance:FLOAT},violations:[STR],recommendations:[STR]}:ENUMS={"ranges": [{"min": 0.0, "max": 0.49, "label": "FAIL"}, {"min": 0.5, "max": 0.74, "label": "NEEDS_IMPROVEMENT"}, {"min": 0.75, "max": 0.89, "label": "GOOD"}, {"min": 0.9, "max": 1.0, "label": "EXCELLENT"}]}]
 ```
 
 **Compressed tokens:** 209 tokens  
-**Reduction:** 26.6%  
+**Reduction:** 41.2%  
 **Use case:** Mission-critical systems requiring maximum semantic preservation
 
 ---
@@ -556,9 +555,7 @@ Output should be:
 
 **Compressed:**
 ```text
-[REQ:DEBUG] [REQ:PREDICT] 
-[TARGET:TICKET:DOMAIN=SUPPORT] 
-[REQ:DEBUG] [REQ:PREDICT] [TARGET:TICKET:DOMAIN=SUPPORT] 
+[REQ:GENERATE:SPECS:SUPPORT_RESPONSE] [TARGET:TICKET:DOMAIN=SUPPORT] 
 [OUT_JSON:STR:ENUMS={"troubleshooting_steps": {"kind": "categorical", "values": ["CHECK PHYSICAL CONNECTIONS", "VERIFY NETWORK ADAPTER SETTINGS", "TEST WITH DIFFERENT DEVICES", "RESET ROUTER/MODEM", "CHECK FOR SERVICE OUTAGES"]}}:CONSTRAINTS={"output_should_be": {"kind": "required", "items": ["Clear, numbered steps", "Non-technical language", "Estimated time for each step", "Success criteria for each step"]}}]
 ```
 
@@ -603,34 +600,25 @@ VALIDATION RULES:
 
 **Compressed:**
 ```text
-[REQ:RANK] [TARGET:REPORT:DOMAIN=FINANCE:TOPIC=ANALYSIS_AGENT] 
+[REQ:EXTRACT] [TARGET:REPORT:DOMAIN=FINANCE:TOPIC=ANALYSIS_AGENT] 
 [EXTRACT:NAMES,ADDRESSES,DATES:TYPE=LIST,DOMAIN=ENTITIES] 
-[OUT_JSON:STR:ENUMS={"required_fields": {"kind": "categorical", "values": ["VENDOR NAME AND ADDRESS", "INVOICE NUMBER AND DATE", "LINE ITEMS"]}, "payment_terms_and_due_date\n\noptional_fields": {"kind": "categorical", "values": ["PURCHASE ORDER NUMBER", "SHIPPING INFORMATION", "BILLING CONTACT"]}, "validation_rules": {"kind": "categorical", "values": ["INVOICE NUMBER MUST BE UNIQUE", "DATES MUST BE IN ISO FORMAT"]}}]
+[OUT_JSON:STR:CONSTRAINTS={"required_fields": {"kind": "required", "items": ["Vendor name and address", "Invoice number and date", "Line items (description, quantity, unit price, total)", "Subtotal, tax, and grand total", "Payment terms and due date"]}}]
 ```
 
 **Metrics:**
 - Original: 245 tokens
 - Compressed: 98 tokens
-- Reduction: 28.3%
+- Reduction: 55.6%
 
 ---
 
 ## Token Structure for System Prompts
 
-### ROLE Token
-Defines agent identity and domain:
-```
-[ROLE:QA_ANALYST:DOMAIN=CUSTOMER_SERVICE]
-[ROLE:TECH_SUPPORT:DOMAIN=NETWORK]
-[ROLE:BETTING_ANALYST:DOMAIN=SOCCER]
-```
-
 ### REQ Token
 Specifies required actions:
 ```
-[REQ:ANALYZE]
-[REQ:EXTRACT,VALIDATE]
-[REQ:DIAGNOSE,TROUBLESHOOT,ESCALATE]
+[REQ:GENERATE:SPECS:SUPPORT_RESPONSE]
+[REQ:GENERATE:SPECS:SUMMARY]
 ```
 
 ### TARGET Token

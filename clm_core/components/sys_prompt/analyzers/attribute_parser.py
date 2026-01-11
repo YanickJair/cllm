@@ -6,7 +6,9 @@ from spacy.tokens import Doc
 
 from clm_core.utils.vocabulary import BaseVocabulary
 from clm_core.utils.parser_rules import BaseRules
-from clm_core.components.sys_prompt.analyzers.extraction_field import ExtractionFieldParser
+from clm_core.components.sys_prompt.analyzers.extraction_field import (
+    ExtractionFieldParser,
+)
 from clm_core.components.sys_prompt.analyzers.output_format import SysPromptOutputFormat
 from .context_parser import ContextParser
 from .._schemas import ExtractionField, Context, OutputSchema, SysPromptConfig
