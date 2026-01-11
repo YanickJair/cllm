@@ -27,9 +27,7 @@ class CLLMConfig(PretrainedConfig):
     ):
         super().__init__(**kwargs)
         base_model_config = AutoConfig.from_pretrained(base_model_name, token=token)
-        self.hidden_size = (
-            base_model_config.hidden_size
-        )
+        self.hidden_size = base_model_config.hidden_size
 
         print("HF Token", token)
         self.base_model_name = base_model_name

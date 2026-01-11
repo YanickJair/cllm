@@ -7,12 +7,13 @@ from clm_core.utils.vocabulary import BaseVocabulary
 
 from ._schemas import CompressionResult, SysPromptConfig
 from .analyzers.attribute_parser import AttributeParser
-from clm_core.components.intent_detector import IntentDetector
+from clm_core.components.intent_detector_v2 import IntentDetectorV2 as IntentDetector
 from clm_core.components.target_extractor import TargetExtractor
 from .tokenizer import CLLMTokenizer
 from clm_core.types import CLMOutput
 
 COMPONENT = "SYSTEM_PROMPT"
+
 
 class SysPromptEncoder:
     def __init__(
@@ -60,9 +61,9 @@ class SysPromptEncoder:
             print(f"Compressing: {prompt}")
             print(f"{'=' * 60}")
 
-        intents = self.intent_detector.detect(text=prompt)
+        intent = self.intent_detector.detect(text=prompt)
         if verbose:
-            print(f"\n1. Intents detected: {[i.token for i in intents]}")
+            print(f"\n1. Intents detected: {intent.token}")
 
         target = self.target_extractor.extract(prompt)
         if verbose:
@@ -84,7 +85,7 @@ class SysPromptEncoder:
             print(f"5. Output format: {output_format.format_type}")
 
         compressed = self.tokenizer.build_sequence(
-            intents=intents,
+            intent=intent,
             contexts=contexts,
             target=target,
             output_format=output_format,
@@ -108,12 +109,12 @@ class SysPromptEncoder:
             metadata={
                 "original_length": len(prompt),
                 "compressed_length": len(compressed),
-                "num_intents": len(intents),
+                "num_intents": 1 if intent.token else 0,
                 "num_targets": 1 if target else 0,
                 "input_tokens": len(prompt.split()),
                 "output_tokens": len(compressed.split()),
                 "verbs": verbs,
-                "intents": intents,
+                "intents": intent.model_dump(),
                 "target": target,
                 "extractions": extractions,
                 "contexts": contexts,
@@ -126,15 +127,6 @@ class SysPromptEncoder:
                     word in prompt.lower()
                     for word in ["python", "javascript", "function", "class"]
                 ),
-                "unmatched_verbs": [
-                    v
-                    for v in verbs
-                    if not any(
-                        v in self._vocab.REQ_TOKENS[i.token]
-                        for i in intents
-                        if i.token in self._vocab.REQ_TOKENS
-                    )
-                ],
             },
         )
 

@@ -11,32 +11,38 @@ def load_prompts() -> list[dict[str, str]]:
 
 def single_prompt():
     nl_spec = """
-    You are a Betting Analysis agent. Your task is to analyze soccer matches by 
-    evaluating each team's performance throughout the season and provide accurate 
-    betting odds.
+    You are a Call QA & Compliance Scoring System for customer service operations.
+
+    TASK:
+    Analyze the transcript and score the agent's compliance across required QA categories.
     
     ANALYSIS CRITERIA:
-    - Review recent match results (last 10 games)
-    - Analyze home vs. away performance
-    - Consider head-to-head history
-    - Factor in injuries and suspensions
-    - Evaluate current league position
-    - Assess offensive and defensive statistics
-    
-    EXAMPLE:
-    Analyze Chelsea FC's season performance by reviewing statistics from each game. 
-    Based on win rate, goals scored/conceded, clean sheets, and recent form, 
-    calculate the probability of win, draw, or loss for their next match.
+    - Mandatory disclosures and verification steps
+    - Policy adherence
+    - Soft-skill behaviors (empathy, clarity, ownership)
+    - Process accuracy
+    - Compliance violations or risks
+    - Customer sentiment trajectory
     
     OUTPUT FORMAT:
-    Return your analysis as a dictionary object with odds as decimal probabilities:
     {
-        "win": 0.45,
-        "draw": 0.30,
-        "lose": 0.25
+        "summary": "short_summary",
+        "qa_scores": {
+            "verification": 0.0,
+            "policy_adherence": 0.0,
+            "soft_skills": 0.0,
+            "accuracy": 0.0,
+            "compliance": 0.0
+        },
+        "violations": ["list_any_detected"],
+        "recommendations": ["improvement_suggestions"]
     }
     
-    Note: Odds must sum to 1.0. Consider all factors before providing final odds.
+    SCORING:
+    0.00–0.49: Fail
+    0.50–0.74: Needs Improvement
+    0.75–0.89: Good
+    0.90–1.00: Excellent
     """
     cfg = CLMConfig(
         lang="en",
@@ -52,18 +58,24 @@ def single_prompt():
 def main(prompts):
     cfg = CLMConfig(
         lang="en",
+        sys_prompt_config=SysPromptConfig(
+            infer_types=True,
+            add_attrs=True,
+        )
     )
     encoder = CLMEncoder(cfg=cfg)
     results = []
 
     for prompt in prompts:
         compressed = encoder.encode(prompt.get("prompt"), verbose=False)  # type: ignore
-        results.append(compressed.model_dump())
-        break
+        if compressed:
+            results.append(compressed.model_dump())
+        else:
+            print("failed for ", prompt)
 
     with open("sys_prompt_compression-v2.json", "w") as f:
         json.dump(results, f)
 
 if __name__ == "__main__":
-    # main(load_prompts())
-    single_prompt()
+    main(load_prompts())
+    # single_prompt()

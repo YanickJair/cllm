@@ -514,43 +514,85 @@ class ENVocabulary(BaseVocabulary):
     @property
     def rank_triggers(self) -> set[str]:
         return {
-            "rank by", "ranked by", "sort by", "sorted by",
-            "order by", "ordered by", "arrange by", "prioritize by",
-            "in order of", "by priority", "by importance",
-            "highest to lowest", "lowest to highest",
-            "best to worst", "top to bottom",
-            "ranking", "rankings", "prioritization",
-            "prioritize", "prioritizing",
+            "rank by",
+            "ranked by",
+            "sort by",
+            "sorted by",
+            "order by",
+            "ordered by",
+            "arrange by",
+            "prioritize by",
+            "in order of",
+            "by priority",
+            "by importance",
+            "highest to lowest",
+            "lowest to highest",
+            "best to worst",
+            "top to bottom",
+            "ranking",
+            "rankings",
+            "prioritization",
+            "prioritize",
+            "prioritizing",
         }
 
     @property
     def REQ_TOKENS(self) -> dict[str, list[str]]:
         return {
             "REVIEW": [
-                "review", "look at", "go over", "examine quality",
-                "assess quality", "evaluate quality", "check over",
-                "look through", "survey", "appraise"
+                "review",
+                "look at",
+                "go over",
+                "examine quality",
+                "assess quality",
+                "evaluate quality",
+                "check over",
+                "look through",
+                "survey",
+                "appraise",
             ],
-
             "ASSESS": [
-                "assess", "appraise", "gauge", "estimate quality",
-                "judge", "measure quality", "rate quality", "weigh"
+                "assess",
+                "appraise",
+                "gauge",
+                "estimate quality",
+                "judge",
+                "measure quality",
+                "rate quality",
+                "weigh",
             ],
-
             "MONITOR": [
-                "monitor", "track", "watch", "observe", "follow",
-                "keep track of", "supervise"
+                "monitor",
+                "track",
+                "watch",
+                "observe",
+                "follow",
+                "keep track of",
+                "supervise",
             ],
-
             "PARSE": [
-                "parse", "read", "interpret", "process document",
-                "read document", "understand document"
+                "parse",
+                "read",
+                "interpret",
+                "process document",
+                "read document",
+                "understand document",
             ],
             "ANALYZE": [
-                "analyze", "review", "examine", "evaluate", "assess", "inspect",
-                "check out", "audit", "investigate", "break down", "dissect", "study",
-                "scrutinize", "look into"
-
+                "analyze",
+                "review",
+                "examine",
+                "evaluate",
+                "assess",
+                "inspect",
+                "check out",
+                "audit",
+                "investigate",
+                "break down",
+                "dissect",
+                "study",
+                "scrutinize",
+                "look into",
             ],
             "MATCH": [
                 "match",
@@ -563,14 +605,34 @@ class ENVocabulary(BaseVocabulary):
                 "check against",
             ],
             "EXTRACT": [
-                "extract", "pull out", "identify", "find", "locate", "get", "retrieve", "return",
-                "include", "select", "pick out", "capture", "obtain", "isolate", "pull", "grab"
-
+                "extract",
+                "pull out",
+                "identify",
+                "find",
+                "locate",
+                "get",
+                "retrieve",
+                "return",
+                "include",
+                "select",
+                "pick out",
+                "capture",
+                "obtain",
+                "isolate",
+                "pull",
+                "grab",
             ],
             "SELECT": [
-                "select", "choose", "pick", "filter", "identify matching",
-                "find matching", "get matching", "retrieve matching",
-                "pull matching", "show matching"
+                "select",
+                "choose",
+                "pick",
+                "filter",
+                "identify matching",
+                "find matching",
+                "get matching",
+                "retrieve matching",
+                "pull matching",
+                "show matching",
             ],
             "GENERATE": [
                 "generate",
@@ -594,8 +656,16 @@ class ENVocabulary(BaseVocabulary):
                 "transcribe",
             ],
             "SUMMARIZE": [
-                "summarize", "condense", "brief", "synopsis", "sum up", "digest", "recap",
-                "overview", "abstract", "précis"
+                "summarize",
+                "condense",
+                "brief",
+                "synopsis",
+                "sum up",
+                "digest",
+                "recap",
+                "overview",
+                "abstract",
+                "précis",
             ],
             "TRANSFORM": [
                 "convert",
@@ -634,8 +704,18 @@ class ENVocabulary(BaseVocabulary):
                 "define",
             ],
             "COMPARE": [
-                "compare", "contrast", "versus", "vs", "difference between", "differentiate", "distinguish",
-                "compare against", "evaluate against", "measure against", "benchmark", "weigh against"
+                "compare",
+                "contrast",
+                "versus",
+                "vs",
+                "difference between",
+                "differentiate",
+                "distinguish",
+                "compare against",
+                "evaluate against",
+                "measure against",
+                "benchmark",
+                "weigh against",
             ],
             "CLASSIFY": [
                 "classify",
@@ -691,9 +771,18 @@ class ENVocabulary(BaseVocabulary):
                 "discover",
             ],
             "RANK": [
-                "prioritize", "order", "sort by", "rate", "score",
-                "rank", "grade", "evaluate priority", "arrange by priority",
-                "order by importance", "sequence", "position"
+                "prioritize",
+                "order",
+                "sort by",
+                "rate",
+                "score",
+                "rank",
+                "grade",
+                "evaluate priority",
+                "arrange by priority",
+                "order by importance",
+                "sequence",
+                "position",
             ],
             "PREDICT": [
                 "predict",
@@ -705,8 +794,16 @@ class ENVocabulary(BaseVocabulary):
                 "extrapolate",
             ],
             "FORMAT": [
-                "format", "structure", "organize", "layout", "arrange",
-                "restructure", "reformat", "style", "present", "display as"
+                "format",
+                "structure",
+                "organize",
+                "layout",
+                "arrange",
+                "restructure",
+                "reformat",
+                "style",
+                "present",
+                "display as",
             ],
             "DETECT": [
                 "detect",
@@ -756,10 +853,56 @@ class ENVocabulary(BaseVocabulary):
                 "delegate",
                 "allocate",
             ],
-            "EXECUTE": ["use","apply", "implement", "run", "perform", "employ", "utilize"],
+            "EXECUTE": [
+                "use",
+                "apply",
+                "implement",
+                "run",
+                "perform",
+                "employ",
+                "utilize",
+            ],
             "LIST": [
-                "list", "enumerate", "itemize", "outline", "show", "display", "provide list",
-                "give me", "show me", "provide all"
+                "list",
+                "enumerate",
+                "itemize",
+                "outline",
+                "show",
+                "display",
+                "provide list",
+                "give me",
+                "show me",
+                "provide all",
+            ],
+        }
+
+    @property
+    def EPISTEMIC_KEYWORDS(self) -> dict[str, list[str]]:
+        return {
+            "future": [
+                "next",
+                "upcoming",
+                "future",
+                "will",
+                "expected",
+                "forecast",
+                "prediction",
+            ],
+            "uncertainty": [
+                "chance",
+                "likelihood",
+                "probability",
+                "odds",
+                "risk",
+            ],
+            "real_world": [
+                "match",
+                "season",
+                "weather",
+                "market",
+                "stock",
+                "team",
+                "game",
             ],
         }
 
@@ -834,20 +977,28 @@ class ENVocabulary(BaseVocabulary):
                 "network infrastructure",
                 "router",
                 "switch",
-                "firewall"
+                "firewall",
             ],
             "INVOICE": [
                 "invoice",
                 "bill",
                 "receipt",
                 "payment document",
-                "billing document"
+                "billing document",
             ],
             "DATA": ["data", "dataset", "database", "spreadsheet", "table", "csv"],
             "QUERY": ["query", "sql", "sql query", "database query"],
             "ENDPOINT": ["endpoint", "api", "api endpoint", "rest endpoint"],
             "COMPONENT": ["component", "module", "package", "library"],
-            "SYSTEM": ["system", "server", "application", "app", "software", "platform", "infrastructure"],
+            "SYSTEM": [
+                "system",
+                "server",
+                "application",
+                "app",
+                "software",
+                "platform",
+                "infrastructure",
+            ],
             "TEST": ["test", "unit test", "test case", "test suite"],
             "LOG": ["log", "logs", "log file", "error log", "system log"],
             "RECORD": ["record", "entry", "row", "item"],
@@ -866,8 +1017,14 @@ class ENVocabulary(BaseVocabulary):
             "REPORT": ["report", "analysis", "findings", "summary report"],
             "TICKET": ["ticket", "support ticket", "issue", "case"],
             "TRANSCRIPT": [
-                "transcript", "conversation", "dialogue", "chat log", "call recording",
-                "chat history", "interaction log", "conversation record"
+                "transcript",
+                "conversation",
+                "dialogue",
+                "chat log",
+                "call recording",
+                "chat history",
+                "interaction log",
+                "conversation record",
             ],
             "FEEDBACK": ["feedback", "comment", "review", "critique"],
             "COMMENT": ["comment", "remark", "note", "observation"],
@@ -911,19 +1068,31 @@ class ENVocabulary(BaseVocabulary):
             "CHURN": ["churn", "customer churn", "attrition"],
             "FEATURES": ["features", "feature", "functionality", "capabilities"],
             "METRICS": [
-                "revenue", "metrics", "statistics", "numbers", "data points", "KPIs", "performance data",
-                "analytics", "measurements"
+                "revenue",
+                "metrics",
+                "statistics",
+                "numbers",
+                "data points",
+                "KPIs",
+                "performance data",
+                "analytics",
+                "measurements",
             ],
             "REGIONS": ["regions", "areas", "locations", "territories"],
             "ITEMS": ["items", "things", "elements", "list", "options", "choices"],
             "CONCEPT": ["concept", "idea", "notion", "principle", "theory"],
             "PROCEDURE": [
-                "procedure", "process", "steps", "method", "technique", "methodology", "instructions",
-                "steps", "workflow"
+                "procedure",
+                "process",
+                "steps",
+                "method",
+                "technique",
+                "methodology",
+                "instructions",
+                "steps",
+                "workflow",
             ],
-            "CONTRACT": [
-                "contract", "agreement", "legal document", "terms", "SLA"
-            ],
+            "CONTRACT": ["contract", "agreement", "legal document", "terms", "SLA"],
             "FACT": ["fact", "facts", "information", "details", "truth"],
             "ANSWER": ["answer", "solution", "response"],
         }

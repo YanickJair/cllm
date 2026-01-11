@@ -13,7 +13,7 @@ __all__ = [
     "CLMConfig",
     "CLMOutput",
     "SysPromptConfig",
-    "SDCompressionConfig"
+    "SDCompressionConfig",
 ]
 
 __locals = locals()

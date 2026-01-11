@@ -1,3 +1,5 @@
+import re
+from enum import Enum
 from typing import Optional, Annotated, Any
 from pydantic import BaseModel, Field, computed_field
 
@@ -7,19 +9,93 @@ DEFAULT_DOMAIN_MAP = {
 }
 
 
+class REQ(str, Enum):
+    ANALYZE = "ANALYZE"
+    GENERATE = "GENERATE"
+    PREDICT = "PREDICT"
+    RECOMMEND = "RECOMMEND"
+    EXTRACT = "EXTRACT"
+    TRANSFORM = "TRANSFORM"
+    FORMAT = "FORMAT"
+    SUMMARIZE = "SUMMARIZE"
+    CLASSIFY = "CLASSIFY"
+    VALIDATE = "VALIDATE"
+    RANK = "RANK"
+    DEBUG = "DEBUG"
+    SEARCH = "SEARCH"
+    EXECUTE = "EXECUTE"
+
+
+class Signal(str, Enum):
+    ANALYSIS = "ANALYSIS"
+    GENERATION = "GENERATION"
+    PREDICTION = "PREDICTION"
+    EXTRACTION = "EXTRACTION"
+    TRANSFORMATION = "TRANSFORMATION"
+    FORMATTING = "FORMATTING"
+    VALIDATION = "VALIDATION"
+    RANKING = "RANKING"
+    DEBUGGING = "DEBUGGING"
+    SEARCH = "SEARCH"
+    EXECUTION = "EXECUTION"
+
+
+class Artifact(str, Enum):
+    TEXT = "TEXT"
+    LIST = "LIST"
+    STRUCTURED = "STRUCTURED"
+    PROBABILITY = "PROBABILITY"
+    VALIDATION = "VALIDATION"
+    DECISION = "DECISION"
+
+
+VOCAB_SIGNAL_MAP = {
+    "ANALYZE": Signal.ANALYSIS,
+    "ASSESS": Signal.ANALYSIS,
+    "REVIEW": Signal.ANALYSIS,
+    "CALCULATE": Signal.PREDICTION,
+    "PREDICT": Signal.PREDICTION,
+    "GENERATE": Signal.GENERATION,
+    "EXTRACT": Signal.EXTRACTION,
+    "TRANSFORM": Signal.TRANSFORMATION,
+    "FORMAT": Signal.FORMATTING,
+    "VALIDATE": Signal.VALIDATION,
+    "RANK": Signal.RANKING,
+    "DEBUG": Signal.DEBUGGING,
+    "SEARCH": Signal.SEARCH,
+    "EXECUTE": Signal.EXECUTION,
+    "SUMMARIZE": Signal.GENERATION,
+    "LIST": Signal.GENERATION,
+}
+
+
 class Intent(BaseModel):
     """Represents a detected intent (REQ token)"""
 
-    token: Annotated[str, Field(..., description="Main action ANALYZE")]
+    token: Annotated[
+        REQ, Field(..., description="Represents the user’s primary task objective")
+    ]
+    specs: list[str] = Field(
+        default_factory=lambda l: [],
+        description="specialization refines what is being generated / predicted / extracted",
+    )
     confidence: Annotated[float, Field(default=0.0, description="Confidence score")]
     trigger_word: Annotated[str, Field(default="", description="Trigger word")]
     modifier: Annotated[
         Optional[str],
         Field(default=None, description="Modifier (optional) DEEP,SURFACE"),
     ]
+    qualifiers: dict[str, str] = Field(default_factory=lambda d: {}, description="")
     unmatched_verbs: list[str] = Field(
         default_factory=list, description="Verbs that didn't map to REQ"
     )
+
+    def build_token(self) -> str:
+        specs = "SPECS:" + "_".join(self.specs) if len(self.specs) > 0 else ""
+        req = f"REQ:{self.token.value}"
+        if specs:
+            return f"[{req}:{specs}]"
+        return f"[{req}]"
 
 
 class Target(BaseModel):
@@ -211,5 +287,6 @@ class SysPromptConfig(BaseModel):
         description="Add examples based on extracted ones from input if exist",
     )
     add_attrs: Optional[bool] = Field(
-        default=True, description="Add extra attributes from input prompt. This can be specifications found in prompt, enums/constraints values defined"
+        default=True,
+        description="Add extra attributes from input prompt. This can be specifications found in prompt, enums/constraints values defined",
     )

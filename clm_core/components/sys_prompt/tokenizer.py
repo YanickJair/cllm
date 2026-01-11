@@ -9,7 +9,7 @@ class CLLMTokenizer:
 
     @staticmethod
     def build_sequence(
-        intents: list[Intent],
+        intent: Intent,
         target: Target,
         extractions: Optional[ExtractionField],
         contexts: list[Context],
@@ -20,6 +20,7 @@ class CLLMTokenizer:
         tokens = []
 
         exclude_extract_token = False
+        """
         for intent in intents:
             if intent.token == "EXTRACT" and extractions and extractions.fields:
                 exclude_extract_token = True
@@ -35,15 +36,16 @@ class CLLMTokenizer:
                 tokens.append(f"[REQ:{intent.token}:{intent.modifier}]")
             else:
                 tokens.append(f"[REQ:{intent.token}]")
-
+        """
+        tokens.append(intent.build_token())
         tokens.append(target.build_token())
 
         if extractions and extractions.fields and not exclude_extract_token:
-            tokens.append(extractions.build_token())
+            if extractions:
+                tokens.append(extractions.build_token())
 
         for ctx in contexts:
-            if not any(ctx.value == intent.modifier for intent in intents):
-                tokens.append(f"[CTX:{ctx.aspect}={ctx.value}]")
+            tokens.append(f"[CTX:{ctx.aspect}={ctx.value}]")
 
         if output_format:
             tokens.append(output_format.build_token())
