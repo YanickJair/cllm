@@ -94,8 +94,8 @@ class Intent(BaseModel):
         specs = "SPECS:" + "_".join(self.specs) if len(self.specs) > 0 else ""
         req = f"REQ:{self.token.value}"
         if specs:
-            return f"[{req}:{specs}]"
-        return f"[{req}]"
+            return f"{req}:{specs}"
+        return f"{req}"
 
 
 class Target(BaseModel):

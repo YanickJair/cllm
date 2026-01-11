@@ -126,19 +126,121 @@ Complex:    [EXTRACT:SENTIMENT,URGENCY:TYPE=LIST,DOMAIN=LEGAL]
 
 The REQ token represents the **primary action or operation** to be performed. It is the most critical token in the system prompt hierarchy as it determines the fundamental task type.
 
-**All REQ values:**
+#### REQ Categorization Taxonomy
+
+REQ tokens are organized into **six fundamental categories** based on their purpose and what they produce:
+
+##### A. ANALYSIS / EVALUATION
+**Purpose:** Interpret, assess, or explain something.
+**Produces:** Insight, judgment, reasoning.
+
+**Examples:**
+- Code review
+- Risk assessment
+- Performance evaluation
+- Root cause analysis
+
+**Canonical REQs:** `ANALYZE`, `EVALUATE`, `ASSESS`, `DIAGNOSE`
+
+⚠️ **Use sparingly** — this is the most generic bucket.
+
+##### B. GENERATION / CREATION
+**Purpose:** Create a new artifact.
+**Produces:** Text, data, structure, plans, content.
+
+**Examples:**
+- Write a report
+- Generate a schema
+- Produce odds
+- Draft an email
+
+**Canonical REQs:** `GENERATE_REPORT`, `GENERATE_SCHEMA`, `GENERATE_BETTING_ODDS`, `GENERATE_SUMMARY`
+
+ℹ️ **This is where most business prompts land.**
+
+##### C. PREDICTION / FORECASTING
+**Purpose:** Estimate future outcomes or probabilities.
+**Produces:** Probabilities, forecasts, predictions.
+
+**Examples:**
+- Match outcome probabilities
+- Sales forecast
+- Risk likelihood
+
+**Canonical REQs:** `PREDICT_OUTCOME`, `FORECAST_METRIC`, `ESTIMATE_PROBABILITY`
+
+⚠️ **Often overlaps with GENERATION** — choose the dominant intent.
+
+**For betting:**
+- Outcome = odds → GENERATION wins
+- Time series forecast → PREDICTION wins
+
+##### D. DECISION / RECOMMENDATION
+**Purpose:** Choose or advise among options.
+**Produces:** A decision, ranking, or recommendation.
+
+**Examples:**
+- Best investment option
+- Recommended action
+- Prioritized list
+
+**Canonical REQs:** `RECOMMEND_ACTION`, `SELECT_OPTION`, `RANK_ALTERNATIVES`
+
+##### E. EXTRACTION / TRANSFORMATION
+**Purpose:** Convert or extract from existing input.
+**Produces:** Structured data from unstructured input.
+
+**Examples:**
+- Extract entities
+- Parse schema
+- Normalize text
+
+**Canonical REQs:** `EXTRACT_FIELDS`, `TRANSFORM_SCHEMA`, `NORMALIZE_TEXT`
+
+ℹ️ **This is often machine-facing, not user-facing.**
+
+##### F. VALIDATION / VERIFICATION
+**Purpose:** Check correctness, compliance, or consistency.
+**Produces:** Pass/fail, issues, validation results.
+
+**Examples:**
+- Policy compliance
+- Schema validation
+- Constraint checking
+
+**Canonical REQs:** `VALIDATE_OUTPUT`, `VERIFY_COMPLIANCE`, `CHECK_CONSISTENCY`
+
+---
+
+#### REQ Token Values & Category Mapping
+
+The following REQ tokens are available in CLM, organized by their category:
+
+**Category A: ANALYSIS / EVALUATION**
 - `ANALYZE` - Examine and evaluate content
-- `EXTRACT` - Pull out specific data or entities
-- `SUMMARIZE` - Condense information (now mapped via GENERATE)
-- `GENERATE` - Create new content (reports, summaries, structured data)
-- `PREDICT` - Make future projections based on uncertainty and real-world grounding
-- `RECOMMEND` - Provide recommendations (deprecated, use RANK)
 - `CLASSIFY` - Categorize items (now mapped via ANALYZE)
-- `VALIDATE` - Check correctness, compliance, or verification
+- `DEBUG` - Find and fix issues
+
+**Category B: GENERATION / CREATION**
+- `GENERATE` - Create new content (reports, summaries, structured data)
+- `SUMMARIZE` - Condense information (now mapped via GENERATE)
+
+**Category C: PREDICTION / FORECASTING**
+- `PREDICT` - Make future projections based on uncertainty and real-world grounding
+
+**Category D: DECISION / RECOMMENDATION**
+- `RECOMMEND` - Provide recommendations (deprecated, use RANK)
+- `RANK` - Order items by priority or preference
+
+**Category E: EXTRACTION / TRANSFORMATION**
+- `EXTRACT` - Pull out specific data or entities
 - `TRANSFORM` - Convert format or restructure data
 - `FORMAT` - Reformat without changing meaning
-- `RANK` - Order items by priority or preference
-- `DEBUG` - Find and fix issues
+
+**Category F: VALIDATION / VERIFICATION**
+- `VALIDATE` - Check correctness, compliance, or verification
+
+**Utility / Other:**
 - `SEARCH` - Search or find information
 - `EXECUTE` - Execute operations or commands
 

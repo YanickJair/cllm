@@ -35,6 +35,14 @@ class DummyVocab(BaseVocabulary):
     def rank_triggers(self) -> set:
         return set()
 
+    @property
+    def EPISTEMIC_KEYWORDS(self) -> dict[str, list[str]]:
+        return {
+            "future": [],
+            "uncertainty": [],
+            "real_world": [],
+        }
+
 
 @pytest.fixture
 def nlp_mock(mocker: MockerFixture):

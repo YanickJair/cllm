@@ -11,12 +11,20 @@ from clm_core.components.sys_prompt import (
 
 
 class _SPECDetector:
+    """
+    SPEC extraction is conservative by design; expand only in response to real misses.
+    """
+
+    # High-precision explicit artifact extraction.
+    # Intentionally conservative to avoid SPEC pollution.
     EXPLICIT_OUTPUT_PATTERNS = [
         re.compile(
             r"(?:generate|return|provide|output|produce)\s+(?:a|an|the)?\s*([a-zA-Z_ ]{2,40})",
             re.IGNORECASE,
         )
     ]
+    # Non-domain specs represent format or mathematical shape,
+    # never primary domain artifacts.
     NON_DOMAIN_SPECS = {
         "JSON_OBJECT",
         "JSON_SCHEMA",
@@ -30,6 +38,8 @@ class _SPECDetector:
         "SUPPORT_RESPONSE": ["support", "ticket", "issue", "incident"],
         "TROUBLESHOOTING_GUIDE": ["troubleshoot", "troubleshooting", "steps"],
     }
+    # Artifact-driven specs are only valid when REQ matches
+    # the artifact's epistemic intent.
     ARTIFACT_TO_SPEC = {
         Artifact.VALIDATION: "VALIDATION_RESULT",
         Artifact.DECISION: "RECOMMENDATION",
@@ -180,14 +190,17 @@ class IntentDetectorV2:
     def _resolve_req(self, text: str, signals: set[Signal], artifacts: set[Artifact]) -> REQ:
         if (
             Artifact.VALIDATION in artifacts or Signal.VALIDATION in signals
-        ) and self._has_validation_target(artifacts):
+        ):
             return REQ.VALIDATE
 
         if Signal.EXTRACTION in signals and Artifact.PROBABILITY not in artifacts:
             # Probability implies synthesis; never treat as EXTRACT
             return REQ.EXTRACT
 
-        if Signal.TRANSFORMATION in signals and self._has_transform_target(artifacts):
+        if Signal.PREDICTION in signals:
+            return REQ.PREDICT
+
+        if Signal.TRANSFORMATION in signals:
             return REQ.TRANSFORM
 
         if Signal.FORMATTING in signals:
