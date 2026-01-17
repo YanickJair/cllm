@@ -2,6 +2,11 @@ from enum import Enum
 from typing import Optional
 from pydantic import BaseModel, Field, computed_field
 
+from clm_core.components.sys_prompt import (
+    PromptTemplate, BoundPromptValidator, ValidationLevel, ConfigurationPromptMinimizer, PromptMode
+)
+
+
 type ORIGINAL_INPUT = str | dict | list
 
 
@@ -23,6 +28,40 @@ class CLMOutput(BaseModel):
     def compression_ratio(self) -> float:
         """Compression ratio of the input"""
         return round((1 - len(self.compressed) / len(self.original)) * 100, 1)
+
+    def bind(self, **runtime_values) -> str:
+        """
+        compose CL + NL
+        Parameters
+        ----------
+        runtime_values
+
+        Returns
+        -------
+
+        """
+        if self.metadata.get("prompt_mode") != "CONFIGURATION":
+            raise RuntimeError("bind() is only supported for configuration prompts")
+
+        template = PromptTemplate(
+            raw_template=self.original,
+            placeholders=self.metadata["placeholders"],
+            role=self.metadata.get("role"),
+            rules=self.metadata.get("rules", {}),
+            priority=self.metadata.get("priority"),
+            compressed=self.compressed,
+        )
+
+        bound_nl = template.bind(**runtime_values)
+
+        issues = BoundPromptValidator().validate(bound_nl)
+        errors = [i for i in issues if i.level == ValidationLevel.ERROR]
+        if errors:
+            raise RuntimeError(f"Bound prompt invalid: {errors}")
+
+        if self.metadata["prompt_mode"] == PromptMode.CONFIGURATION:
+            bound_nl = ConfigurationPromptMinimizer.minimize(bound_nl)
+        return f"{self.compressed}\n\n{bound_nl}"
 
 
 class FieldImportance(Enum):

@@ -3,11 +3,49 @@ from enum import Enum
 from typing import Optional, Annotated, Any
 from pydantic import BaseModel, Field, computed_field
 
+from clm_core.components.sys_prompt.errors import TemplateBindingError
+
 DEFAULT_DOMAIN_MAP = {
     "CALL": "SUPPORT",
     "TICKET": "SUPPORT",
 }
 
+
+class PromptMode(str, Enum):
+    TASK = "TASK"
+    CONFIGURATION = "CONFIGURATION"
+
+
+class PromptTemplate(BaseModel):
+    raw_template: str = Field(..., description="Raw configuration template (placeholders intact)")
+    placeholders: list[str] = Field(..., description="Runtime placeholders (symbolic, unresolved)")
+    role: Optional[str] = Field(default=None, description="System Prompt Agent's role")
+    rules: dict = Field(default_factory=lambda x: {}, description="Agent's rule(s)")
+    priority: Optional[str] = Field(default=None, description="Agent priority definition")
+    compressed: str = Field(..., description="Deterministic compressed representation")
+
+    def bind(self, **values: Any) -> str:
+        """
+        Bind runtime values into the template.
+        Returns a concrete system prompt string.
+        """
+        missing = [p for p in self.placeholders if p not in values]
+        if missing:
+            raise TemplateBindingError(
+                f"Missing values for placeholders: {missing}"
+            )
+
+        extra = [k for k in values if k not in self.placeholders]
+
+        if extra:
+            raise TemplateBindingError(
+                f"Extra values provided not used in template: {extra}"
+            )
+
+        bound = self.raw_template
+        for key, val in values.items():
+            bound = bound.replace(f"{{{{{key}}}}}", str(val))
+        return bound
 
 class REQ(str, Enum):
     ANALYZE = "ANALYZE"
@@ -290,3 +328,12 @@ class SysPromptConfig(BaseModel):
         default=True,
         description="Add extra attributes from input prompt. This can be specifications found in prompt, enums/constraints values defined",
     )
+
+class ValidationLevel(str, Enum):
+    ERROR = "ERROR"
+    WARNING = "WARNING"
+
+
+class ValidationIssue(BaseModel):
+    level: ValidationLevel
+    message: str
