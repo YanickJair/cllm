@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-01-19
+
+### Added
+
+- Full dictionary implementations for Spanish (ES), French (FR), and Portuguese (PT) languages
+  - `EPISTEMIC_KEYWORDS` with future, uncertainty, and real_world categories
+  - `STOPWORDS` tuples for proper filtering
+  - `CODE_INDICATORS` for code-related term detection
+  - Expanded `patterns.py` with comprehensive regex patterns (~574+ lines each)
+  - Enhanced `rules.py` with language-specific processing rules (~294+ lines each)
+  - Extended `vocabulary.py` with full vocabulary definitions (~250+ lines each)
+
+### Changed
+
+- Refactored `ConfigurationPromptMinimizer` to use dependency injection
+  - Now requires spaCy `Language` instance in constructor instead of lazy loading
+  - Converted class methods to instance methods for cleaner API
+  - Removed optional spaCy fallback - spaCy is now required
+- Simplified minimizer initialization by removing `_get_nlp()` class method
+
+### Fixed
+
+- Removed regex-based fallback in minimizer (was unused code path)
+
 ## [0.3.0] - 2026-01-19
 
 ### Added
