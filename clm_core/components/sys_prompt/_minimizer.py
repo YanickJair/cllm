@@ -1,16 +1,7 @@
 import re
 from typing import Optional, Literal
 
-try:
-    import spacy
-    from spacy.matcher import Matcher
-    from spacy.language import Language
-    SPACY_AVAILABLE = True
-except ImportError:
-    SPACY_AVAILABLE = False
-    spacy = None  # type: ignore
-    Matcher = None  # type: ignore
-    Language = None  # type: ignore
+from spacy import Language
 
 from clm_core.components.sys_prompt.analyzers.output_format import SysPromptOutputFormat
 
@@ -76,21 +67,9 @@ class ConfigurationPromptMinimizer:
         (r"custom instructions are paramount", None),
     ]
 
-    _nlp: Optional["Language"] = None
-
-    @classmethod
-    def _get_nlp(cls) -> Optional["Language"]:
-        """Lazy load spaCy model."""
-        if not SPACY_AVAILABLE:
-            return None
-
-        if cls._nlp is None:
-            try:
-                cls._nlp = spacy.load("en_core_web_sm")
-            except OSError:
-                cls._nlp = spacy.blank("en")
-                cls._nlp.add_pipe("sentencizer")
-        return cls._nlp
+    def __init__(self, nlp: Language):
+        self._nlp = nlp
+        self._nlp.add_pipe("sentencizer")
 
     @classmethod
     def suppress_with_cl(cls, out: str, cl_metadata: dict) -> str:
@@ -193,8 +172,7 @@ class ConfigurationPromptMinimizer:
 
         return "\n".join(output_lines).strip()
 
-    @classmethod
-    def minimize(cls, nl_prompt: str, cl_metadata: Optional[dict] = None) -> str:
+    def minimize(self, nl_prompt: str, cl_metadata: Optional[dict] = None) -> str:
         """
         Minimize the natural language prompt by removing redundant content.
 
@@ -205,24 +183,19 @@ class ConfigurationPromptMinimizer:
         Returns:
             Minimized prompt with redundant content removed
         """
-        nlp = cls._get_nlp()
-        if nlp is not None:
-            out = cls._minimize_with_spacy(nl_prompt, nlp)
-        else:
-            out = cls._minimize_with_regex(nl_prompt)
+        out = self._minimize_with_spacy(nl_prompt)
 
         if "<basic_rules>" in out.lower():
-            out = cls._trim_basic_rules(out)
+            out = self._trim_basic_rules(out)
 
         if cl_metadata:
-            out = cls.suppress_with_cl(out=out, cl_metadata=cl_metadata)
+            out = self.suppress_with_cl(out=out, cl_metadata=cl_metadata)
 
-        out = cls._clean_general_prompt(out)
+        out = self._clean_general_prompt(out)
 
         return out.strip()
 
-    @classmethod
-    def _minimize_with_spacy(cls, text: str, nlp: "Language") -> str:
+    def _minimize_with_spacy(self, text: str) -> str:
         """
         Use spaCy for more robust sentence-level analysis and filtering.
 
@@ -234,7 +207,7 @@ class ConfigurationPromptMinimizer:
             Filtered text with droppable sentences removed
         """
         # Parse the text, but skip XML-like blocks for sentence analysis
-        blocks = cls._extract_blocks(text)
+        blocks = self._extract_blocks(text)
 
         result_parts = []
 
@@ -242,11 +215,11 @@ class ConfigurationPromptMinimizer:
             if block_type == "xml":
                 result_parts.append(content)
             else:
-                doc = nlp(content)
+                doc = self._nlp(content)
 
                 kept_sentences = []
                 for sent in doc.sents:
-                    if not cls._should_drop_sentence(sent):
+                    if not self._should_drop_sentence(sent):
                         kept_sentences.append(sent.text)
 
                 if kept_sentences:
@@ -394,45 +367,6 @@ class ConfigurationPromptMinimizer:
                 blocks.append(("text", part))
 
         return blocks
-
-    @classmethod
-    def _minimize_with_regex(cls, text: str) -> str:
-        """
-        Fall back to regex-based minimization when spaCy is not available.
-
-        Args:
-            text: Input text
-
-        Returns:
-            Filtered text
-        """
-        out = text
-
-        # Remove explicit priority explanations
-        out = re.sub(
-            r"Follow the basic rules.*?custom instructions.*?\.",
-            "",
-            out,
-            flags=re.IGNORECASE | re.DOTALL,
-        )
-
-        # Remove "Remember:" statements
-        out = re.sub(
-            r"Remember:\s*[^.]*\.",
-            "",
-            out,
-            flags=re.IGNORECASE,
-        )
-
-        # Remove conflict/priority statements
-        out = re.sub(
-            r"[^.]*if there are conflicts[^.]*\.",
-            "",
-            out,
-            flags=re.IGNORECASE,
-        )
-
-        return out
 
     @staticmethod
     def _trim_basic_rules(text: str) -> str:

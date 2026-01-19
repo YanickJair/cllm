@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Optional
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, computed_field, ConfigDict
+from spacy import Language
 
 from clm_core.components.sys_prompt import (
     PromptTemplate, BoundPromptValidator, ValidationLevel, ConfigurationPromptMinimizer, PromptMode
@@ -29,7 +30,7 @@ class CLMOutput(BaseModel):
         """Compression ratio of the input"""
         return round((1 - len(self.compressed) / len(self.original)) * 100, 1)
 
-    def bind(self, **runtime_values) -> str:
+    def bind(self, nlp: Language, **runtime_values: Optional[dict]) -> str:
         """
         compose CL + NL
         Parameters
@@ -60,7 +61,7 @@ class CLMOutput(BaseModel):
             raise RuntimeError(f"Bound prompt invalid: {errors}")
 
         if self.metadata["prompt_mode"] == PromptMode.CONFIGURATION:
-            bound_nl = ConfigurationPromptMinimizer.minimize(bound_nl, cl_metadata=self.metadata)
+            bound_nl = ConfigurationPromptMinimizer(nlp).minimize(bound_nl, cl_metadata=self.metadata)
         return f"{self.compressed}\n\n{bound_nl}"
 
 
@@ -157,3 +158,5 @@ class SDCompressionConfig(BaseModel):
         },
         description="Importance scores for default fields. Overrides default thresholds.",
     )
+
+    model_config = ConfigDict(use_enum_values=True)
