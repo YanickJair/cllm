@@ -1,7 +1,7 @@
 import re
 from enum import Enum
 from typing import Optional, Annotated, Any
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, ConfigDict
 
 from clm_core.components.sys_prompt.errors import TemplateBindingError
 
@@ -140,7 +140,7 @@ class Intent(BaseModel):
 class Target(BaseModel):
     token: str
     domain: Optional[str] = None
-    attributes: dict[str, str] | None = None
+    attributes: Optional[dict[str, str]] = Field(default_factory=lambda d: {})
     unmatched_nouns: list[str] = Field(default_factory=list)
 
     def __post_init__(self):
@@ -188,7 +188,7 @@ class ExtractionField(BaseModel):
         ...,
         description="Fields that represent what to extract from the input (i.e. ISSUE, SENTIMENT, ACTIONS)",
     )
-    attributes: dict[str, str] | None = None
+    attributes: Optional[dict[str, str]] = Field(default_factory=lambda d: {})
 
     def __post_init__(self):
         if self.attributes is None:
@@ -231,7 +231,7 @@ class OutputFormat(BaseModel):
     """Represents output format (OUT token)"""
 
     format_type: str
-    attributes: dict[str, str] | None = None
+    attributes: Optional[dict[str, str]] = Field(default_factory=lambda d: {})
 
     def __post_init__(self):
         if self.attributes is None:
@@ -330,7 +330,8 @@ class SysPromptConfig(BaseModel):
     )
     add_attrs: Optional[bool] = Field(
         default=True,
-        description="Add extra attributes from input prompt. This can be specifications found in prompt, enums/constraints values defined",
+        description="Add extra attributes from input prompt. "
+                    "This can be specifications found in prompt, enums/constraints values defined",
     )
 
 class ValidationLevel(str, Enum):

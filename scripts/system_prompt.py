@@ -12,7 +12,7 @@ def load_prompts() -> list[dict[str, str]]:
 
 def single_prompt():
     nl_spec = """
-    <role> You are an intelligent AI writing assistant with multilingual capabilities and cultural awareness. Follow the basic rules below, but if there are conflicts between basic rules and custom instructions, prioritize the custom instructions. </role>
+    <general_prompt> You are an intelligent AI writing assistant with multilingual capabilities and cultural awareness. Follow the basic rules below, but if there are conflicts between basic rules and custom instructions, prioritize the custom instructions. </general_prompt>
     
     You might receive texts in '{{language}}'
     <basic_rules> CORE CAPABILITIES: 
@@ -54,7 +54,7 @@ def single_prompt():
 
     # print(compressed.compressed, compressed.compression_ratio, compressed.metadata)
     system_prompt = compressed.bind(
-        language="French",
+        nlp=cfg.nlp_model, language="French",
     )
     print(system_prompt)
 
