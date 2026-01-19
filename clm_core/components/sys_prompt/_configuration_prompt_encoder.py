@@ -1,19 +1,38 @@
 import re
 from clm_core import CLMOutput
+from spacy.language import Language
+
+from clm_core.utils.parser_rules import BaseRules
+from clm_core.utils.vocabulary import BaseVocabulary
+from ._schemas import SysPromptConfig
+from .analyzers.attribute_parser import AttributeParser
+
 from clm_core.components.sys_prompt.base_encoder import BasePromptEncoder
 from clm_core.components.sys_prompt._schemas import PromptTemplate
 from clm_core.components.sys_prompt._prompt_template_validator import PromptTemplateValidator
 
 _ROLE_PATTERN = re.compile(
-    r"(you are|your role is)\s+(?:an?|the)?\s*([a-zA-Z_ ]{3,50})",
+    r"(you are|your role is)\s+(?:an?|the)?\s*"
+    r"([a-zA-Z][a-zA-Z_ ]*?)"
+    r"(?=\s*(?:\.|,?\s*(?:Follow|Please|Your task|that follows|who follows))|\s*$)",
     re.IGNORECASE,
 )
 _PLACEHOLDER_PATTERN = re.compile(r"\{\{([^}]+)\}\}")
 
 
 class ConfigurationPromptEncoder(BasePromptEncoder):
-    def __init__(self):
+    def __init__(
+        self,
+        nlp: Language,
+        vocab: BaseVocabulary,
+        rules: BaseRules,
+        config: SysPromptConfig = SysPromptConfig(),
+    ):
         self._template_validator = PromptTemplateValidator()
+        self._config = config
+        self.attribute_parser = AttributeParser(
+            nlp=nlp, config=config, vocab=vocab, rules=rules
+        )
 
     def compress(self, prompt: str, verbose: bool = False) -> CLMOutput:
         template = self._build_template(prompt)
@@ -29,6 +48,7 @@ class ConfigurationPromptEncoder(BasePromptEncoder):
                 "rules": template.rules,
                 "priority": template.priority,
                 "placeholders": template.placeholders,
+                "output_format": template.output_format,
                 "validation": [issue.model_dump() for issue in validation_issues]
             },
         )
@@ -38,8 +58,7 @@ class ConfigurationPromptEncoder(BasePromptEncoder):
     ) -> list[CLMOutput]:
         return [self.compress(p, verbose=verbose) for p in prompts]
 
-    @staticmethod
-    def _build_template(prompt: str) -> PromptTemplate:
+    def _build_template(self, prompt: str) -> PromptTemplate:
         role = None
         rules = {
             "basic": False,
@@ -91,13 +110,17 @@ class ConfigurationPromptEncoder(BasePromptEncoder):
         if priority:
             parts.append(f"[PRIORITY:{priority}]")
 
-        compressed = "".join(parts)
+        output_format = None
+        if self._config.use_structured_output_abstraction:
+            output_format = self.attribute_parser.parse_output_format(prompt).build_token()
+            parts.append(output_format)
 
         return PromptTemplate(
             raw_template=prompt,
             placeholders=placeholders,
+            output_format=output_format,
             role=role,
             rules=rules,
             priority=priority,
-            compressed=compressed,
+            compressed="".join(parts),
         )

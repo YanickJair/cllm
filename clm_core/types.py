@@ -41,7 +41,7 @@ class CLMOutput(BaseModel):
 
         """
         if self.metadata.get("prompt_mode") != "CONFIGURATION":
-            raise RuntimeError("bind() is only supported for configuration prompts")
+            return self.compressed
 
         template = PromptTemplate(
             raw_template=self.original,
@@ -60,7 +60,7 @@ class CLMOutput(BaseModel):
             raise RuntimeError(f"Bound prompt invalid: {errors}")
 
         if self.metadata["prompt_mode"] == PromptMode.CONFIGURATION:
-            bound_nl = ConfigurationPromptMinimizer.minimize(bound_nl)
+            bound_nl = ConfigurationPromptMinimizer.minimize(bound_nl, cl_metadata=self.metadata)
         return f"{self.compressed}\n\n{bound_nl}"
 
 

@@ -28,7 +28,12 @@ class SysPromptEncoder:
             rules=rules,
             vocab=vocab
         )
-        self._configuration_prompt = ConfigurationPromptEncoder()
+        self._configuration_prompt = ConfigurationPromptEncoder(
+            nlp=nlp,
+            vocab=vocab,
+            rules=rules,
+            config=config
+        )
 
     @staticmethod
     def _detect_prompt_mode(text: str) -> PromptMode:

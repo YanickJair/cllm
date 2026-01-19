@@ -23,6 +23,7 @@ class PromptTemplate(BaseModel):
     rules: dict = Field(default_factory=lambda x: {}, description="Agent's rule(s)")
     priority: Optional[str] = Field(default=None, description="Agent priority definition")
     compressed: str = Field(..., description="Deterministic compressed representation")
+    output_format: Optional[str] = Field(default=None, description="Output defined in prompt after compressing")
 
     def bind(self, **values: Any) -> str:
         """
@@ -319,6 +320,9 @@ class SysPromptConfig(BaseModel):
     lang: str = Field(default="en", description="Language of the prompt")
     infer_types: Optional[bool] = Field(
         default=False, description="Infer types for output fields"
+    )
+    use_structured_output_abstraction: Optional[bool] = Field(
+        default=True, description="If to compress output structure define with CL or keep it as-is"
     )
     add_examples: Optional[bool] = Field(
         default=False,

@@ -1,5 +1,5 @@
 import re
-from typing import Optional
+from typing import Optional, Literal
 
 try:
     import spacy
@@ -11,6 +11,8 @@ except ImportError:
     spacy = None  # type: ignore
     Matcher = None  # type: ignore
     Language = None  # type: ignore
+
+from clm_core.components.sys_prompt.analyzers.output_format import SysPromptOutputFormat
 
 
 class ConfigurationPromptMinimizer:
@@ -25,7 +27,42 @@ class ConfigurationPromptMinimizer:
     META_KEYWORDS = {
         "paramount", "custom instructions", "adapt culturally",
         "basic rules", "custom rules", "enhance naturally",
-        "preserve language" # When combined with "adapt" or "enhance"
+        "preserve language"
+    }
+    ROLE_BLOCK_PATTERN = re.compile(
+        r"<role>.*?</role>",
+        re.IGNORECASE | re.DOTALL,
+    )
+    PRIORITY_PATTERNS = [
+        r"if there (is|are) (any )?conflicts.*?(prioritize|override).*",
+        r"custom instructions.*?(override|take precedence).*",
+        r"remember:.*?(priority|override).*",
+        r"\bin case of conflicts?\b.*\b(follow|use)\b.*\b(custom|user)\b",
+    ]
+    RULE_INTENT_PATTERNS = [
+        r"the following rules.*",
+        r"please adhere to.*rules.*",
+        r"these rules (apply|must be followed).*",
+        r"\bplease\b.*\b(follow|adhere to|comply with)\b.*\brules?\b",
+        r"\bthese rules\b.*\b(should|must|need to)\b.*\b(followed|applied)\b",
+        r"\bensure that\b.*\brules?\b.*\b(followed|applied)\b",
+    ]
+    CL_NL_SUPPRESSION_MAP = {
+        "priority": {
+            "enabled": True,
+            "patterns": [...],
+            "scope": "sentence",  # type: Literal["sentence", "block"]
+        },
+        "rules": {
+            "enabled": True,
+            "patterns": [...],
+            "scope": "sentence",
+        },
+        "output_format": {
+            "enabled": True,
+            "patterns": [...],
+            "scope": "sentence",
+        },
     }
 
     # Patterns for sentences that should be dropped
@@ -56,12 +93,114 @@ class ConfigurationPromptMinimizer:
         return cls._nlp
 
     @classmethod
+    def suppress_with_cl(cls, out: str, cl_metadata: dict) -> str:
+        if cl_metadata.get("role"):
+            out = cls.ROLE_BLOCK_PATTERN.sub("", out)
+
+        if cl_metadata.get("priority"):
+            out = cls.suppress_sentences(out, cls.PRIORITY_PATTERNS)
+
+        if cl_metadata.get("rules"):
+            out = cls.suppress_sentences(out, cls.RULE_INTENT_PATTERNS)
+
+        if cl_metadata.get("output_format"):
+            # Use the same detection logic that CL used to compress the output format
+            out, _ = SysPromptOutputFormat.extract_output_block(out)
+
+        return out.strip()
+
+    @staticmethod
+    def suppress_sentences(text: str, patterns: list[str]) -> str:
+        """
+        Remove sentences matching any of the given regex patterns.
+        Operates ONLY on free text, never on blocks, lists, or schemas.
+        """
+        compiled_patterns = [
+            re.compile(pat, re.IGNORECASE)
+            for pat in patterns
+        ]
+
+        def should_drop(sentence: str) -> bool:
+            sent = sentence.strip().lower()
+
+            if not sent:
+                return False
+
+            if any(k in sent for k in ("output", "return", "include", "format", "must", "shall")):
+                return False
+
+            if sent.startswith(("-", "•")):
+                return False
+            if re.match(r"\d+\.", sent):
+                return False
+
+            if "{" in sent or "}" in sent:
+                return False
+
+            for pat in compiled_patterns:
+                if pat.search(sent):
+                    return True
+
+            return False
+
+        lines = text.splitlines()
+        output_lines = []
+
+        buffer = []
+
+        def flush_buffer():
+            if not buffer:
+                return
+            paragraph = " ".join(buffer).strip()
+            buffer.clear()
+
+            sentences = re.split(r"(?<=[.!?])\s+", paragraph)
+
+            kept = [
+                s for s in sentences
+                if not should_drop(s)
+            ]
+
+            if kept:
+                output_lines.append(" ".join(kept))
+
+        for line in lines:
+            stripped = line.strip()
+
+            if not stripped:
+                flush_buffer()
+                output_lines.append("")
+                continue
+
+            if (
+                stripped.startswith("<")
+                or stripped.endswith(">")
+                or stripped.startswith("{")
+                or stripped.startswith("}")
+            ):
+                flush_buffer()
+                output_lines.append(line)
+                continue
+
+            if stripped.startswith(("-", "•")) or re.match(r"\d+\.", stripped):
+                flush_buffer()
+                output_lines.append(line)
+                continue
+
+            buffer.append(stripped)
+
+        flush_buffer()
+
+        return "\n".join(output_lines).strip()
+
+    @classmethod
     def minimize(cls, nl_prompt: str, cl_metadata: Optional[dict] = None) -> str:
         """
         Minimize the natural language prompt by removing redundant content.
 
         Args:
             nl_prompt: The original natural language prompt
+            cl_metadata: CL metadata for Prompt compression
 
         Returns:
             Minimized prompt with redundant content removed
@@ -74,6 +213,9 @@ class ConfigurationPromptMinimizer:
 
         if "<basic_rules>" in out.lower():
             out = cls._trim_basic_rules(out)
+
+        if cl_metadata:
+            out = cls.suppress_with_cl(out=out, cl_metadata=cl_metadata)
 
         out = cls._clean_general_prompt(out)
 

@@ -640,12 +640,98 @@ class SchemaOutputCompressor:
 
 
 class SysPromptOutputFormat:
+    # Patterns to detect output format section headers
+    OUTPUT_SECTION_HEADERS = re.compile(
+        r"^(output\s*format|expected\s*format|response\s*format|output\s*structure|"
+        r"output\s*schema|json\s*format|json\s*schema|return\s*format)\s*:?\s*$",
+        re.IGNORECASE | re.MULTILINE
+    )
+
     def __init__(self, config: SysPromptConfig):
         self.struct_compressor = SchemaOutputCompressor(
             infer_types=config.infer_types,
             add_attributes=config.add_attrs,
             add_examples=config.add_examples,
         )
+
+    @classmethod
+    def extract_output_block(cls, text: str) -> tuple[str, str]:
+        """
+        Extract and remove the output format block from text.
+        Returns (remaining_text, extracted_block).
+
+        Detects:
+        1. Section with header like "OUTPUT FORMAT:" followed by content
+        2. Standalone JSON blocks that define output schema
+        """
+        # First, try to find a section with an output format header
+        lines = text.split("\n")
+        header_idx = None
+
+        for i, line in enumerate(lines):
+            if cls.OUTPUT_SECTION_HEADERS.match(line.strip()):
+                header_idx = i
+                break
+
+        if header_idx is not None:
+            # Find the end of this section (next non-empty section header or end of text)
+            end_idx = len(lines)
+            brace_depth = 0
+            in_json_block = False
+
+            for i in range(header_idx + 1, len(lines)):
+                line = lines[i].strip()
+
+                # Track JSON block depth
+                if line.startswith("{"):
+                    in_json_block = True
+                    brace_depth += line.count("{") - line.count("}")
+                elif in_json_block:
+                    brace_depth += line.count("{") - line.count("}")
+                    if brace_depth <= 0:
+                        in_json_block = False
+                        end_idx = i + 1
+                        break
+
+                # Check for next section header (ALL CAPS followed by colon)
+                if not in_json_block and line and re.match(r"^[A-Z][A-Z\s]+:$", line):
+                    end_idx = i
+                    break
+
+            extracted = "\n".join(lines[header_idx:end_idx])
+            remaining = "\n".join(lines[:header_idx] + lines[end_idx:])
+            return remaining.strip(), extracted.strip()
+
+        # Fallback: look for standalone JSON blocks that look like output schemas
+        # Match code-fenced JSON
+        code_fence_match = re.search(
+            r"```(?:json)?\s*(\{[\s\S]*?\})\s*```",
+            text,
+            flags=re.IGNORECASE
+        )
+        if code_fence_match:
+            try:
+                json.loads(code_fence_match.group(1))
+                remaining = text[:code_fence_match.start()] + text[code_fence_match.end():]
+                return remaining.strip(), code_fence_match.group(0)
+            except Exception:
+                pass
+
+        # Match bare JSON blocks (only if they look like schema definitions)
+        brace_match = re.search(r"(\{[\s\S]{10,2000}\})", text)
+        if brace_match:
+            try:
+                parsed = json.loads(brace_match.group(1))
+                # Only remove if it looks like a schema (has string placeholder values)
+                if isinstance(parsed, dict) and all(
+                    isinstance(v, (str, list, dict, int, float)) for v in parsed.values()
+                ):
+                    remaining = text[:brace_match.start()] + text[brace_match.end():]
+                    return remaining.strip(), brace_match.group(1)
+            except Exception:
+                pass
+
+        return text, ""
 
     def compress(self, output_spec, is_structured=None):
         if is_structured is None:
