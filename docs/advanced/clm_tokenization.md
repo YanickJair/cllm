@@ -817,6 +817,192 @@ OUTPUT FORMAT:
 
 ---
 
+## Part 1b: Configuration Prompt Tokenization
+
+### Purpose
+
+Configuration prompts are **template-based system instructions** that define an agent's persistent behavior. Unlike task prompts that focus on a specific action, configuration prompts establish identity, rules, and behavioral patterns.
+
+**Key differences from Task Prompts:**
+- Define agent role and persona (not actions)
+- Contain behavioral rules (basic and custom)
+- Support runtime placeholders for dynamic values
+- Include priority definitions for rule conflicts
+
+### Configuration Prompt Token Types
+
+```
++-----------------------------------------+
+|  1. PROMPT_MODE - Prompt type           |  <- Identifier
+|     [PROMPT_MODE:CONFIGURATION]         |
++-----------------------------------------+
+           |
+           v
++-----------------------------------------+
+|  2. ROLE - Agent identity               |  <- Who
+|     [ROLE:CUSTOMER_SUPPORT_AGENT]       |
++-----------------------------------------+
+           |
+           v
++-----------------------------------------+
+|  3. RULES - Active rule sets            |  <- Behavior
+|     [RULES:BASIC,CUSTOM]                |
++-----------------------------------------+
+           |
+           v
++-----------------------------------------+
+|  4. PRIORITY - Conflict resolution      |  <- Precedence
+|     [PRIORITY:CUSTOM_OVER_BASIC]        |
++-----------------------------------------+
+           |
+           v
++-----------------------------------------+
+|  5. OUT - Output format (optional)      |  <- Output spec
+|     [OUT_JSON:{field:TYPE}]             |
++-----------------------------------------+
+```
+
+### Token Definitions
+
+| Token | Purpose | Required | Examples |
+|-------|---------|----------|----------|
+| **PROMPT_MODE** | Identifies prompt type | Yes | `[PROMPT_MODE:CONFIGURATION]` |
+| **ROLE** | Agent identity/persona | When detected | `[ROLE:ASSISTANT]`, `[ROLE:CUSTOMER_SUPPORT_AGENT]` |
+| **RULES** | Active rule sets | When detected | `[RULES:BASIC]`, `[RULES:BASIC,CUSTOM]` |
+| **PRIORITY** | Rule conflict resolution | When detected | `[PRIORITY:CUSTOM_OVER_BASIC]` |
+| **OUT** | Output format | When specified | `[OUT_JSON:{response:STR}]` |
+
+### PROMPT_MODE Token
+
+**Purpose:** Identifies this as a configuration prompt (vs task prompt)
+
+**Values:**
+- `CONFIGURATION` - Template-based agent configuration
+- `TASK` - Action-oriented task prompt (default)
+
+**Example:**
+```
+[PROMPT_MODE:CONFIGURATION]
+```
+
+### ROLE Token
+
+**Purpose:** Captures the agent's identity and persona
+
+**Detection patterns:**
+- `<role>You are a...</role>` tags
+- "You are a..." or "Your role is..." phrases
+
+**Examples:**
+```
+[ROLE:HELPFUL_ASSISTANT]
+[ROLE:CUSTOMER_SUPPORT_AGENT]
+[ROLE:CONTENT_MODERATOR]
+[ROLE:PROFESSIONAL_TRANSLATOR]
+```
+
+**Normalization:**
+- Spaces replaced with underscores
+- Converted to uppercase
+- Articles (a, an, the) removed
+
+### RULES Token
+
+**Purpose:** Indicates which rule sets are active
+
+**Values:**
+- `BASIC` - Standard/default rules detected
+- `CUSTOM` - User-specific rules detected
+
+**Detection patterns:**
+- `<basic_rules>` tags or "basic rules" phrase
+- `<custom_rules>` tags or "custom instructions" phrase
+
+**Examples:**
+```
+[RULES:BASIC]
+[RULES:CUSTOM]
+[RULES:BASIC,CUSTOM]
+```
+
+### PRIORITY Token
+
+**Purpose:** Defines how rule conflicts should be resolved
+
+**Values:**
+- `CUSTOM_OVER_BASIC` - Custom rules take precedence
+
+**Detection patterns:**
+- "custom instructions are paramount"
+- "prioritize custom instructions"
+- "custom instructions override"
+
+**Example:**
+```
+[PRIORITY:CUSTOM_OVER_BASIC]
+```
+
+### Configuration Prompt Example
+
+**Original:**
+```
+<role>You are a helpful customer support agent</role>
+
+<basic_rules>
+- Be polite and professional
+- Verify customer identity
+- Document all interactions
+</basic_rules>
+
+<custom_rules>
+- Address customer as: {{customer_name}}
+- Account tier: {{account_tier}}
+</custom_rules>
+
+Follow the basic rules as your foundation. If there are conflicts
+between basic rules and custom instructions, prioritize custom
+instructions. Custom instructions are paramount.
+
+OUTPUT:
+{
+    "response": "message",
+    "escalate": true/false
+}
+```
+
+**Compressed CL Token:**
+```
+[PROMPT_MODE:CONFIGURATION][ROLE:CUSTOMER_SUPPORT_AGENT][RULES:BASIC,CUSTOM][PRIORITY:CUSTOM_OVER_BASIC][OUT_JSON:{response:STR,escalate:BOOL}]
+```
+
+**Metadata extracted:**
+- `role`: "CUSTOMER_SUPPORT_AGENT"
+- `rules`: {"basic": true, "custom": true}
+- `priority`: "CUSTOM_OVER_BASIC"
+- `placeholders`: ["customer_name", "account_tier"]
+- `output_format`: "{response:STR,escalate:BOOL}"
+
+### Two-Phase Compression
+
+Configuration prompts use a **two-phase compression** approach:
+
+**Phase 1: CL Token Generation**
+- Extract semantic elements (role, rules, priority)
+- Generate compressed CL tokens
+- Detect and encode output format
+
+**Phase 2: NL Minimization**
+- Remove redundant meta-instructions
+- Suppress priority explanations (encoded in CL)
+- Trim verbose rule descriptions
+- Remove content already encoded in CL tokens
+
+**Result:** CL tokens + minimized NL prompt
+
+See [Configuration Prompt Encoding](../sys_prompt/configuration_prompt.md) for complete documentation.
+
+---
+
 ## Part 2: Transcript Tokenization
 
 ### Purpose
@@ -1365,9 +1551,11 @@ config = CLMConfig(
 
 ## Next Steps
 
-- **[System Prompt Encoder](../sys_prompt_encoder.md)** - Using the 6-token hierarchy
+- **[System Prompt Encoder](../sys_prompt/index.md)** - Overview of system prompt compression
+  - [Task Prompts](../sys_prompt/task_prompt.md) - Using the 6-token hierarchy
+  - [Configuration Prompts](../sys_prompt/configuration_prompt.md) - Template-based agent configuration
 - **[Structured Data Encoder](../sd_encoder.md)** - Using header + row format
 - **[CLM Vocabulary](clm_vocabulary.md)** - Understanding vocabulary mappings
-- **[CLM Configuration](clm_configuration)** - Configuring the encoders
+- **[CLM Configuration](clm_configuration.md)** - Configuring the encoders
 
 ---

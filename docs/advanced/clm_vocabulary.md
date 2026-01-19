@@ -953,7 +953,7 @@ print(f"Available domains: {domains}")
 
 - **[CLM Configuration](clm_configuration.md)** - Using vocabularies via config
 - **[Token Hierarchy](clm_tokenization.md)** - Understanding token structure
-- **[System Prompt Encoder](../sys_prompt_encoder.md)** - Vocabulary in system prompts
+- **[System Prompt Encoder](../sys_prompt/index.md)** - Vocabulary in system prompts
 - **[Transcript Encoder](../transcript_encoder.md)** - Vocabulary in transcripts
 
 ---
