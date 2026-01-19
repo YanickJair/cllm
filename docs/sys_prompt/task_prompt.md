@@ -1,25 +1,16 @@
-# System Prompt Encoder
+# Task Prompt Encoding
 
 ## Overview
 
-System Prompts (also called **System Instructions**) are processed by LLM models before they begin processing user input. They define the **agent's identity**, **task**, and **behavior** - essentially establishing who the AI should be and what it should do.
+Task prompts are **action-oriented system instructions** that tell the model what to do for a specific task. They are the most common type of system prompt, used for data extraction, analysis, generation, and transformation tasks.
 
-**Key characteristics:**
-- Processed before every user interaction
-- Define model behavior and constraints
-- Often repeated thousands of times per day
-- Can be 500-5,000+ tokens
-- Critical for consistent agent performance
-
-The more detailed a system prompt, the better the model understands and performs its intended task. However, detailed prompts are token-intensive and costly at scale.
-
-**Typical compression:** 75-90% token reduction
+**Typical compression:** 65-85% token reduction
 
 ---
 
-## Anatomy of a System Prompt
+## Anatomy of a Task Prompt
 
-Effective system prompts typically contain three core elements:
+Effective task prompts typically contain three core elements:
 
 ### 1. Identity (Who)
 Defines the agent's role and persona:
@@ -52,13 +43,13 @@ Additional elements often include:
 
 ---
 
-## Example: System Prompt Structure
+## Example: Task Prompt Structure
 
-### Detailed System Prompt
+### Detailed Task Prompt
 
 ```text
-You are a Betting Analysis agent. Your task is to analyze soccer matches by 
-evaluating each team's performance throughout the season and provide accurate 
+You are a Betting Analysis agent. Your task is to analyze soccer matches by
+evaluating each team's performance throughout the season and provide accurate
 betting odds.
 
 ANALYSIS CRITERIA:
@@ -70,8 +61,8 @@ ANALYSIS CRITERIA:
 - Assess offensive and defensive statistics
 
 EXAMPLE:
-Analyze Chelsea FC's season performance by reviewing statistics from each game. 
-Based on win rate, goals scored/conceded, clean sheets, and recent form, 
+Analyze Chelsea FC's season performance by reviewing statistics from each game.
+Based on win rate, goals scored/conceded, clean sheets, and recent form,
 calculate the probability of win, draw, or loss for their next match.
 
 OUTPUT FORMAT:
@@ -87,65 +78,29 @@ Note: Odds must sum to 1.0. Consider all factors before providing final odds.
 
 **Token count:** ~180 tokens
 
-### Compressed System Prompt
+### Compressed Task Prompt
 
 ```text
-[REQ:PREDICT:SPECS:BETTING_ODDS] 
-[TARGET:REPORT:DOMAIN=BUSINESS:TOPIC=BETTING_ANALYSIS_AGENT] 
-[EXTRACT:PERFORMANCE,ACCURACY:DOMAIN=QA] 
+[REQ:PREDICT:SPECS:BETTING_ODDS]
+[TARGET:REPORT:DOMAIN=BUSINESS:TOPIC=BETTING_ANALYSIS_AGENT]
+[EXTRACT:PERFORMANCE,ACCURACY:DOMAIN=QA]
 [OUT_JSON:{win:FLOAT,draw:FLOAT,lose:FLOAT}]
 ```
 
-**Token count:** ~45 tokens  
+**Token count:** ~45 tokens
 **Compression:** 82.0% reduction
-
----
-
-## Why Compress System Prompts?
-
-### The Scale Problem
-
-In production environments, system prompts create significant overhead:
-
-| Scenario | Details | Impact |
-|----------|---------|--------|
-| **Contact Center** | 1,000 agents × 20,000 calls/day | 20M prompt tokens/day |
-| **Chatbot Service** | 10,000 concurrent users × 50 interactions/day | 500K prompt tokens/day |
-| **Enterprise Tool** | 500 employees × 100 queries/day | 50K prompt tokens/day |
-
-Compression provides additional benefits:
-
-**⚡ Faster Processing**
-- Smaller prompts = faster inference
-- Reduced latency by 30-73%
-- Better user experience
-
-**📊 Higher Context Window Utilization**
-- More room for actual conversation
-- Longer context histories
-- More examples in few-shot learning
-
-**🔄 Easier Iteration**
-- Faster A/B testing of prompts
-- Quicker deployment of updates
-- Simpler version control
-
-**🌐 Better Scalability**
-- Handle more concurrent requests
-- Lower infrastructure requirements
-- Smoother peak load handling
 
 ---
 
 ## CLM Compression Strategy
 
 **CLM semantic encoding**:
-- ✅ Models understand compressed tokens natively
-- ✅ No decompression needed
-- ✅ Semantic meaning preserved
-- ✅ Structured, predictable format
+- Models understand compressed tokens natively
+- No decompression needed
+- Semantic meaning preserved
+- Structured, predictable format
 
-### How CLM Compresses
+### How CLM Compresses Task Prompts
 
 1. **Intent Detection**: Identifies primary action (analyze, extract, generate)
 2. **Role Extraction**: Captures agent identity and domain
@@ -168,7 +123,7 @@ cfg = CLMConfig(lang="en")  # Uses default: infer_types=False, add_attrs=False
 encoder = CLMEncoder(cfg=cfg)
 
 system_prompt = """
-You are a customer service quality analyst. Analyze call transcripts 
+You are a customer service quality analyst. Analyze call transcripts
 for compliance violations and sentiment issues in agent responses.
 """
 
@@ -182,7 +137,7 @@ print(f"Compression: {result.compression_ratio:.1%}")
 
 ### Configuration Options
 
-System prompt compression is controlled through `SysPromptConfig` with two key parameters:
+Task prompt compression is controlled through `SysPromptConfig` with two key parameters:
 
 ```python
 from clm_core import CLMConfig, SysPromptConfig
@@ -214,7 +169,7 @@ cfg = CLMConfig(
 
 You can combine these parameters to achieve different compression ratios:
 
-**Level 1: Maximum Compression (70-75% reduction)** ⚡ Fastest
+**Level 1: Maximum Compression (70-75% reduction)**
 ```python
 cfg = CLMConfig(
     lang="en",
@@ -228,12 +183,12 @@ cfg = CLMConfig(
 - Best for: Simple, repetitive instructions
 - Trade-off: Less explicit structure
 
-**Level 2: Type-Annotated (65-70% reduction)** 📝 Clear Types
+**Level 2: Type-Annotated (65-70% reduction)**
 ```python
 cfg = CLMConfig(
     lang="en",
     sys_prompt_config=SysPromptConfig(
-        infer_types=True,   # ← Type annotations added
+        infer_types=True,   # Type annotations added
         add_attrs=False
     )
 )
@@ -242,13 +197,13 @@ cfg = CLMConfig(
 - Best for: When LLM needs type hints
 - Trade-off: Slightly larger but clearer structure
 
-**Level 3: Attribute-Rich (30-35% reduction)** 🎯 Maximum Detail
+**Level 3: Attribute-Rich (30-35% reduction)**
 ```python
 cfg = CLMConfig(
     lang="en",
     sys_prompt_config=SysPromptConfig(
         infer_types=False,
-        add_attrs=True      # ← Enums and constraints added
+        add_attrs=True      # Enums and constraints added
     )
 )
 ```
@@ -256,13 +211,13 @@ cfg = CLMConfig(
 - Best for: Complex validation requirements
 - Trade-off: Lower compression but full semantic preservation
 
-**Level 4: Full Annotation (25-30% reduction)** 🔬 Everything
+**Level 4: Full Annotation (25-30% reduction)**
 ```python
 cfg = CLMConfig(
     lang="en",
     sys_prompt_config=SysPromptConfig(
-        infer_types=True,   # ← Types
-        add_attrs=True      # ← Attributes
+        infer_types=True,   # Types
+        add_attrs=True      # Attributes
     )
 )
 ```
@@ -355,19 +310,19 @@ cfg = CLMConfig(
 
 ```
 Do you need maximum cost savings?
-├─ YES → Level 1 (Default)
-└─ NO → Continue...
++- YES -> Level 1 (Default)
++- NO -> Continue...
 
 Does your LLM struggle with JSON types?
-├─ YES → Add infer_types=True
-└─ NO → Continue...
++- YES -> Add infer_types=True
++- NO -> Continue...
 
 Do you have complex enums/ranges/categories?
-├─ YES → Add add_attrs=True
-└─ NO → Use Level 1
++- YES -> Add add_attrs=True
++- NO -> Use Level 1
 
 Are both type hints AND attributes critical?
-└─ YES → Level 4 (Both True)
++- YES -> Level 4 (Both True)
 ```
 
 ---
@@ -406,10 +361,10 @@ OUTPUT FORMAT:
 }
 
 SCORING:
-0.00–0.49: Fail
-0.50–0.74: Needs Improvement
-0.75–0.89: Good
-0.90–1.00: Excellent
+0.00-0.49: Fail
+0.50-0.74: Needs Improvement
+0.75-0.89: Good
+0.90-1.00: Excellent
 ```
 
 **Original tokens:** 285 tokens
@@ -430,13 +385,13 @@ cfg = CLMConfig(
 
 **Compressed:**
 ```text
-[REQ:GENERATE:SPECS:SUMMARY] [TARGET:TRANSCRIPT:DOMAIN=QA] 
-[EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS,ACCURACY,SENTIMENT:TYPE=LIST,DOMAIN=LEGAL] 
+[REQ:GENERATE:SPECS:SUMMARY] [TARGET:TRANSCRIPT:DOMAIN=QA]
+[EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS,ACCURACY,SENTIMENT:TYPE=LIST,DOMAIN=LEGAL]
 [OUT_JSON:{summary,qa_scores:{verification,policy_adherence,soft_skills,accuracy,compliance},violations,recommendations}]
 ```
 
-**Compressed tokens:** 83 tokens  
-**Reduction:** 69.1%  
+**Compressed tokens:** 83 tokens
+**Reduction:** 69.1%
 **Use case:** High-volume, cost-sensitive operations
 
 ---
@@ -447,7 +402,7 @@ cfg = CLMConfig(
 cfg = CLMConfig(
     lang="en",
     sys_prompt_config=SysPromptConfig(
-        infer_types=True,   # ← Types added
+        infer_types=True,   # Types added
         add_attrs=False
     )
 )
@@ -455,13 +410,13 @@ cfg = CLMConfig(
 
 **Compressed:**
 ```text
-[REQ:GENERATE:SPECS:SUMMARY] [TARGET:TRANSCRIPT:DOMAIN=QA] 
-[EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS,ACCURACY,SENTIMENT:TYPE=LIST,DOMAIN=LEGAL] 
+[REQ:GENERATE:SPECS:SUMMARY] [TARGET:TRANSCRIPT:DOMAIN=QA]
+[EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS,ACCURACY,SENTIMENT:TYPE=LIST,DOMAIN=LEGAL]
 [OUT_JSON:{summary:STR,qa_scores:{verification:FLOAT,policy_adherence:FLOAT,soft_skills:FLOAT,accuracy:FLOAT,compliance:FLOAT},violations:[STR],recommendations:[STR]}
 ```
 
-**Compressed tokens:** 98 tokens  
-**Reduction:** 64.1%  
+**Compressed tokens:** 98 tokens
+**Reduction:** 64.1%
 **Use case:** When LLM needs explicit type hints for JSON generation
 
 ---
@@ -473,20 +428,20 @@ cfg = CLMConfig(
     lang="en",
     sys_prompt_config=SysPromptConfig(
         infer_types=False,
-        add_attrs=True      # ← Enums and constraints added
+        add_attrs=True      # Enums and constraints added
     )
 )
 ```
 
 **Compressed:**
 ```text
-[REQ:GENERATE:SPECS:SUMMARY] [TARGET:TRANSCRIPT:DOMAIN=QA] 
-[EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS,ACCURACY,SENTIMENT:TYPE=LIST,DOMAIN=LEGAL] 
+[REQ:GENERATE:SPECS:SUMMARY] [TARGET:TRANSCRIPT:DOMAIN=QA]
+[EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS,ACCURACY,SENTIMENT:TYPE=LIST,DOMAIN=LEGAL]
 [OUT_JSON:{summary,qa_scores:{verification,policy_adherence,soft_skills,accuracy,compliance},violations,recommendations}:ENUMS={"ranges": [{"min": 0.0, "max": 0.49, "label": "FAIL"}, {"min": 0.5, "max": 0.74, "label": "NEEDS_IMPROVEMENT"}, {"min": 0.75, "max": 0.89, "label": "GOOD"}, {"min": 0.9, "max": 1.0, "label": "EXCELLENT"}]}
 ```
 
-**Compressed tokens:** 195 tokens  
-**Reduction:** 46.1%  
+**Compressed tokens:** 195 tokens
+**Reduction:** 46.1%
 **Use case:** Complex validation rules and compliance requirements
 
 ---
@@ -497,21 +452,21 @@ cfg = CLMConfig(
 cfg = CLMConfig(
     lang="en",
     sys_prompt_config=SysPromptConfig(
-        infer_types=True,   # ← Types
-        add_attrs=True      # ← Attributes
+        infer_types=True,   # Types
+        add_attrs=True      # Attributes
     )
 )
 ```
 
 **Compressed:**
 ```text
-[REQ:GENERATE:SPECS:SUMMARY] [TARGET:TRANSCRIPT:DOMAIN=QA] 
-[EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS,ACCURACY,SENTIMENT:TYPE=LIST,DOMAIN=LEGAL] 
+[REQ:GENERATE:SPECS:SUMMARY] [TARGET:TRANSCRIPT:DOMAIN=QA]
+[EXTRACT:COMPLIANCE,DISCLOSURES,VERIFICATION,POLICY,SOFT_SKILLS,ACCURACY,SENTIMENT:TYPE=LIST,DOMAIN=LEGAL]
 [OUT_JSON:{summary:STR,qa_scores:{verification:FLOAT,policy_adherence:FLOAT,soft_skills:FLOAT,accuracy:FLOAT,compliance:FLOAT},violations:[STR],recommendations:[STR]}:ENUMS={"ranges": [{"min": 0.0, "max": 0.49, "label": "FAIL"}, {"min": 0.5, "max": 0.74, "label": "NEEDS_IMPROVEMENT"}, {"min": 0.75, "max": 0.89, "label": "GOOD"}, {"min": 0.9, "max": 1.0, "label": "EXCELLENT"}]}]
 ```
 
-**Compressed tokens:** 209 tokens  
-**Reduction:** 41.2%  
+**Compressed tokens:** 209 tokens
+**Reduction:** 41.2%
 **Use case:** Mission-critical systems requiring maximum semantic preservation
 
 ---
@@ -555,14 +510,14 @@ Output should be:
 
 **Compressed:**
 ```text
-[REQ:GENERATE:SPECS:SUPPORT_RESPONSE] [TARGET:TICKET:DOMAIN=SUPPORT] 
+[REQ:GENERATE:SPECS:SUPPORT_RESPONSE] [TARGET:TICKET:DOMAIN=SUPPORT]
 [OUT_JSON:STR:ENUMS={"troubleshooting_steps": {"kind": "categorical", "values": ["CHECK PHYSICAL CONNECTIONS", "VERIFY NETWORK ADAPTER SETTINGS", "TEST WITH DIFFERENT DEVICES", "RESET ROUTER/MODEM", "CHECK FOR SERVICE OUTAGES"]}}:CONSTRAINTS={"output_should_be": {"kind": "required", "items": ["Clear, numbered steps", "Non-technical language", "Estimated time for each step", "Success criteria for each step"]}}]
 ```
 
 **Metrics:**
 - Original: ~160 tokens
 - Compressed: ~100 tokens
-- Reduction: 37–40%
+- Reduction: 37-40%
 
 ---
 
@@ -588,7 +543,7 @@ OPTIONAL FIELDS:
 - Billing contact
 
 OUTPUT:
-Return as JSON with nested objects for line items. Include confidence scores 
+Return as JSON with nested objects for line items. Include confidence scores
 for each extracted field (0.0-1.0). Flag any missing required fields.
 
 VALIDATION RULES:
@@ -600,8 +555,8 @@ VALIDATION RULES:
 
 **Compressed:**
 ```text
-[REQ:EXTRACT] [TARGET:REPORT:DOMAIN=FINANCE:TOPIC=ANALYSIS_AGENT] 
-[EXTRACT:NAMES,ADDRESSES,DATES:TYPE=LIST,DOMAIN=ENTITIES] 
+[REQ:EXTRACT] [TARGET:REPORT:DOMAIN=FINANCE:TOPIC=ANALYSIS_AGENT]
+[EXTRACT:NAMES,ADDRESSES,DATES:TYPE=LIST,DOMAIN=ENTITIES]
 [OUT_JSON:STR:CONSTRAINTS={"required_fields": {"kind": "required", "items": ["Vendor name and address", "Invoice number and date", "Line items (description, quantity, unit price, total)", "Subtotal, tax, and grand total", "Payment terms and due date"]}}]
 ```
 
@@ -612,7 +567,7 @@ VALIDATION RULES:
 
 ---
 
-## Token Structure for System Prompts
+## Token Structure for Task Prompts
 
 ### REQ Token
 Specifies required actions:
@@ -653,7 +608,7 @@ Provides context and constraints:
 [CTX:CONFIDENCE_THRESHOLD=0.8]
 ```
 
-See [Token Hierarchy](advanced/clm_tokenization.md) for complete reference.
+See [Token Hierarchy](../advanced/clm_tokenization.md) for complete reference.
 
 ---
 
@@ -677,7 +632,7 @@ You are a specialist analyst. Perform detailed analysis based on the category.
 compressed_stage2 = encoder.encode(stage2_prompt)
 
 # Combine for multi-stage workflow
-full_workflow = f"{compressed_stage1.compressed} → {compressed_stage2.compressed}"
+full_workflow = f"{compressed_stage1.compressed} -> {compressed_stage2.compressed}"
 ```
 
 ### Dynamic System Prompts
@@ -687,17 +642,17 @@ For prompts that change based on context:
 ```python
 def get_compressed_prompt(user_tier: str, language: str):
     """Generate compressed prompt based on user context."""
-    
+
     base_prompt = f"""
-    You are a {user_tier} support agent. 
+    You are a {user_tier} support agent.
     Respond in {language}.
     """
-    
+
     if user_tier == "premium":
         base_prompt += "Provide white-glove service with detailed explanations."
     else:
         base_prompt += "Provide efficient, standard support."
-    
+
     return encoder.encode(base_prompt)
 
 # Usage
@@ -790,10 +745,10 @@ cfg = CLMConfig(
 ```
 
 **Decision matrix:**
-- Need explicit types in JSON? → Set `infer_types=True`
-- Have complex enums/ranges/constraints? → Set `add_attrs=True`
-- Cost-sensitive high volume? → Keep both `False`
-- Mission-critical accuracy? → Set both `True`
+- Need explicit types in JSON? -> Set `infer_types=True`
+- Have complex enums/ranges/constraints? -> Set `add_attrs=True`
+- Cost-sensitive high volume? -> Keep both `False`
+- Mission-critical accuracy? -> Set both `True`
 
 ### 3. Document Compression Mappings
 
@@ -806,7 +761,7 @@ prompt_registry = {
         "compressed": compressed_text,
         "compression_ratio": 0.65,
         "last_tested": "2024-12-31",
-        "performance": "✅ Verified"
+        "performance": "Verified"
     }
 }
 ```
@@ -1048,18 +1003,6 @@ result2 = encoder.encode(prompt)  # Consistent
 
 ## Next Steps
 
-- **[Transcript Encoding](transcript_encoder.md)** - Compress customer service conversations
-- **[Structured Data Encoding](sd_encoder.md)** - Compress catalogs and configurations
-- **[Advanced: Token Hierarchy](advanced/clm_tokenization.md)** - Deep dive into semantic tokens
-- **[Advanced: CLM Dictionary](advanced/clm_vocabulary.md)** - Language-specific vocabularies
-
----
-
-## Support
-
-Questions about system prompt compression?
-
-- 📖 **Documentation**: [docs.cllm.io](https://yanickjair.github.io/cllm/)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/YanickJar/cllm/discussions)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/YanickJar/cllm/issues)
-- 📧 **Email**: support@cllm.io
+- **[Configuration Prompt Encoding](configuration_prompt.md)** - Learn about template-based compression
+- **[Advanced: Token Hierarchy](../advanced/clm_tokenization.md)** - Deep dive into semantic tokens
+- **[Advanced: CLM Dictionary](../advanced/clm_vocabulary.md)** - Language-specific vocabularies

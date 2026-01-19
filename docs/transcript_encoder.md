@@ -564,7 +564,7 @@ cfg = CLMConfig(lang="en")  # Handles English with some non-English words
 
 ## Next Steps
 
-- **[System Prompt Encoding](sys_prompt_encoder.md)** - Compress agent instructions
+- **[System Prompt Encoding](sys_prompt/index.md)** - Compress agent instructions
 - **[Structured Data Encoding](sd_encoder.md)** - Compress NBA catalogs
 - **[Advanced: Token Hierarchy](advanced/clm_tokenization.md)** - Deep dive into token structure
 - **[Advanced: CLM Dictionary](advanced/clm_dictionary.md)** - Language-specific vocabularies

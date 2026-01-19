@@ -842,7 +842,7 @@ for name, data in comparison.items():
 
 ## Next Steps
 
-- **[System Prompt Encoder](../sys_prompt_encoder.md)** - Creating system prompt compressions
+- **[System Prompt Encoder](../sys_prompt/index.md)** - Creating system prompt compressions
 - **[Transcript Encoder](../transcript_encoder.md)** - Creating transcript compressions
 - **[Structured Data Encoder](../sd_encoder.md)** - Creating structured data compressions
 - **[CLM Tokenization](clm_tokenization.md)** - Understanding the output format

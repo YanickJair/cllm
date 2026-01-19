@@ -301,7 +301,9 @@ Based on production testing with 5,000+ samples:
 
 ## Next Steps
 
-- **[System Prompt Encoding](sys_prompt_encoder.md)** - Detailed guide for compressing instructions
+- **[System Prompt Encoding](sys_prompt/index.md)** - Overview of system prompt compression
+  - [Task Prompts](sys_prompt/task_prompt.md) - Action-oriented instruction compression
+  - [Configuration Prompts](sys_prompt/configuration_prompt.md) - Template-based agent configuration
 - **[Structured Data Encoding](sd_encoder.md)** - Configuration options and best practices
 - **[Transcript Encoding](transcript_encoder.md)** - Customer service conversation compression
 - **[Advanced: CLM Dictionary](advanced/clm_dictionary.md)** - Understanding the vocabulary

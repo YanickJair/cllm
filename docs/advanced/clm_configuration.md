@@ -83,7 +83,7 @@ config = CLMConfig(
 
 #### `sys_prompt_config` (SysPromptConfig)
 
-Configuration for system prompt compression. See [System Prompt Encoder](../sys_prompt_encoder.md) for complete documentation.
+Configuration for system prompt compression. See [System Prompt Encoder](../sys_prompt/index.md) for complete documentation.
 
 **Default behavior:**
 ```python
@@ -99,10 +99,39 @@ config = CLMConfig(
     lang="en",
     sys_prompt_config=SysPromptConfig(
         infer_types=True,
-        add_attrs=False
+        add_attrs=False,
+        use_structured_output_abstraction=True
     )
 )
 ```
+
+### SysPromptConfig Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `infer_types` | bool | `False` | Add type annotations to JSON output fields |
+| `add_attrs` | bool | `False` | Include enums, ranges, and constraints in output |
+| `use_structured_output_abstraction` | bool | `True` | Compress output format to CL tokens |
+
+**`infer_types`** - When `True`, adds explicit type information to JSON fields:
+```
+# infer_types=False
+[OUT_JSON:{summary,score}]
+
+# infer_types=True
+[OUT_JSON:{summary:STR,score:FLOAT}]
+```
+
+**`add_attrs`** - When `True`, preserves enums, ranges, and constraints:
+```
+# add_attrs=False
+[OUT_JSON:{score:FLOAT}]
+
+# add_attrs=True
+[OUT_JSON:{score:FLOAT}:ENUMS={"ranges":[{"min":0.0,"max":0.49,"label":"FAIL"}]}]
+```
+
+**`use_structured_output_abstraction`** - When `True`, compresses output format definitions into CL tokens. When `False`, output format remains in natural language. This is particularly useful for Configuration Prompts where output format should be encoded in CL tokens rather than kept in NL.
 
 ---
 
@@ -693,7 +722,9 @@ vocab = config.vocab
 
 - **[CLM Vocabulary](clm_vocabulary.md)** - Complete vocabulary reference
 - **[Token Hierarchy](clm_tokenization.md)** - Understanding semantic tokens
-- **[System Prompt Encoder](../sys_prompt_encoder.md)** - Using system prompt compression
+- **[System Prompt Encoder](../sys_prompt/index.md)** - Overview of system prompt compression
+  - [Task Prompts](../sys_prompt/task_prompt.md) - Action-oriented instruction compression
+  - [Configuration Prompts](../sys_prompt/configuration_prompt.md) - Template-based agent configuration
 - **[Transcript Encoder](../transcript_encoder.md)** - Using transcript compression
 - **[Structured Data Encoder](../sd_encoder.md)** - Using structured data compression
 

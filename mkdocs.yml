@@ -29,7 +29,10 @@ nav:
     - Introduction: 'index.md'
     - Components:
         - Transcript Encoder: 'transcript_encoder.md'
-        - System Prompt Encoder: 'sys_prompt_encoder.md'
+        - System Prompt Encoder:
+            - Overview: 'sys_prompt/index.md'
+            - Task Prompt: 'sys_prompt/task_prompt.md'
+            - Configuration Prompt: 'sys_prompt/configuration_prompt.md'
         - Structured Data Encoder: 'sd_encoder.md'
     - Advanced:
         - CLM Configuration: 'advanced/clm_configuration.md'
