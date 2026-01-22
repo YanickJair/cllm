@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Optional
-from pydantic import BaseModel, Field, computed_field, ConfigDict
+from pydantic import BaseModel, Field, computed_field, ConfigDict, field_validator, field_serializer
 from spacy import Language
 
 from clm_core.components.sys_prompt import (
@@ -129,6 +129,7 @@ class SDCompressionConfig(BaseModel):
         "If a field is not in this list, it will be placed at the end.",
     )
     default_fields_importance: dict[str, FieldImportance] = Field(
+        frozen=True,
         default_factory=lambda: {
             "id": FieldImportance.CRITICAL,
             "external_id": FieldImportance.CRITICAL,
@@ -159,4 +160,27 @@ class SDCompressionConfig(BaseModel):
         description="Importance scores for default fields. Overrides default thresholds.",
     )
 
-    model_config = ConfigDict(use_enum_values=True)
+    @field_validator("default_fields_importance", mode="before")
+    @classmethod
+    def convert_float_to_field_importance(cls, v: dict) -> dict[str, FieldImportance]:
+        if not isinstance(v, dict):
+            return v
+        result = {}
+        for key, value in v.items():
+            if isinstance(value, (int, float)):
+                for member in FieldImportance:
+                    if member.value == value:
+                        result[key] = member
+                        break
+                else:
+                    raise ValueError(f"No FieldImportance enum matches value {value}")
+            else:
+                result[key] = value
+        return result
+
+    @field_serializer("default_fields_importance")
+    @classmethod
+    def serialize_field_importance(cls, v: dict[str, FieldImportance]) -> dict[str, float]:
+        return {key: importance.value for key, importance in v.items()}
+
+    model_config = ConfigDict(use_enum_values=False)

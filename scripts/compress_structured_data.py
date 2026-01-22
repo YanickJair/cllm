@@ -89,6 +89,7 @@ def example_product_encoding():
             auto_detect=True,
             required_fields=["product_id", "name", "price"],
             excluded_fields=["warehouse_location", "created_date"],
+            default_fields_importance={"id": 1.0, "name": 0.8}
         )
     )
     compressor = CLMEncoder(cfg=config)
