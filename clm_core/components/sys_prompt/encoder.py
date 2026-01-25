@@ -3,8 +3,9 @@ from spacy.language import Language
 from clm_core.utils.parser_rules import BaseRules
 from clm_core.utils.vocabulary import BaseVocabulary
 from ._configuration_prompt_encoder import ConfigurationPromptEncoder
+from clm_core import SysPromptConfig
 
-from ._schemas import SysPromptConfig, PromptMode
+from ._schemas import PromptMode
 from ._task_prompt_encoder import TaskPromptEncoder
 from clm_core.types import CLMOutput
 

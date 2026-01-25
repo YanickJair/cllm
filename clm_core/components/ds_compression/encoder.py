@@ -3,14 +3,20 @@ from typing import Any
 from clm_core.types import SDCompressionConfig, FieldImportance, CLMOutput
 
 
-class DSEncoder:
+class SDEncoder:
+    ROW_SEPARATOR = "|"
+    NESTED_OPEN = "["
+    NESTED_CLOSE = "]"
+    SCHEMA_OPEN = "{"
+    SCHEMA_CLOSE = "}"
+
     def __init__(
         self,
         *,
         config: SDCompressionConfig,
         catalog_name: str = "CATALOG",
         delimiter: str = ",",
-    ) -> None:
+    ):
         self._config = config
         self._catalog_name = catalog_name
         self._done: bool = False
@@ -89,20 +95,20 @@ class DSEncoder:
         compressed: dict[str, Any] = {}
 
         if "id" in item:
-            # Always include the ID
             compressed["id"] = item["id"]
 
-        compressed_keys: list[str] = []
-
         for key, value in item.items():
-            if self._should_include_field(key, value):
-                if isinstance(value, dict):
-                    self.encode_item(value)
-                elif isinstance(value, list):
-                    self.encode(value)
-                else:
-                    compressed[key] = value
-                compressed_keys.append(key)
+            if not self._should_include_field(key, value):
+                continue
+            if isinstance(value, dict):
+                compressed[key] = self.encode_item(value)
+            elif isinstance(value, list):
+                compressed[key] = [
+                    self.encode_item(v) if isinstance(v, dict) else v
+                    for v in value
+                ]
+            else:
+                compressed[key] = value
         return compressed
 
     def _get_ordered_fields(self, compressed_item: dict[str, Any]) -> list[tuple[str, Any]]:
@@ -174,23 +180,37 @@ class DSEncoder:
         Returns:
              Formatted string
         """
-        result: str
-
         if isinstance(value, list):
-            result = "+".join([str(v) for v in value])
-        elif isinstance(value, dict):
-            result = "+".join([str(v) for v in value.values()])
-        elif isinstance(value, str):
-            # Only escape the delimiter to preserve structure
+            # list of dicts → multiple rows
+            if value and isinstance(value[0], dict):
+                rows = [self._format_inline_object(v) for v in value]
+                return self.ROW_SEPARATOR.join(rows)
+            return "+".join(str(v) for v in value)
+
+        if isinstance(value, dict):
+            return self._format_inline_object(value)
+
+        if isinstance(value, str):
             result = value.replace(self._delimiter, ";")
         else:
             result = str(value)
 
-        # Truncate if max_length is specified
         if max_length and len(result) > max_length:
             result = result[:max_length] + "..."
-
         return result
+
+    def _format_inline_object(self, obj: dict[str, Any]) -> str:
+        ordered = self._get_ordered_fields(obj)
+
+        schema = self.delimiter.join(k for k, _ in ordered)
+        values = self.delimiter.join(
+            self._format_value(v) for _, v in ordered
+        )
+
+        return (
+            f"{self.SCHEMA_OPEN}{schema}{self.SCHEMA_CLOSE}"
+            f"{self.NESTED_OPEN}{values}{self.NESTED_CLOSE}"
+        )
 
     def _should_include_field(self, key: str, value: Any) -> bool:
         """

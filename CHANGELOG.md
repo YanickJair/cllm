@@ -5,11 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.0.5] - 2026-01-25
-### Changed
+## [0.0.7] - 2026-01-25
 
-- Updated CLMOutput documentation
-- Updated Structured Data Encoder documentation
+### Documentation
+
+- Updated `sd_encoder.md` with new examples from `scripts/compress_structured_data.py`:
+  - Added Example 1: Nested Data with Arrays (nested objects and user arrays)
+  - Added Example 2: Product Catalog (demonstrates `excluded_fields` and `default_fields_importance`)
+  - Added Example 3: KB Articles (shows `field_importance` and `max_description_length`)
+- Added `default_fields_importance` parameter documentation to Configuration Reference
+- Added "Nested Structure Handling" section documenting inline formatting for nested objects and arrays
+- Updated imports to use simplified `from clm_core import SDCompressionConfig`
+- Updated `index.md` structured data example:
+  - Removed non-existent `dataset_name` parameter
+  - Changed `max_field_length` to `max_description_length`
+  - Fixed output format to match actual encoder behavior (`{fields}[values]`)
+  - Added notes about comma escaping (`;`) and array separator (`+`)
 
 ## [0.0.4] - 2026-01-25
 

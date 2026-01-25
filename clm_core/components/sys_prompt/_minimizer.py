@@ -3,7 +3,7 @@ from typing import Optional, Literal
 
 from spacy import Language
 
-from ._schemas import SysPromptConfig
+from clm_core import SysPromptConfig
 from clm_core.components.sys_prompt.analyzers.output_format import SysPromptOutputFormat
 
 

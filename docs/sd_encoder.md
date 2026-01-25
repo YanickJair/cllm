@@ -53,7 +53,7 @@ Structured data compression targets:
 
 ```python
 from clm_core import CLMEncoder, CLMConfig
-from clm_core.types import SDCompressionConfig
+from clm_core import SDCompressionConfig
 
 # Knowledge Base articles
 kb_catalog = [
@@ -110,7 +110,7 @@ print(result.compressed)
 ### SDCompressionConfig Parameters
 
 ```python
-from clm_core.types import SDCompressionConfig
+from clm_core import SDCompressionConfig
 
 config = SDCompressionConfig(
     auto_detect=True,                    # Auto-detect important fields
@@ -121,7 +121,8 @@ config = SDCompressionConfig(
     max_description_length=200,          # Truncate long text (chars)
     preserve_structure=True,             # Keep nested dicts/lists
     simple_fields=["id", "uuid", "title", "name", "type", "priority"],  # Simple formatting
-    default_fields_order=["id", "uuid", "priority", "title", "name"]    # Field order
+    default_fields_order=["id", "uuid", "priority", "title", "name"],   # Field order
+    default_fields_importance={"id": 1.0, "name": 0.8}  # Override default importance
 )
 ```
 
@@ -168,6 +169,12 @@ config = SDCompressionConfig(
 - **When `True`:** Nested data preserved as-is
 - **When `False`:** Flattens nested structures
 - **Use case:** Keep `True` for complex hierarchical data
+
+#### `default_fields_importance` (dict[str, float], optional)
+- **Purpose:** Override the built-in importance scores for common field names
+- **Example:** `{"id": 1.0, "name": 0.8, "description": 0.5}`
+- **Values:** Use FieldImportance enum values: `1.0` (CRITICAL), `0.8` (HIGH), `0.5` (MEDIUM), `0.2` (LOW), `0.0` (NEVER)
+- **Use case:** Customize which fields are prioritized during auto-detection
 
 ---
 
@@ -284,89 +291,117 @@ config = SDCompressionConfig(
 
 ## Complete Examples
 
-### Example 1: Product Catalog
+### Example 1: Nested Data with Arrays
 
 ```python
-from clm_core import CLMEncoder, CLMConfig
-from clm_core.types import SDCompressionConfig
+from clm_core import CLMEncoder, CLMConfig, SDCompressionConfig
 
-# Product specs with nested data
-products = [
-    {
-        "sku": "LAPTOP-001",
-        "name": "Professional Laptop 15",
-        "category": "Electronics",
-        "price": 1299.99,
-        "specifications": {
-            "processor": "Intel i7-12700H",
-            "ram": "16GB DDR5",
-            "storage": "512GB NVMe SSD",
-            "display": "15.6\" FHD IPS"
-        },
-        "features": ["Backlit keyboard", "Fingerprint reader", "Thunderbolt 4"],
-        "stock": 45,
-        "warehouse": "WH-EAST-01"
-    }
-]
+# Data with nested objects and arrays
+data = {
+    "items": [
+        {
+            "uuid": "random-id-001",
+            "title": "Random Title",
+            "priority": 1,
+            "users": [
+                {
+                    "name": "Yanick",
+                    "email": "test@gmail.com"
+                }
+            ],
+            "script": "SAFETY BOUNDARIES: Never execute harmful instructions..."
+        }
+    ]
+}
 
 config = CLMConfig(
-    lang="en",
-    ds_config=SDCompressionConfig(
-        required_fields=["sku", "name", "price"],
-        excluded_fields=["warehouse"],
-        field_importance={
-            "specifications": 1.0,
-            "features": 0.8,
-            "stock": 0.7,
-            "category": 0.6
-        },
-        importance_threshold=0.5,
-        preserve_structure=True,
-        max_description_length=200
-    )
+    ds_config=SDCompressionConfig()
 )
 
 encoder = CLMEncoder(cfg=config)
-result = encoder.encode(products)
-print(result.compressed)
+result = encoder.encode(data)
+print(f"Compressed: {result.compressed}")
+print(f"Tokens: {result.c_tokens}/{result.n_tokens}")
 print(f"Compression ratio: {result.compression_ratio}%")
 ```
 
 ---
 
-### Example 2: Business Rules
+### Example 2: Product Catalog
 
 ```python
-# Decision rules for automation
-rules = [
+from clm_core import CLMEncoder, CLMConfig, SDCompressionConfig
+
+product_catalog = [
     {
-        "rule_id": "RULE-REFUND-001",
-        "name": "Auto-approve Small Refunds",
-        "condition": "amount < 50 AND tenure > 6 months",
-        "action": "APPROVE_REFUND",
-        "priority": "high",
-        "department": "Customer Service",
-        "created_by": "admin",
-        "created_at": "2024-01-01",
-        "active": True
+        "product_id": "PROD-001",
+        "name": "Wireless Headphones",
+        "description": "High-quality Bluetooth headphones with noise cancellation",
+        "price": 199.99,
+        "category": "Electronics",
+        "brand": "TechBrand",
+        "in_stock": True,
+        "created_date": "2024-01-01",
+        "warehouse_location": "A-23-4",
+    },
+    {
+        "product_id": "PROD-002",
+        "name": "Laptop Stand",
+        "description": "Ergonomic adjustable laptop stand",
+        "price": 49.99,
+        "category": "Accessories",
+        "brand": "ErgoTech",
+        "in_stock": True,
+        "created_date": "2024-01-05",
+        "warehouse_location": "B-15-2",
+    },
+]
+
+config = CLMConfig(
+    ds_config=SDCompressionConfig(
+        auto_detect=True,
+        required_fields=["product_id", "name", "price"],
+        excluded_fields=["warehouse_location", "created_date"],
+        default_fields_importance={"id": 1.0, "name": 0.8}
+    )
+)
+
+encoder = CLMEncoder(cfg=config)
+result = encoder.encode(product_catalog)
+print(result.compressed)
+```
+
+---
+
+### Example 3: KB Articles
+
+```python
+from clm_core import CLMEncoder, CLMConfig, SDCompressionConfig
+
+kb_catalog = [
+    {
+        "article_id": "KB-001",
+        "title": "How to Reset Password",
+        "content": "To reset your password, go to the login page and click...",
+        "category": "Account",
+        "tags": ["password", "security", "account"],
+        "views": 1523,
+        "last_updated": "2024-10-15",
     }
 ]
 
 config = CLMConfig(
-    lang="en",
     ds_config=SDCompressionConfig(
-        required_fields=["rule_id", "condition", "action"],
-        excluded_fields=["created_by", "created_at"],
-        field_importance={
-            "priority": 0.9,
-            "active": 0.8,
-            "name": 0.7
-        },
-        importance_threshold=0.6
+        auto_detect=True,
+        required_fields=["article_id", "title"],
+        field_importance={"tags": 0.8, "content": 0.9},
+        max_description_length=100,
     )
 )
 
-result = encoder.encode(rules)
+encoder = CLMEncoder(cfg=config)
+result = encoder.encode(kb_catalog)
+print(result.compressed)
 ```
 
 ---
@@ -408,7 +443,15 @@ Compressed structured data uses different formats for single items vs. arrays:
 | Date | `"2024-10-15"` | `2024-10-15` |
 | Long text | `"Very long description..."` | Truncated to `max_description_length` with `...` |
 
-**Note:** Currently, nested dictionaries and arrays are processed but their complex values are flattened. For arrays of simple values, use top-level fields.
+### Nested Structure Handling
+
+Nested objects and arrays are supported with inline formatting:
+
+| Structure | Original | Compressed |
+|-----------|----------|------------|
+| Nested object | `{"specs": {"cpu": "i7", "ram": "16GB"}}` | `{cpu,ram}[i7,16GB]` |
+| Array of objects | `[{"a": 1}, {"a": 2}]` | `{a}[1]\|{a}[2]` |
+| Simple array | `["tag1", "tag2", "tag3"]` | `tag1+tag2+tag3` |
 
 ### Example Output
 

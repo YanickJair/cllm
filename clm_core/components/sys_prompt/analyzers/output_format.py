@@ -3,10 +3,10 @@ import json
 import re
 from typing import Any, Union, Optional
 
+from clm_core import SysPromptConfig
 from clm_core.components.sys_prompt._schemas import (
     OutputField,
     OutputSchema,
-    SysPromptConfig,
 )
 
 BULLET_PATTERNS = [

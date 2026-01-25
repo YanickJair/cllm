@@ -1,6 +1,12 @@
-from clm_core.config.schemas import CLMConfig
-from clm_core.types import CLMOutput, SDCompressionConfig
-from clm_core.components.sys_prompt import SysPromptConfig
+from clm_core.types import (
+    CLMOutput,
+    SDCompressionConfig,
+    SysPromptConfig,
+    CLMConfig,
+    FieldImportance
+)
+from clm_core.components.sys_prompt import PromptMode, PromptTemplate
+from .components.transcript import TranscriptCompressionResult, TranscriptAnalysis
 from .encoder import CLMEncoder
 
 from .__version__ import __description__, __title__, __version__
@@ -14,6 +20,11 @@ __all__ = [
     "CLMOutput",
     "SysPromptConfig",
     "SDCompressionConfig",
+    "FieldImportance",
+    "PromptMode",
+    "PromptTemplate",
+    "TranscriptCompressionResult",
+    "TranscriptAnalysis"
 ]
 
 __locals = locals()

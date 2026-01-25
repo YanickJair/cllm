@@ -1,6 +1,6 @@
 import pytest
 
-from clm_core.components.ds_compression.encoder import DSEncoder
+from clm_core.components.ds_compression.encoder import SDEncoder
 from clm_core.types import SDCompressionConfig, FieldImportance, CLMOutput
 
 
@@ -34,7 +34,7 @@ class TestCLMOutputEstimateTokens:
 class TestDSEncoderInit:
     def test_default_initialization(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
         assert encoder._config is config
         assert encoder._catalog_name == "CATALOG"
         assert encoder._delimiter == ","
@@ -42,24 +42,24 @@ class TestDSEncoderInit:
 
     def test_custom_catalog_name(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config, catalog_name="PRODUCTS")
+        encoder = SDEncoder(config=config, catalog_name="PRODUCTS")
         assert encoder._catalog_name == "PRODUCTS"
 
     def test_custom_delimiter(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config, delimiter="|")
+        encoder = SDEncoder(config=config, delimiter="|")
         assert encoder._delimiter == "|"
 
 
 class TestDSEncoderDelimiterProperty:
     def test_delimiter_getter(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config, delimiter=":")
+        encoder = SDEncoder(config=config, delimiter=":")
         assert encoder.delimiter == ":"
 
     def test_delimiter_setter(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
         encoder.delimiter = ";"
         assert encoder.delimiter == ";"
 
@@ -69,7 +69,7 @@ class TestDSEncoderDelimiterProperty:
 class TestDSEncoderEncode:
     def test_encode_single_dict(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
         data = {"id": "123", "name": "Test Product"}
 
         result = encoder.encode(data)
@@ -81,7 +81,7 @@ class TestDSEncoderEncode:
 
     def test_encode_list_of_dicts(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
         data = [
             {"id": "1", "name": "Product A"},
             {"id": "2", "name": "Product B"},
@@ -98,7 +98,7 @@ class TestDSEncoderEncode:
 
     def test_encode_empty_list(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
         data = []
 
         result = encoder.encode(data)
@@ -109,7 +109,7 @@ class TestDSEncoderEncode:
 
     def test_encode_sets_n_tokens_and_c_tokens(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
         data = [{"id": "1", "name": "Test"}]
 
         result = encoder.encode(data)
@@ -120,7 +120,7 @@ class TestDSEncoderEncode:
 
     def test_encode_compression_ratio_is_valid(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
         data = [
             {"product_id": "PROD-001", "name": "Widget", "price": 9.99},
             {"product_id": "PROD-002", "name": "Gadget", "price": 19.99},
@@ -135,7 +135,7 @@ class TestDSEncoderEncode:
 
     def test_encode_metadata_contains_lengths(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
         data = [{"id": "1"}]
 
         result = encoder.encode(data)
@@ -147,7 +147,7 @@ class TestDSEncoderEncode:
 class TestDSEncoderEncodeItem:
     def test_encode_item_includes_id(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
         item = {"id": "123", "name": "Test"}
 
         result = encoder.encode_item(item)
@@ -157,7 +157,7 @@ class TestDSEncoderEncodeItem:
 
     def test_encode_item_respects_required_fields(self):
         config = SDCompressionConfig(required_fields=["custom_field"])
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
         item = {"id": "1", "custom_field": "value", "other": "data"}
 
         result = encoder.encode_item(item)
@@ -166,7 +166,7 @@ class TestDSEncoderEncodeItem:
 
     def test_encode_item_respects_excluded_fields(self):
         config = SDCompressionConfig(excluded_fields=["secret", "password"])
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
         item = {"id": "1", "name": "Test", "secret": "hidden", "password": "123"}
 
         result = encoder.encode_item(item)
@@ -179,7 +179,7 @@ class TestDSEncoderEncodeItem:
             auto_detect=True,
             importance_threshold=0.8  # Only HIGH and CRITICAL
         )
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
         # 'notes' has LOW importance by default
         item = {"id": "1", "name": "Test", "notes": "some notes"}
 
@@ -194,7 +194,7 @@ class TestDSEncoderEncodeItem:
 class TestDSEncoderGetOrderedFields:
     def test_simple_fields_come_first(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
         item = {"description": "A description", "id": "123", "name": "Test"}
 
         result = encoder._get_ordered_fields(item)
@@ -206,7 +206,7 @@ class TestDSEncoderGetOrderedFields:
 
     def test_simple_fields_sorted_by_default_order(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
         # default_fields_order has id before name
         item = {"name": "Test", "id": "123"}
 
@@ -217,7 +217,7 @@ class TestDSEncoderGetOrderedFields:
 
     def test_complex_fields_at_end(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
         item = {"id": "1", "custom_field": "value", "another_custom": "data"}
 
         result = encoder._get_ordered_fields(item)
@@ -230,7 +230,7 @@ class TestDSEncoderGetOrderedFields:
 class TestDSEncoderFormatItemToken:
     def test_format_with_default_delimiter(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
         item = {"id": "123", "name": "Test"}
 
         result = encoder._format_item_token(item)
@@ -241,7 +241,7 @@ class TestDSEncoderFormatItemToken:
 
     def test_format_with_custom_delimiter(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config, delimiter="|")
+        encoder = SDEncoder(config=config, delimiter="|")
         item = {"id": "123", "name": "Test"}
 
         result = encoder._format_item_token(item)
@@ -250,7 +250,7 @@ class TestDSEncoderFormatItemToken:
 
     def test_truncates_long_complex_fields(self):
         config = SDCompressionConfig(max_description_length=20)
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
         item = {"id": "1", "description": "A" * 100}  # 100 chars
 
         result = encoder._format_item_token(item)
@@ -263,7 +263,7 @@ class TestDSEncoderFormatItemToken:
 class TestDSEncoderFormatHeaderKeys:
     def test_header_matches_value_order(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
         item = {"description": "desc", "id": "1", "name": "test"}
 
         header = encoder._format_header_keys(item)
@@ -277,7 +277,7 @@ class TestDSEncoderFormatHeaderKeys:
 
     def test_header_uses_delimiter(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config, delimiter="|")
+        encoder = SDEncoder(config=config, delimiter="|")
         item = {"id": "1", "name": "test"}
 
         header = encoder._format_header_keys(item)
@@ -288,7 +288,7 @@ class TestDSEncoderFormatHeaderKeys:
 class TestDSEncoderFormatValue:
     def test_format_string_value(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         result = encoder._format_value("Hello World")
 
@@ -296,7 +296,7 @@ class TestDSEncoderFormatValue:
 
     def test_format_string_escapes_delimiter(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config, delimiter=",")
+        encoder = SDEncoder(config=config, delimiter=",")
 
         result = encoder._format_value("Hello, World")
 
@@ -304,7 +304,7 @@ class TestDSEncoderFormatValue:
 
     def test_format_list_value(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         result = encoder._format_value(["a", "b", "c"])
 
@@ -312,7 +312,7 @@ class TestDSEncoderFormatValue:
 
     def test_format_dict_value(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         result = encoder._format_value({"key1": "val1", "key2": "val2"})
 
@@ -322,7 +322,7 @@ class TestDSEncoderFormatValue:
 
     def test_format_numeric_value(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         result = encoder._format_value(42)
 
@@ -330,14 +330,14 @@ class TestDSEncoderFormatValue:
 
     def test_format_boolean_value(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         assert encoder._format_value(True) == "True"
         assert encoder._format_value(False) == "False"
 
     def test_format_truncates_with_max_length(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         result = encoder._format_value("A" * 100, max_length=20)
 
@@ -346,7 +346,7 @@ class TestDSEncoderFormatValue:
 
     def test_format_no_truncation_when_under_max_length(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         result = encoder._format_value("Short", max_length=100)
 
@@ -357,7 +357,7 @@ class TestDSEncoderFormatValue:
 class TestDSEncoderShouldIncludeField:
     def test_excludes_field_in_excluded_fields(self):
         config = SDCompressionConfig(excluded_fields=["secret"])
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         result = encoder._should_include_field("secret", "value")
 
@@ -365,7 +365,7 @@ class TestDSEncoderShouldIncludeField:
 
     def test_includes_field_in_required_fields(self):
         config = SDCompressionConfig(required_fields=["must_have"])
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         result = encoder._should_include_field("must_have", "value")
 
@@ -376,7 +376,7 @@ class TestDSEncoderShouldIncludeField:
             field_importance={"custom": 0.9},
             importance_threshold=0.8
         )
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         assert encoder._should_include_field("custom", "value") is True
 
@@ -385,20 +385,20 @@ class TestDSEncoderShouldIncludeField:
             field_importance={"custom": 0.3},
             importance_threshold=0.5
         )
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         assert encoder._should_include_field("custom", "value") is False
 
     def test_auto_detect_mode(self):
         config = SDCompressionConfig(auto_detect=True)
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         # 'id' should be detected as CRITICAL
         assert encoder._should_include_field("user_id", "123") is True
 
     def test_includes_all_when_auto_detect_disabled(self):
         config = SDCompressionConfig(auto_detect=False)
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         assert encoder._should_include_field("random_field", "value") is True
 
@@ -406,7 +406,7 @@ class TestDSEncoderShouldIncludeField:
 class TestDSEncoderDetectFieldImportance:
     def test_detects_id_as_critical(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         result = encoder._detect_field_importance("user_id", "123")
 
@@ -414,7 +414,7 @@ class TestDSEncoderDetectFieldImportance:
 
     def test_detects_name_as_high(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         result = encoder._detect_field_importance("product_name", "Widget")
 
@@ -422,7 +422,7 @@ class TestDSEncoderDetectFieldImportance:
 
     def test_detects_internal_prefix_as_low(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         result = encoder._detect_field_importance("internal_code", "abc")
 
@@ -430,7 +430,7 @@ class TestDSEncoderDetectFieldImportance:
 
     def test_detects_underscore_prefix_as_low(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         result = encoder._detect_field_importance("_private", "value")
 
@@ -438,7 +438,7 @@ class TestDSEncoderDetectFieldImportance:
 
     def test_detects_date_suffix_as_never(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         # Use field names not in default_fields_importance to test suffix detection
         assert encoder._detect_field_importance("processed_at", "2024-01-01") == FieldImportance.NEVER
@@ -446,7 +446,7 @@ class TestDSEncoderDetectFieldImportance:
 
     def test_detects_none_value_as_never(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         result = encoder._detect_field_importance("some_field", None)
 
@@ -454,7 +454,7 @@ class TestDSEncoderDetectFieldImportance:
 
     def test_detects_empty_string_as_never(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         result = encoder._detect_field_importance("some_field", "")
 
@@ -462,7 +462,7 @@ class TestDSEncoderDetectFieldImportance:
 
     def test_detects_long_string_as_medium(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         result = encoder._detect_field_importance("content", "A" * 600)
 
@@ -470,7 +470,7 @@ class TestDSEncoderDetectFieldImportance:
 
     def test_detects_short_string_as_low(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         result = encoder._detect_field_importance("code", "ab")
 
@@ -478,7 +478,7 @@ class TestDSEncoderDetectFieldImportance:
 
     def test_default_is_medium(self):
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         result = encoder._detect_field_importance("unknown_field", "some normal value")
 
@@ -492,7 +492,7 @@ class TestDSEncoderIntegration:
         config = SDCompressionConfig(
             excluded_fields=["warehouse_location", "created_date"]
         )
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         products = [
             {
@@ -530,7 +530,7 @@ class TestDSEncoderIntegration:
     def test_header_value_alignment(self):
         """Verify that header keys align with value positions"""
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         data = [
             {"uuid": "id-1", "title": "Title 1", "priority": 1},
@@ -558,7 +558,7 @@ class TestDSEncoderIntegration:
     def test_single_item_vs_list_consistency(self):
         """Single dict and list with one item should produce similar structures"""
         config = SDCompressionConfig()
-        encoder = DSEncoder(config=config)
+        encoder = SDEncoder(config=config)
 
         item = {"id": "123", "name": "Test"}
 

@@ -7,7 +7,8 @@ from spacy.language import Language
 from clm_core.utils.parser_rules import BaseRules
 from clm_core.utils.vocabulary import BaseVocabulary
 from . import ConfigurationPromptMinimizer
-from ._schemas import SysPromptConfig, ValidationLevel, PromptMode
+from ._schemas import ValidationLevel, PromptMode
+from clm_core import SysPromptConfig
 from .analyzers.attribute_parser import AttributeParser
 
 from clm_core.components.sys_prompt.base_encoder import BasePromptEncoder

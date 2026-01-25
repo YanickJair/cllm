@@ -20,7 +20,7 @@ import os
 import sys
 from typing import Optional
 
-from clm_core.components.ds_compression import DSEncoder
+from clm_core.components.ds_compression import SDEncoder
 from clm_core.types import SDCompressionConfig
 
 # Add parent directory to path for imports
@@ -159,7 +159,7 @@ class RunGPTCLMBenchmark:
             required_fields=["id", "title", "description", "category"],
             auto_detect=False,
         )
-        compressor = DSEncoder(config=config, catalog_name="kb")
+        compressor = SDEncoder(config=config, catalog_name="kb")
         return compressor.encode(nbas)
 
     def calculate_cost(

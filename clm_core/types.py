@@ -1,10 +1,17 @@
 import json
 import re
 from enum import Enum
-from typing import Optional, Self
+from typing import Optional, Self, Literal, Annotated
+
+import spacy
 from pydantic import BaseModel, Field, computed_field, ConfigDict, field_validator, field_serializer, model_validator
 
+from clm_core.utils.parser_rules import BaseRules
+from clm_core.utils.vocabulary import BaseVocabulary
+from clm_core.dictionary import rules_map, vocab_map
+
 type ORIGINAL_INPUT = str | dict | list
+type LANG = Literal["en", "fr", "es", "pt"]
 
 
 class CLMOutput(BaseModel):
@@ -192,3 +199,64 @@ class SDCompressionConfig(BaseModel):
         return {key: importance.value for key, importance in v.items()}
 
     model_config = ConfigDict(use_enum_values=False)
+
+
+class SysPromptConfig(BaseModel):
+    lang: str = Field(default="en", description="Language of the prompt")
+    infer_types: Optional[bool] = Field(
+        default=False, description="Infer types for output fields"
+    )
+    use_structured_output_abstraction: Optional[bool] = Field(
+        default=True, description="If to compress output structure define with CL or keep it as-is"
+    )
+    add_examples: Optional[bool] = Field(
+        default=False,
+        description="Add examples based on extracted ones from input if exist",
+    )
+    add_attrs: Optional[bool] = Field(
+        default=True,
+        description="Add extra attributes from input prompt. "
+                    "This can be specifications found in prompt, enums/constraints values defined",
+    )
+
+class CLMConfig(BaseModel):
+    lang: Annotated[LANG, Field(default="en", description="Language of the model")]
+    ds_config: SDCompressionConfig = Field(
+        default_factory=lambda: SDCompressionConfig(),
+        description="Configuration for data Structure Data compression",
+    )
+    sys_prompt_config: SysPromptConfig = Field(
+        default_factory=lambda: SysPromptConfig(),
+        description="Configuration for system prompt",
+    )
+
+    @computed_field
+    @property
+    def vocab(self) -> BaseVocabulary:
+        return vocab_map[self.lang]
+
+    @computed_field
+    @property
+    def nlp_model(self) -> spacy.Language:
+        """
+        Load spaCy model for the configured language
+        Returns
+        -------
+
+        """
+        match self.lang:
+            case "en":
+                return spacy.load("en_core_web_sm")
+            case _:
+                raise NotImplementedError(
+                    f"Model for language {self.lang} not supported yet"
+                )
+
+    @computed_field
+    @property
+    def rules(self) -> BaseRules:
+        return rules_map[self.lang]
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
