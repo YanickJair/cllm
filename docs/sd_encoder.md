@@ -31,11 +31,11 @@ Structured data compression targets:
 
 ### What Gets Preserved
 
-✅ **Critical fields:** IDs, names, titles, types
-✅ **High-importance fields:** Categories, tags, descriptions
+✅ **Critical fields:** IDs, UUIDs, names, titles, types, status
+✅ **High-importance fields:** Categories, tags, descriptions, priority
 ✅ **Relationships:** Parent-child, nested structures
 ✅ **Data types:** Strings, numbers, dates, arrays
-✅ **Field order:** Configurable prioritization
+✅ **Field order:** Configurable prioritization (IDs and priority first)
 
 ### What Gets Optimized
 
@@ -96,10 +96,12 @@ print(result.compressed)
 
 **Output:**
 ```text
-{article_id,title,content,category,tags,views}[KB-001,How to Reset Password,To reset your password go to the login page and click...,Account,password+security+account,1523][KB-002,Update Email Address,To update your email navigate to settings...,Account,email+settings,892]
+{article_id,title,content,category,tags,views}[KB-001,How to Reset Password,To reset your password; go to the login page and click...,Account,password+security+account,1523][KB-002,Update Email Address,To update your email; navigate to settings...,Account,email+settings,892]
 ```
 
-**Compression:** ~50% token reduction
+**Note:** Commas in text values are escaped with semicolons to preserve the delimiter structure.
+
+**Compression:** ~40% token reduction
 
 ---
 
@@ -114,12 +116,12 @@ config = SDCompressionConfig(
     auto_detect=True,                    # Auto-detect important fields
     required_fields=["id", "name"],      # Always include these
     excluded_fields=["metadata"],        # Never include these
-    field_importance={"desc": 0.9},      # Custom importance scores
+    field_importance={"desc": 0.9},      # Custom importance scores (0.0-1.0)
     importance_threshold=0.5,            # Include fields above this
-    max_description_length=200,          # Truncate long text
+    max_description_length=200,          # Truncate long text (chars)
     preserve_structure=True,             # Keep nested dicts/lists
-    simple_fields=["id", "title"],       # Fields for simple formatting
-    default_fields_order=["id", "name"]  # Field ordering priority
+    simple_fields=["id", "uuid", "title", "name", "type", "priority"],  # Simple formatting
+    default_fields_order=["id", "uuid", "priority", "title", "name"]    # Field order
 )
 ```
 
@@ -175,10 +177,21 @@ The encoder has built-in importance scores for common fields:
 
 | Field | Importance | Priority | Typical Use |
 |-------|------------|----------|-------------|
-| `id`, `uuid`, `external_id`, `status` | **CRITICAL** | Always included | Identifiers, state |
-| `name`, `title`, `type`, `category`, `tags`, `description`, `priority`, `severity`, `resolution`, `owner`, `channel` | **HIGH** | Usually included | Core attributes |
-| `subcategory`, `details`, `assignee`, `department`, `language` | **MEDIUM** | Often included | Secondary info |
-| `notes`, `source`, `metadata`, `created_at`, `updated_at`, `version` | **LOW** | Rarely included | Metadata |
+| `id`, `uuid`, `external_id`, `status` | **CRITICAL** (1.0) | Always included | Identifiers, state |
+| `name`, `title`, `type`, `category`, `tags`, `description`, `priority`, `severity`, `resolution`, `owner`, `channel` | **HIGH** (0.8) | Usually included | Core attributes |
+| `subcategory`, `details`, `assignee`, `department`, `language` | **MEDIUM** (0.5) | Often included | Secondary info |
+| `notes`, `source`, `metadata`, `created_at`, `updated_at`, `version` | **LOW** (0.2) | Rarely included | Metadata |
+
+### Default Simple Fields
+
+These fields are formatted without transformation and appear first in the output:
+- `id`, `uuid`, `title`, `name`, `type`, `priority`, `article_id`, `product_id`
+
+### Default Field Order
+
+Fields are ordered in the output as follows:
+1. `id` → `uuid` → `priority` → `article_id` → `product_id` → `title` → `name` → `type`
+2. Then other fields in their original order
 
 **Importance Scale:**
 - **CRITICAL**: 1.0 (always included unless explicitly excluded)
@@ -362,31 +375,55 @@ result = encoder.encode(rules)
 
 ### Structure
 
-Compressed structured data uses a header + rows format:
+Compressed structured data uses different formats for single items vs. arrays:
 
+**Single Item:**
+```
+[value1,value2,value3]
+```
+
+**Array of Items (header + rows):**
 ```
 {field1,field2,field3}[value1,value2,value3][value1,value2,value3]
 ```
 
-**Header:**
-- `{FIELDS}`: Comma-separated list of included fields in order
+**Header (arrays only):**
+- `{fields}`: Comma-separated list of included field names in order
 
 **Rows:**
-- One bracketed row per record
-- Fields in same order as header
+- One bracketed row per record: `[values]`
+- Values comma-separated in same order as header
 - Values preserved with minimal transformation
+- Commas in values are escaped with semicolons
 
 ### Data Type Handling
 
 | Type | Original | Compressed |
 |------|----------|------------|
 | String | `"Hello World"` | `Hello World` |
+| String with comma | `"Hello, World"` | `Hello; World` |
 | Number | `1299.99` | `1299.99` |
 | Boolean | `true` | `True` |
-| Array | `["a", "b", "c"]` | `a+b+c` |
 | Null | `null` | (excluded) |
 | Date | `"2024-10-15"` | `2024-10-15` |
-| Nested | `{"key": "value"}` | `value` |
+| Long text | `"Very long description..."` | Truncated to `max_description_length` with `...` |
+
+**Note:** Currently, nested dictionaries and arrays are processed but their complex values are flattened. For arrays of simple values, use top-level fields.
+
+### Example Output
+
+**Input:**
+```json
+[
+  {"article_id": "KB-001", "title": "Reset Password", "category": "Account"},
+  {"article_id": "KB-002", "title": "Update Email", "category": "Account"}
+]
+```
+
+**Output:**
+```
+{article_id,title,category}[KB-001,Reset Password,Account][KB-002,Update Email,Account]
+```
 
 ---
 
@@ -394,21 +431,47 @@ Compressed structured data uses a header + rows format:
 
 The encoder returns a `CLMOutput` object with:
 
-| Field | Description |
-|-------|-------------|
-| `compressed` | The compressed string output |
-| `original` | The original input data |
-| `n_tokens` | Estimated input token count |
-| `c_tokens` | Estimated compressed token count |
-| `compression_ratio` | Percentage of token reduction |
-| `metadata` | Additional compression metadata |
+| Field | Type | Description |
+|-------|------|-------------|
+| `compressed` | `str` | The compressed string output |
+| `original` | `str \| dict \| list` | The original input data |
+| `n_tokens` | `int` | Estimated input token count (~4 chars/token) |
+| `c_tokens` | `int` | Estimated compressed token count |
+| `compression_ratio` | `float` | Percentage of token reduction |
+| `component` | `str` | Component name (`"ds_compression"`) |
+| `metadata` | `dict` | Additional compression metadata |
+
+### Token Estimation
+
+Tokens are estimated at approximately 4 characters per token:
 
 ```python
 result = encoder.encode(data)
-print(f"Input tokens: {result.n_tokens}")
-print(f"Output tokens: {result.c_tokens}")
-print(f"Compression: {result.compression_ratio}%")
+print(f"Input tokens: {result.n_tokens}")      # Estimated from original
+print(f"Output tokens: {result.c_tokens}")     # Estimated from compressed
+print(f"Compression: {result.compression_ratio}%")  # (1 - c_tokens/n_tokens) * 100
 ```
+
+### Automatic Fallback
+
+If the compressed output would be **larger** than the original input, the encoder automatically falls back to the original:
+
+```python
+result = encoder.encode(small_data)
+# If compression increases size, result.compressed == original
+# result.compression_ratio will be 0.0
+# result.metadata["description"] will explain the fallback
+```
+
+This ensures compression never increases token usage.
+
+### Whitespace Normalization
+
+All compressed output is automatically normalized:
+- Multiple spaces, tabs, and newlines collapsed to single spaces
+- Leading and trailing whitespace trimmed
+
+This ensures consistent, compact output regardless of input formatting.
 
 ---
 
