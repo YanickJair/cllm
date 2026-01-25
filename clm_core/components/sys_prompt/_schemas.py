@@ -303,25 +303,6 @@ class DetectedField(BaseModel):
     source: str = Field(..., description="Source of the detected field")
     confidence: float = Field(..., description="Confidence of the detected field")
 
-
-class SysPromptConfig(BaseModel):
-    lang: str = Field(default="en", description="Language of the prompt")
-    infer_types: Optional[bool] = Field(
-        default=False, description="Infer types for output fields"
-    )
-    use_structured_output_abstraction: Optional[bool] = Field(
-        default=True, description="If to compress output structure define with CL or keep it as-is"
-    )
-    add_examples: Optional[bool] = Field(
-        default=False,
-        description="Add examples based on extracted ones from input if exist",
-    )
-    add_attrs: Optional[bool] = Field(
-        default=True,
-        description="Add extra attributes from input prompt. "
-                    "This can be specifications found in prompt, enums/constraints values defined",
-    )
-
 class ValidationLevel(str, Enum):
     ERROR = "ERROR"
     WARNING = "WARNING"

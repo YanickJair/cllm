@@ -4,7 +4,7 @@ from spacy.language import Language
 from clm_core.utils.parser_rules import BaseRules
 from clm_core.utils.vocabulary import BaseVocabulary
 
-from ._schemas import SysPromptConfig
+from clm_core import SysPromptConfig
 from .analyzers.attribute_parser import AttributeParser
 from clm_core.components.intent_detector_v2 import IntentDetectorV2 as IntentDetector
 from clm_core.components.target_extractor import TargetExtractor

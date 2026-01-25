@@ -1,3 +1,3 @@
-from .encoder import DSEncoder
+from .encoder import SDEncoder
 
-__all__ = ["DSEncoder"]
+__all__ = ["SDEncoder"]

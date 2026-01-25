@@ -160,6 +160,8 @@ The compressed result preserves the semantic meaning while dramatically reducing
 Compress knowledge bases, product catalogs, and structured datasets:
 
 ```python
+from clm_core import SDCompressionConfig
+
 kb_catalog = [
     {
         "article_id": "KB-001",
@@ -173,31 +175,33 @@ kb_catalog = [
 ]
 
 config = CLMConfig(
+    lang="en",
     ds_config=SDCompressionConfig(
-        dataset_name="ARTICLE",
         auto_detect=True,
         required_fields=["article_id", "title"],
         field_importance={"tags": 0.8, "content": 0.9},
-        max_field_length=100,
+        max_description_length=100,
     )
 )
 
-compressor = CLMEncoder(cfg=config)
-result = compressor.encode(kb_catalog)
+encoder = CLMEncoder(cfg=config)
+result = encoder.encode(kb_catalog)
 print(result.compressed)
 ```
 
 **Output:**
 ```text
-[KB_CATALOG:1]{ARTICLE_ID,TITLE,CONTENT,CATEGORY,VIEWS,LAST_UPDATED}
-[KB-001,HOW_TO_RESET_PASSWORD,TO_RESET_YOUR_PASSWORD_GO_TO_THE_LOGIN_PAGE_AND_CLICK,ACCOUNT,1523,2024-10-15]
+{article_id,title,content,category,tags,views}[KB-001,How to Reset Password,To reset your password; go to the login page and click...,Account,password+security+account,1523]
 ```
 
+**Note:** Commas in text values are escaped with semicolons. Arrays use `+` as separator.
+
 **Key Features:**
-- Configure compression mechanism with custom attributes
-- Specify which fields to include/ignore
-- Set field importance weights
-- Auto-detect data patterns
+- Supports both single objects and arrays of objects
+- Configure field importance and thresholds
+- Specify required/excluded fields
+- Auto-detect important fields based on patterns
+- Nested structures preserved with inline formatting
 
 Learn more about [Structured Data Compression](sd_encoder.md).
 

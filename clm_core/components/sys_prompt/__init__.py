@@ -3,7 +3,6 @@ from ._prompt_template_validator import BoundPromptValidator
 from ._schemas import (
     Intent,
     Target,
-    SysPromptConfig,
     VOCAB_SIGNAL_MAP,
     REQ,
     Signal,
@@ -17,7 +16,6 @@ from .prompt_assembler import PromptAssembler
 __all__ = [
     "Intent",
     "Target",
-    "SysPromptConfig",
     "REQ",
     "Artifact",
     "VOCAB_SIGNAL_MAP",

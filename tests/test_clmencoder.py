@@ -2,7 +2,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from clm_core.encoder import CLMEncoder
-from clm_core.config.schemas import CLMConfig
+from clm_core import CLMConfig
 from clm_core.core.text_classifier import DataTypes
 from clm_core.types import CLMOutput
 

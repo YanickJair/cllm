@@ -118,8 +118,12 @@ class CustomerProfile(BaseModel):
         default=None, description="churn risk: 'LOW', 'MEDIUM', 'HIGH'"
     )
     attributes: Optional[dict] = None
-    name: str | None = None
-    email: str | None = None
+    name: Optional[str] = Field(
+        default=None, description="Customer's name"
+    )
+    email: Optional[str] = Field(
+        default=None, description="Customer's email"
+    )
 
 
 class TranscriptAnalysis(BaseModel):
@@ -151,8 +155,8 @@ class TranscriptCompressionResult(BaseModel):
 class TemporalPattern(BaseModel):
     """Represents extracted temporal information"""
 
-    days: list[str] | None = Field(default=None, description="days of the week")
-    times: list[str] | None = Field(default=None, description="times of day")
-    duration: str | None = Field(default=None, description="duration")
-    frequency: str | None = Field(default=None, description="frequency: 33x day")
-    pattern: str | None = Field(default=None, description="pattern")
+    days: Optional[list[str]] = Field(default=None, description="days of the week")
+    times: Optional[list[str]] = Field(default=None, description="times of day")
+    duration: Optional[str] = Field(default=None, description="duration")
+    frequency: Optional[str] = Field(default=None, description="frequency: 33x day")
+    pattern: Optional[str] = Field(default=None, description="pattern")

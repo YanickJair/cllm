@@ -11,7 +11,8 @@ from clm_core.components.sys_prompt.analyzers.extraction_field import (
 )
 from clm_core.components.sys_prompt.analyzers.output_format import SysPromptOutputFormat
 from .context_parser import ContextParser
-from .._schemas import ExtractionField, Context, OutputSchema, SysPromptConfig
+from clm_core import SysPromptConfig
+from .._schemas import ExtractionField, Context, OutputSchema
 
 
 class AttributeParser:
