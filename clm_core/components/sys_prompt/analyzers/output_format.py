@@ -646,6 +646,25 @@ class SysPromptOutputFormat:
         r"output\s*schema|json\s*format|json\s*schema|return\s*format)\s*:?\s*$",
         re.IGNORECASE | re.MULTILINE
     )
+    RULE_INTENT_PATTERNS = [
+        r"the following rules.*",
+        r"please adhere to.*rules.*",
+        r"these rules (apply|must be followed).*",
+        r"\bplease\b.*\b(follow|adhere to|comply with)\b.*\brules?\b",
+        r"\bthese rules\b.*\b(should|must|need to)\b.*\b(followed|applied)\b",
+        r"\bensure that\b.*\brules?\b.*\b(followed|applied)\b",
+    ]
+    PLAIN_TEXT_ONLY_PATTERNS = [
+        r"\bonly output\b.*\b(text|transcription)\b",
+        r"\boutput only\b.*\b(text|transcription)\b",
+        r"\bprovide \b.*\b(only)\b \b.*\b(plain text)\b",
+        r"\bnever respond to questions\b",
+        r"\bdo not add commentary\b",
+        r"\bdo not engage in conversation\b",
+        r"\bnot a conversational ai\b",
+        r"\bonly reformat\b",
+        r"\bformat(ting)? only\b",
+    ]
 
     def __init__(self, config: SysPromptConfig):
         self.struct_compressor = SchemaOutputCompressor(
@@ -654,6 +673,26 @@ class SysPromptOutputFormat:
             add_examples=config.add_examples,
         )
 
+    @staticmethod
+    def should_emit_out_json(prompt: str) -> bool:
+        return any([
+            contains_json_block(prompt),
+            detect_format_from_text(prompt) == "STRUCTURED",
+        ])
+
+    @classmethod
+    def determine_text_output(cls, prompt: str) -> str:
+        for pat in cls.PLAIN_TEXT_ONLY_PATTERNS:
+            if re.search(pat, prompt, re.IGNORECASE):
+                return "TEXT"
+        return ""
+
+    # Pattern to match XML-style output format tags
+    OUTPUT_XML_TAG_PATTERN = re.compile(
+        r"<output_format>\s*.*?\s*</output_format>",
+        re.IGNORECASE | re.DOTALL
+    )
+
     @classmethod
     def extract_output_block(cls, text: str) -> tuple[str, str]:
         """
@@ -661,10 +700,16 @@ class SysPromptOutputFormat:
         Returns (remaining_text, extracted_block).
 
         Detects:
-        1. Section with header like "OUTPUT FORMAT:" followed by content
-        2. Standalone JSON blocks that define output schema
+        1. XML-style <output_format> tags
+        2. Section with header like "OUTPUT FORMAT:" followed by content
+        3. Standalone JSON blocks that define output schema
         """
-        # First, try to find a section with an output format header
+        # First, try to find XML-style output_format tags
+        xml_match = cls.OUTPUT_XML_TAG_PATTERN.search(text)
+        if xml_match:
+            remaining = text[:xml_match.start()] + text[xml_match.end():]
+            return remaining.strip(), xml_match.group(0)
+
         lines = text.split("\n")
         header_idx = None
 
@@ -689,7 +734,6 @@ class SysPromptOutputFormat:
                 elif in_json_block:
                     brace_depth += line.count("{") - line.count("}")
                     if brace_depth <= 0:
-                        in_json_block = False
                         end_idx = i + 1
                         break
 
@@ -733,7 +777,7 @@ class SysPromptOutputFormat:
 
         return text, ""
 
-    def compress(self, output_spec, is_structured=None):
+    def compress(self, output_spec: Any, is_structured=None) -> OutputSchema:
         if is_structured is None:
             is_structured = isinstance(output_spec, dict)
 
@@ -743,13 +787,17 @@ class SysPromptOutputFormat:
             )
 
         schema_obj = self._process_nl_schema(output_spec)
+        if not self.should_emit_out_json(output_spec):
+            format_type = self.determine_text_output(output_spec)
+            return OutputSchema(format_type=format_type)
+
         return self.struct_compressor.compress_schema(
             schema_obj.raw_schema or {}, extra_text=output_spec
         )
 
     def compress_with_schema(
         self, output_spec: Union[str, dict], return_schema: bool = False
-    ):
+    ) -> tuple[str, OutputSchema] | str:
         is_structured = isinstance(output_spec, dict)
         if is_structured:
             schema = self.struct_compressor.compress_schema(output_spec)

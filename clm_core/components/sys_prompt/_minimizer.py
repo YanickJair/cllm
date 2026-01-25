@@ -3,6 +3,7 @@ from typing import Optional, Literal
 
 from spacy import Language
 
+from ._schemas import SysPromptConfig
 from clm_core.components.sys_prompt.analyzers.output_format import SysPromptOutputFormat
 
 
@@ -20,9 +21,20 @@ class ConfigurationPromptMinimizer:
         "basic rules", "custom rules", "enhance naturally",
         "preserve language"
     }
-    ROLE_BLOCK_PATTERN = re.compile(
+    ROLE_BLOCK_PATTERN = [
+        r"<general_prompt>.*?</general_prompt>",
         r"<role>.*?</role>",
-        re.IGNORECASE | re.DOTALL,
+    ]
+    # Pattern to match "You are a..." role sentences (for non-XML prompts)
+    ROLE_SENTENCE_PATTERN = re.compile(
+        r"(?:^|\n)\s*(?:You are|Your role is)\s+(?:an?\s+)?[^.]+\.\s*",
+        re.IGNORECASE
+    )
+    # Pattern to match SCORING sections with ranges
+    SCORING_SECTION_PATTERN = re.compile(
+        r"(?:^|\n\n?)(?:SCORING|SCORE RANGES?|RATING):?\s*\n"
+        r"(?:[\d.]+\s*[-–]\s*[\d.]+\s*[:=]?\s*[^\n]+\n?)+",
+        re.IGNORECASE | re.MULTILINE
     )
     PRIORITY_PATTERNS = [
         r"if there (is|are) (any )?conflicts.*?(prioritize|override).*",
@@ -38,6 +50,7 @@ class ConfigurationPromptMinimizer:
         r"\bthese rules\b.*\b(should|must|need to)\b.*\b(followed|applied)\b",
         r"\bensure that\b.*\brules?\b.*\b(followed|applied)\b",
     ]
+
     CL_NL_SUPPRESSION_MAP = {
         "priority": {
             "enabled": True,
@@ -67,26 +80,41 @@ class ConfigurationPromptMinimizer:
         (r"custom instructions are paramount", None),
     ]
 
-    def __init__(self, nlp: Language):
+    def __init__(
+        self,
+            *,
+        nlp: Language,
+        config: SysPromptConfig,
+    ):
         self._nlp = nlp
-        self._nlp.add_pipe("sentencizer")
+        self._cfg = config
+        if "sentencizer" not in self._nlp.pipe_names:
+            self._nlp.add_pipe("sentencizer")
 
-    @classmethod
-    def suppress_with_cl(cls, out: str, cl_metadata: dict) -> str:
+    def suppress_with_cl(self, out: str, cl_metadata: dict) -> str:
         if cl_metadata.get("role"):
-            out = cls.ROLE_BLOCK_PATTERN.sub("", out)
+            out = self.suppress_role(text=out, patterns=self.ROLE_BLOCK_PATTERN)
+            # Also remove "You are a..." sentences for non-XML prompts
+            out = self.ROLE_SENTENCE_PATTERN.sub("", out)
 
         if cl_metadata.get("priority"):
-            out = cls.suppress_sentences(out, cls.PRIORITY_PATTERNS)
+            out = self.suppress_sentences(out, self.PRIORITY_PATTERNS)
 
         if cl_metadata.get("rules"):
-            out = cls.suppress_sentences(out, cls.RULE_INTENT_PATTERNS)
+            out = self.suppress_sentences(out, self.RULE_INTENT_PATTERNS)
 
         if cl_metadata.get("output_format"):
-            # Use the same detection logic that CL used to compress the output format
-            out, _ = SysPromptOutputFormat.extract_output_block(out)
-
+            output_analyzer = SysPromptOutputFormat(self._cfg)
+            out, _ = output_analyzer.extract_output_block(out)
+            out = self.SCORING_SECTION_PATTERN.sub("", out)
         return out.strip()
+
+
+    @staticmethod
+    def suppress_role(text: str, patterns: list[str]) -> str:
+        for pattern in patterns:
+            text = re.sub(pattern, "", text, flags=re.IGNORECASE | re.DOTALL)
+        return text
 
     @staticmethod
     def suppress_sentences(text: str, patterns: list[str]) -> str:
@@ -190,9 +218,7 @@ class ConfigurationPromptMinimizer:
 
         if cl_metadata:
             out = self.suppress_with_cl(out=out, cl_metadata=cl_metadata)
-
         out = self._clean_general_prompt(out)
-
         return out.strip()
 
     def _minimize_with_spacy(self, text: str) -> str:
@@ -380,12 +406,14 @@ class ConfigurationPromptMinimizer:
             Text with trimmed basic_rules
         """
         def replacer(match):
-            return """<basic_rules>
-            • Detect input language automatically
-            • Apply appropriate grammar and style
-            • Improve clarity and readability
-            • Output only the enhanced text
-            </basic_rules>"""
+            return (
+                "<basic_rules>"
+                "• Detect input language automatically "
+                "• Apply appropriate grammar and style "
+                "• Improve clarity and readability "
+                "• Output only the enhanced text"
+                "</basic_rules>"
+            )
 
         return re.sub(
             r"<basic_rules>.*?</basic_rules>",

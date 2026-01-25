@@ -1,5 +1,4 @@
 import pytest
-from unittest.mock import MagicMock, patch
 
 from clm_core.types import CLMOutput, FieldImportance, SDCompressionConfig
 
@@ -54,14 +53,18 @@ class TestCLMOutput:
         assert output.original == [{"id": "1"}, {"id": "2"}]
 
     def test_compression_ratio_positive(self):
+        # Token estimation: ~4 chars per token
         output = CLMOutput(
-            original="Hello world!",  # 12 chars
+            original="Hello world! This is a test.",  # 28 chars = ~7 tokens
             component="test",
-            compressed="Hlo",  # 3 chars
+            compressed="Hlo",  # 3 chars = ~1 token
             metadata={}
         )
-        # (1 - 3/12) * 100 = 75.0
-        assert output.compression_ratio == 75.0
+        # n_tokens = 28//4 = 7, c_tokens = 3//4 = 1 (min 1)
+        # (1 - 1/7) * 100 = 85.7
+        assert output.n_tokens == 7
+        assert output.c_tokens == 1
+        assert output.compression_ratio == 85.7
 
     def test_compression_ratio_zero(self):
         output = CLMOutput(
@@ -70,39 +73,32 @@ class TestCLMOutput:
             compressed="Hello",
             metadata={}
         )
+        # Both have same token count, so 0% compression
         assert output.compression_ratio == 0.0
 
-    def test_compression_ratio_negative(self):
+    def test_compression_ratio_negative_fallback(self):
+        # When compressed would be larger than original, validator falls back to original
         output = CLMOutput(
-            original="Hi",  # 2 chars
+            original="Hi",  # 2 chars = ~1 token (min 1)
             component="test",
-            compressed="Hello world",  # 11 chars
+            compressed="Hello world and more",  # 20 chars = ~5 tokens, but will be replaced
             metadata={}
         )
-        # (1 - 11/2) * 100 = -450.0
-        assert output.compression_ratio == -450.0
+        # Validator replaces compressed with original when c_tokens > n_tokens
+        assert output.n_tokens == 1
+        assert output.c_tokens == 1  # Now same as original
+        assert output.compressed == "Hi"  # Replaced with original
+        assert output.compression_ratio == 0.0  # No compression, not negative
 
-    def test_bind_returns_compressed_when_not_configuration_mode(self):
+    def test_n_tokens_and_c_tokens_computed(self):
         output = CLMOutput(
-            original="Some prompt",
+            original="This is a sample text for testing tokens",  # 41 chars
             component="test",
-            compressed="[COMPRESSED]",
-            metadata={"prompt_mode": "OTHER"}
-        )
-        nlp = MagicMock()
-        result = output.bind(nlp)
-        assert result == "[COMPRESSED]"
-
-    def test_bind_returns_compressed_when_no_prompt_mode(self):
-        output = CLMOutput(
-            original="Some prompt",
-            component="test",
-            compressed="[COMPRESSED]",
+            compressed="[TEST]",  # 6 chars
             metadata={}
         )
-        nlp = MagicMock()
-        result = output.bind(nlp)
-        assert result == "[COMPRESSED]"
+        assert output.n_tokens == 10  # 41 // 4
+        assert output.c_tokens == 1   # 6 // 4 = 1 (min 1)
 
 
 class TestSDCompressionConfig:
@@ -127,7 +123,7 @@ class TestSDCompressionConfig:
 
     def test_default_fields_order(self):
         config = SDCompressionConfig()
-        expected_order = ["id", "article_id", "product_id", "title", "name", "type"]
+        expected_order = ["id", "uuid", "priority", "article_id", "product_id", "title", "name", "type"]
         assert config.default_fields_order == expected_order
 
     def test_default_fields_importance_contains_expected_keys(self):

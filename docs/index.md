@@ -34,9 +34,9 @@ CLM is a patent-pending compression technology that reduces LLM token consumptio
 
 ### Three Core Compression Targets
 
-1. **Transcripts** - Customer service conversations, support calls, agent-customer interactions
-2. **Structured Data** - NBA catalogs, product configurations, business rules, metadata
-3. **System Prompts** - Agent instructions, role definitions, operational guidelines
+1. **Transcripts** - Customer service conversations, support calls, chat interactions
+2. **Structured Data** - Product catalogs, knowledge bases, business rules, configurations
+3. **System Prompts** - Task instructions, role definitions, operational guidelines
 
 **Key Benefits:**
 - 60-95% token reduction
@@ -98,7 +98,7 @@ By choosing English as your language, CLM automatically loads the `en_core_web_s
 
 ### 1. System Prompt Compression
 
-Perfect for compressing agent instructions, role definitions, and task specifications:
+Perfect for compressing task instructions, role definitions, and specifications:
 
 ```python
 encoder = CLMEncoder(cfg=config)
@@ -157,7 +157,7 @@ The compressed result preserves the semantic meaning while dramatically reducing
 
 ### 2. Structured Data Compression
 
-Compress NBA catalogs, knowledge bases, and structured datasets:
+Compress knowledge bases, product catalogs, and structured datasets:
 
 ```python
 kb_catalog = [
@@ -228,12 +228,12 @@ cfg = CLMConfig(lang="en")
 encoder = CLMEncoder(cfg=cfg)
 
 result = encoder.encode(
-    input_=transcript, 
+    input_=transcript,
     metadata={
-        'call_id': 'CX-0001', 
-        'agent': 'Raj', 
-        'duration': '9m', 
-        'channel': 'voice', 
+        'call_id': 'CALL-0001',
+        'representative': 'Raj',
+        'duration': '9m',
+        'channel': 'voice',
         'issue_type': 'Billing Dispute'
     }
 )
@@ -252,7 +252,7 @@ print(result.compressed)
 ```
 
 **What's Preserved:**
-- ✅ Agent's name (key information)
+- ✅ Representative's name (key information)
 - ✅ Customer contact details (key information)
 - ✅ Issue type and severity (important context)
 - ✅ Actions taken with attributes (TIMELINE, RESULT, REFERENCE)
@@ -288,9 +288,9 @@ Based on production testing with 5,000+ samples:
 
 | Target Type | Average Compression | Use Case |
 |-------------|-------------------|----------|
-| **System Prompts** | 75-90% | Agent instructions, role definitions |
+| **System Prompts** | 75-90% | Task instructions, role definitions |
 | **Transcripts** | 85-92% | Customer service calls |
-| **Structured Data** | 70-85% | NBA catalogs, configurations |
+| **Structured Data** | 40-85% | Catalogs, configurations |
 
 **Validation Accuracy:** 91.5%  
 **Test Pass Rate:** 88.2%  

@@ -1,20 +1,23 @@
 import re
+from typing import Optional
+
 from clm_core import CLMOutput
 from spacy.language import Language
 
 from clm_core.utils.parser_rules import BaseRules
 from clm_core.utils.vocabulary import BaseVocabulary
-from ._schemas import SysPromptConfig
+from . import ConfigurationPromptMinimizer
+from ._schemas import SysPromptConfig, ValidationLevel, PromptMode
 from .analyzers.attribute_parser import AttributeParser
 
 from clm_core.components.sys_prompt.base_encoder import BasePromptEncoder
 from clm_core.components.sys_prompt._schemas import PromptTemplate
-from clm_core.components.sys_prompt._prompt_template_validator import PromptTemplateValidator
+from clm_core.components.sys_prompt._prompt_template_validator import PromptTemplateValidator, BoundPromptValidator
 
 _ROLE_PATTERN = re.compile(
     r"(you are|your role is)\s+(?:an?|the)?\s*"
-    r"([a-zA-Z][a-zA-Z_ ]*?)"
-    r"(?=\s*(?:\.|,?\s*(?:Follow|Please|Your task|that follows|who follows))|\s*$)",
+    r"([a-zA-Z][a-zA-Z0-9_ &\-]+?)"
+    r"(?=\s*(?:</role>|\.|\s+for\s|,?\s*(?:Follow|Please|Your task|that follows|who follows))|\s*$)",
     re.IGNORECASE,
 )
 _PLACEHOLDER_PATTERN = re.compile(r"\{\{([^}]+)\}\}")
@@ -33,6 +36,53 @@ class ConfigurationPromptEncoder(BasePromptEncoder):
         self.attribute_parser = AttributeParser(
             nlp=nlp, config=config, vocab=vocab, rules=rules
         )
+        self._minimizer = ConfigurationPromptMinimizer(
+            nlp=nlp,
+            config=config
+        )
+
+    def bind(self, out: CLMOutput, **runtime_values: Optional[dict]) -> str:
+        """
+        compose CL + NL
+        Args:
+        out (CLMOutput)
+        runtime_values (dict)
+        ----------
+        runtime_values
+
+        Returns
+        -------
+
+        """
+        if out.metadata.get("prompt_mode") != "CONFIGURATION":
+            return out.compressed
+
+        template = PromptTemplate(
+            raw_template=out.original,
+            placeholders=out.metadata["placeholders"],
+            role=out.metadata.get("role"),
+            rules=out.metadata.get("rules", {}),
+            priority=out.metadata.get("priority"),
+            compressed=out.compressed,
+        )
+
+        bound_nl = template.bind(**runtime_values)
+
+        issues = BoundPromptValidator().validate(bound_nl)
+        errors = [i for i in issues if i.level == ValidationLevel.ERROR]
+        if errors:
+            raise RuntimeError(f"Bound prompt invalid: {errors}")
+
+        if out.metadata["prompt_mode"] == PromptMode.CONFIGURATION:
+            bound_nl = self._minimizer.minimize(bound_nl, cl_metadata=out.metadata)
+
+        result = f"{out.compressed}\n\n{bound_nl}"
+
+        original_text = out.original if isinstance(out.original, str) else str(out.original)
+        if len(result) > len(original_text):
+            out.metadata["description"] = "CL Tokens greater than NL token. Keeping NL input"
+            return original_text.format(**runtime_values)
+        return result
 
     def compress(self, prompt: str, verbose: bool = False) -> CLMOutput:
         template = self._build_template(prompt)

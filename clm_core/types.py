@@ -1,12 +1,8 @@
+import json
+import re
 from enum import Enum
-from typing import Optional
-from pydantic import BaseModel, Field, computed_field, ConfigDict, field_validator, field_serializer
-from spacy import Language
-
-from clm_core.components.sys_prompt import (
-    PromptTemplate, BoundPromptValidator, ValidationLevel, ConfigurationPromptMinimizer, PromptMode
-)
-
+from typing import Optional, Self
+from pydantic import BaseModel, Field, computed_field, ConfigDict, field_validator, field_serializer, model_validator
 
 type ORIGINAL_INPUT = str | dict | list
 
@@ -24,45 +20,52 @@ class CLMOutput(BaseModel):
         description="Metadata of the compressing input. It can include specific things from each component",
     )
 
+    @model_validator(mode='after')
+    def validate_compression_ratio(self) -> Self:
+        """If compression ratio is negative (expanded), use original instead."""
+        if self.c_tokens > self.n_tokens:
+            original = self.original
+            if isinstance(original, str):
+                self.compressed = original
+            else:
+                self.compressed = json.dumps(original, ensure_ascii=False)
+            self.metadata["description"] = "CL Tokens greater than NL token. Keeping NL input"
+        return self
+
+    @field_validator("compressed", mode='before')
+    @classmethod
+    def validate_compressed(cls, c: str) -> str:
+        """Normalize whitespace: collapse all whitespace (tabs, newlines, spaces) to single spaces."""
+        return re.sub(r'\s+', ' ', c).strip()
+
+    @staticmethod
+    def _estimate_tokens(data: str | dict | list) -> int:
+        """Estimate token count (~4 chars per token)."""
+        if isinstance(data, str):
+            text = data
+        else:
+            text = json.dumps(data, ensure_ascii=False)
+        return max(1, len(text) // 4)
+
+    @computed_field
+    @property
+    def n_tokens(self) -> int:
+        """Estimated input token count."""
+        return self._estimate_tokens(self.original)
+
+    @computed_field
+    @property
+    def c_tokens(self) -> int:
+        """Estimated compressed token count."""
+        return self._estimate_tokens(self.compressed)
+
     @computed_field
     @property
     def compression_ratio(self) -> float:
-        """Compression ratio of the input"""
-        return round((1 - len(self.compressed) / len(self.original)) * 100, 1)
-
-    def bind(self, nlp: Language, **runtime_values: Optional[dict]) -> str:
-        """
-        compose CL + NL
-        Parameters
-        ----------
-        runtime_values
-
-        Returns
-        -------
-
-        """
-        if self.metadata.get("prompt_mode") != "CONFIGURATION":
-            return self.compressed
-
-        template = PromptTemplate(
-            raw_template=self.original,
-            placeholders=self.metadata["placeholders"],
-            role=self.metadata.get("role"),
-            rules=self.metadata.get("rules", {}),
-            priority=self.metadata.get("priority"),
-            compressed=self.compressed,
-        )
-
-        bound_nl = template.bind(**runtime_values)
-
-        issues = BoundPromptValidator().validate(bound_nl)
-        errors = [i for i in issues if i.level == ValidationLevel.ERROR]
-        if errors:
-            raise RuntimeError(f"Bound prompt invalid: {errors}")
-
-        if self.metadata["prompt_mode"] == PromptMode.CONFIGURATION:
-            bound_nl = ConfigurationPromptMinimizer(nlp).minimize(bound_nl, cl_metadata=self.metadata)
-        return f"{self.compressed}\n\n{bound_nl}"
+        """Compression ratio based on token reduction."""
+        if self.n_tokens == 0:
+            return 0.0
+        return round((1 - self.c_tokens / self.n_tokens) * 100, 1)
 
 
 class FieldImportance(Enum):
@@ -108,9 +111,11 @@ class SDCompressionConfig(BaseModel):
     simple_fields: list[str] = Field(
         default_factory=lambda: [
             "id",
+            "uuid",
             "title",
             "name",
             "type",
+            "priority",
             "article_id",
             "product_id",
         ],
@@ -119,6 +124,8 @@ class SDCompressionConfig(BaseModel):
     default_fields_order: list[str] = Field(
         default_factory=lambda: [
             "id",
+            "uuid",
+            "priority",
             "article_id",
             "product_id",
             "title",
@@ -132,6 +139,7 @@ class SDCompressionConfig(BaseModel):
         frozen=True,
         default_factory=lambda: {
             "id": FieldImportance.CRITICAL,
+            "uuid": FieldImportance.CRITICAL,
             "external_id": FieldImportance.CRITICAL,
             "name": FieldImportance.HIGH,
             "title": FieldImportance.HIGH,

@@ -5,7 +5,96 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.2] - 2026-01-22
+## [0.0.3] - 2026-01-25
+
+### Added
+
+- `bind()` method on `CLMEncoder` for runtime placeholder binding in configuration prompts
+- `suppress_role()` static method in `ConfigurationPromptMinimizer` for flexible role block removal
+- `should_emit_out_json()` and `determine_text_output()` methods in `SysPromptOutputFormat` for improved output format detection
+- `PLAIN_TEXT_ONLY_PATTERNS` in `SysPromptOutputFormat` for detecting plain text output requirements
+- New default fields in `SDCompressionConfig`:
+  - `uuid` and `priority` added to `simple_fields`
+  - `uuid` and `priority` added to `default_fields_order`
+  - `uuid` added to `default_fields_importance` as CRITICAL
+- Test suite for `TranscriptEncoder` (`tests/components/test_transcript_encoder.py`)
+
+### Changed
+
+- Moved `bind()` method from `CLMOutput` to `ConfigurationPromptEncoder` - encoder now handles binding internally
+- `ConfigurationPromptMinimizer` constructor now requires `config: SysPromptConfig` parameter
+- `ROLE_BLOCK_PATTERN` in minimizer now supports multiple patterns including `<general_prompt>` blocks
+- `OutputSchema.fields` and `OutputSchema.attributes` are now `Optional` for flexibility
+- `OutputSchema.build_token()` now handles `TEXT` format type and `None` attributes gracefully
+- Role pattern in `ConfigurationPromptEncoder` now matches `</role>` closing tag
+- `SysPromptOutputFormat.compress()` returns `OutputSchema` with proper type hint
+
+### Fixed
+
+- Output format detection now correctly identifies plain text output requirements
+- JSON block extraction in `extract_output_block()` no longer resets `in_json_block` flag prematurely
+- `ConfigurationPromptMinimizer` now checks if `sentencizer` already exists before adding to spaCy pipeline
+- Added missing `REQ` enum values used in vocabulary: `EXPLAIN`, `COMPARE`, `REVIEW`, `ASSESS`, `MONITOR`, `PARSE`, `MATCH`, `SELECT`, `OPTIMIZE`, `CALCULATE`, `AGGREGATE`, `DETERMINE`, `ROUTE`, `CODE`, `DETECT`, `LIST`
+- Added `DETECTION` signal to `Signal` enum and `VOCAB_SIGNAL_MAP`
+- Fixed test imports in `test_transcript_encoder.py` (`EnglishVocabulary` → `ENVocabulary`, `EnglishRules` → `ENRules`)
+- Updated `test_types.py` tests for token-based compression ratio calculation and removed obsolete `bind` method tests
+- Role extraction pattern now supports `&`, `-`, and numeric characters in role names
+- Role suppression now removes "You are a..." sentences from NL when role is extracted (not just XML tags)
+- SCORING sections with numeric ranges are now always removed from NL when output_format is present
+- `<output_format>` XML tags are now properly removed by `extract_output_block()`
+- `CLMOutput` validator now correctly falls back to original when compression ratio is negative (compressed larger than original)
+- `CLMOutput.validate_compressed` normalizes all whitespace (tabs, newlines, multiple spaces) to single spaces
+- Fixed `_trim_basic_rules` to not include indented content in replacement string
+- `ConfigurationPromptEncoder.bind()` now returns original when combined CL+NL is larger than original
+
+## [0.0.3.3] - 2026-01-24
+
+### Added
+
+- `n_tokens` and `c_tokens` as computed properties on `CLMOutput` model
+  - Token estimation (~4 chars per token) now handled centrally in `CLMOutput._estimate_tokens()`
+  - Encoders no longer need to calculate tokens manually
+- Comprehensive test suite for `DSEncoder` (`tests/components/test_ds_encoder.py`) with 55 tests:
+  - `TestDSEncoderInit`: Initialization and configuration tests
+  - `TestDSEncoderDelimiterProperty`: Delimiter getter/setter tests
+  - `TestDSEncoderEstimateTokens`: Token estimation tests
+  - `TestDSEncoderEncode`: Main encode method tests
+  - `TestDSEncoderEncodeItem`: Item encoding tests
+  - `TestDSEncoderGetOrderedFields`: Field ordering tests
+  - `TestDSEncoderFormatItemToken`: Token formatting tests
+  - `TestDSEncoderFormatHeaderKeys`: Header formatting tests
+  - `TestDSEncoderFormatValue`: Value formatting tests
+  - `TestDSEncoderShouldIncludeField`: Field inclusion logic tests
+  - `TestDSEncoderDetectFieldImportance`: Field importance detection tests
+  - `TestDSEncoderIntegration`: End-to-end integration tests
+
+### Changed
+
+- `CLMOutput.compression_ratio` now calculated from token counts (`n_tokens`/`c_tokens`) instead of raw length
+- DS compression output format optimized for better compression:
+  - Removed unnecessary uppercasing of values
+  - Removed space-to-underscore replacement (keeps original text)
+  - Single-line format for items (no newlines between records)
+  - Simplified header format (removed `CATALOG_CATALOG:N` prefix)
+- Long text fields now truncated using `max_description_length` config (default: 200 chars)
+
+### Fixed
+
+- DS compression header/value alignment issue - header keys now match value order
+  - Extracted ordering logic into `_get_ordered_fields()` method
+  - Both `_format_header_keys()` and `_format_item_token()` use same ordering
+- `compression_ratio` returning incorrect values for structured data (was using `len()` on list/dict)
+- Syntax errors in `_minimizer.py` (incomplete function stubs)
+
+### Documentation
+
+- Updated `sd_encoder.md` with new compression format and `CLMOutput` fields
+- Removed domain-specific references (NBA, CX) from documentation - now uses generic terminology
+- Updated `docs/index.md` with generic use case descriptions
+- Updated `docs/sys_prompt/index.md` with generic terminology
+- Renamed script functions in `compress_structured_data.py` to be more generic
+
+## [0.0.3.2] - 2026-01-22
 
 ### Added
 
@@ -29,7 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - CI/CD workflow file formatting (trailing newline in `publish.yml`)
 
-## [0.3.1] - 2026-01-19
+## [0.0.3.1] - 2026-01-19
 
 ### Added
 
@@ -53,7 +142,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed regex-based fallback in minimizer (was unused code path)
 
-## [0.3.0] - 2026-01-19
+## [0.0.3] - 2026-01-19
 
 ### Added
 
@@ -106,7 +195,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed TARGET token formatting and enum output format generation
 - Improved attribute ordering in output schema: SCHEMA → KEYS → ENUMS → CONSTRAINTS → others
 
-## [0.1.0] - 2025-12-10
+## [0.0.2] - 2025-12-10
 
 ### Added
 
