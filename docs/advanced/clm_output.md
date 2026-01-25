@@ -20,13 +20,26 @@
 ## CLMOutput Structure
 
 ```python
-class CLMOutput:
+from pydantic import BaseModel, computed_field
+
+class CLMOutput(BaseModel):
     original: str | list | dict        # Original input
     component: str                     # Encoder name
-    compressed: str                    # Compressed output
+    compressed: str                    # Compressed output (whitespace normalized)
     metadata: dict                     # Encoder-specific metadata
-    compression_ratio: float           # Computed property (%)
+
+    # Computed properties
+    n_tokens: int                      # Estimated input token count
+    c_tokens: int                      # Estimated compressed token count
+    compression_ratio: float           # Token reduction percentage
 ```
+
+### Key Features
+
+- **Token-based metrics**: `n_tokens` and `c_tokens` estimate token counts (~4 chars/token)
+- **Whitespace normalization**: All whitespace in `compressed` is normalized to single spaces
+- **Automatic fallback**: If compression would increase size, original is used instead
+- **Pydantic model**: Full validation and serialization support
 
 ### Fields
 
@@ -88,10 +101,12 @@ elif result.component == "SD":
 
 **Purpose:** The compressed output in semantic token format
 
+**Whitespace Normalization:** All whitespace (tabs, newlines, multiple spaces) is automatically collapsed to single spaces and trimmed.
+
 **Format:** Depends on encoder type
-- **System Prompt:** Token hierarchy (REQ, TARGET, EXTRACT, etc.)
+- **System Prompt:** Token hierarchy (PROMPT_MODE, ROLE, OUT_JSON, etc.)
 - **Transcript:** Domain tokens (CALL, ISSUE, ACTION, etc.)
-- **Structured Data:** Header + row format
+- **Structured Data:** Header + row format `{fields}[values]`
 
 **Examples:**
 
@@ -112,9 +127,7 @@ compressed = """[CALL:SUPPORT:AGENT=Raj:DURATION=9m:CHANNEL=voice]
 
 **Structured Data:**
 ```python
-compressed = """[NBA_CATALOG:2]{NBA_ID,ACTION,PRIORITY}
-[NBA-001,OFFER_PREMIUM_UPGRADE,HIGH]
-[NBA-002,CROSS_SELL_CREDIT_CARD,MEDIUM]"""
+compressed = "{id,action,priority}[NBA-001,Offer Premium Upgrade,high][NBA-002,Cross-sell Credit Card,medium]"
 ```
 
 ---
@@ -169,25 +182,48 @@ compressed = """[NBA_CATALOG:2]{NBA_ID,ACTION,PRIORITY}
 
 ---
 
+#### `n_tokens` (int) - Computed Property
+
+**Purpose:** Estimated token count for the original input
+
+**Formula:** `max(1, len(original_text) // 4)`
+
+**Note:** Uses ~4 characters per token estimation
+
+---
+
+#### `c_tokens` (int) - Computed Property
+
+**Purpose:** Estimated token count for the compressed output
+
+**Formula:** `max(1, len(compressed) // 4)`
+
+---
+
 #### `compression_ratio` (float) - Computed Property
 
-**Purpose:** Automatic calculation of compression percentage
+**Purpose:** Automatic calculation of token reduction percentage
 
-**Formula:** `(1 - len(compressed) / len(original)) * 100`
+**Formula:** `(1 - c_tokens / n_tokens) * 100`
 
 **Returns:** Float rounded to 1 decimal place (e.g., 73.6%)
 
 **Interpretation:**
-- `70.7%` means the compressed version is 70.7% smaller than the original
+- `70.7%` means the compressed version uses 70.7% fewer tokens than the original
 - Higher percentage = better compression
-- Typical ranges: 60-95% depending on content and configuration
+- `0.0%` means no compression (or automatic fallback was triggered)
+- Typical ranges: 30-90% depending on content and configuration
 
 **Examples:**
 ```python
 result = encoder.encode(content)
 
+print(f"Input tokens: {result.n_tokens}")
+print(f"Output tokens: {result.c_tokens}")
 print(f"Compression: {result.compression_ratio}%")
-# Output: Compression: 73.6%
+# Output: Input tokens: 150
+#         Output tokens: 45
+#         Compression: 70.0%
 
 if result.compression_ratio >= 70:
     print("Excellent compression")
@@ -199,12 +235,33 @@ else:
 
 ---
 
+#### Automatic Fallback Behavior
+
+If the compressed output would be **larger** than the original (negative compression), the encoder automatically falls back to the original input:
+
+```python
+result = encoder.encode(short_content)
+
+# If compression would increase size:
+# - result.compressed == result.original (or JSON string of original)
+# - result.compression_ratio == 0.0
+# - result.metadata["description"] explains the fallback
+
+if result.metadata.get("description"):
+    print(f"Note: {result.metadata['description']}")
+    # Output: Note: CL Tokens greater than NL token. Keeping NL input
+```
+
+This ensures compression **never** increases token usage.
+
+---
+
 ## Complete Examples
 
 ### Example 1: System Prompt Encoding
 
 ```python
-from cllm import CLMEncoder, CLMConfig, SysPromptConfig
+from clm_core import CLMEncoder, CLMConfig, SysPromptConfig
 
 # Create encoder
 config = CLMConfig(
@@ -234,19 +291,19 @@ result = encoder.encode(system_prompt)
 print("Component:", result.component)
 # Output: Component: System Prompt
 
-print("Original length:", len(result.original))
-# Output: Original length: 285
+print("Input tokens:", result.n_tokens)
+# Output: Input tokens: 71
 
 print("Compressed:")
 print(result.compressed)
-# Output: [REQ:ANALYZE] [TARGET:TRANSCRIPT] 
-#         [EXTRACT:SENTIMENT,URGENCY,COMPLIANCE] [OUT:JSON]
+# Output: [PROMPT_MODE:CONFIGURATION][ROLE:CUSTOMER_SERVICE_QUALITY_ANALYST]
+#         [OUT_JSON:{sentiment,urgency,compliance}]
 
-print("Compressed length:", len(result.compressed))
-# Output: Compressed length: 83
+print("Output tokens:", result.c_tokens)
+# Output: Output tokens: 25
 
 print("Compression ratio:", result.compression_ratio, "%")
-# Output: Compression ratio: 70.9 %
+# Output: Compression ratio: 64.8 %
 
 print("Metadata:")
 print(result.metadata)
@@ -258,7 +315,7 @@ print(result.metadata)
 ### Example 2: Transcript Encoding
 
 ```python
-from cllm import CLMEncoder, CLMConfig
+from clm_core import CLMEncoder, CLMConfig
 
 # Create encoder
 config = CLMConfig(lang="en")
@@ -322,7 +379,7 @@ print(result.metadata)
 ### Example 3: Structured Data Encoding
 
 ```python
-from cllm import CLMEncoder, CLMConfig, SDCompressionConfig
+from clm_core import CLMEncoder, CLMConfig, SDCompressionConfig
 
 # Create encoder
 config = CLMConfig(
@@ -367,12 +424,14 @@ print("Original:", result.original)
 
 print("Compressed:")
 print(result.compressed)
-# Output: [NBA_CATALOG:2]{NBA_ID,ACTION,DESCRIPTION,CONDITIONS,PRIORITY,CHANNEL}
-#         [NBA-001,OFFER_PREMIUM_UPGRADE,RECOMMEND_PREMIUM_TIER,[TENURE>12M],HIGH,PHONE]
-#         [NBA-002,CROSS_SELL_CREDIT_CARD,OFFER_COBRANDED_CARD,[GOOD_CREDIT],MEDIUM,EMAIL]
+# Output: {id,action,description,priority,channel}[NBA-001,Offer Premium Upgrade,Recommend premium tier,high,phone][NBA-002,Cross-sell Credit Card,Offer co-branded card,medium,email]
 
+print("Input tokens:", result.n_tokens)
+print("Output tokens:", result.c_tokens)
 print("Compression ratio:", result.compression_ratio, "%")
-# Output: Compression ratio: 82.3 %
+# Output: Input tokens: 95
+#         Output tokens: 45
+#         Compression ratio: 52.6 %
 
 print("Metadata:")
 print(result.metadata)
@@ -457,14 +516,17 @@ results = []
 for content in content_batch:
     result = encoder.encode(content)
     results.append({
-        "original_length": len(result.original),
-        "compressed_length": len(result.compressed),
-        "ratio": result.compression_ratio
+        "n_tokens": result.n_tokens,
+        "c_tokens": result.c_tokens,
+        "ratio": result.compression_ratio,
+        "fallback": result.compression_ratio == 0.0
     })
 
 # Calculate average compression
 avg_ratio = sum(r["ratio"] for r in results) / len(results)
+fallback_count = sum(1 for r in results if r["fallback"])
 print(f"Average compression: {avg_ratio:.1f}%")
+print(f"Fallbacks triggered: {fallback_count}/{len(results)}")
 ```
 
 **Quality monitoring:**
@@ -472,13 +534,16 @@ print(f"Average compression: {avg_ratio:.1f}%")
 result = encoder.encode(content)
 
 # Alert on poor compression
-MIN_COMPRESSION = 60.0
+MIN_COMPRESSION = 40.0
 
 if result.compression_ratio < MIN_COMPRESSION:
     print(f"Alert: Compression ratio {result.compression_ratio}% below threshold {MIN_COMPRESSION}%")
     print(f"Content type: {result.component}")
-    print(f"Original: {len(result.original)} chars")
-    print(f"Compressed: {len(result.compressed)} chars")
+    print(f"Input tokens: {result.n_tokens}")
+    print(f"Output tokens: {result.c_tokens}")
+
+    if result.compression_ratio == 0.0:
+        print("Note: Fallback to original was triggered")
 ```
 
 ---
@@ -536,14 +601,16 @@ log_compression(result)
 ```python
 try:
     result = encoder.encode(content)
-    
+
     # Validate output
     if not result.compressed:
         raise ValueError("Compression failed - empty output")
-    
-    if result.compression_ratio < 0:
-        raise ValueError("Compression failed - output larger than input")
-    
+
+    # Check for fallback (compression ratio of 0 means original was used)
+    if result.compression_ratio == 0.0 and result.n_tokens > 10:
+        logging.warning(f"Compression fallback triggered for {result.component}")
+        logging.warning(f"Reason: {result.metadata.get('description', 'Unknown')}")
+
 except Exception as e:
     logging.error(f"Compression error: {e}")
     logging.error(f"Content type: {type(content)}")
@@ -680,7 +747,7 @@ save_compression_result(result, "compression_log.json")
 ### 4. Use Type Hints
 
 ```python
-from cllm import CLMOutput
+from clm_core import CLMOutput
 
 def process_compression(result: CLMOutput) -> dict:
     """Process compression result with type safety"""
@@ -700,27 +767,33 @@ processed = process_compression(result)  # Type-safe
 
 ## Troubleshooting
 
-### Issue: Negative Compression Ratio
+### Issue: Zero Compression Ratio
 
-**Symptom:** `compression_ratio` is negative (e.g., -15.0%)
+**Symptom:** `compression_ratio` is `0.0%`
 
-**Cause:** Compressed output is larger than original input
+**Cause:** Automatic fallback was triggered because compression would have increased size
 
-**Solution:**
+**Explanation:**
+As of v0.0.4, CLMOutput automatically falls back to the original input when compression would increase token count. This means you'll never see negative compression ratios.
+
+**Detection:**
 ```python
 result = encoder.encode(content)
 
-if result.compression_ratio < 0:
-    print("Warning: Compression increased size")
-    print(f"Original: {len(result.original)}")
-    print(f"Compressed: {len(result.compressed)}")
-    
-    # This may happen with very short inputs
-    # or inappropriate encoder choice
-    
-    # Use original instead
-    use_content = result.original if result.compression_ratio < 0 else result.compressed
+if result.compression_ratio == 0.0:
+    # Check if fallback was triggered
+    if result.metadata.get("description"):
+        print(f"Fallback triggered: {result.metadata['description']}")
+        # Output: Fallback triggered: CL Tokens greater than NL token. Keeping NL input
+
+    # The compressed field contains the original content
+    print(f"Using original: {result.compressed[:50]}...")
 ```
+
+**Common causes:**
+- Very short inputs where token overhead exceeds savings
+- Content that doesn't compress well (already optimized)
+- Inappropriate encoder for the content type
 
 ### Issue: Empty Compressed Output
 
@@ -752,7 +825,7 @@ if not result.compressed:
 **Solution:**
 ```python
 # Be explicit about encoder type
-from cllm import CLMEncoder, CLMConfig, SysPromptConfig
+from clm_core import CLMEncoder, CLMConfig, SysPromptConfig
 
 # For system prompts
 sys_config = CLMConfig(
