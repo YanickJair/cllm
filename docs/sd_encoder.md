@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Structured Data Encoder is designed to compress structured datasets like NBA (Next Best Action) catalogs, knowledge bases, product configurations, and business rules. Unlike transcript or system prompt compression, this encoder works with **tabular or nested structured data** in JSON/dictionary format.
+The Structured Data Encoder compresses structured datasets like knowledge bases, product catalogs, business rules, and configuration data. Unlike transcript or system prompt compression, this encoder works with **tabular or nested structured data** in JSON/dictionary format.
 
 **Key characteristics:**
 - Compresses arrays of structured objects
@@ -11,7 +11,7 @@ The Structured Data Encoder is designed to compress structured datasets like NBA
 - Maintains data integrity for downstream processing
 - Optimized for catalog and configuration data
 
-**Typical compression:** 70-85% token reduction
+**Typical compression:** 40-85% token reduction
 
 ---
 
@@ -23,19 +23,19 @@ Structured data compression targets:
 
 | Data Type | Examples | Compression |
 |-----------|----------|-------------|
-| **NBA Catalogs** | Next Best Action recommendations, offers, suggestions | 75-85% |
 | **Knowledge Bases** | Help articles, FAQs, documentation entries | 70-80% |
 | **Product Catalogs** | SKUs, configurations, specifications | 75-85% |
 | **Business Rules** | Validation rules, workflows, decision trees | 70-80% |
 | **Configuration Data** | System settings, feature flags, parameters | 80-90% |
+| **Recommendation Catalogs** | Offers, suggestions, actions | 75-85% |
 
 ### What Gets Preserved
 
-✅ **Critical fields:** IDs, names, titles, types  
-✅ **High-importance fields:** Categories, tags, descriptions  
-✅ **Relationships:** Parent-child, nested structures  
-✅ **Data types:** Strings, numbers, dates, arrays  
-✅ **Field order:** Configurable prioritization  
+✅ **Critical fields:** IDs, names, titles, types
+✅ **High-importance fields:** Categories, tags, descriptions
+✅ **Relationships:** Parent-child, nested structures
+✅ **Data types:** Strings, numbers, dates, arrays
+✅ **Field order:** Configurable prioritization
 
 ### What Gets Optimized
 
@@ -52,7 +52,8 @@ Structured data compression targets:
 ### Simple Example
 
 ```python
-from cllm import CLMEncoder, CLMConfig, SDCompressionConfig
+from clm_core import CLMEncoder, CLMConfig
+from clm_core.types import SDCompressionConfig
 
 # Knowledge Base articles
 kb_catalog = [
@@ -80,11 +81,10 @@ kb_catalog = [
 config = CLMConfig(
     lang="en",
     ds_config=SDCompressionConfig(
-        dataset_name="ARTICLE",
         auto_detect=True,
         required_fields=["article_id", "title"],
         field_importance={"tags": 0.8, "content": 0.9},
-        max_field_length=100
+        max_description_length=100
     )
 )
 
@@ -96,12 +96,10 @@ print(result.compressed)
 
 **Output:**
 ```text
-[KB_CATALOG:2]{ARTICLE_ID,TITLE,CONTENT,CATEGORY,TAGS,VIEWS,LAST_UPDATED}
-[KB-001,HOW_TO_RESET_PASSWORD,TO_RESET_YOUR_PASSWORD_GO_TO_THE_LOGIN_PAGE_AND_CLICK,ACCOUNT,[PASSWORD,SECURITY,ACCOUNT],1523,2024-10-15]
-[KB-002,UPDATE_EMAIL_ADDRESS,TO_UPDATE_YOUR_EMAIL_NAVIGATE_TO_SETTINGS,ACCOUNT,[EMAIL,SETTINGS],892,2024-10-12]
+{article_id,title,content,category,tags,views}[KB-001,How to Reset Password,To reset your password go to the login page and click...,Account,password+security+account,1523][KB-002,Update Email Address,To update your email navigate to settings...,Account,email+settings,892]
 ```
 
-**Compression:** ~78% token reduction
+**Compression:** ~50% token reduction
 
 ---
 
@@ -110,28 +108,22 @@ print(result.compressed)
 ### SDCompressionConfig Parameters
 
 ```python
-from cllm import SDCompressionConfig
+from clm_core.types import SDCompressionConfig
 
 config = SDCompressionConfig(
-    dataset_name="CATALOG",              # Dataset identifier
     auto_detect=True,                    # Auto-detect important fields
     required_fields=["id", "name"],      # Always include these
     excluded_fields=["metadata"],        # Never include these
     field_importance={"desc": 0.9},      # Custom importance scores
     importance_threshold=0.5,            # Include fields above this
-    max_field_length=200,                # Truncate long text
+    max_description_length=200,          # Truncate long text
     preserve_structure=True,             # Keep nested dicts/lists
-    simple_fields=["id", "title"],       # Fields to simplify
+    simple_fields=["id", "title"],       # Fields for simple formatting
     default_fields_order=["id", "name"]  # Field ordering priority
 )
 ```
 
 ### Core Parameters
-
-#### `dataset_name` (string)
-- **Purpose:** Identifies the type of data being compressed
-- **Examples:** `"ARTICLE"`, `"NBA"`, `"PRODUCT"`, `"RULE"`
-- **Impact:** Used in compressed output header: `[DATASET_NAME:COUNT]`
 
 #### `auto_detect` (boolean, default: `True`)
 - **Purpose:** Automatically detect and prioritize important fields
@@ -163,11 +155,11 @@ config = SDCompressionConfig(
 - **Example:** `0.7` = only include fields with importance ≥ 0.7
 - **Trade-off:** Higher threshold = more compression, less detail
 
-#### `max_field_length` (int, default: `200`)
+#### `max_description_length` (int, default: `200`)
 - **Purpose:** Maximum length for text fields (in characters)
-- **Impact:** Long descriptions are truncated
+- **Impact:** Long descriptions are truncated with `...`
 - **Recommendation:** Adjust based on field type (50-500)
-- **Note:** Only applies to string fields
+- **Note:** Only applies to non-simple string fields
 
 #### `preserve_structure` (boolean, default: `True`)
 - **Purpose:** Maintain nested dictionaries and lists
@@ -183,7 +175,7 @@ The encoder has built-in importance scores for common fields:
 
 | Field | Importance | Priority | Typical Use |
 |-------|------------|----------|-------------|
-| `id`, `external_id`, `status` | **CRITICAL** | Always included | Identifiers, state |
+| `id`, `uuid`, `external_id`, `status` | **CRITICAL** | Always included | Identifiers, state |
 | `name`, `title`, `type`, `category`, `tags`, `description`, `priority`, `severity`, `resolution`, `owner`, `channel` | **HIGH** | Usually included | Core attributes |
 | `subcategory`, `details`, `assignee`, `department`, `language` | **MEDIUM** | Often included | Secondary info |
 | `notes`, `source`, `metadata`, `created_at`, `updated_at`, `version` | **LOW** | Rarely included | Metadata |
@@ -191,8 +183,9 @@ The encoder has built-in importance scores for common fields:
 **Importance Scale:**
 - **CRITICAL**: 1.0 (always included unless explicitly excluded)
 - **HIGH**: 0.8 (included with default threshold)
-- **MEDIUM**: 0.6 (included with threshold ≤ 0.6)
-- **LOW**: 0.3 (excluded with default threshold)
+- **MEDIUM**: 0.5 (included with threshold ≤ 0.5)
+- **LOW**: 0.2 (excluded with default threshold)
+- **NEVER**: 0.0 (always excluded)
 
 You can override these with the `field_importance` parameter:
 
@@ -214,7 +207,6 @@ config = SDCompressionConfig(
 ```python
 # Balanced compression for help articles
 config = SDCompressionConfig(
-    dataset_name="ARTICLE",
     auto_detect=True,
     required_fields=["article_id", "title"],
     field_importance={
@@ -223,40 +215,20 @@ config = SDCompressionConfig(
         "views": 0.5         # Moderate importance
     },
     importance_threshold=0.5,
-    max_field_length=150
+    max_description_length=150
 )
 ```
 
-**Result:** Includes ID, title, content (truncated), category, tags, views  
-**Compression:** ~75%
+**Result:** Includes ID, title, content (truncated), category, tags, views
+**Compression:** ~50%
 
 ---
 
-### Example 2: NBA Catalog (Aggressive)
-
-```python
-# Maximum compression for large catalogs
-config = SDCompressionConfig(
-    dataset_name="NBA",
-    auto_detect=True,
-    required_fields=["nba_id", "action"],
-    excluded_fields=["created_at", "updated_at", "version"],
-    importance_threshold=0.7,  # Higher threshold
-    max_field_length=100
-)
-```
-
-**Result:** Only critical and high-importance fields  
-**Compression:** ~85%
-
----
-
-### Example 3: Product Catalog (Conservative)
+### Example 2: Product Catalog (Conservative)
 
 ```python
 # Preserve more detail for product specs
 config = SDCompressionConfig(
-    dataset_name="PRODUCT",
     auto_detect=True,
     required_fields=["sku", "name", "price"],
     field_importance={
@@ -265,22 +237,21 @@ config = SDCompressionConfig(
         "features": 0.8
     },
     importance_threshold=0.4,  # Lower threshold
-    max_field_length=300,      # Longer fields
+    max_description_length=300,      # Longer fields
     preserve_structure=True    # Keep nested specs
 )
 ```
 
-**Result:** Comprehensive product information preserved  
-**Compression:** ~70%
+**Result:** Comprehensive product information preserved
+**Compression:** ~45%
 
 ---
 
-### Example 4: Business Rules (Minimal)
+### Example 3: Business Rules (Minimal)
 
 ```python
 # Lightweight compression for rules
 config = SDCompressionConfig(
-    dataset_name="RULE",
     auto_detect=False,  # Explicit control
     required_fields=["rule_id", "condition", "action"],
     excluded_fields=["author", "created_at", "metadata"],
@@ -293,81 +264,19 @@ config = SDCompressionConfig(
 )
 ```
 
-**Result:** Only rule logic, no metadata  
-**Compression:** ~80%
+**Result:** Only rule logic, no metadata
+**Compression:** ~60%
 
 ---
 
 ## Complete Examples
 
-### Example 1: NBA Catalog
+### Example 1: Product Catalog
 
 ```python
-from cllm import CLMEncoder, CLMConfig, SDCompressionConfig
+from clm_core import CLMEncoder, CLMConfig
+from clm_core.types import SDCompressionConfig
 
-# Next Best Action recommendations
-nba_catalog = [
-    {
-        "nba_id": "NBA-001",
-        "action": "Offer Premium Upgrade",
-        "description": "Recommend premium tier to qualified customers",
-        "conditions": ["tenure > 12 months", "no recent complaints"],
-        "priority": "high",
-        "channel": "phone",
-        "script": "Based on your loyalty, we'd like to offer...",
-        "expected_value": 450,
-        "created_at": "2024-01-15",
-        "updated_at": "2024-10-20"
-    },
-    {
-        "nba_id": "NBA-002",
-        "action": "Cross-sell Credit Card",
-        "description": "Offer co-branded credit card to active users",
-        "conditions": ["good credit score", "active checking"],
-        "priority": "medium",
-        "channel": "email",
-        "script": "Earn rewards on every purchase...",
-        "expected_value": 300,
-        "created_at": "2024-02-10",
-        "updated_at": "2024-10-18"
-    }
-]
-
-config = CLMConfig(
-    lang="en",
-    ds_config=SDCompressionConfig(
-        dataset_name="NBA",
-        required_fields=["nba_id", "action"],
-        excluded_fields=["created_at", "updated_at"],
-        field_importance={
-            "conditions": 0.9,
-            "priority": 0.8,
-            "expected_value": 0.7,
-            "script": 0.6
-        },
-        importance_threshold=0.6,
-        max_field_length=100
-    )
-)
-
-encoder = CLMEncoder(cfg=config)
-result = encoder.encode(nba_catalog)
-```
-
-**Output:**
-```text
-[NBA_CATALOG:2]{NBA_ID,ACTION,DESCRIPTION,CONDITIONS,PRIORITY,CHANNEL,SCRIPT,EXPECTED_VALUE}
-[NBA-001,OFFER_PREMIUM_UPGRADE,RECOMMEND_PREMIUM_TIER_TO_QUALIFIED_CUSTOMERS,[TENURE>12M,NO_COMPLAINTS],HIGH,PHONE,BASED_ON_YOUR_LOYALTY_WE_OFFER,450]
-[NBA-002,CROSS_SELL_CREDIT_CARD,OFFER_COBRANDED_CARD_TO_ACTIVE_USERS,[GOOD_CREDIT,ACTIVE_CHECKING],MEDIUM,EMAIL,EARN_REWARDS_ON_EVERY_PURCHASE,300]
-```
-
-**Compression:** ~82%
-
----
-
-### Example 2: Product Configuration
-
-```python
 # Product specs with nested data
 products = [
     {
@@ -390,8 +299,8 @@ products = [
 config = CLMConfig(
     lang="en",
     ds_config=SDCompressionConfig(
-        dataset_name="PRODUCT",
         required_fields=["sku", "name", "price"],
+        excluded_fields=["warehouse"],
         field_importance={
             "specifications": 1.0,
             "features": 0.8,
@@ -399,25 +308,20 @@ config = CLMConfig(
             "category": 0.6
         },
         importance_threshold=0.5,
-        preserve_structure=True,  # Keep nested specs
-        max_field_length=200
+        preserve_structure=True,
+        max_description_length=200
     )
 )
 
+encoder = CLMEncoder(cfg=config)
 result = encoder.encode(products)
+print(result.compressed)
+print(f"Compression ratio: {result.compression_ratio}%")
 ```
-
-**Output:**
-```text
-[PRODUCT_CATALOG:1]{SKU,NAME,CATEGORY,PRICE,SPECIFICATIONS,FEATURES,STOCK}
-[LAPTOP-001,PROFESSIONAL_LAPTOP_15,ELECTRONICS,1299.99,{PROCESSOR:I7-12700H,RAM:16GB_DDR5,STORAGE:512GB_SSD,DISPLAY:15.6_FHD},[BACKLIT_KB,FINGERPRINT,THUNDERBOLT4],45]
-```
-
-**Compression:** ~75%
 
 ---
 
-### Example 3: Business Rules
+### Example 2: Business Rules
 
 ```python
 # Decision rules for automation
@@ -438,7 +342,6 @@ rules = [
 config = CLMConfig(
     lang="en",
     ds_config=SDCompressionConfig(
-        dataset_name="RULE",
         required_fields=["rule_id", "condition", "action"],
         excluded_fields=["created_by", "created_at"],
         field_importance={
@@ -453,14 +356,6 @@ config = CLMConfig(
 result = encoder.encode(rules)
 ```
 
-**Output:**
-```text
-[RULE_CATALOG:1]{RULE_ID,NAME,CONDITION,ACTION,PRIORITY,ACTIVE}
-[RULE-REFUND-001,AUTO_APPROVE_SMALL_REFUNDS,AMOUNT<50_AND_TENURE>6M,APPROVE_REFUND,HIGH,TRUE]
-```
-
-**Compression:** ~78%
-
 ---
 
 ## Output Format
@@ -470,32 +365,50 @@ result = encoder.encode(rules)
 Compressed structured data uses a header + rows format:
 
 ```
-[DATASET_NAME:COUNT]{FIELD1,FIELD2,FIELD3,...}
-[value1,value2,value3,...]
-[value1,value2,value3,...]
+{field1,field2,field3}[value1,value2,value3][value1,value2,value3]
 ```
 
 **Header:**
-- `DATASET_NAME`: From `dataset_name` config parameter
-- `COUNT`: Number of records
-- `{FIELDS}`: Comma-separated list of included fields
+- `{FIELDS}`: Comma-separated list of included fields in order
 
 **Rows:**
-- One row per record
+- One bracketed row per record
 - Fields in same order as header
-- Values compressed (uppercase, underscores, truncated)
+- Values preserved with minimal transformation
 
 ### Data Type Handling
 
 | Type | Original | Compressed |
 |------|----------|------------|
-| String | `"Hello World"` | `HELLO_WORLD` |
+| String | `"Hello World"` | `Hello World` |
 | Number | `1299.99` | `1299.99` |
-| Boolean | `true` | `TRUE` |
-| Array | `["a", "b", "c"]` | `[A,B,C]` |
-| Null | `null` | `NULL` |
+| Boolean | `true` | `True` |
+| Array | `["a", "b", "c"]` | `a+b+c` |
+| Null | `null` | (excluded) |
 | Date | `"2024-10-15"` | `2024-10-15` |
-| Nested | `{"key": "value"}` | `{KEY:VALUE}` |
+| Nested | `{"key": "value"}` | `value` |
+
+---
+
+## CLMOutput Fields
+
+The encoder returns a `CLMOutput` object with:
+
+| Field | Description |
+|-------|-------------|
+| `compressed` | The compressed string output |
+| `original` | The original input data |
+| `n_tokens` | Estimated input token count |
+| `c_tokens` | Estimated compressed token count |
+| `compression_ratio` | Percentage of token reduction |
+| `metadata` | Additional compression metadata |
+
+```python
+result = encoder.encode(data)
+print(f"Input tokens: {result.n_tokens}")
+print(f"Output tokens: {result.c_tokens}")
+print(f"Compression: {result.compression_ratio}%")
+```
 
 ---
 
@@ -508,7 +421,6 @@ Always specify critical identifiers:
 ```python
 config = SDCompressionConfig(
     required_fields=["id", "name"],  # Never compress these out
-    # ... other settings
 )
 ```
 
@@ -530,9 +442,9 @@ Adjust based on content type:
 
 ```python
 config = SDCompressionConfig(
-    max_field_length=50   # For short fields (titles, names)
-    max_field_length=200  # For descriptions
-    max_field_length=500  # For detailed content
+    max_description_length=50   # For short fields (titles, names)
+    max_description_length=200  # For descriptions
+    max_description_length=500  # For detailed content
 )
 ```
 
@@ -562,170 +474,10 @@ sample = catalog[:5]
 result = encoder.encode(sample)
 
 # Verify critical fields present
-assert "ID" in result.compressed
-assert "NAME" in result.compressed
+assert "ID" in result.compressed or "id" in result.compressed
 
 # Check compression ratio
-assert result.compression_ratio >= 0.70
-```
-
----
-
-## Use Cases
-
-### 1. NBA Optimization
-
-Compress large recommendation catalogs:
-
-```python
-# 1000+ NBA actions
-config = SDCompressionConfig(
-    dataset_name="NBA",
-    required_fields=["nba_id", "action"],
-    excluded_fields=["metadata", "timestamps"],
-    importance_threshold=0.7,
-    max_field_length=100
-)
-
-# Daily catalog updates
-nba_catalog = load_nba_catalog()
-compressed = encoder.encode(nba_catalog)
-
-# Send to LLM for recommendation
-llm.complete(
-    system=f"NBA Catalog: {compressed.compressed}",
-    user="Recommend action for customer..."
-)
-```
-
-**Benefit:** 85% token reduction on catalog context
-
----
-
-### 2. Knowledge Base Compression
-
-Optimize help article search:
-
-```python
-# Compress articles for semantic search
-config = SDCompressionConfig(
-    dataset_name="ARTICLE",
-    required_fields=["article_id", "title"],
-    field_importance={
-        "content": 0.9,
-        "tags": 0.8,
-        "category": 0.7
-    },
-    max_field_length=150
-)
-
-articles = get_kb_articles()
-compressed = encoder.encode(articles)
-
-# Faster retrieval with compressed context
-relevant_articles = search_compressed(query, compressed.compressed)
-```
-
-**Benefit:** 75% token reduction, faster search
-
----
-
-### 3. Product Catalog for Recommendations
-
-Compress product specs for LLM:
-
-```python
-# E-commerce product recommendations
-config = SDCompressionConfig(
-    dataset_name="PRODUCT",
-    required_fields=["sku", "name", "price"],
-    field_importance={
-        "specifications": 1.0,
-        "features": 0.8,
-        "stock": 0.6
-    },
-    preserve_structure=True
-)
-
-products = get_available_products()
-compressed = encoder.encode(products)
-
-# LLM-powered recommendations
-llm.complete(
-    system=f"Products: {compressed.compressed}",
-    user="Recommend laptop for programming under $1500"
-)
-```
-
-**Benefit:** Include more products in context window
-
----
-
-### 4. Configuration Management
-
-Compress system configurations:
-
-```python
-# System settings for AI assistant
-config = SDCompressionConfig(
-    dataset_name="CONFIG",
-    required_fields=["key", "value"],
-    excluded_fields=["description", "updated_at"],
-    importance_threshold=0.8
-)
-
-settings = get_system_config()
-compressed = encoder.encode(settings)
-
-# Provide to LLM for context
-llm.complete(
-    system=f"System Config: {compressed.compressed}",
-    user="What's the max file upload size?"
-)
-```
-
-**Benefit:** Compact system context
-
----
-
-## Performance Optimization
-
-### Batch Processing
-
-```python
-# Process large catalogs in chunks
-def compress_large_catalog(items, chunk_size=100):
-    compressed_chunks = []
-    
-    for i in range(0, len(items), chunk_size):
-        chunk = items[i:i + chunk_size]
-        result = encoder.encode(chunk)
-        compressed_chunks.append(result.compressed)
-    
-    return "\n".join(compressed_chunks)
-
-# Usage
-large_catalog = load_catalog()  # 10,000 items
-compressed = compress_large_catalog(large_catalog)
-```
-
-### Caching
-
-```python
-from functools import lru_cache
-import hashlib
-
-@lru_cache(maxsize=100)
-def get_compressed_catalog(catalog_hash: str):
-    """Cache compressed catalogs by content hash."""
-    catalog = load_catalog_by_hash(catalog_hash)
-    return encoder.encode(catalog).compressed
-
-# Usage
-catalog_hash = hashlib.md5(
-    str(catalog).encode()
-).hexdigest()
-compressed = get_compressed_catalog(catalog_hash)
+assert result.compression_ratio >= 30
 ```
 
 ---
@@ -738,7 +490,6 @@ compressed = get_compressed_catalog(catalog_hash)
 
 **Solution:**
 ```python
-# Add to required_fields
 config = SDCompressionConfig(
     required_fields=["id", "name", "missing_field"],
     # OR lower threshold
@@ -752,13 +503,10 @@ config = SDCompressionConfig(
 
 **Solution:**
 ```python
-# Increase threshold
 config = SDCompressionConfig(
     importance_threshold=0.7,  # Higher
-    # AND/OR exclude more fields
     excluded_fields=["notes", "metadata", "timestamps"],
-    # AND/OR reduce field length
-    max_field_length=100
+    max_description_length=100
 )
 ```
 
@@ -768,7 +516,6 @@ config = SDCompressionConfig(
 
 **Solution:**
 ```python
-# Ensure structure preservation
 config = SDCompressionConfig(
     preserve_structure=True  # Must be True for nested data
 )
@@ -779,6 +526,7 @@ config = SDCompressionConfig(
 ## Next Steps
 
 - **[Transcript Encoding](transcript_encoder.md)** - Compress conversations
+- **[System Prompt Encoding](sys_prompt/index.md)** - Compress instructions
 - **[Advanced: Token Hierarchy](advanced/clm_tokenization.md)** - Understanding semantic tokens
 - **[Advanced: CLM Dictionary](advanced/clm_vocabulary.md)** - Language vocabularies
 
@@ -788,7 +536,6 @@ config = SDCompressionConfig(
 
 Questions about structured data compression?
 
-- 📖 **Documentation**: [docs.cllm.io](https://yanickjair.github.io/cllm/)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/YanickJar/cllm/discussions)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/YanickJar/cllm/issues)
-- 📧 **Email**: support@cllm.io
+- 📖 **Documentation**: [docs.clm.io](https://yanickjair.github.io/clm/)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/YanickJair/clm/discussions)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/YanickJair/clm/issues)

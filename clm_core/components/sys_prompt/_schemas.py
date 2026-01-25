@@ -1,7 +1,7 @@
-import re
+import logging
 from enum import Enum
 from typing import Optional, Annotated, Any
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field
 
 from clm_core.components.sys_prompt.errors import TemplateBindingError
 
@@ -9,6 +9,9 @@ DEFAULT_DOMAIN_MAP = {
     "CALL": "SUPPORT",
     "TICKET": "SUPPORT",
 }
+
+_logger = logging.Logger(__name__)
+_logger.setLevel(logging.INFO)
 
 
 class PromptMode(str, Enum):
@@ -39,7 +42,7 @@ class PromptTemplate(BaseModel):
         extra = [k for k in values if k not in self.placeholders]
 
         if extra:
-            raise TemplateBindingError(
+            _logger.warning(
                 f"Extra values provided not used in template: {extra}"
             )
 
@@ -112,7 +115,7 @@ class Intent(BaseModel):
     """Represents a detected intent (REQ token)"""
 
     token: Annotated[
-        REQ, Field(..., description="Represents the user’s primary task objective")
+        REQ | str, Field(..., description="Represents the user’s primary task objective")
     ]
     specs: list[str] = Field(
         default_factory=lambda l: [],
@@ -250,10 +253,9 @@ class OutputField(BaseModel):
 
 class OutputSchema(BaseModel):
     """Extracted schema from NL or structured definition"""
-
     format_type: str = Field(..., description="Format type of the schema")
-    fields: list[OutputField] = Field(..., description="Fields of the schema")
-    attributes: dict[str, Any] = Field(..., description="Attributes of the schema")
+    fields: Optional[list[OutputField]] = Field(default=None, description="Fields of the schema")
+    attributes: Optional[dict[str, Any]] = Field(default=None, description="Attributes of the schema")
     raw_schema: Optional[dict | str] = Field(None, description="Raw schema")
     format_hint: Optional[str] = Field(None, description="Format hint")
 
@@ -267,6 +269,13 @@ class OutputSchema(BaseModel):
         - Other attributes (ENUMS, SPECS, KEYS, etc.) follow.
         - Order of attributes is stable: SCHEMA → KEYS → ENUMS → SPECS → others.
         """
+        if self.format_type == "TEXT":
+            return "[OUTPUT:TEXT]"
+
+        if self.attributes is None:
+            fmt = (self.format_hint or self.format_type or "STRUCTURED").upper()
+            return f"[OUT_{fmt}]"
+
         fmt = (self.format_hint or self.format_type or "STRUCTURED").upper()
         schema = self.attributes.get("schema", "")
         parts = [f"OUT_{fmt}", f"{schema}"]
@@ -287,27 +296,6 @@ class OutputSchema(BaseModel):
             parts.append(f"{k}={self.attributes[k]}")
 
         return "[" + ":".join(parts) + "]"
-
-
-class CompressionResult(BaseModel):
-    """Complete compression result"""
-
-    original: str = Field(..., description="Original prompt")
-    compressed: str = Field(..., description="Compressed prompt")
-    intents: list[Intent] = Field(..., description="Intents extracted from the prompt")
-    target: Target = Field(..., description="Target of the prompt")
-    extractions: Optional[ExtractionField] = Field(
-        ..., description="Extractions from the prompt"
-    )
-    contexts: list[Context] = Field(
-        ..., description="Contexts extracted from the prompt"
-    )
-    output_format: Optional[OutputSchema] = Field(
-        ..., description="Output format of the prompt"
-    )
-    compression_ratio: float = Field(..., description="Compression ratio of the prompt")
-    metadata: dict = Field(..., description="Metadata of the prompt")
-
 
 class DetectedField(BaseModel):
     name: str = Field(..., description="Name of the detected field")

@@ -33,10 +33,7 @@ class DSEncoder:
 
         Returns:
             Compressed catalog in format:
-            [NBA_CATALOG:
-             [NBA:id:title:KEY=VALUE:KEY=VALUE]
-             [NBA:id:title:KEY=VALUE:KEY=VALUE]
-            ]
+            {field1,field2,field3}[value1,value2,value3][value1,value2,value3]
         """
         if isinstance(catalog, dict):
             compressed_item = self._format_item_token(self.encode_item(catalog))
@@ -47,29 +44,23 @@ class DSEncoder:
                 metadata={
                     "original_length": len(catalog),
                     "compressed_length": len(compressed_item),
-                    "output_tokens": len(compressed_item.split()),
                 },
             )
 
-        count_catalogs = len(catalog)
         compressed_results = [
             self.encode_item(item) for item in catalog if isinstance(item, dict)
         ]
 
         if len(compressed_results) > 0:
-            compressed_keys = f"{self.delimiter}".join(
-                k.upper() for k in self._formated_keys(compressed_results[0])
-            )
+            compressed_keys = self._format_header_keys(compressed_results[0])
 
-            lines = [
-                f"[{self._catalog_name.upper()}_CATALOG:{count_catalogs}]{{{compressed_keys}}}"
-            ]
+            parts = [f"{{{compressed_keys}}}"]
 
             for compressed in compressed_results:
                 item_token = self._format_item_token(compressed)
-                lines.append(f" {item_token}")
+                parts.append(item_token)
 
-            compressed_item = "\n".join(lines)
+            compressed_item = "".join(parts)
             return CLMOutput(
                 component="ds_compression",
                 compressed=compressed_item,
@@ -77,7 +68,6 @@ class DSEncoder:
                 metadata={
                     "original_length": len(catalog),
                     "compressed_length": len(compressed_item),
-                    "output_tokens": len(compressed_item),
                 },
             )
         return CLMOutput(
@@ -103,6 +93,7 @@ class DSEncoder:
             compressed["id"] = item["id"]
 
         compressed_keys: list[str] = []
+
         for key, value in item.items():
             if self._should_include_field(key, value):
                 if isinstance(value, dict):
@@ -114,29 +105,23 @@ class DSEncoder:
                 compressed_keys.append(key)
         return compressed
 
-    def _format_item_token(self, compressed_item: dict[str, Any]) -> str:
+    def _get_ordered_fields(self, compressed_item: dict[str, Any]) -> list[tuple[str, Any]]:
         """
-        Format single item as [NBA:id:title:KEY=VALUE:KEY=VALUE]
-
-        Args:
-            compressed_item: Dict returned by encode_item()
+        Get fields ordered consistently: simple fields (sorted by default_fields_order) first,
+        then complex fields.
 
         Returns:
-            Token string like "[NBA:NBA-001:BILLING_ISSUE_RESOLUTION:CATEGORY=BILLING:PRIORITY=HIGH]"
+            List of (key, value) tuples in the correct order
         """
-        parts = []
-
         simple_fields = []
         complex_fields = []
 
         for key, value in compressed_item.items():
             key_lower = key.lower()
-            formatted_value = self._format_value(value)
-
             if key_lower in self._config.simple_fields:
-                simple_fields.append((key_lower, formatted_value))
+                simple_fields.append((key_lower, value))
             else:
-                complex_fields.append((key.upper(), formatted_value))
+                complex_fields.append((key_lower, value))
 
         simple_fields.sort(
             key=lambda x: self._config.default_fields_order.index(x[0])
@@ -144,41 +129,68 @@ class DSEncoder:
             else 999
         )
 
-        for _, value in simple_fields:
-            parts.append(value)
+        return simple_fields + complex_fields
 
-        for key, value in complex_fields:
-            if value and value != "":
-                parts.append(f"{value}")
+    def _format_item_token(self, compressed_item: dict[str, Any]) -> str:
+        """
+        Format single item as a bracketed token with delimiter-separated values.
+
+        Args:
+            compressed_item: Dict returned by encode_item()
+
+        Returns:
+            Token string like "[ID-001,Product Name,Category,199.99]"
+        """
+        ordered_fields = self._get_ordered_fields(compressed_item)
+        parts = []
+
+        for key, value in ordered_fields:
+            # Apply max length for non-simple fields (complex/description fields)
+            max_len = None
+            if key.lower() not in self._config.simple_fields:
+                max_len = self._config.max_description_length
+
+            formatted_value = self._format_value(value, max_length=max_len)
+            if formatted_value and formatted_value != "":
+                parts.append(formatted_value)
 
         return f"[{f'{self.delimiter}'.join(parts)}]"
 
-    @staticmethod
-    def _formated_keys(compressed_item: dict[str, Any]):
-        return compressed_item.keys()
-
-    @staticmethod
-    def _format_value(value: Any) -> str:
+    def _format_header_keys(self, compressed_item: dict[str, Any]) -> str:
         """
-        Format a value for token output
+        Format header keys in the same order as values are formatted.
+        """
+        ordered_fields = self._get_ordered_fields(compressed_item)
+        return self.delimiter.join(key for key, _ in ordered_fields)
+
+    def _format_value(self, value: Any, max_length: int | None = None) -> str:
+        """
+        Format a value for token output - minimal transformation for max compression.
 
         Args:
             value: Any value from compressed item
+            max_length: Optional maximum length for the formatted value
 
         Returns:
              Formatted string
         """
+        result: str
+
         if isinstance(value, list):
-            return "+".join([str(v).replace(" ", "_") for v in value])
+            result = "+".join([str(v) for v in value])
+        elif isinstance(value, dict):
+            result = "+".join([str(v) for v in value.values()])
+        elif isinstance(value, str):
+            # Only escape the delimiter to preserve structure
+            result = value.replace(self._delimiter, ";")
+        else:
+            result = str(value)
 
-        if isinstance(value, dict):
-            return "+".join([f"{v}" for k, v in value.items()])
+        # Truncate if max_length is specified
+        if max_length and len(result) > max_length:
+            result = result[:max_length] + "..."
 
-        if isinstance(value, str):
-            cleaned = value.replace(" ", "_").replace(":", "").replace("=", "")
-            return cleaned.upper()
-
-        return str(value)
+        return result
 
     def _should_include_field(self, key: str, value: Any) -> bool:
         """

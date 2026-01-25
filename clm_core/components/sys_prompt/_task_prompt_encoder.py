@@ -110,8 +110,6 @@ class TaskPromptEncoder(BasePromptEncoder):
                 "compressed_length": len(compressed),
                 "num_intents": 1 if intent.token else 0,
                 "num_targets": 1 if target else 0,
-                "input_tokens": len(prompt.split()),
-                "output_tokens": len(compressed.split()),
                 "verbs": verbs,
                 "intents": intent.model_dump(),
                 "target": target,

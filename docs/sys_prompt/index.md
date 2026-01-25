@@ -2,14 +2,14 @@
 
 ## Overview
 
-System Prompts (also called **System Instructions**) are processed by LLM models before they begin processing user input. They define the **agent's identity**, **task**, and **behavior** - essentially establishing who the AI should be and what it should do.
+System Prompts (also called **System Instructions**) are processed by LLM models before they begin processing user input. They define the **model's identity**, **task**, and **behavior** - essentially establishing who the AI should be and what it should do.
 
 **Key characteristics:**
 - Processed before every user interaction
 - Define model behavior and constraints
 - Often repeated thousands of times per day
 - Can be 500-5,000+ tokens
-- Critical for consistent agent performance
+- Critical for consistent model performance
 
 The more detailed a system prompt, the better the model understands and performs its intended task. However, detailed prompts are token-intensive and costly at scale.
 
@@ -32,7 +32,7 @@ Task prompts are **action-oriented instructions** that tell the model what to do
 
 **Example:**
 ```text
-You are a Betting Analysis agent. Analyze soccer matches and provide betting odds.
+You are a Betting Analysis system. Analyze soccer matches and provide betting odds.
 Return your analysis as: {"win": 0.45, "draw": 0.30, "lose": 0.25}
 ```
 
@@ -47,9 +47,9 @@ Return your analysis as: {"win": 0.45, "draw": 0.30, "lose": 0.25}
 
 ### Configuration Prompts
 
-Configuration prompts are **template-based instructions** that define an agent's persistent behavior and can be parameterized at runtime. They typically include:
+Configuration prompts are **template-based instructions** that define persistent behavior and can be parameterized at runtime. They typically include:
 
-- **Role**: The agent's identity and persona
+- **Role**: The assistant's identity and persona
 - **Rules**: Basic and custom behavioral rules
 - **Priority**: How to handle rule conflicts
 - **Placeholders**: Runtime variables (e.g., `{{user_name}}`, `{{context}}`)
@@ -83,10 +83,10 @@ Custom instructions are paramount. If there are conflicts, prioritize custom rul
 
 | Aspect | Task Prompt | Configuration Prompt |
 |--------|-------------|---------------------|
-| **Purpose** | Execute a specific task | Define persistent agent behavior |
+| **Purpose** | Execute a specific task | Define persistent model behavior |
 | **Structure** | Action + Target + Output | Role + Rules + Placeholders |
 | **Runtime** | Static per request | Parameterized with runtime values |
-| **Use Case** | Data extraction, analysis, generation | Chatbots, assistants, configurable agents |
+| **Use Case** | Data extraction, analysis, generation | Chatbots, assistants, configurable systems |
 | **Compression Focus** | Intent, extraction fields, output schema | Role, rules, meta-instructions |
 
 ---

@@ -35,6 +35,12 @@ class SysPromptEncoder:
             config=config
         )
 
+    def bind(self, out: CLMOutput, **kwargs: dict) -> str:
+        return self._configuration_prompt.bind(
+            out=out,
+            **kwargs
+        )
+
     @staticmethod
     def _detect_prompt_mode(text: str) -> PromptMode:
         """Detect which prompt we are dealing with.
@@ -82,3 +88,5 @@ class SysPromptEncoder:
             self.compress(prompt=prompt, verbose=verbose)
             for prompt in prompts
         ]
+
+

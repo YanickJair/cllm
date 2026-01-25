@@ -49,3 +49,10 @@ class CLMEncoder:
                 transcript=input_, verbose=verbose, metadata=metadata
             )
         return self._sys_prompt_encoder.compress(input_, verbose)
+
+    def bind(self, out: CLMOutput, **kwargs):
+        """Called during runtime to bind values for configuration prompt placeholders"""
+        return self._sys_prompt_encoder.bind(
+            out=out,
+            **kwargs
+        )
