@@ -28,11 +28,10 @@ class TranscriptEncoder(metaclass=SingletonMeta):
     """
     Encodes transcript analysis into compressed tokens
 
-    Philosophy: Extends CLLMTokenizer format: [CALL:metadata][ISSUE:details][ACTION:details][RESOLUTION:details]
+    Philosophy: Extends CLLMTokenizer format: [CALL:metadata][ISSUE:details][ACTION_CHAIN:action1→action2→...][RESOLUTION:details]
     """
 
     def __init__(self, nlp: Language, vocab: BaseVocabulary, rules: BaseRules):
-        self._nlp = nlp
         self._analyzer = TranscriptAnalyzer(nlp=nlp, vocab=vocab, rules=rules)
         self.analysis: TranscriptAnalysis | None = None
 
@@ -48,7 +47,7 @@ class TranscriptEncoder(metaclass=SingletonMeta):
         [ID:key=value:...]
         [CONTACT:key=value:...]
         [ISSUE:type:key=value:...]
-        [ACTION:type:key=value:...]
+        [ACTION_CHAIN:type1→type2→type3→...]
         [RESOLUTION:type:key=value:...]
         [SENTIMENT:start→end]
         """
@@ -84,11 +83,11 @@ class TranscriptEncoder(metaclass=SingletonMeta):
             if verbose:
                 print(f"Issue: {issue_token}")
 
-        for action in self.analysis.actions:
-            action_token = self._encode_action(action)
-            tokens.append(action_token)
+        if self.analysis.actions:
+            action_chain_token = self._encode_action_chain(self.analysis.actions)
+            tokens.append(action_chain_token)
             if verbose:
-                print(f"Action: {action_token}")
+                print(f"Action Chain: {action_chain_token}")
 
         resolution_token = self._encode_resolution(self.analysis.resolution)
         tokens.append(resolution_token)
@@ -101,7 +100,14 @@ class TranscriptEncoder(metaclass=SingletonMeta):
             print(f"Sentiment: {sentiment_token}")
 
         compressed = " ".join(tokens)
-        doc = self._nlp(transcript)
+
+        # Extract verbs and noun_chunks from already-processed turn docs (avoid re-processing)
+        verbs = []
+        noun_chunks = []
+        for turn in self.analysis.turns:
+            if turn.doc:
+                verbs.extend(token.lemma_ for token in turn.doc if token.pos_ == "VERB")
+                noun_chunks.extend(chunk.text for chunk in turn.doc.noun_chunks)
 
         return CLMOutput(
             compressed=compressed,
@@ -112,8 +118,8 @@ class TranscriptEncoder(metaclass=SingletonMeta):
                 "analysis": self.analysis.to_dict(),
                 "original_length": len(transcript),
                 "compressed_length": len(compressed),
-                "verbs": [token.lemma_ for token in doc if token.pos_ == "VERB"],
-                "noun_chunks": [chunk.text for chunk in doc.noun_chunks],
+                "verbs": verbs,
+                "noun_chunks": noun_chunks,
                 "language": "en",
                 "has_numbers": bool(re.search(r"\d", transcript)),
                 "has_urls": bool(re.search(r"https?://", transcript)),
@@ -287,6 +293,9 @@ class TranscriptEncoder(metaclass=SingletonMeta):
                     amounts = "+".join(turn.entities.get("money", []))
                     parts.append(f"AMOUNTS={amounts}")
 
+        if issue.cause:
+            parts.append(f"CAUSE={issue.cause}")
+
         if issue.severity:
             parts.append(f"SEVERITY={issue.severity}")
 
@@ -311,44 +320,16 @@ class TranscriptEncoder(metaclass=SingletonMeta):
         return f"[{':'.join(parts)}]"
 
     @staticmethod
-    def _encode_action(action: Action) -> str:
+    def _encode_action_chain(actions: list[Action]) -> str:
         """
-        Encode action with financial details
+        Encode actions as a chain joined by →
 
-        Format: [ACTION:TYPE:ATTR=VALUE:...]
-        Example: [ACTION:TROUBLESHOOT:RESULT=PENDING]
-        Example: [ACTION:REFUND:REFERENCE=RFD-908712:TIMELINE=3-5d:RESULT=COMPLETED]
-        Example: [ACTION:CREDIT:AMOUNT=$10:METHOD=ACCOUNT_CREDIT:RESULT=APPLIED]
+        Format: [ACTION_CHAIN:TYPE1→TYPE2→TYPE3→...]
+        Example: [ACTION_CHAIN:TROUBLESHOOTING_PERFORMED→ACCOUNT_VERIFIED→REFUND_PROCESSED]
         """
-        parts = ["ACTION", action.type]
-
-        if action.step:
-            parts.append(f"STEP={action.step}")
-
-        if (
-            action.attributes
-            and "reference" in action.attributes
-            and action.attributes["reference"]
-        ):
-            parts.append(f"REFERENCE={action.attributes['reference']}")
-
-        if (
-            action.attributes
-            and "timeline" in action.attributes
-            and action.attributes["timeline"]
-        ):
-            parts.append(f"TIMELINE={action.attributes['timeline']}")
-
-        if action.amount:
-            parts.append(f"AMOUNT={action.amount}")
-
-        if action.payment_method:
-            parts.append(f"METHOD={action.payment_method}")
-
-        if action.result:
-            parts.append(f"RESULT={action.result}")
-
-        return f"[{':'.join(parts)}]"
+        action_types = [action.type for action in actions]
+        chain = "→".join(action_types)
+        return f"[ACTION_CHAIN:{chain}]"
 
     @staticmethod
     def _encode_resolution(resolution: Resolution) -> str:

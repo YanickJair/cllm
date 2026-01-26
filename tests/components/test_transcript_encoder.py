@@ -51,7 +51,6 @@ class TestTranscriptEncoderInit:
     def test_initialization(self, nlp, vocab, rules):
         TranscriptEncoder._instances = {}
         encoder = TranscriptEncoder(nlp=nlp, vocab=vocab, rules=rules)
-        assert encoder._nlp is nlp
         assert encoder._analyzer is not None
         assert encoder.analysis is None
 
@@ -223,68 +222,37 @@ class TestEncodeIssue:
         assert "AMOUNTS=$14.99+$16.99" in result
 
 
-class TestEncodeAction:
-    def test_basic_action(self):
-        action = Action(type="TROUBLESHOOT")
-        result = TranscriptEncoder._encode_action(action)
-        assert result == "[ACTION:TROUBLESHOOT:RESULT=PENDING]"
+class TestEncodeActionChain:
+    def test_single_action(self):
+        actions = [Action(type="TROUBLESHOOT")]
+        result = TranscriptEncoder._encode_action_chain(actions)
+        assert result == "[ACTION_CHAIN:TROUBLESHOOT]"
 
-    def test_action_with_step(self):
-        action = Action(type="TROUBLESHOOT", step="RESTART_MODEM")
-        result = TranscriptEncoder._encode_action(action)
-        assert "STEP=RESTART_MODEM" in result
+    def test_multiple_actions(self):
+        actions = [
+            Action(type="TROUBLESHOOT"),
+            Action(type="ACCOUNT_VERIFIED"),
+            Action(type="REFUND_PROCESSED")
+        ]
+        result = TranscriptEncoder._encode_action_chain(actions)
+        assert result == "[ACTION_CHAIN:TROUBLESHOOT→ACCOUNT_VERIFIED→REFUND_PROCESSED]"
 
-    def test_action_with_reference(self):
-        action = Action(
-            type="REFUND",
-            attributes={"reference": "RFD-908712"}
-        )
-        result = TranscriptEncoder._encode_action(action)
-        assert "REFERENCE=RFD-908712" in result
+    def test_action_chain_preserves_order(self):
+        actions = [
+            Action(type="ACCOUNT_VERIFIED"),
+            Action(type="TROUBLESHOOT"),
+            Action(type="DOCUMENTATION_UPDATED")
+        ]
+        result = TranscriptEncoder._encode_action_chain(actions)
+        assert result == "[ACTION_CHAIN:ACCOUNT_VERIFIED→TROUBLESHOOT→DOCUMENTATION_UPDATED]"
 
-    def test_action_with_timeline(self):
-        action = Action(
-            type="REFUND",
-            attributes={"timeline": "3-5d"}
-        )
-        result = TranscriptEncoder._encode_action(action)
-        assert "TIMELINE=3-5d" in result
-
-    def test_action_with_amount(self):
-        action = Action(type="CREDIT", amount="$10")
-        result = TranscriptEncoder._encode_action(action)
-        assert "AMOUNT=$10" in result
-
-    def test_action_with_payment_method(self):
-        action = Action(type="CREDIT", payment_method="ACCOUNT_CREDIT")
-        result = TranscriptEncoder._encode_action(action)
-        assert "METHOD=ACCOUNT_CREDIT" in result
-
-    def test_action_with_result(self):
-        action = Action(type="REFUND", result="COMPLETED")
-        result = TranscriptEncoder._encode_action(action)
-        assert "RESULT=COMPLETED" in result
-
-    def test_action_full(self):
-        action = Action(
-            type="REFUND",
-            step="PROCESS",
-            result="COMPLETED",
-            amount="$50",
-            payment_method="ORIGINAL_PAYMENT",
-            attributes={
-                "reference": "REF-123",
-                "timeline": "24h"
-            }
-        )
-        result = TranscriptEncoder._encode_action(action)
-        assert "ACTION:REFUND" in result
-        assert "STEP=PROCESS" in result
-        assert "REFERENCE=REF-123" in result
-        assert "TIMELINE=24h" in result
-        assert "AMOUNT=$50" in result
-        assert "METHOD=ORIGINAL_PAYMENT" in result
-        assert "RESULT=COMPLETED" in result
+    def test_two_actions(self):
+        actions = [
+            Action(type="REFUND"),
+            Action(type="CREDIT")
+        ]
+        result = TranscriptEncoder._encode_action_chain(actions)
+        assert result == "[ACTION_CHAIN:REFUND→CREDIT]"
 
 
 class TestEncodeResolution:

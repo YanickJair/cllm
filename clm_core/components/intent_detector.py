@@ -32,9 +32,10 @@ class IntentDetector:
                 index[syn] = action
         return index
 
-    def detect(self, text: str, context: str = "") -> list[Intent]:
+    def detect(self, text: str, context: str = "", doc: Doc = None) -> list[Intent]:
         text_lower = text.lower().strip()
-        doc = self.nlp(text_lower)
+        if doc is None:
+            doc = self.nlp(text_lower)
 
         multi = self._detect_multiple_explicit(text_lower, doc)
         if multi:
