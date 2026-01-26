@@ -1,6 +1,167 @@
 """
 Pattern definitions and constants for target extraction
 """
+EXPLICIT_ACTION_PHRASES = {
+    "DOCUMENTATION_UPDATED": {
+        "i have documented",
+        "i've documented",
+        "i have added notes",
+        "i've added notes",
+        "i logged this",
+        "i have logged this",
+        "added to the ticket",
+        "updated the case notes",
+    },
+    "ACCOUNT_UPDATED": {
+        "i have updated your account",
+        "i've updated your account",
+        "your account has been updated",
+        "i changed your plan",
+        "i have changed your settings",
+    },
+}
+TECHNICAL_ISSUE_MAP = {
+    "OUTAGE": ["outage", "down", "offline", "multiple customers"],
+    "PACKET_LOSS": ["packet loss", "degraded line"],
+    "INTERMITTENT_CONNECTIVITY": ["keeps dropping", "intermittent"],
+}
+EXPLICIT_ONLY_ACTIONS = {
+    "DOCUMENTATION_UPDATED",
+    "ACCOUNT_UPDATED",
+    "REQUEST_APPROVED",
+}
+TROUBLESHOOTING_ACTIONS = {
+    "TROUBLESHOOTING_PERFORMED": {
+        "ran a test",
+        "reset",
+        "rebooted",
+        "cleared",
+        "flushed",
+        "performed",
+        "applied fix",
+    },
+    "DIAGNOSTIC_PERFORMED": {
+        "checked",
+        "looked at",
+        "can see",
+        "reviewed logs",
+        "i see",
+        "pulled up",
+        "ran diagnostics",
+        "line test",
+    },
+}
+
+ACTION_EVENT_MAP = {
+    "VERIFY": "ACCOUNT_VERIFIED",
+    "TROUBLESHOOT": "TROUBLESHOOT",
+    "ESCALATE": "ESCALATION_CREATED",
+    "REPLACE": "REPLACEMENT_ORDERED",
+    "SCHEDULE": "APPOINTMENT_SCHEDULED",
+    "UPDATE_INFO": "ACCOUNT_UPDATED",
+    "CANCEL": "SERVICE_CANCELLED",
+    "OFFER_DISCOUNT": "DISCOUNT_APPLIED",
+    "APPROVE": "REQUEST_APPROVED",
+    "DENY": "REQUEST_DENIED",
+    "NOTIFY": "CUSTOMER_NOTIFIED",
+    "DOCUMENT": "DOCUMENTATION_UPDATED",
+    "ACTIVATE_TRIAL": "TRIAL_ACTIVATED",
+}
+ISSUE_CONFIRMATION_MAP = {
+    "DUPLICATE_CHARGE_CONFIRMED": {
+        "duplicate",
+        "processed twice",
+        "double charged",
+        "two charges",
+    }
+}
+SUPPORTED_ACTION_TYPES = {
+    "REFUND",
+    "CREDIT",
+    "TROUBLESHOOT",
+    "ESCALATE",
+    "REPLACE",
+    "CHARGE",
+    "PAYMENT",
+}
+
+ACTION_COMPLETION_KEYWORDS = {
+    "submitted",
+    "processed",
+    "completed",
+    "filed",
+    "applied",
+    "issued",
+    "sent",
+    "done",
+}
+
+ACTION_COMPLETION_PHRASES = {
+    "just submitted",
+    "just processed",
+    "already submitted",
+    "already processed",
+}
+
+ACTION_NOW_PATTERNS = [
+    r"(i('|’)ve|i have) (just )?(submitted|processed|filed)\b",
+    r"i('?m| am) (processing|submitting|filing) (it|the|that)? (now)?\b",
+]
+
+POSITIVE_CUSTOMER_CONFIRMATIONS = {
+    "perfect",
+    "great",
+    "thank",
+    "got it",
+    "received",
+    "appreciate",
+}
+
+AGENT_CONFIRMATION_PHRASES = {
+    "all set",
+    "you're all set",
+    "that's done",
+    "completed",
+}
+
+RESOLUTION_KEYWORDS = {
+    "RESOLVED": {"resolved", "fixed", "solved", "approved", "payout"},
+    "ESCALATED": {"escalate", "supervisor", "transfer"},
+    "PENDING_REPLACEMENT": {"replace", "replacement", "exchange"},
+}
+
+BILLING_CAUSE_KEYWORDS = {
+    "DUPLICATE_PROCESSING": {"duplicate", "processed twice", "retried"},
+    "DOUBLE_BILLING": {"double billing"},
+    "PRORATION_CONFUSION": {"proration", "prorated"},
+    "SYSTEM_ERROR": {"error", "mistake"},
+    "MID_CYCLE_UPGRADE": {"upgrade"},
+    "MID_CYCLE_DOWNGRADE": {"downgrade"},
+    "BILLING_OVERLAP": {"overlap"},
+}
+
+ISSUE_TYPE_KEYWORDS = {
+    "BILLING_DISPUTE": {"bill", "charge", "refund"},
+    "CONNECTIVITY": {"internet", "connection", "wifi"},
+    "PERFORMANCE": {"slow", "speed"},
+}
+
+SEVERITY_KEYWORDS = {
+    "HIGH": {
+        "critical",
+        "urgent",
+        "emergency",
+        "not working at all",
+        "can't work",
+    },
+    "MEDIUM": {
+        "frustrated",
+        "annoying",
+        "need it for work",
+        "important",
+    },
+}
+
 
 TECHNICAL_CONCEPTS = [
     "data structures",

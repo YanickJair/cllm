@@ -1,5 +1,6 @@
 import re
 import spacy
+from spacy.tokens import Doc
 from clm_core.dictionary.en.patterns import NER_DOMAIN_PATTERNS
 
 
@@ -12,10 +13,14 @@ class EntityExtractor:
         _ruler (spacy.pipeline.EntityRuler): The entity ruler used for custom entity recognition.
     """
 
-    def __init__(self, model: str = "en_core_web_sm"):
-        self._nlp = spacy.load(model, disable=["parser", "textcat"])
-        if "sentencizer" not in self._nlp.pipe_names:
-            self._nlp.add_pipe("sentencizer")
+    def __init__(self, nlp: spacy.Language = None, model: str = "en_core_web_sm"):
+        # Reuse provided nlp instance or load a new one
+        if nlp is not None:
+            self._nlp = nlp
+        else:
+            self._nlp = spacy.load(model, disable=["parser", "textcat"])
+            if "sentencizer" not in self._nlp.pipe_names:
+                self._nlp.add_pipe("sentencizer")
 
         if "entity_ruler" not in self._nlp.pipe_names:
             self._ruler = self._nlp.add_pipe("entity_ruler", before="ner")
@@ -39,12 +44,13 @@ class EntityExtractor:
             "URL": r"https?://[^\s<>'\"{}|\\^`\[\]]+",
         }
 
-    def extract(self, text: str) -> dict:
+    def extract(self, text: str, doc: Doc = None) -> dict:
         """
         Extract named entities from the given text.
 
         Args:
             text (str): The text to extract entities from.
+            doc (spacy.tokens.Doc): Optional pre-processed spaCy doc to reuse.
 
         Returns:
             dict: A dictionary containing extracted entities.
@@ -54,7 +60,8 @@ class EntityExtractor:
             >>> named_entity_extractor.extract(text)
             {'persons': ['John Doe'], 'organizations': ['Google Inc.'], 'locations': [], 'dates': []}
         """
-        doc = self._nlp(text)
+        if doc is None:
+            doc = self._nlp(text)
 
         entities: dict[str, list] = {
             "persons": [],

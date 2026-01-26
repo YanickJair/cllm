@@ -1,3 +1,4 @@
+from spacy.tokens import Doc
 from clm_core.components.sys_prompt import Target
 
 from ._target.target_normalizer import TargetNormalizer
@@ -54,7 +55,7 @@ class TargetExtractor:
         self.normalizer = TargetNormalizer()
 
     def extract(
-        self, text: str, detected_req_tokens: list[str] | None = None
+        self, text: str, detected_req_tokens: list[str] | None = None, doc: Doc = None
     ) -> Target:
         """Main extraction pipeline
 
@@ -69,6 +70,7 @@ class TargetExtractor:
         Args:
             text (str): The input text to extract targets from.
             detected_req_tokens (list[str] | None): Optional list of detected requirement tokens.
+            doc (Doc): Optional pre-processed spaCy doc to reuse.
 
         Returns:
             list[Target]: A list of extracted targets.
@@ -81,7 +83,8 @@ class TargetExtractor:
             >>> targets
             [Target(text='laptop', attributes={'ram': '16GB', 'ssd': '512GB'})]
         """
-        doc = self.nlp(text)
+        if doc is None:
+            doc = self.nlp(text)
 
         target = self.imperative_extractor.extract(text, detected_req_tokens, doc)
         if target:

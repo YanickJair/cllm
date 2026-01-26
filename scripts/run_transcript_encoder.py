@@ -271,7 +271,7 @@ def show_comparison(transcript: str, metadata: dict):
     print("-" * 70)
     print(f"\nLength: {len(transcript)} characters")
 
-    cfg = CLMConfig(lang="en",)
+    cfg = CLMConfig(lang="en")
     encoder = CLMEncoder(cfg=cfg)
     new_result = encoder.encode(input_=transcript, metadata=metadata)
 
@@ -294,20 +294,16 @@ def show_comparison(transcript: str, metadata: dict):
         f"  Compressed:       {new_chars:>6} chars ({(1 - new_chars / original_chars) * 100:>5.1f}% compression)"
     )
 
-    # Token count estimate
-    original_tokens = len(transcript.split())
-    new_tokens = len(new_result.compressed)
-
     print("\nToken count (approximate):")
-    print(f"  Original:  {original_tokens:>6} tokens")
+    print(f"  Original:  {new_result.n_tokens:>6} tokens")
     print(
-        f"  Compressed:       {new_tokens:>6} tokens ({(1 - new_tokens / original_tokens) * 100:>5.1f}% compression)"
+        f"  Compressed:       {new_result.c_tokens:>6} tokens ({(1 - new_result.c_tokens / new_result.n_tokens) * 100:>5.1f}% compression)"
     )
 
-    print(f"🗜️  Compression Ratio: {(1 - new_chars / original_chars) * 100:.1f}%")
+    print(f"🗜️  Compression Ratio: {new_result.compression_ratio:.1f}%")
 
     print("\n✅ Ready for production use!")
-    return new_result.metadata.get("analysis"), new_result.compressed
+    return new_result.metadata.get("analysis"), new_result
 
 
 if __name__ == "__main__":
@@ -322,15 +318,12 @@ if __name__ == "__main__":
             analysis, new_result = show_comparison(
                 transcript.get("transcript"), metadata=transcript.get("metadata")
             )
-            print(transcript)
-            print(new_result)
             result.append(
                 {
                     **analysis,
-                    "compressed": new_result,
+                    "compressed": new_result.model_dump(),
                     "original": transcript.get("transcript"),
                 }
             )
-        break
     with open("transcript_analysis.json", "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False)

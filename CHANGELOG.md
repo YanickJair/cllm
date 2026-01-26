@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [0.0.9] - 2026-01-26
+
+### Changed
+                                                                                                                                
+- EntityExtractor (utils/named_entity.py):                                                                                    
+    - Now accepts an optional shared nlp instance instead of loading its own model                                               
+    - extract() accepts an optional pre-computed doc to avoid re-processing                                                      
+- IntentDetector (intent_detector.py):                                                                                        
+    - detect() now accepts an optional pre-computed doc parameter                                                                
+- TargetExtractor (target_extractor.py):                                                                                      
+    - extract() now accepts an optional pre-computed doc parameter                                                               
+- TranscriptAnalyzer (analyzer.py):                                                                                           
+    - Passes the shared nlp instance to EntityExtractor                                                                          
+    - Passes pre-computed docs from nlp.pipe() to all sub-components                                                             
+- TranscriptEncoder (encoder.py):                                                                                             
+    - Removed redundant nlp(transcript) call                                                                                     
+    - Extracts verbs/noun_chunks from already-processed turn docs 
+- Pre-built keyword indices at init time:                                                                                     
+    - _issue_type_index, _severity_index, _resolution_index, _billing_cause_index, _technical_issue_index,                       
+  _issue_confirmation_index, _troubleshooting_index, _action_tokens_index                                                        
+    - Indices are sorted by keyword length (descending) for greedy matching of multi-word phrases                                
+- Fast lookup methods:                                                                                                        
+    - _lookup_category() - returns first matching category                                                                       
+    - _lookup_all_categories() - returns all matching categories                                                                 
+- Updated methods to use indices:                                                                                             
+    - _get_issue_type() - now O(n) single pass instead of O(n*m)                                                                 
+    - _detect_severity() - now O(n) single pass                                                                                  
+    - _extract_resolution() - now O(n) single pass                                                                               
+    - _detect_billing_cause() - now O(n) single pass                                                                             
+    - _detect_technical_issue_detail() - now O(n) single pass                                                                    
+    - _detect_action_events() - optimized with pre-built indices                                                                 
+- Removed duplicate _detect_action_events method - there were two definitions, kept the more complete one
+
 ## [0.0.8] - 2026-01-26
 
 ### Added
