@@ -118,12 +118,8 @@ class CustomerProfile(BaseModel):
         default=None, description="churn risk: 'LOW', 'MEDIUM', 'HIGH'"
     )
     attributes: Optional[dict] = None
-    name: Optional[str] = Field(
-        default=None, description="Customer's name"
-    )
-    email: Optional[str] = Field(
-        default=None, description="Customer's email"
-    )
+    name: Optional[str] = Field(default=None, description="Customer's name")
+    email: Optional[str] = Field(default=None, description="Customer's email")
 
 
 class TranscriptAnalysis(BaseModel):

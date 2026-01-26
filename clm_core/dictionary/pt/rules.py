@@ -218,7 +218,10 @@ class PTRules(BaseRules):
     @property
     def QUESTION_PATTERNS(self) -> list[tuple[str, int]]:
         return [
-            (r"o que (?:é|são|significa) (?:o |a |os |as |um |uma )?([\w\s]+?)(?:\?|$)", 1),
+            (
+                r"o que (?:é|são|significa) (?:o |a |os |as |um |uma )?([\w\s]+?)(?:\?|$)",
+                1,
+            ),
             (r"como (?:funciona|funcionam|pode|podem) ([\w\s]+?)(?:\?|$)", 1),
             (r"por que (?:é|são|está|estão) ([\w\s]+?)(?:\?|$)", 1),
             (r"onde (?:está|estão|fica|ficam) ([\w\s]+?)(?:\?|$)", 1),
@@ -246,7 +249,10 @@ class PTRules(BaseRules):
 
     @property
     def PROCEDURE_PATTERN(self) -> tuple[str, int]:
-        return (r"como (?:posso|se pode|fazer para) ([\w\s]+?)(?:\s+em|\s+com|\.|\?|$)", 1)
+        return (
+            r"como (?:posso|se pode|fazer para) ([\w\s]+?)(?:\s+em|\s+com|\.|\?|$)",
+            1,
+        )
 
     @property
     def CLEANUP_TAIL(self) -> str:

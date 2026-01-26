@@ -11,6 +11,7 @@ from clm_core.types import CLMOutput
 
 COMPONENT = "SYSTEM_PROMPT"
 
+
 class SysPromptEncoder:
     def __init__(
         self,
@@ -24,23 +25,14 @@ class SysPromptEncoder:
         Initialize encode
         """
         self._task_prompt = TaskPromptEncoder(
-            nlp=nlp,
-            config=config,
-            rules=rules,
-            vocab=vocab
+            nlp=nlp, config=config, rules=rules, vocab=vocab
         )
         self._configuration_prompt = ConfigurationPromptEncoder(
-            nlp=nlp,
-            vocab=vocab,
-            rules=rules,
-            config=config
+            nlp=nlp, vocab=vocab, rules=rules, config=config
         )
 
     def bind(self, out: CLMOutput, **kwargs: dict) -> str:
-        return self._configuration_prompt.bind(
-            out=out,
-            **kwargs
-        )
+        return self._configuration_prompt.bind(out=out, **kwargs)
 
     @staticmethod
     def _detect_prompt_mode(text: str) -> PromptMode:
@@ -52,7 +44,7 @@ class SysPromptEncoder:
         if any(
             phrase in tl
             for phrase in (
-                 "you are an ai",
+                "you are an ai",
                 "your role",
                 "follow the rules",
                 "capabilities:",
@@ -85,9 +77,4 @@ class SysPromptEncoder:
         self, prompts: list[str], verbose: bool = False
     ) -> list[CLMOutput]:
         """Compress multiple prompts"""
-        return [
-            self.compress(prompt=prompt, verbose=verbose)
-            for prompt in prompts
-        ]
-
-
+        return [self.compress(prompt=prompt, verbose=verbose) for prompt in prompts]

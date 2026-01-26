@@ -4,13 +4,21 @@ from enum import Enum
 from typing import Optional, Self, Literal, Annotated, TypeAlias, Union
 
 import spacy
-from pydantic import BaseModel, Field, computed_field, ConfigDict, field_validator, field_serializer, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    computed_field,
+    ConfigDict,
+    field_validator,
+    field_serializer,
+    model_validator,
+)
 
 from clm_core.utils.parser_rules import BaseRules
 from clm_core.utils.vocabulary import BaseVocabulary
 from clm_core.dictionary import rules_map, vocab_map
 
-ORIGINAL_INPUT: TypeAlias = Union[str, dict, list]  
+ORIGINAL_INPUT: TypeAlias = Union[str, dict, list]
 LANG: TypeAlias = Literal["en", "fr", "es", "pt"]
 
 
@@ -27,7 +35,7 @@ class CLMOutput(BaseModel):
         description="Metadata of the compressing input. It can include specific things from each component",
     )
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_compression_ratio(self) -> Self:
         """If compression ratio is negative (expanded), use original instead."""
         if self.c_tokens > self.n_tokens:
@@ -36,14 +44,16 @@ class CLMOutput(BaseModel):
                 self.compressed = original
             else:
                 self.compressed = json.dumps(original, ensure_ascii=False)
-            self.metadata["description"] = "CL Tokens greater than NL token. Keeping NL input"
+            self.metadata["description"] = (
+                "CL Tokens greater than NL token. Keeping NL input"
+            )
         return self
 
-    @field_validator("compressed", mode='before')
+    @field_validator("compressed", mode="before")
     @classmethod
     def validate_compressed(cls, c: str) -> str:
         """Normalize whitespace: collapse all whitespace (tabs, newlines, spaces) to single spaces."""
-        return re.sub(r'\s+', ' ', c).strip()
+        return re.sub(r"\s+", " ", c).strip()
 
     @staticmethod
     def _estimate_tokens(data: str | dict | list) -> int:
@@ -99,7 +109,9 @@ class SDCompressionConfig(BaseModel):
     auto_detect: Optional[bool] = Field(
         default=True, description="Approach 2: Auto-detect rule"
     )
-    drop_non_required_fields: Optional[bool] = Field(default=True, description="Whether or not to drop no required fields")
+    drop_non_required_fields: Optional[bool] = Field(
+        default=True, description="Whether or not to drop no required fields"
+    )
     importance_threshold: Optional[float] = Field(
         default=0.5, description="Include fields above this threshold"
     )
@@ -196,7 +208,9 @@ class SDCompressionConfig(BaseModel):
 
     @field_serializer("default_fields_importance")
     @classmethod
-    def serialize_field_importance(cls, v: dict[str, FieldImportance]) -> dict[str, float]:
+    def serialize_field_importance(
+        cls, v: dict[str, FieldImportance]
+    ) -> dict[str, float]:
         return {key: importance.value for key, importance in v.items()}
 
     model_config = ConfigDict(use_enum_values=False)
@@ -208,7 +222,8 @@ class SysPromptConfig(BaseModel):
         default=False, description="Infer types for output fields"
     )
     use_structured_output_abstraction: Optional[bool] = Field(
-        default=True, description="If to compress output structure define with CL or keep it as-is"
+        default=True,
+        description="If to compress output structure define with CL or keep it as-is",
     )
     add_examples: Optional[bool] = Field(
         default=False,
@@ -217,8 +232,9 @@ class SysPromptConfig(BaseModel):
     add_attrs: Optional[bool] = Field(
         default=True,
         description="Add extra attributes from input prompt. "
-                    "This can be specifications found in prompt, enums/constraints values defined",
+        "This can be specifications found in prompt, enums/constraints values defined",
     )
+
 
 class CLMConfig(BaseModel):
     lang: Annotated[LANG, Field(default="en", description="Language of the model")]

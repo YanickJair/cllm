@@ -3,13 +3,16 @@ from clm_core.types import (
     SDCompressionConfig,
     SysPromptConfig,
     CLMConfig,
-    FieldImportance
+    FieldImportance,
 )
 from clm_core.components.sys_prompt import PromptMode, PromptTemplate
 from clm_core.components.ds_compression import SDEncoderV2, SDEncoder
 from clm_core.components.sys_prompt.encoder import SysPromptEncoder
 from clm_core.components.transcript.encoder import TranscriptEncoder
-from clm_core.components.transcript import TranscriptCompressionResult, TranscriptAnalysis
+from clm_core.components.transcript import (
+    TranscriptCompressionResult,
+    TranscriptAnalysis,
+)
 from clm_core.encoder import CLMEncoder
 
 from .__version__ import __description__, __title__, __version__

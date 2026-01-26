@@ -41,7 +41,6 @@ class SDEncoderV2:
             metadata={},
         )
 
-
     def _encode_object(self, obj: dict[str, Any]) -> str:
         normalized = self._normalize_object(obj)
 
@@ -62,7 +61,11 @@ class SDEncoderV2:
     def _encode_list(self, items: list[Any]) -> str:
         dict_items = [x for x in items if isinstance(x, dict)]
 
-        if dict_items and len(dict_items) == len(items) and self._same_schema(dict_items):
+        if (
+            dict_items
+            and len(dict_items) == len(items)
+            and self._same_schema(dict_items)
+        ):
             return self._encode_table(dict_items)
 
         parts = []
@@ -74,9 +77,7 @@ class SDEncoderV2:
         return "".join(parts)
 
     def _encode_table(self, rows: list[dict[str, Any]]) -> str:
-        normalized_rows = [
-            self._filter_fields(self._normalize_object(r)) for r in rows
-        ]
+        normalized_rows = [self._filter_fields(self._normalize_object(r)) for r in rows]
 
         header = self._format_header(normalized_rows[0])
         body = "".join(self._format_row(r) for r in normalized_rows)
@@ -118,12 +119,9 @@ class SDEncoderV2:
         for key, value in obj.items():
             value = self._normalize_value(value)
 
-            if (
-                value == []
-                and (
-                    not self._config.required_fields
-                    or key not in self._config.required_fields
-                )
+            if value == [] and (
+                not self._config.required_fields
+                or key not in self._config.required_fields
             ):
                 continue
 
@@ -156,7 +154,9 @@ class SDEncoderV2:
         return out
 
     @staticmethod
-    def _find_table_fields(obj: dict[str, Any]) -> list[tuple[str, list[dict[str, Any]]]]:
+    def _find_table_fields(
+        obj: dict[str, Any],
+    ) -> list[tuple[str, list[dict[str, Any]]]]:
         return [
             (k, v)
             for k, v in obj.items()
@@ -190,10 +190,7 @@ class SDEncoderV2:
 
     def _should_include_field(self, key: str, value: Any) -> bool:
         if self._config.drop_non_required_fields:
-            return (
-                self._config.required_fields
-                and key in self._config.required_fields
-            )
+            return self._config.required_fields and key in self._config.required_fields
 
         if self._config.excluded_fields and key in self._config.excluded_fields:
             return False
@@ -203,8 +200,7 @@ class SDEncoderV2:
 
         if self._config.field_importance and key in self._config.field_importance:
             return (
-                self._config.field_importance[key]
-                >= self._config.importance_threshold
+                self._config.field_importance[key] >= self._config.importance_threshold
             )
 
         if self._config.auto_detect:

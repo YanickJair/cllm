@@ -14,6 +14,7 @@ from clm_core.types import CLMOutput
 
 COMPONENT = "TASK_PROMPT"
 
+
 class TaskPromptEncoder(BasePromptEncoder):
     def __init__(
         self,

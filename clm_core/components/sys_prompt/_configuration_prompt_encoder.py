@@ -13,7 +13,10 @@ from .analyzers.attribute_parser import AttributeParser
 
 from clm_core.components.sys_prompt.base_encoder import BasePromptEncoder
 from clm_core.components.sys_prompt._schemas import PromptTemplate
-from clm_core.components.sys_prompt._prompt_template_validator import PromptTemplateValidator, BoundPromptValidator
+from clm_core.components.sys_prompt._prompt_template_validator import (
+    PromptTemplateValidator,
+    BoundPromptValidator,
+)
 
 _ROLE_PATTERN = re.compile(
     r"(you are|your role is)\s+(?:an?|the)?\s*"
@@ -37,10 +40,7 @@ class ConfigurationPromptEncoder(BasePromptEncoder):
         self.attribute_parser = AttributeParser(
             nlp=nlp, config=config, vocab=vocab, rules=rules
         )
-        self._minimizer = ConfigurationPromptMinimizer(
-            nlp=nlp,
-            config=config
-        )
+        self._minimizer = ConfigurationPromptMinimizer(nlp=nlp, config=config)
 
     def bind(self, out: CLMOutput, **runtime_values: Optional[dict]) -> str:
         """
@@ -79,9 +79,13 @@ class ConfigurationPromptEncoder(BasePromptEncoder):
 
         result = f"{out.compressed}\n\n{bound_nl}"
 
-        original_text = out.original if isinstance(out.original, str) else str(out.original)
+        original_text = (
+            out.original if isinstance(out.original, str) else str(out.original)
+        )
         if len(result) > len(original_text):
-            out.metadata["description"] = "CL Tokens greater than NL token. Keeping NL input"
+            out.metadata["description"] = (
+                "CL Tokens greater than NL token. Keeping NL input"
+            )
             return original_text.format(**runtime_values)
         return result
 
@@ -100,7 +104,7 @@ class ConfigurationPromptEncoder(BasePromptEncoder):
                 "priority": template.priority,
                 "placeholders": template.placeholders,
                 "output_format": template.output_format,
-                "validation": [issue.model_dump() for issue in validation_issues]
+                "validation": [issue.model_dump() for issue in validation_issues],
             },
         )
 
@@ -122,29 +126,27 @@ class ConfigurationPromptEncoder(BasePromptEncoder):
             role = m.group(2).strip().upper().replace(" ", "_")
 
         if re.search(
-                r"<basic_rules>|basic rules|core capabilities",
-                prompt,
-                re.IGNORECASE,
+            r"<basic_rules>|basic rules|core capabilities",
+            prompt,
+            re.IGNORECASE,
         ):
             rules["basic"] = True
 
         if re.search(
-                r"<custom_rules>|custom instructions",
-                prompt,
-                re.IGNORECASE,
+            r"<custom_rules>|custom instructions",
+            prompt,
+            re.IGNORECASE,
         ):
             rules["custom"] = True
 
         if re.search(
-                r"(custom instructions.*(override|prioritize)|custom.*paramount)",
-                prompt,
-                re.IGNORECASE,
+            r"(custom instructions.*(override|prioritize)|custom.*paramount)",
+            prompt,
+            re.IGNORECASE,
         ):
             priority = "CUSTOM_OVER_BASIC"
 
-        placeholders = sorted(
-            set(_PLACEHOLDER_PATTERN.findall(prompt))
-        )
+        placeholders = sorted(set(_PLACEHOLDER_PATTERN.findall(prompt)))
 
         parts = ["[PROMPT_MODE:CONFIGURATION]"]
         if role:
@@ -163,7 +165,9 @@ class ConfigurationPromptEncoder(BasePromptEncoder):
 
         output_format = None
         if self._config.use_structured_output_abstraction:
-            output_format = self.attribute_parser.parse_output_format(prompt).build_token()
+            output_format = self.attribute_parser.parse_output_format(
+                prompt
+            ).build_token()
             parts.append(output_format)
 
         return PromptTemplate(

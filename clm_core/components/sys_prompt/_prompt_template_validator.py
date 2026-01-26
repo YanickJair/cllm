@@ -1,5 +1,9 @@
 import re
-from clm_core.components.sys_prompt._schemas import ValidationIssue, ValidationLevel, PromptTemplate
+from clm_core.components.sys_prompt._schemas import (
+    ValidationIssue,
+    ValidationLevel,
+    PromptTemplate,
+)
 
 
 _PLACEHOLDER_PATTERN = re.compile(r"\{\{([^}]+)\}\}")
@@ -29,14 +33,14 @@ class PromptTemplateValidator:
                 issues.append(
                     ValidationIssue(
                         level=ValidationLevel.ERROR,
-                        message="Empty placeholder detected"
+                        message="Empty placeholder detected",
                     )
                 )
             elif not p.replace("_", "").isalnum():
                 issues.append(
                     ValidationIssue(
                         level=ValidationLevel.WARNING,
-                        message=f"Non-standard placeholder name: '{p}'"
+                        message=f"Non-standard placeholder name: '{p}'",
                     )
                 )
 
@@ -45,7 +49,7 @@ class PromptTemplateValidator:
             issues.append(
                 ValidationIssue(
                     level=ValidationLevel.ERROR,
-                    message="Duplicate placeholders detected"
+                    message="Duplicate placeholders detected",
                 )
             )
 
@@ -53,7 +57,7 @@ class PromptTemplateValidator:
             issues.append(
                 ValidationIssue(
                     level=ValidationLevel.WARNING,
-                    message="Priority defined but no rules detected"
+                    message="Priority defined but no rules detected",
                 )
             )
 
@@ -61,11 +65,12 @@ class PromptTemplateValidator:
             issues.append(
                 ValidationIssue(
                     level=ValidationLevel.WARNING,
-                    message="No role detected in configuration prompt"
+                    message="No role detected in configuration prompt",
                 )
             )
 
         return issues
+
 
 class BoundPromptValidator:
     @staticmethod
@@ -78,7 +83,7 @@ class BoundPromptValidator:
             issues.append(
                 ValidationIssue(
                     level=ValidationLevel.ERROR,
-                    message=f"Unresolved placeholders remain: {unresolved}"
+                    message=f"Unresolved placeholders remain: {unresolved}",
                 )
             )
 
@@ -86,8 +91,7 @@ class BoundPromptValidator:
         if not bound_prompt.strip():
             issues.append(
                 ValidationIssue(
-                    level=ValidationLevel.ERROR,
-                    message="Bound prompt is empty"
+                    level=ValidationLevel.ERROR, message="Bound prompt is empty"
                 )
             )
 

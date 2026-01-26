@@ -17,9 +17,13 @@ class ConfigurationPromptMinimizer:
 
     # Keywords that indicate a meta-instruction (about following rules)
     META_KEYWORDS = {
-        "paramount", "custom instructions", "adapt culturally",
-        "basic rules", "custom rules", "enhance naturally",
-        "preserve language"
+        "paramount",
+        "custom instructions",
+        "adapt culturally",
+        "basic rules",
+        "custom rules",
+        "enhance naturally",
+        "preserve language",
     }
     ROLE_BLOCK_PATTERN = [
         r"<general_prompt>.*?</general_prompt>",
@@ -27,14 +31,13 @@ class ConfigurationPromptMinimizer:
     ]
     # Pattern to match "You are a..." role sentences (for non-XML prompts)
     ROLE_SENTENCE_PATTERN = re.compile(
-        r"(?:^|\n)\s*(?:You are|Your role is)\s+(?:an?\s+)?[^.]+\.\s*",
-        re.IGNORECASE
+        r"(?:^|\n)\s*(?:You are|Your role is)\s+(?:an?\s+)?[^.]+\.\s*", re.IGNORECASE
     )
     # Pattern to match SCORING sections with ranges
     SCORING_SECTION_PATTERN = re.compile(
         r"(?:^|\n\n?)(?:SCORING|SCORE RANGES?|RATING):?\s*\n"
         r"(?:[\d.]+\s*[-–]\s*[\d.]+\s*[:=]?\s*[^\n]+\n?)+",
-        re.IGNORECASE | re.MULTILINE
+        re.IGNORECASE | re.MULTILINE,
     )
     PRIORITY_PATTERNS = [
         r"if there (is|are) (any )?conflicts.*?(prioritize|override).*",
@@ -75,14 +78,13 @@ class ConfigurationPromptMinimizer:
         (r"follow the basic rules", r"prioritize"),
         (r"if there are conflicts", r"prioritize"),
         (r"conflicts between", r"custom instructions"),
-
         # Redundant meta-instructions (standalone)
         (r"custom instructions are paramount", None),
     ]
 
     def __init__(
         self,
-            *,
+        *,
         nlp: Language,
         config: SysPromptConfig,
     ):
@@ -109,7 +111,6 @@ class ConfigurationPromptMinimizer:
             out = self.SCORING_SECTION_PATTERN.sub("", out)
         return out.strip()
 
-
     @staticmethod
     def suppress_role(text: str, patterns: list[str]) -> str:
         for pattern in patterns:
@@ -122,10 +123,7 @@ class ConfigurationPromptMinimizer:
         Remove sentences matching any of the given regex patterns.
         Operates ONLY on free text, never on blocks, lists, or schemas.
         """
-        compiled_patterns = [
-            re.compile(pat, re.IGNORECASE)
-            for pat in patterns
-        ]
+        compiled_patterns = [re.compile(pat, re.IGNORECASE) for pat in patterns]
 
         def should_drop(sentence: str) -> bool:
             sent = sentence.strip().lower()
@@ -133,7 +131,10 @@ class ConfigurationPromptMinimizer:
             if not sent:
                 return False
 
-            if any(k in sent for k in ("output", "return", "include", "format", "must", "shall")):
+            if any(
+                k in sent
+                for k in ("output", "return", "include", "format", "must", "shall")
+            ):
                 return False
 
             if sent.startswith(("-", "•")):
@@ -163,10 +164,7 @@ class ConfigurationPromptMinimizer:
 
             sentences = re.split(r"(?<=[.!?])\s+", paragraph)
 
-            kept = [
-                s for s in sentences
-                if not should_drop(s)
-            ]
+            kept = [s for s in sentences if not should_drop(s)]
 
             if kept:
                 output_lines.append(" ".join(kept))
@@ -277,21 +275,33 @@ class ConfigurationPromptMinimizer:
             if isinstance(pattern_tuple, tuple):
                 pattern1, pattern2 = pattern_tuple
                 if re.search(pattern1, sent_text_lower, re.IGNORECASE):
-                    if pattern2 is None or re.search(pattern2, sent_text_lower, re.IGNORECASE):
+                    if pattern2 is None or re.search(
+                        pattern2, sent_text_lower, re.IGNORECASE
+                    ):
                         return True
 
         if sent_text_lower.startswith("remember:"):
             return cls._is_meta_instruction(sent_text_lower)
 
-        has_priority = any(word in sent_text_lower for word in ["prioritize", "priority", "paramount"])
-        has_conflict = any(word in sent_text_lower for word in ["conflict", "conflicts"])
+        has_priority = any(
+            word in sent_text_lower for word in ["prioritize", "priority", "paramount"]
+        )
+        has_conflict = any(
+            word in sent_text_lower for word in ["conflict", "conflicts"]
+        )
         if has_priority and has_conflict:
             return True
 
-        if "follow" in sent_text_lower and "rule" in sent_text_lower and "custom" in sent_text_lower:
+        if (
+            "follow" in sent_text_lower
+            and "rule" in sent_text_lower
+            and "custom" in sent_text_lower
+        ):
             return True
 
-        if len(sent_text_lower) < 50 and cls._is_standalone_meta_fragment(sent_text_lower):
+        if len(sent_text_lower) < 50 and cls._is_standalone_meta_fragment(
+            sent_text_lower
+        ):
             return True
 
         return False
@@ -379,7 +389,7 @@ class ConfigurationPromptMinimizer:
             List of (block_type, content) tuples where block_type is 'xml' or 'text'
         """
         blocks = []
-        pattern = r'(<[^>]+>.*?</[^>]+>)'
+        pattern = r"(<[^>]+>.*?</[^>]+>)"
 
         parts = re.split(pattern, text, flags=re.DOTALL)
 
@@ -387,7 +397,7 @@ class ConfigurationPromptMinimizer:
             if not part.strip():
                 continue
 
-            if re.match(r'<[^>]+>.*?</[^>]+>', part, re.DOTALL):
+            if re.match(r"<[^>]+>.*?</[^>]+>", part, re.DOTALL):
                 blocks.append(("xml", part))
             else:
                 blocks.append(("text", part))
@@ -405,6 +415,7 @@ class ConfigurationPromptMinimizer:
         Returns:
             Text with trimmed basic_rules
         """
+
         def replacer(match):
             return (
                 "<basic_rules>"
@@ -433,6 +444,7 @@ class ConfigurationPromptMinimizer:
         Returns:
             Text with cleaned general_prompt
         """
+
         def replacer(match):
             content = match.group(1)
 

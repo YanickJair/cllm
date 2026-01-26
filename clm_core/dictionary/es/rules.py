@@ -217,7 +217,10 @@ class ESRules(BaseRules):
     @property
     def QUESTION_PATTERNS(self) -> list[tuple[str, int]]:
         return [
-            (r"qué (?:es|son|significa) (?:el |la |los |las |un |una )?([\w\s]+?)(?:\?|$)", 1),
+            (
+                r"qué (?:es|son|significa) (?:el |la |los |las |un |una )?([\w\s]+?)(?:\?|$)",
+                1,
+            ),
             (r"cómo (?:funciona|funcionan|puede|pueden) ([\w\s]+?)(?:\?|$)", 1),
             (r"por qué (?:es|son|está|están) ([\w\s]+?)(?:\?|$)", 1),
             (r"dónde (?:está|están|se encuentra) ([\w\s]+?)(?:\?|$)", 1),
@@ -245,7 +248,10 @@ class ESRules(BaseRules):
 
     @property
     def PROCEDURE_PATTERN(self) -> tuple[str, int]:
-        return (r"cómo (?:puedo|se puede|hago para) ([\w\s]+?)(?:\s+en|\s+con|\.|\?|$)", 1)
+        return (
+            r"cómo (?:puedo|se puede|hago para) ([\w\s]+?)(?:\s+en|\s+con|\.|\?|$)",
+            1,
+        )
 
     @property
     def CLEANUP_TAIL(self) -> str:

@@ -9,7 +9,7 @@ from ._schemas import (
     Artifact,
     PromptTemplate,
     ValidationLevel,
-    PromptMode
+    PromptMode,
 )
 
 __all__ = [
@@ -23,6 +23,5 @@ __all__ = [
     "BoundPromptValidator",
     "ValidationLevel",
     "ConfigurationPromptMinimizer",
-    "PromptMode"
+    "PromptMode",
 ]
-

@@ -104,14 +104,15 @@ class SDEncoder:
                 compressed[key] = self.encode_item(value)
             elif isinstance(value, list):
                 compressed[key] = [
-                    self.encode_item(v) if isinstance(v, dict) else v
-                    for v in value
+                    self.encode_item(v) if isinstance(v, dict) else v for v in value
                 ]
             else:
                 compressed[key] = value
         return compressed
 
-    def _get_ordered_fields(self, compressed_item: dict[str, Any]) -> list[tuple[str, Any]]:
+    def _get_ordered_fields(
+        self, compressed_item: dict[str, Any]
+    ) -> list[tuple[str, Any]]:
         """
         Get fields ordered consistently: simple fields (sorted by default_fields_order) first,
         then complex fields.
@@ -203,9 +204,7 @@ class SDEncoder:
         ordered = self._get_ordered_fields(obj)
 
         schema = self.delimiter.join(k for k, _ in ordered)
-        values = self.delimiter.join(
-            self._format_value(v) for _, v in ordered
-        )
+        values = self.delimiter.join(self._format_value(v) for _, v in ordered)
 
         return (
             f"{self.SCHEMA_OPEN}{schema}{self.SCHEMA_CLOSE}"

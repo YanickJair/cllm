@@ -644,7 +644,7 @@ class SysPromptOutputFormat:
     OUTPUT_SECTION_HEADERS = re.compile(
         r"^(output\s*format|expected\s*format|response\s*format|output\s*structure|"
         r"output\s*schema|json\s*format|json\s*schema|return\s*format)\s*:?\s*$",
-        re.IGNORECASE | re.MULTILINE
+        re.IGNORECASE | re.MULTILINE,
     )
     RULE_INTENT_PATTERNS = [
         r"the following rules.*",
@@ -675,10 +675,12 @@ class SysPromptOutputFormat:
 
     @staticmethod
     def should_emit_out_json(prompt: str) -> bool:
-        return any([
-            contains_json_block(prompt),
-            detect_format_from_text(prompt) == "STRUCTURED",
-        ])
+        return any(
+            [
+                contains_json_block(prompt),
+                detect_format_from_text(prompt) == "STRUCTURED",
+            ]
+        )
 
     @classmethod
     def determine_text_output(cls, prompt: str) -> str:
@@ -689,8 +691,7 @@ class SysPromptOutputFormat:
 
     # Pattern to match XML-style output format tags
     OUTPUT_XML_TAG_PATTERN = re.compile(
-        r"<output_format>\s*.*?\s*</output_format>",
-        re.IGNORECASE | re.DOTALL
+        r"<output_format>\s*.*?\s*</output_format>", re.IGNORECASE | re.DOTALL
     )
 
     @classmethod
@@ -707,7 +708,7 @@ class SysPromptOutputFormat:
         # First, try to find XML-style output_format tags
         xml_match = cls.OUTPUT_XML_TAG_PATTERN.search(text)
         if xml_match:
-            remaining = text[:xml_match.start()] + text[xml_match.end():]
+            remaining = text[: xml_match.start()] + text[xml_match.end() :]
             return remaining.strip(), xml_match.group(0)
 
         lines = text.split("\n")
@@ -749,14 +750,14 @@ class SysPromptOutputFormat:
         # Fallback: look for standalone JSON blocks that look like output schemas
         # Match code-fenced JSON
         code_fence_match = re.search(
-            r"```(?:json)?\s*(\{[\s\S]*?\})\s*```",
-            text,
-            flags=re.IGNORECASE
+            r"```(?:json)?\s*(\{[\s\S]*?\})\s*```", text, flags=re.IGNORECASE
         )
         if code_fence_match:
             try:
                 json.loads(code_fence_match.group(1))
-                remaining = text[:code_fence_match.start()] + text[code_fence_match.end():]
+                remaining = (
+                    text[: code_fence_match.start()] + text[code_fence_match.end() :]
+                )
                 return remaining.strip(), code_fence_match.group(0)
             except Exception:
                 pass
@@ -768,9 +769,10 @@ class SysPromptOutputFormat:
                 parsed = json.loads(brace_match.group(1))
                 # Only remove if it looks like a schema (has string placeholder values)
                 if isinstance(parsed, dict) and all(
-                    isinstance(v, (str, list, dict, int, float)) for v in parsed.values()
+                    isinstance(v, (str, list, dict, int, float))
+                    for v in parsed.values()
                 ):
-                    remaining = text[:brace_match.start()] + text[brace_match.end():]
+                    remaining = text[: brace_match.start()] + text[brace_match.end() :]
                     return remaining.strip(), brace_match.group(1)
             except Exception:
                 pass

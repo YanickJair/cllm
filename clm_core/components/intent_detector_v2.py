@@ -187,10 +187,10 @@ class IntentDetectorV2:
 
         return artifacts
 
-    def _resolve_req(self, text: str, signals: set[Signal], artifacts: set[Artifact]) -> REQ:
-        if (
-            Artifact.VALIDATION in artifacts or Signal.VALIDATION in signals
-        ):
+    def _resolve_req(
+        self, text: str, signals: set[Signal], artifacts: set[Artifact]
+    ) -> REQ:
+        if Artifact.VALIDATION in artifacts or Signal.VALIDATION in signals:
             return REQ.VALIDATE
 
         if Signal.EXTRACTION in signals and Artifact.PROBABILITY not in artifacts:

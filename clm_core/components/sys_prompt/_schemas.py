@@ -20,13 +20,21 @@ class PromptMode(str, Enum):
 
 
 class PromptTemplate(BaseModel):
-    raw_template: str = Field(..., description="Raw configuration template (placeholders intact)")
-    placeholders: list[str] = Field(..., description="Runtime placeholders (symbolic, unresolved)")
+    raw_template: str = Field(
+        ..., description="Raw configuration template (placeholders intact)"
+    )
+    placeholders: list[str] = Field(
+        ..., description="Runtime placeholders (symbolic, unresolved)"
+    )
     role: Optional[str] = Field(default=None, description="System Prompt Agent's role")
     rules: dict = Field(default_factory=lambda x: {}, description="Agent's rule(s)")
-    priority: Optional[str] = Field(default=None, description="Agent priority definition")
+    priority: Optional[str] = Field(
+        default=None, description="Agent priority definition"
+    )
     compressed: str = Field(..., description="Deterministic compressed representation")
-    output_format: Optional[str] = Field(default=None, description="Output defined in prompt after compressing")
+    output_format: Optional[str] = Field(
+        default=None, description="Output defined in prompt after compressing"
+    )
 
     def bind(self, **values: Any) -> str:
         """
@@ -35,21 +43,18 @@ class PromptTemplate(BaseModel):
         """
         missing = [p for p in self.placeholders if p not in values]
         if missing:
-            raise TemplateBindingError(
-                f"Missing values for placeholders: {missing}"
-            )
+            raise TemplateBindingError(f"Missing values for placeholders: {missing}")
 
         extra = [k for k in values if k not in self.placeholders]
 
         if extra:
-            _logger.warning(
-                f"Extra values provided not used in template: {extra}"
-            )
+            _logger.warning(f"Extra values provided not used in template: {extra}")
 
         bound = self.raw_template
         for key, val in values.items():
             bound = bound.replace(f"{{{{{key}}}}}", str(val))
         return bound
+
 
 class REQ(str, Enum):
     ANALYZE = "ANALYZE"
@@ -115,7 +120,8 @@ class Intent(BaseModel):
     """Represents a detected intent (REQ token)"""
 
     token: Annotated[
-        REQ | str, Field(..., description="Represents the user’s primary task objective")
+        REQ | str,
+        Field(..., description="Represents the user’s primary task objective"),
     ]
     specs: list[str] = Field(
         default_factory=lambda l: [],
@@ -253,9 +259,14 @@ class OutputField(BaseModel):
 
 class OutputSchema(BaseModel):
     """Extracted schema from NL or structured definition"""
+
     format_type: str = Field(..., description="Format type of the schema")
-    fields: Optional[list[OutputField]] = Field(default=None, description="Fields of the schema")
-    attributes: Optional[dict[str, Any]] = Field(default=None, description="Attributes of the schema")
+    fields: Optional[list[OutputField]] = Field(
+        default=None, description="Fields of the schema"
+    )
+    attributes: Optional[dict[str, Any]] = Field(
+        default=None, description="Attributes of the schema"
+    )
     raw_schema: Optional[dict | str] = Field(None, description="Raw schema")
     format_hint: Optional[str] = Field(None, description="Format hint")
 
@@ -297,11 +308,13 @@ class OutputSchema(BaseModel):
 
         return "[" + ":".join(parts) + "]"
 
+
 class DetectedField(BaseModel):
     name: str = Field(..., description="Name of the detected field")
     span: tuple[int, int] = Field(..., description="Span of the detected field")
     source: str = Field(..., description="Source of the detected field")
     confidence: float = Field(..., description="Confidence of the detected field")
+
 
 class ValidationLevel(str, Enum):
     ERROR = "ERROR"

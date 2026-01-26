@@ -218,7 +218,10 @@ class FRRules(BaseRules):
     @property
     def QUESTION_PATTERNS(self) -> list[tuple[str, int]]:
         return [
-            (r"qu(?:'est-ce que|el|elle) (?:est|sont) (?:le |la |les |un |une )?([\w\s]+?)(?:\?|$)", 1),
+            (
+                r"qu(?:'est-ce que|el|elle) (?:est|sont) (?:le |la |les |un |une )?([\w\s]+?)(?:\?|$)",
+                1,
+            ),
             (r"comment (?:fonctionne|fonctionnent|peut|peuvent) ([\w\s]+?)(?:\?|$)", 1),
             (r"pourquoi (?:est|sont|est-ce que) ([\w\s]+?)(?:\?|$)", 1),
             (r"où (?:est|sont|se trouve) ([\w\s]+?)(?:\?|$)", 1),
@@ -246,7 +249,10 @@ class FRRules(BaseRules):
 
     @property
     def PROCEDURE_PATTERN(self) -> tuple[str, int]:
-        return (r"comment (?:puis-je|peut-on|faire pour) ([\w\s]+?)(?:\s+en|\s+avec|\.|\?|$)", 1)
+        return (
+            r"comment (?:puis-je|peut-on|faire pour) ([\w\s]+?)(?:\s+en|\s+avec|\.|\?|$)",
+            1,
+        )
 
     @property
     def CLEANUP_TAIL(self) -> str:

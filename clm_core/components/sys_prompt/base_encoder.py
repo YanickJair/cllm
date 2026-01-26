@@ -9,5 +9,7 @@ class BasePromptEncoder(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def compress_batch(self, prompts: list[str], verbose: bool = False) -> list[CLMOutput]:
+    def compress_batch(
+        self, prompts: list[str], verbose: bool = False
+    ) -> list[CLMOutput]:
         raise NotImplementedError
