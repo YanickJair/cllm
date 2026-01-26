@@ -1,7 +1,7 @@
 import json
 import re
 from enum import Enum
-from typing import Optional, Self, Literal, Annotated
+from typing import Optional, Self, Literal, Annotated, TypeAlias, Union
 
 import spacy
 from pydantic import BaseModel, Field, computed_field, ConfigDict, field_validator, field_serializer, model_validator
@@ -10,8 +10,8 @@ from clm_core.utils.parser_rules import BaseRules
 from clm_core.utils.vocabulary import BaseVocabulary
 from clm_core.dictionary import rules_map, vocab_map
 
-type ORIGINAL_INPUT = str | dict | list
-type LANG = Literal["en", "fr", "es", "pt"]
+ORIGINAL_INPUT: TypeAlias = Union[str, dict, list]  
+LANG: TypeAlias = Literal["en", "fr", "es", "pt"]
 
 
 class CLMOutput(BaseModel):
