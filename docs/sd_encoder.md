@@ -1,15 +1,15 @@
-# Structured Data Encoder
+# Structured Data Encoder (SDEncoderV2)
 
 ## Overview
 
-The Structured Data Encoder compresses structured datasets like knowledge bases, product catalogs, business rules, and configuration data. Unlike transcript or system prompt compression, this encoder works with **tabular or nested structured data** in JSON/dictionary format.
+The Structured Data Encoder (`SDEncoderV2`) compresses structured datasets like knowledge bases, product catalogs, business rules, and configuration data. Unlike transcript or system prompt compression, this encoder works with **tabular or nested structured data** in JSON/dictionary format.
 
 **Key characteristics:**
-- Compresses arrays of structured objects
-- Preserves field relationships and hierarchy
-- Highly configurable field selection
+- Header-first, row-based format with explicit nested schema scoping
+- Nested schemas defined in header: `field:{nested,fields}`
+- Values contain only data, no repeated schemas
+- Highly configurable field selection with importance thresholds
 - Maintains data integrity for downstream processing
-- Optimized for catalog and configuration data
 
 **Typical compression:** 40-85% token reduction
 
@@ -114,6 +114,7 @@ from clm_core import SDCompressionConfig
 
 config = SDCompressionConfig(
     auto_detect=True,                    # Auto-detect important fields
+    drop_non_required_fields=True,       # Only keep required_fields (aggressive compression)
     required_fields=["id", "name"],      # Always include these
     excluded_fields=["metadata"],        # Never include these
     field_importance={"desc": 0.9},      # Custom importance scores (0.0-1.0)
@@ -127,6 +128,12 @@ config = SDCompressionConfig(
 ```
 
 ### Core Parameters
+
+#### `drop_non_required_fields` (boolean, default: `True`)
+- **Purpose:** When enabled, only fields in `required_fields` are included
+- **When `True`:** Aggressive compression - only required fields kept
+- **When `False`:** Uses importance thresholds and auto-detection
+- **Use case:** Maximum compression when you know exactly which fields you need
 
 #### `auto_detect` (boolean, default: `True`)
 - **Purpose:** Automatically detect and prioritize important fields
@@ -445,13 +452,22 @@ Compressed structured data uses different formats for single items vs. arrays:
 
 ### Nested Structure Handling
 
-Nested objects and arrays are supported with inline formatting:
+Nested schemas are defined in the header, values contain only data:
 
-| Structure | Original | Compressed |
-|-----------|----------|------------|
-| Nested object | `{"specs": {"cpu": "i7", "ram": "16GB"}}` | `{cpu,ram}[i7,16GB]` |
-| Array of objects | `[{"a": 1}, {"a": 2}]` | `{a}[1]\|{a}[2]` |
-| Simple array | `["tag1", "tag2", "tag3"]` | `tag1+tag2+tag3` |
+| Structure | Header | Values |
+|-----------|--------|--------|
+| Nested object | `specs:{cpu,ram}` | `[i7,16GB]` |
+| Array of objects | `items:{a,b}` | `[1,x][2,y]` |
+| Simple array | `tags` | `tag1+tag2+tag3` |
+
+**Example with nested actions:**
+
+```
+Input:  {"id": "1", "actions": [{"name": "A", "desc": "X"}, {"name": "B", "desc": "Y"}]}
+Output: {id,actions:{name,desc}}[1,[A,X][B,Y]]
+```
+
+The nested schema `{name,desc}` appears only once in the header as `actions:{name,desc}`, not repeated for each item.
 
 ### Example Output
 

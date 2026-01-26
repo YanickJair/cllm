@@ -316,9 +316,11 @@ class TestDSEncoderFormatValue:
 
         result = encoder._format_value({"key1": "val1", "key2": "val2"})
 
+        # Dict values are formatted as {schema}[values]
         assert "val1" in result
         assert "val2" in result
-        assert "+" in result
+        assert "{" in result and "}" in result
+        assert "[" in result and "]" in result
 
     def test_format_numeric_value(self):
         config = SDCompressionConfig()

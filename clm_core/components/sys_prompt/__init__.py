@@ -11,7 +11,6 @@ from ._schemas import (
     ValidationLevel,
     PromptMode
 )
-from .prompt_assembler import PromptAssembler
 
 __all__ = [
     "Intent",
@@ -21,7 +20,6 @@ __all__ = [
     "VOCAB_SIGNAL_MAP",
     "Signal",
     "PromptTemplate",
-    "PromptAssembler",
     "BoundPromptValidator",
     "ValidationLevel",
     "ConfigurationPromptMinimizer",

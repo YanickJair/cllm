@@ -319,44 +319,6 @@ and maintain a professional style throughout your responses.
 
 ---
 
-## Template Binding
-
-Configuration prompts support runtime placeholder binding via `PromptTemplate`:
-
-```python
-from clm_core.components.sys_prompt import PromptAssembler, PromptTemplate
-
-# Create template from compressed result
-template = PromptTemplate(
-    raw_template=original_prompt,
-    placeholders=["customer_name", "account_type", "tone"],
-    role="CUSTOMER_SUPPORT_AGENT",
-    rules={"basic": True, "custom": True},
-    priority="CUSTOM_OVER_BASIC",
-    compressed="[PROMPT_MODE:CONFIGURATION][ROLE:CUSTOMER_SUPPORT_AGENT]..."
-)
-
-# Bind runtime values
-assembler = PromptAssembler()
-final_prompt = assembler.assemble_system_prompt(
-    template=template,
-    runtime_values={
-        "customer_name": "John Smith",
-        "account_type": "Premium",
-        "tone": "friendly"
-    }
-)
-
-print(final_prompt)
-# [PROMPT_MODE:CONFIGURATION][ROLE:CUSTOMER_SUPPORT_AGENT]...
-#
-# <custom_rules>
-# - Always greet the customer by name: John Smith
-# - Reference their account type: Premium
-# - Use friendly tone throughout the conversation
-# </custom_rules>
-```
-
 ### Validation
 
 Templates are validated for common issues:

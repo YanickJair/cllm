@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.8] - 2026-01-26
+
+### Added
+
+- New `SDEncoderV2` class with improved nested schema handling
+  - Header-first, row-based format with explicit nested schema scoping: `key:{nested}`
+  - Nested schemas defined in header, values contain only data
+  - Example: `{id,actions:{name,desc}}[1,[A,X][B,Y]]` instead of repeating schema in values
+  - Config-driven with `drop_non_required_fields` option
+- `drop_non_required_fields` parameter in `SDCompressionConfig`
+
+### Changed
+
+- `SDEncoderV2` is now the default encoder for structured data compression
+- Improved compression ratio for nested objects and arrays of objects
+- GitHub Workflow updated (.github/workflows/publish.yml):                                                                       
+  - Added new test job that runs before build-and-publish                                                                        
+  - Installs dependencies including spaCy model                                                                                  
+  - Runs pytest tests/ -v --tb=short                                                                                             
+  - Build job now has needs: test - won't publish if tests fail
+
+### Documentation
+
+- Updated `sd_encoder.md` to document `SDEncoderV2` and new nested schema format
+- Updated examples to use new header-first format
+
 ## [0.0.7] - 2026-01-25
 
 ### Documentation

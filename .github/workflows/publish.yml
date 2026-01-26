@@ -10,9 +10,31 @@ on:
     types: [created]
 
 jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev]"
+          python -m spacy download en_core_web_sm
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+
   build-and-publish:
     name: Build and Publish Python Package
     runs-on: ubuntu-latest
+    needs: test
 
     environment:
       name: pypi
