@@ -6,6 +6,10 @@ from clm_core.types import (
     FieldImportance
 )
 from clm_core.components.sys_prompt import PromptMode, PromptTemplate
+from components.ds_compression import SDEncoderV2, SDEncoder
+from components.sys_prompt import TaskPromptEncoder, ConfigurationPromptEncoder
+from components.sys_prompt.encoder import SysPromptEncoder
+from components.transcript.encoder import TranscriptEncoder
 from .components.transcript import TranscriptCompressionResult, TranscriptAnalysis
 from .encoder import CLMEncoder
 
@@ -24,7 +28,13 @@ __all__ = [
     "PromptMode",
     "PromptTemplate",
     "TranscriptCompressionResult",
-    "TranscriptAnalysis"
+    "TranscriptAnalysis",
+    "SDEncoderV2",
+    "SDEncoder",
+    "TranscriptEncoder",
+    "SysPromptEncoder",
+    "ConfigurationPromptEncoder",
+    "TaskPromptEncoder"
 ]
 
 __locals = locals()

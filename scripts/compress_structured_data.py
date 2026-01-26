@@ -32,11 +32,14 @@ def catalog_compression():
     }
 
     config = CLMConfig(
-        ds_config=SDCompressionConfig()
+        ds_config=SDCompressionConfig(
+            max_description_length=100,
+            required_fields=["id", "title", "priority", "description"]
+        )
     )
 
     compressor = CLMEncoder(cfg=config)
-    return compressor.encode(data)
+    return compressor.encode(catalog)
 
 
 def example_kb_article_encoding():

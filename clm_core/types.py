@@ -99,6 +99,7 @@ class SDCompressionConfig(BaseModel):
     auto_detect: Optional[bool] = Field(
         default=True, description="Approach 2: Auto-detect rule"
     )
+    drop_non_required_fields: Optional[bool] = Field(default=True, description="Whether or not to drop no required fields")
     importance_threshold: Optional[float] = Field(
         default=0.5, description="Include fields above this threshold"
     )
