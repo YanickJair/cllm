@@ -24,7 +24,7 @@ def cfg(mocker: MockerFixture) -> CLMConfig:
     return config
 
 
-def test_encode_structured_data_routes_to_dsencoder(mocker: MockerFixture, cfg: CLMConfig):
+def test_encode_structured_data_routes_to_sdencoder(mocker: MockerFixture, cfg: CLMConfig):
     encoder = CLMEncoder(cfg=cfg)
 
     # Force classification to STRUCTURED_DATA
@@ -36,8 +36,8 @@ def test_encode_structured_data_routes_to_dsencoder(mocker: MockerFixture, cfg: 
         compressed="[ID:1]",
         metadata={}
     )
-    mocked_ds_encode = mocker.patch(
-        "clm_core.components.ds_compression.DSEncoder.encode",
+    mocked_ds_encode = mocker.patch.object(
+        encoder._ds_encoder, "encode",
         return_value=mocked_output
     )
 
