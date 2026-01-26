@@ -1,4 +1,3 @@
-from ._configuration_prompt_encoder import ConfigurationPromptEncoder
 from ._minimizer import ConfigurationPromptMinimizer
 from ._prompt_template_validator import BoundPromptValidator
 from ._schemas import (
@@ -12,7 +11,6 @@ from ._schemas import (
     ValidationLevel,
     PromptMode
 )
-from ._task_prompt_encoder import TaskPromptEncoder
 
 __all__ = [
     "Intent",
@@ -25,8 +23,6 @@ __all__ = [
     "BoundPromptValidator",
     "ValidationLevel",
     "ConfigurationPromptMinimizer",
-    "PromptMode",
-    "ConfigurationPromptEncoder",
-    "TaskPromptEncoder"
+    "PromptMode"
 ]
 

@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `SDEncoderV2` is now the default encoder for structured data compression
 - Improved compression ratio for nested objects and arrays of objects
+- GitHub Workflow updated (.github/workflows/publish.yml):                                                                       
+  - Added new test job that runs before build-and-publish                                                                        
+  - Installs dependencies including spaCy model                                                                                  
+  - Runs pytest tests/ -v --tb=short                                                                                             
+  - Build job now has needs: test - won't publish if tests fail
 
 ### Documentation
 
