@@ -48,7 +48,10 @@ class TestSDEncoderV2EncodeObject:
         assert "1" in result.compressed
 
     def test_encode_object_with_array_of_objects(self):
-        config = SDCompressionConfig(drop_non_required_fields=False)
+        config = SDCompressionConfig(
+            drop_non_required_fields=False,
+            auto_detect=False,
+        )
         encoder = SDEncoderV2(config=config)
 
         result = encoder.encode({
@@ -59,11 +62,7 @@ class TestSDEncoderV2EncodeObject:
             ]
         })
 
-        # Header should include actions field
-        assert "actions" in result.compressed
-        # Values should contain the action data
-        assert "A" in result.compressed
-        assert "B" in result.compressed
+        assert result.compressed == "{id,actions:{name,desc}}[1,[A,X][B,Y]]"
 
 
 class TestSDEncoderV2EncodeList:
@@ -102,6 +101,20 @@ class TestSDEncoderV2FormatHeader:
         assert "id" in header
         assert "name" in header
         assert "," in header
+
+    def test_format_header_nested_table(self):
+        config = SDCompressionConfig(drop_non_required_fields=False)
+        encoder = SDEncoderV2(config=config)
+
+        header = encoder._format_header({
+            "id": "1",
+            "actions": [
+                {"name": "A", "desc": "X"},
+                {"name": "B", "desc": "Y"}
+            ]
+        })
+
+        assert "actions:{name,desc}" in header
 
     def test_format_header_nested_object(self):
         config = SDCompressionConfig(drop_non_required_fields=False)
@@ -192,6 +205,33 @@ class TestSDEncoderV2FormatValue:
 
         assert result == "42"
 
+    def test_format_value_nested_table(self):
+        config = SDCompressionConfig()
+        encoder = SDEncoderV2(config=config)
+
+        result = encoder._format_value([
+            {"name": "A", "desc": "X"},
+            {"name": "B", "desc": "Y"}
+        ])
+
+        assert result == "[A,X][B,Y]"
+
+    def test_format_single_field_dict_skips_brackets(self):
+        config = SDCompressionConfig()
+        encoder = SDEncoderV2(config=config)
+
+        result = encoder._format_value({"task": "Our favorite hikes"})
+
+        assert result == "Our favorite hikes"
+
+    def test_format_multi_field_dict_keeps_brackets(self):
+        config = SDCompressionConfig()
+        encoder = SDEncoderV2(config=config)
+
+        result = encoder._format_value({"a": "1", "b": "2"})
+
+        assert result == "[1,2]"
+
     def test_format_dict_value(self):
         config = SDCompressionConfig()
         encoder = SDEncoderV2(config=config)
@@ -238,7 +278,7 @@ class TestSDEncoderV2FilterFields:
         )
         encoder = SDEncoderV2(config=config)
 
-        result = encoder._filter_fields({"id": "1", "name": "Test", "extra": "data"})
+        result = encoder._filter_fields({"id": "1", "name": "Test", "extra": "data"}, path="")
 
         assert "id" in result
         assert "name" not in result
@@ -251,10 +291,38 @@ class TestSDEncoderV2FilterFields:
         )
         encoder = SDEncoderV2(config=config)
 
-        result = encoder._filter_fields({"id": "1", "secret": "password"})
+        result = encoder._filter_fields({"id": "1", "secret": "password"}, path="")
 
         assert "id" in result
         assert "secret" not in result
+
+    def test_filter_fields_nested_table(self):
+        config = SDCompressionConfig(
+            drop_non_required_fields=True,
+            required_fields=["id", "actions", "actions.name"],
+            preserve_structure=True,
+        )
+        encoder = SDEncoderV2(config=config)
+
+        result = encoder._filter_fields(
+            {
+                "id": "1",
+                "actions": [
+                    {"name": "A", "desc": "X"},
+                    {"name": "B", "desc": "Y"}
+                ],
+                "extra": "data",
+            },
+            path="",
+        )
+
+        assert "id" in result
+        assert "actions" in result
+        assert "extra" not in result
+        # Each nested item should only have "name" (desc filtered out)
+        for item in result["actions"]:
+            assert "name" in item
+            assert "desc" not in item
 
     def test_required_fields_always_included(self):
         config = SDCompressionConfig(
@@ -264,7 +332,7 @@ class TestSDEncoderV2FilterFields:
         )
         encoder = SDEncoderV2(config=config)
 
-        result = encoder._filter_fields({"id": "1", "name": "Test"})
+        result = encoder._filter_fields({"id": "1", "name": "Test"}, path="")
 
         assert "id" in result
         assert "name" in result
@@ -351,6 +419,28 @@ class TestSDEncoderV2SameSchema:
 
 
 class TestSDEncoderV2Integration:
+    def test_nested_table_round_trip(self):
+        config = SDCompressionConfig(
+            drop_non_required_fields=True,
+            required_fields=["id", "actions", "actions.name"],
+            preserve_structure=True,
+        )
+        encoder = SDEncoderV2(config=config)
+
+        data = {
+            "id": "1",
+            "actions": [
+                {"name": "A", "desc": "X"},
+                {"name": "B", "desc": "Y"}
+            ],
+            "extra": "should be dropped",
+        }
+
+        result = encoder.encode(data)
+
+        # Only id and actions.name should survive filtering
+        assert result.compressed == "{id,actions:{name}}[1,[A][B]]"
+
     def test_full_encode_with_nested_actions(self):
         config = SDCompressionConfig(
             drop_non_required_fields=False,
