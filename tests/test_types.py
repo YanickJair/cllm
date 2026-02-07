@@ -123,7 +123,7 @@ class TestSDCompressionConfig:
 
     def test_default_fields_order(self):
         config = SDCompressionConfig()
-        expected_order = ["id", "uuid", "priority", "article_id", "product_id", "title", "name", "type"]
+        expected_order = ("id", "uuid", "priority", "article_id", "product_id", "title", "name", "type")
         assert config.default_fields_order == expected_order
 
     def test_default_fields_importance_contains_expected_keys(self):
