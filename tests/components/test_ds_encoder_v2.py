@@ -262,7 +262,7 @@ class TestSDEncoderV2NormalizeObject:
         assert "tags" in result
 
     def test_truncates_long_strings(self):
-        config = SDCompressionConfig(max_description_length=10)
+        config = SDCompressionConfig(max_truncation_length=10)
         encoder = SDEncoderV2(config=config)
 
         result = encoder._normalize_object({"desc": "This is a very long description"})

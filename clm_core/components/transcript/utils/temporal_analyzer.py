@@ -15,9 +15,8 @@ from clm_core.dictionary.en.patterns import DAY_NAMES, WORD_TO_NUM
 class TemporalAnalyzer:
     """Temporal extractor with natural date, range, and frequency inference."""
 
-    def __init__(self):
-        # TODO: receive nlp as argument instead of loading here
-        self._nlp = spacy.load("en_core_web_sm", disable=["ner", "parser", "textcat"])
+    def __init__(self, nlp: spacy.Language):
+        self._nlp = nlp
         if "sentencizer" not in self._nlp.pipe_names:
             self._nlp.add_pipe("sentencizer")
         self.matcher = Matcher(self._nlp.vocab)

@@ -249,7 +249,7 @@ class TestDSEncoderFormatItemToken:
         assert "|" in result
 
     def test_truncates_long_complex_fields(self):
-        config = SDCompressionConfig(max_description_length=20)
+        config = SDCompressionConfig(max_truncation_length=20)
         encoder = SDEncoder(config=config)
         item = {"id": "1", "description": "A" * 100}  # 100 chars
 

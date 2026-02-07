@@ -109,7 +109,7 @@ class TestSDCompressionConfig:
         assert config.importance_threshold == 0.5
         assert config.field_importance is None
         assert config.excluded_fields is None
-        assert config.max_description_length == 200
+        assert config.max_truncation_length == 200
         assert config.preserve_structure is True
 
     def test_default_simple_fields(self):
@@ -168,9 +168,9 @@ class TestSDCompressionConfig:
         config = SDCompressionConfig(excluded_fields=["password", "secret"])
         assert config.excluded_fields == ["password", "secret"]
 
-    def test_custom_max_description_length(self):
-        config = SDCompressionConfig(max_description_length=500)
-        assert config.max_description_length == 500
+    def test_custom_max_truncation_length(self):
+        config = SDCompressionConfig(max_truncation_length=500)
+        assert config.max_truncation_length == 500
 
 
 class TestSDCompressionConfigFieldImportanceValidator:

@@ -45,7 +45,7 @@ class TranscriptAnalyzer:
         self.vocab = TranscriptVocabulary()
         self.intent_detector = IntentDetector(nlp=nlp, vocab=vocab)
         self.target_extractor = TargetExtractor(nlp, vocab=vocab, rules=rules)
-        self.temporal_extractor = TemporalAnalyzer()
+        self.temporal_extractor = TemporalAnalyzer(nlp=nlp)
         self.sentiment_analyzer = SentimentAnalyzer()
         self.entity_extractor = EntityExtractor(nlp=nlp)
 

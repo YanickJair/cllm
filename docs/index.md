@@ -180,7 +180,7 @@ config = CLMConfig(
         auto_detect=True,
         required_fields=["article_id", "title"],
         field_importance={"tags": 0.8, "content": 0.9},
-        max_description_length=100,
+        max_truncation_length=100,
     )
 )
 
@@ -202,6 +202,7 @@ print(result.compressed)
 - Specify required/excluded fields
 - Auto-detect important fields based on patterns
 - Nested structures preserved with inline formatting
+- Per-field truncation via `max_truncation_mapping`, applied recursively to nested objects
 
 Learn more about [Structured Data Compression](sd_encoder.md).
 
