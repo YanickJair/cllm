@@ -1,0 +1,1 @@
+Do not include attribution to Claude in the commit message or co-author attribution. Ever.
