@@ -1,4 +1,5 @@
 import json
+import time
 
 from clm_core import CLMEncoder, CLMConfig
 from clm_core.types import SDCompressionConfig
@@ -53,15 +54,25 @@ def catalog_compression():
       ]
     }
 
+    start_time = time.perf_counter()
     config = CLMConfig(
         ds_config=SDCompressionConfig(
-            max_description_length=100,
+            max_truncation_mapping={
+                "task": 10
+            }
         )
     )
 
     compressor = CLMEncoder(cfg=config)
-    return compressor.encode(data)
+    elapsed_seconds = time.perf_counter() - start_time
+    print(f"Elapsed creating config: {elapsed_seconds:.6f} s")
 
+    start_time = time.perf_counter()
+    c = compressor.encode(data)
+    elapsed_seconds = time.perf_counter() - start_time
+
+    print(f"Elapsed compressing data: {elapsed_seconds:.6f} s")
+    return c
 
 def example_kb_article_encoding():
     """Example: Encode KB articles."""
@@ -82,7 +93,7 @@ def example_kb_article_encoding():
             auto_detect=True,
             required_fields=["article_id", "title"],
             field_importance={"tags": 0.8, "content": 0.9},
-            max_description_length=100,
+            max_truncation_mapping=100,
         )
     )
 

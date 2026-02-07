@@ -134,22 +134,30 @@ class SDEncoderV2:
     def _normalize_object(self, obj: dict[str, Any]) -> dict[str, Any]:
         out = {}
         for key, value in obj.items():
-            value = self._normalize_value(value)
+            value = self._normalize_value(value, key)
             if value == [] and not self._is_required_path(key):
                 continue
-
             out[key] = value
         return out
 
-    def _normalize_value(self, value: Any) -> Any:
+    def _normalize_value(self, value: Any, key: str) -> Any:
+        if isinstance(value, dict):
+            return self._normalize_object(value)
         if isinstance(value, list) and value and all(isinstance(x, dict) for x in value):
             return [self._normalize_object(x) for x in value]
         if (
             isinstance(value, str)
-            and self._config.max_description_length
-            and len(value) > self._config.max_description_length
+            and self._config.max_truncation_mapping
+            and key in self._config.max_truncation_mapping
+            and len(value) > self._config.max_truncation_mapping[key]
         ):
-            return value[: self._config.max_description_length] + "..."
+            value = value[: self._config.max_truncation_mapping[key]] + "..."
+        elif (
+            isinstance(value, str)
+            and self._config.max_truncation_length
+            and len(value) > self._config.max_truncation_length
+        ):
+            return value[: self._config.max_truncation_length] + "..."
         return value
 
     def _filter_fields(

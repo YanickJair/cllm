@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-02-07
+
+### Changed
+
+- `CLMConfig.nlp_model` now caches the spaCy model at instance level using a Pydantic `PrivateAttr`
+  - Repeated access returns the same cached object instead of calling `spacy.load()` each time (~1.2s per call)
+- `CLMEncoder.__init__` no longer eagerly initializes `_nlp`, `_ts_encoder`, or `_sys_prompt_encoder`
+  - These are now lazy `@property` accessors created on first use
+  - `_ds_encoder` and `_classifier` remain eager (cheap, no spaCy dependency)
+  - Structured data encoding no longer pays the spaCy loading cost
+- `TemporalAnalyzer.__init__` now accepts a shared `nlp: spacy.Language` parameter instead of loading its own model
+  - Removes redundant `spacy.load()` call (~1.2s saving when transcript encoding is used)
+  - `TranscriptAnalyzer` passes its shared `nlp` instance to `TemporalAnalyzer`
+
 ## [0.1.0] - 2026-02-07
 
 ### Added
@@ -115,13 +129,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `sd_encoder.md` with new examples from `scripts/compress_structured_data.py`:
   - Added Example 1: Nested Data with Arrays (nested objects and user arrays)
   - Added Example 2: Product Catalog (demonstrates `excluded_fields` and `default_fields_importance`)
-  - Added Example 3: KB Articles (shows `field_importance` and `max_description_length`)
+  - Added Example 3: KB Articles (shows `field_importance` and `max_truncation_mapping`)
 - Added `default_fields_importance` parameter documentation to Configuration Reference
 - Added "Nested Structure Handling" section documenting inline formatting for nested objects and arrays
 - Updated imports to use simplified `from clm_core import SDCompressionConfig`
 - Updated `index.md` structured data example:
   - Removed non-existent `dataset_name` parameter
-  - Changed `max_field_length` to `max_description_length`
+  - Changed `max_field_length` to `max_truncation_mapping`
   - Fixed output format to match actual encoder behavior (`{fields}[values]`)
   - Added notes about comma escaping (`;`) and array separator (`+`)
 
@@ -196,7 +210,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed space-to-underscore replacement (keeps original text)
   - Single-line format for items (no newlines between records)
   - Simplified header format (removed `CATALOG_CATALOG:N` prefix)
-- Long text fields now truncated using `max_description_length` config (default: 200 chars)
+- Long text fields now truncated using `max_truncation_mapping` config (default: 200 chars)
 
 ### Fixed
 

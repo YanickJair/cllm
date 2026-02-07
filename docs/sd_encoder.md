@@ -40,7 +40,7 @@ Structured data compression targets:
 ### What Gets Optimized
 
 - **Text fields:** Compressed while preserving meaning
-- **Long descriptions:** Truncated to configurable length
+- **Long descriptions:** Truncated to configurable length (uniform or per-field)
 - **Low-importance fields:** Excluded based on thresholds
 - **Redundant information:** Deduplicated across records
 - **Metadata:** Optional exclusion of timestamps, versions
@@ -84,7 +84,7 @@ config = CLMConfig(
         auto_detect=True,
         required_fields=["article_id", "title"],
         field_importance={"tags": 0.8, "content": 0.9},
-        max_description_length=100
+        max_truncation_length=100
     )
 )
 
@@ -119,10 +119,9 @@ config = SDCompressionConfig(
     excluded_fields=["metadata"],        # Never include these
     field_importance={"desc": 0.9},      # Custom importance scores (0.0-1.0)
     importance_threshold=0.5,            # Include fields above this
-    max_description_length=200,          # Truncate long text (chars)
+    max_truncation_length=200,          # Default truncation for long text (chars)
+    max_truncation_mapping={"title": 50, "desc": 100},  # Per-field truncation (overrides max_truncation_length)
     preserve_structure=True,             # Keep nested dicts/lists
-    simple_fields=["id", "uuid", "title", "name", "type", "priority"],  # Simple formatting
-    default_fields_order=["id", "uuid", "priority", "title", "name"],   # Field order
     default_fields_importance={"id": 1.0, "name": 0.8}  # Override default importance
 )
 ```
@@ -165,11 +164,18 @@ config = SDCompressionConfig(
 - **Example:** `0.7` = only include fields with importance ≥ 0.7
 - **Trade-off:** Higher threshold = more compression, less detail
 
-#### `max_description_length` (int, default: `200`)
-- **Purpose:** Maximum length for text fields (in characters)
+#### `max_truncation_length` (int, default: `200`)
+- **Purpose:** Default maximum length for text fields (in characters)
 - **Impact:** Long descriptions are truncated with `...`
 - **Recommendation:** Adjust based on field type (50-500)
-- **Note:** Only applies to non-simple string fields
+- **Note:** Acts as the fallback for any string field not listed in `max_truncation_mapping`. Applied recursively to nested objects.
+
+#### `max_truncation_mapping` (dict[str, int], optional)
+- **Purpose:** Per-field truncation limits that override `max_truncation_length`
+- **Example:** `{"title": 50, "description": 200, "summary": 100}`
+- **Impact:** Each key maps a field name to its maximum character length. Fields matching a key are truncated to that length (with `...` appended); all other string fields fall back to `max_truncation_length`.
+- **Nested objects:** Truncation is applied recursively — field names are matched at every nesting level, so `"description": 100` truncates a `description` field whether it appears at the top level or inside a nested object.
+- **Use case:** Different length limits for different field types (short titles, longer descriptions)
 
 #### `preserve_structure` (boolean, default: `True`)
 - **Purpose:** Maintain nested dictionaries and lists
@@ -242,7 +248,7 @@ config = SDCompressionConfig(
         "views": 0.5         # Moderate importance
     },
     importance_threshold=0.5,
-    max_description_length=150
+    max_truncation_length=150
 )
 ```
 
@@ -264,7 +270,7 @@ config = SDCompressionConfig(
         "features": 0.8
     },
     importance_threshold=0.4,  # Lower threshold
-    max_description_length=300,      # Longer fields
+    max_truncation_length=300,      # Longer fields
     preserve_structure=True    # Keep nested specs
 )
 ```
@@ -325,7 +331,7 @@ config = SDCompressionConfig(
     auto_detect=False,           # Explicit control over fields
     drop_non_required_fields=False,
     preserve_structure=True,     # Required — recurses into nested items
-    max_description_length=100,
+    max_truncation_length=100,
 )
 ```
 
@@ -350,6 +356,35 @@ config = SDCompressionConfig(
 ```
 
 **Note:** If the items in the array have different keys (heterogeneous schema), the encoder falls back to the plain list format (`value1+value2+...`).
+
+---
+
+### Example 5: Per-Field Truncation with Nested Objects
+
+When different fields need different length limits — for example, short titles but longer descriptions — use `max_truncation_mapping`. Truncation is applied recursively, so nested objects have their fields truncated too.
+
+```python
+data = {
+    "id": "PROD-001",
+    "title": "Wireless Noise-Cancelling Over-Ear Bluetooth Headphones with Advanced ANC Technology",
+    "specs": {
+        "description": "These premium headphones feature industry-leading noise cancellation powered by dual microphones and adaptive algorithms that automatically adjust to your environment for an immersive listening experience.",
+        "warranty": "Full manufacturer coverage including parts and labor for two calendar years from the original date of purchase"
+    }
+}
+
+config = SDCompressionConfig(
+    drop_non_required_fields=False,
+    auto_detect=False,
+    preserve_structure=True,
+    max_truncation_length=200,                     # default fallback
+    max_truncation_mapping={"title": 30, "description": 60},  # per-field overrides
+)
+```
+
+With `max_truncation_mapping`, the `title` is truncated to 30 characters and the nested `specs.description` is truncated to 60 characters, while `warranty` (not in the mapping) falls back to `max_truncation_length` (200).
+
+Without `max_truncation_mapping`, every string field longer than `max_truncation_length` would be truncated uniformly.
 
 ---
 
@@ -459,7 +494,7 @@ config = CLMConfig(
         auto_detect=True,
         required_fields=["article_id", "title"],
         field_importance={"tags": 0.8, "content": 0.9},
-        max_description_length=100,
+        max_truncation_length=100,
     )
 )
 
@@ -505,7 +540,7 @@ Compressed structured data uses different formats for single items vs. arrays:
 | Boolean | `true` | `True` |
 | Null | `null` | (excluded) |
 | Date | `"2024-10-15"` | `2024-10-15` |
-| Long text | `"Very long description..."` | Truncated to `max_description_length` with `...` |
+| Long text | `"Very long description..."` | Truncated to `max_truncation_mapping[field]` or `max_truncation_length` with `...` |
 
 ### Nested Structure Handling
 
@@ -620,13 +655,22 @@ importance_threshold=0.4  # More detail
 
 ### 3. Set Appropriate Field Lengths
 
-Adjust based on content type:
+Use `max_truncation_mapping` for per-field control, or `max_truncation_length` as a uniform default:
 
 ```python
+# Per-field truncation (recommended when fields have different lengths)
 config = SDCompressionConfig(
-    max_description_length=50   # For short fields (titles, names)
-    max_description_length=200  # For descriptions
-    max_description_length=500  # For detailed content
+    max_truncation_mapping={
+        "title": 50,           # Short fields
+        "description": 200,    # Medium fields
+        "content": 500,        # Long fields
+    },
+    max_truncation_length=200,  # Fallback for fields not in the mapping
+)
+
+# Uniform truncation (simpler, one limit for all)
+config = SDCompressionConfig(
+    max_truncation_length=200   # Applied to all string fields
 )
 ```
 
@@ -688,7 +732,7 @@ config = SDCompressionConfig(
 config = SDCompressionConfig(
     importance_threshold=0.7,  # Higher
     excluded_fields=["notes", "metadata", "timestamps"],
-    max_description_length=100
+    max_truncation_length=100
 )
 ```
 

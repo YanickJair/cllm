@@ -155,7 +155,7 @@ class SDEncoder:
             # Apply max length for non-simple fields (complex/description fields)
             max_len = None
             if key.lower() not in self._config.simple_fields:
-                max_len = self._config.max_description_length
+                max_len = self._config.max_truncation_length
 
             formatted_value = self._format_value(value, max_length=max_len)
             if formatted_value and formatted_value != "":

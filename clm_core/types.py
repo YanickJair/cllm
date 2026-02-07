@@ -1,5 +1,6 @@
 import json
 import re
+from email.policy import default
 from enum import Enum
 from typing import Optional, Self, Literal, Annotated, TypeAlias, Union
 
@@ -7,6 +8,7 @@ import spacy
 from pydantic import (
     BaseModel,
     Field,
+    PrivateAttr,
     computed_field,
     ConfigDict,
     field_validator,
@@ -122,8 +124,12 @@ class SDCompressionConfig(BaseModel):
     excluded_fields: Optional[list[str]] = Field(
         default=None, description="Never include these"
     )
-    max_description_length: Optional[int] = Field(
-        default=200, description="Truncate long text"
+    max_truncation_length: Optional[int] = Field(
+        default=200, description="Truncate long text. If max config truncation mapping not defined, will use this for all"
+    )
+    max_truncation_mapping: Optional[dict[str, int]] = Field(
+        default=None,
+        description="Truncation mapping. This overrides max_truncation_mapping and truncate each field individually"
     )
     preserve_structure: Optional[bool] = Field(
         default=True, description="Keep nested dicts/lists"
@@ -253,6 +259,7 @@ class CLMConfig(BaseModel):
         default_factory=lambda: SysPromptConfig(),
         description="Configuration for system prompt",
     )
+    _nlp_cache: Optional[spacy.Language] = PrivateAttr(default=None)
 
     @computed_field
     @property
@@ -263,18 +270,19 @@ class CLMConfig(BaseModel):
     @property
     def nlp_model(self) -> spacy.Language:
         """
-        Load spaCy model for the configured language
-        Returns
-        -------
-
+        Load spaCy model for the configured language.
+        Cached at instance level to avoid repeated loading.
         """
+        if self._nlp_cache is not None:
+            return self._nlp_cache
         match self.lang:
             case "en":
-                return spacy.load("en_core_web_sm")
+                self._nlp_cache = spacy.load("en_core_web_sm")
             case _:
                 raise NotImplementedError(
                     f"Model for language {self.lang} not supported yet"
                 )
+        return self._nlp_cache
 
     @computed_field
     @property
