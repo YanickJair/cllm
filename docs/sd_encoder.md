@@ -296,6 +296,63 @@ config = SDCompressionConfig(
 
 ---
 
+### Example 4: Nested Tables (Actions / Steps)
+
+When your data contains fields that are arrays of objects with a consistent schema (e.g. actions, steps, line items), the encoder represents them as inline tables — the nested schema appears once in the header and each item becomes a compact row.
+
+```python
+# Data with nested list-of-dicts
+data = [
+    {
+        "id": "NBA-001",
+        "title": "Billing Issue",
+        "actions": [
+            {"name": "Verify", "description": "Check the account status"},
+            {"name": "Refund", "description": "Issue a partial refund"}
+        ]
+    },
+    {
+        "id": "NBA-002",
+        "title": "Login Problem",
+        "actions": [
+            {"name": "Reset", "description": "Reset the password"},
+            {"name": "Escalate", "description": "Forward to tier 2"}
+        ]
+    }
+]
+
+config = SDCompressionConfig(
+    auto_detect=False,           # Explicit control over fields
+    drop_non_required_fields=False,
+    preserve_structure=True,     # Required — recurses into nested items
+    max_description_length=100,
+)
+```
+
+**Output:**
+```text
+{id,title,actions:{name,description}}[NBA-001,Billing Issue,[Verify,Check the account status][Refund,Issue a partial refund]][NBA-002,Login Problem,[Reset,Reset the password][Escalate,Forward to tier 2]]
+```
+
+To keep only specific sub-fields inside the nested table, use dot-path required fields with `drop_non_required_fields`:
+
+```python
+config = SDCompressionConfig(
+    drop_non_required_fields=True,
+    required_fields=["id", "title", "actions", "actions.name"],
+    preserve_structure=True,
+)
+```
+
+**Output:**
+```text
+{id,title,actions:{name}}[NBA-001,Billing Issue,[Verify][Refund]][NBA-002,Login Problem,[Reset][Escalate]]
+```
+
+**Note:** If the items in the array have different keys (heterogeneous schema), the encoder falls back to the plain list format (`value1+value2+...`).
+
+---
+
 ## Complete Examples
 
 ### Example 1: Nested Data with Arrays
@@ -456,9 +513,12 @@ Nested schemas are defined in the header, values contain only data:
 
 | Structure | Header | Values |
 |-----------|--------|--------|
-| Nested object | `specs:{cpu,ram}` | `[i7,16GB]` |
+| Nested object (multi-field) | `specs:{cpu,ram}` | `[i7,16GB]` |
+| Nested object (single-field) | `context:{task}` | `My task` |
 | Array of objects | `items:{a,b}` | `[1,x][2,y]` |
 | Simple array | `tags` | `tag1+tag2+tag3` |
+
+**Single-field bracket elision:** When a nested object has only one field, the brackets are omitted because the header already makes the structure unambiguous. For example, `context:{task}` with value `My task` instead of `[My task]`. Multi-field nested objects and nested table rows always keep their brackets.
 
 **Example with nested actions:**
 
@@ -640,6 +700,20 @@ config = SDCompressionConfig(
 ```python
 config = SDCompressionConfig(
     preserve_structure=True  # Must be True for nested data
+)
+```
+
+### Issue: Nested Tables Rendered as Stringified Dicts
+
+**Symptom:** A list-of-dicts field shows as `{'id': 1, ...}+{'id': 2, ...}` instead of `[1,...][2,...]`
+
+**Cause:** `auto_detect` uses field values to determine importance. If a field like `wasSunny: False` is dropped (falsy values get `NEVER` importance) while `wasSunny: True` is kept, the row schemas diverge and nested table encoding falls back to plain list stringification.
+
+**Solution:** This is fixed in v0.0.10 — nested table filtering now derives the schema from the first item and applies it uniformly to all rows. If you're on an older version, specify `required_fields` explicitly:
+```python
+config = SDCompressionConfig(
+    required_fields=["hikes.id", "hikes.name", "hikes.distanceKm"],
+    preserve_structure=True
 )
 ```
 

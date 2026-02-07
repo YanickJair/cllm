@@ -128,33 +128,6 @@ class SDCompressionConfig(BaseModel):
     preserve_structure: Optional[bool] = Field(
         default=True, description="Keep nested dicts/lists"
     )
-    simple_fields: list[str] = Field(
-        default_factory=lambda: [
-            "id",
-            "uuid",
-            "title",
-            "name",
-            "type",
-            "priority",
-            "article_id",
-            "product_id",
-        ],
-        description="Fields to simplify",
-    )
-    default_fields_order: list[str] = Field(
-        default_factory=lambda: [
-            "id",
-            "uuid",
-            "priority",
-            "article_id",
-            "product_id",
-            "title",
-            "name",
-            "type",
-        ],
-        description="Order for default fields. IDs take precedence over other fields. "
-        "If a field is not in this list, it will be placed at the end.",
-    )
     default_fields_importance: dict[str, FieldImportance] = Field(
         frozen=True,
         default_factory=lambda: {
@@ -187,6 +160,40 @@ class SDCompressionConfig(BaseModel):
         },
         description="Importance scores for default fields. Overrides default thresholds.",
     )
+
+    @computed_field
+    @property
+    def simple_fields(self) -> tuple[str, ...]:
+        """Default fields that are mapped if no field is configured"""
+        return (
+            "id",
+            "uuid",
+            "title",
+            "name",
+            "type",
+            "priority",
+            "email",
+            "article_id",
+            "product_id",
+        )
+
+    @computed_field
+    @property
+    def default_fields_order(self) -> tuple[str, ...]:
+        """
+        Order for default fields. IDs take precedence over other fields. "
+        "If a field is not in this list, it will be placed at the end.
+        """
+        return (
+            "id",
+            "uuid",
+            "priority",
+            "article_id",
+            "product_id",
+            "title",
+            "name",
+            "type",
+        )
 
     @field_validator("default_fields_importance", mode="before")
     @classmethod

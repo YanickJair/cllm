@@ -2,9 +2,9 @@ import json
 import sys
 from pathlib import Path
 
-from clm_core import CLMEncoder, CLMConfig
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "clm_core"))
+from clm_core import CLMEncoder, CLMConfig
 
 CX_TRANSCRIPTS = [
     {
@@ -273,7 +273,7 @@ def show_comparison(transcript: str, metadata: dict):
 
     cfg = CLMConfig(lang="en")
     encoder = CLMEncoder(cfg=cfg)
-    new_result = encoder.encode(input_=transcript, metadata=metadata)
+    new_result = encoder.encode(input_=transcript, metadata={})
 
     # INFORMATION PRESERVATION CHECK
     print("\n" + "=" * 70)
@@ -325,5 +325,6 @@ if __name__ == "__main__":
                     "original": transcript.get("transcript"),
                 }
             )
+            break
     with open("transcript_analysis.json", "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False)

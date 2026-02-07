@@ -5,13 +5,14 @@ from clm_core.types import SDCompressionConfig, FieldImportance, CLMOutput
 
 class SDEncoderV2:
     """
-    Canonical CLM encoder
+    Canonical CLM structured-data encoder (V2)
 
-    - Header-first, row-based
+    Features:
+    - Header-first, row-based encoding
     - Explicit nested schema scoping: key:{nested}
-    - Tables only at root or via semantic wrapper
-    - No nested tables
-    - Config-driven
+    - Path-aware required field projection (e.g. users.name)
+    - Strict projection via drop_non_required_fields
+    - Early string truncation
     """
 
     ROW_OPEN = "["
@@ -25,6 +26,7 @@ class SDEncoderV2:
     ):
         self._config = config
         self._delimiter = delimiter
+        self._required_paths = set(config.required_fields or [])
 
     def encode(self, data: Any) -> CLMOutput:
         if isinstance(data, dict):
@@ -44,16 +46,21 @@ class SDEncoderV2:
     def _encode_object(self, obj: dict[str, Any]) -> str:
         normalized = self._normalize_object(obj)
 
+        # semantic wrapper: dict that is purely a wrapper around a single list[dict]
         table_fields = self._find_table_fields(normalized)
         if (
             self._config.preserve_structure
             and len(table_fields) == 1
+            and len(normalized) == 1
             and not self._has_identity_fields(normalized)
         ):
             _, table = table_fields[0]
             return self._encode_table(table)
 
-        row = self._filter_fields(normalized)
+        row = self._filter_fields(normalized, path="")
+        if not row:
+            return ""
+
         header = self._format_header(row)
         body = self._format_row(row)
         return f"{{{header}}}{body}"
@@ -71,17 +78,25 @@ class SDEncoderV2:
         parts = []
         for item in items:
             if isinstance(item, dict):
-                parts.append(self._encode_object(item))
+                encoded = self._encode_object(item)
+                if encoded:
+                    parts.append(encoded)
             else:
                 parts.append(str(item))
         return "".join(parts)
 
     def _encode_table(self, rows: list[dict[str, Any]]) -> str:
-        normalized_rows = [self._filter_fields(self._normalize_object(r)) for r in rows]
+        filtered_rows = [
+            self._filter_fields(self._normalize_object(r), path="")
+            for r in rows
+        ]
+        filtered_rows = [r for r in filtered_rows if r]
 
-        header = self._format_header(normalized_rows[0])
-        body = "".join(self._format_row(r) for r in normalized_rows)
+        if not filtered_rows:
+            return ""
 
+        header = self._format_header(filtered_rows[0])
+        body = "".join(self._format_row(r) for r in filtered_rows)
         return f"{{{header}}}{body}"
 
     def _format_header(self, row: dict[str, Any]) -> str:
@@ -89,6 +104,9 @@ class SDEncoderV2:
         for key, value in self._ordered_items(row):
             if isinstance(value, dict):
                 nested = self._format_header(value)
+                parts.append(f"{key}:{{{nested}}}")
+            elif self._is_nested_table(value):
+                nested = self._format_header(value[0])
                 parts.append(f"{key}:{{{nested}}}")
             else:
                 parts.append(key)
@@ -100,7 +118,11 @@ class SDEncoderV2:
 
     def _format_value(self, value: Any) -> str:
         if isinstance(value, dict):
+            if len(value) == 1:
+                return self._format_value(next(iter(value.values())))
             return self._format_row(value)
+        if self._is_nested_table(value):
+            return "".join(self._format_row(item) for item in value)
         if isinstance(value, list):
             return "+".join(str(v) for v in value)
         if isinstance(value, bool):
@@ -110,25 +132,18 @@ class SDEncoderV2:
         return str(value)
 
     def _normalize_object(self, obj: dict[str, Any]) -> dict[str, Any]:
-        """
-        Early normalization:
-        - truncate strings
-        - drop empty lists unless required
-        """
         out = {}
         for key, value in obj.items():
             value = self._normalize_value(value)
-
-            if value == [] and (
-                not self._config.required_fields
-                or key not in self._config.required_fields
-            ):
+            if value == [] and not self._is_required_path(key):
                 continue
 
             out[key] = value
         return out
 
     def _normalize_value(self, value: Any) -> Any:
+        if isinstance(value, list) and value and all(isinstance(x, dict) for x in value):
+            return [self._normalize_object(x) for x in value]
         if (
             isinstance(value, str)
             and self._config.max_description_length
@@ -137,21 +152,82 @@ class SDEncoderV2:
             return value[: self._config.max_description_length] + "..."
         return value
 
-    def _filter_fields(self, obj: dict[str, Any]) -> dict[str, Any]:
-        """
-        Importance filtering with recursive dict preservation.
-        """
+    def _filter_fields(
+        self,
+        obj: dict[str, Any],
+        *,
+        path: str,
+    ) -> dict[str, Any]:
         out = {}
+
         for key, value in obj.items():
-            if not self._should_include_field(key, value):
+            full_path = f"{path}.{key}" if path else key
+
+            if not self._should_include_path(full_path, value):
                 continue
 
             if isinstance(value, dict) and self._config.preserve_structure:
-                out[key] = self._filter_fields(value)
+                nested = self._filter_fields(value, path=full_path)
+                if nested:
+                    out[key] = nested
+            elif self._is_nested_table(value) and self._config.preserve_structure:
+                # Filter first item to determine schema, then apply
+                # the same keys to all items for consistent schema.
+                first = self._filter_fields(value[0], path=full_path)
+                if first:
+                    kept = set(first.keys())
+                    filtered = [first] + [
+                        {k: item[k] for k in item if k in kept}
+                        for item in value[1:]
+                    ]
+                    out[key] = filtered
             else:
                 out[key] = value
 
         return out
+
+    def _should_include_path(self, path: str, value: Any) -> bool:
+        """
+        Strict path-based projection.
+        """
+        if self._config.drop_non_required_fields and self._required_paths:
+            # exact match
+            if path in self._required_paths:
+                return True
+
+            # prefix match (parent of required path)
+            for req in self._required_paths:
+                if req.startswith(path + "."):
+                    return True
+
+            return False
+
+        key = path.split(".")[-1]
+        if self._config.excluded_fields and key in self._config.excluded_fields:
+            return False
+
+        if self._config.required_fields and key in self._config.required_fields:
+            return True
+
+        if self._config.field_importance and key in self._config.field_importance:
+            return (
+                self._config.field_importance[key]
+                >= self._config.importance_threshold
+            )
+
+        if self._config.auto_detect:
+            return (
+                self._detect_field_importance(key, value).value
+                >= self._config.importance_threshold
+            )
+
+        return True
+
+    def _is_required_path(self, key: str) -> bool:
+        return any(
+            rp == key or rp.startswith(key + ".")
+            for rp in self._required_paths
+        )
 
     @staticmethod
     def _find_table_fields(
@@ -166,6 +242,15 @@ class SDEncoderV2:
     def _has_identity_fields(self, obj: dict[str, Any]) -> bool:
         identity = set(f.lower() for f in self._config.simple_fields)
         return any(k.lower() in identity for k in obj.keys())
+
+    @staticmethod
+    def _is_nested_table(value: Any) -> bool:
+        return (
+            isinstance(value, list)
+            and len(value) > 0
+            and all(isinstance(x, dict) for x in value)
+            and SDEncoderV2._same_schema(value)
+        )
 
     @staticmethod
     def _same_schema(rows: list[dict[str, Any]]) -> bool:
@@ -187,29 +272,6 @@ class SDEncoderV2:
             else 999
         )
         return simple + complex_
-
-    def _should_include_field(self, key: str, value: Any) -> bool:
-        if self._config.drop_non_required_fields:
-            return self._config.required_fields and key in self._config.required_fields
-
-        if self._config.excluded_fields and key in self._config.excluded_fields:
-            return False
-
-        if self._config.required_fields and key in self._config.required_fields:
-            return True
-
-        if self._config.field_importance and key in self._config.field_importance:
-            return (
-                self._config.field_importance[key] >= self._config.importance_threshold
-            )
-
-        if self._config.auto_detect:
-            return (
-                self._detect_field_importance(key, value).value
-                >= self._config.importance_threshold
-            )
-
-        return True
 
     def _detect_field_importance(self, key: str, value: Any) -> FieldImportance:
         key_lower = key.lower()

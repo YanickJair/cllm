@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0] - 2026-02-07
+
+### Added
+
+- Nested table encoding in `SDEncoderV2` for list-of-dict fields with homogeneous schemas
+  - New `_is_nested_table` static method detects `list[dict]` with consistent keys
+  - Nested schema appears once in the header: `actions:{name,desc}`
+  - Each item encoded as a compact row: `[A,X][B,Y]`
+  - Field filtering recurses into nested table items via dot-path required fields (e.g. `actions.name`)
+  - Normalization recurses into nested table items for string truncation
+  - Falls back to plain list format (`val1+val2`) when item schemas differ
+- Single-field bracket elision: nested dicts with one field skip redundant `[`/`]` wrappers
+  - `context:{task}` value renders as `My task` instead of `[My task]`
+  - Multi-field nested dicts and nested table rows keep brackets
+
+### Changed
+
+- `simple_fields` and `default_fields_order` in `SDCompressionConfig` converted from plain fields
+  to `computed_field` properties (immutable defaults, no longer overridable via constructor)
+
+### Fixed
+
+- Semantic wrapper in `_encode_object` no longer triggers when the dict has non-table fields
+  - Previously, a dict like `{context, friends, hikes}` with one list-of-dicts field would discard
+    the other fields and produce empty output
+  - Now only activates when the dict is purely a single-key wrapper (e.g. `{items: [...]}`)
+- `_should_include_path` no longer drops all fields when `required_fields` is empty
+  - `drop_non_required_fields` strict projection now only activates when `required_fields` is set
+  - Without `required_fields`, falls through to `auto_detect` / `field_importance` as expected
+- Nested table filtering now maintains consistent schema across all rows
+  - Previously, value-dependent `auto_detect` could exclude a field from some rows but not others
+    (e.g. `wasSunny: False` dropped as NEVER importance, but `wasSunny: True` kept), breaking
+    schema homogeneity and causing fallback to stringified `+` join
+  - First item's filtered keys now determine the schema for all rows
+- Removed duplicate `simple_fields` definition in `SDCompressionConfig` that caused a Pydantic
+  `TypeError` on import (plain `Field` conflicted with `computed_field`)
+
+### Documentation
+
+- Added Example 4 (Nested Tables) to `sd_encoder.md` configuration examples
+- Updated nested structure handling table with single-field bracket elision
+- Added dot-path required fields example for filtering nested table sub-fields
+- Added troubleshooting entry for nested tables rendered as stringified dicts
+
 # [0.0.9] - 2026-01-26
 
 ### Changed
