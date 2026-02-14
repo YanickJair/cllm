@@ -15,6 +15,10 @@ from . import (
     SentimentTrajectory,
     TranscriptAnalysis,
     Turn,
+    ResolutionState,
+    RefundReference,
+    ConversationTimeline,
+    PromiseCommitment,
 )
 from clm_core.utils.singleton import SingletonMeta
 from clm_core.types import CLMOutput
@@ -89,10 +93,60 @@ class TranscriptEncoder(metaclass=SingletonMeta):
             if verbose:
                 print(f"Action Chain: {action_chain_token}")
 
-        resolution_token = self._encode_resolution(self.analysis.resolution)
-        tokens.append(resolution_token)
-        if verbose:
-            print(f"Resolution: {resolution_token}")
+        # Resolution logic: avoid showing both UNKNOWN and a clear state
+        resolution = self.analysis.resolution
+        resolution_state = self.analysis.resolution_state
+
+        has_clear_state = (
+            resolution_state
+            and resolution_state.type not in ("UNKNOWN", "UNRESOLVED")
+        )
+
+        if resolution.type == "UNKNOWN" and has_clear_state:
+            # Skip UNKNOWN, show the clearer resolution state
+            res_state_token = self._encode_resolution_state(resolution_state)
+            tokens.append(res_state_token)
+            if verbose:
+                print(f"Resolution State: {res_state_token}")
+        elif resolution.type == "UNKNOWN":
+            # No clear state, only show UNKNOWN
+            resolution_token = self._encode_resolution(resolution)
+            tokens.append(resolution_token)
+            if verbose:
+                print(f"Resolution: {resolution_token}")
+        else:
+            # We have a clear base resolution, show both
+            resolution_token = self._encode_resolution(resolution)
+            tokens.append(resolution_token)
+            if verbose:
+                print(f"Resolution: {resolution_token}")
+
+            if resolution_state:
+                res_state_token = self._encode_resolution_state(resolution_state)
+                tokens.append(res_state_token)
+                if verbose:
+                    print(f"Resolution State: {res_state_token}")
+
+        if self.analysis.refund_reference:
+            refund_token = self._encode_refund_reference(self.analysis.refund_reference)
+            if refund_token:
+                tokens.append(refund_token)
+                if verbose:
+                    print(f"Refund: {refund_token}")
+
+        if self.analysis.timeline:
+            timeline_token = self._encode_timeline(self.analysis.timeline)
+            if timeline_token:
+                tokens.append(timeline_token)
+                if verbose:
+                    print(f"Timeline: {timeline_token}")
+
+        if self.analysis.promises:
+            promises_token = self._encode_promises(self.analysis.promises)
+            if promises_token:
+                tokens.append(promises_token)
+                if verbose:
+                    print(f"Promises: {promises_token}")
 
         sentiment_token = self._encode_sentiment(self.analysis.sentiment_trajectory)
         tokens.append(sentiment_token)
@@ -408,3 +462,117 @@ class TranscriptEncoder(metaclass=SingletonMeta):
             compressed = compressed.replace(full, abbrev)
 
         return compressed
+
+    # ============================================================
+    # Case-dependent feature encoding methods
+    # ============================================================
+
+    @staticmethod
+    def _encode_resolution_state(state: ResolutionState) -> str:
+        """
+        Encode enhanced resolution state
+
+        Format: [RES_STATE:TYPE:ATTR=VALUE:...]
+        Example: [RES_STATE:FULLY_RESOLVED:CSAT=SATISFIED]
+        Example: [RES_STATE:PENDING:FOLLOW_UP=YES:REASON=VERIFICATION_NEEDED]
+        """
+        parts = ["RES_STATE", state.type]
+
+        if state.completeness and state.completeness != "UNKNOWN":
+            parts.append(f"COMPLETENESS={state.completeness}")
+
+        if state.customer_satisfaction:
+            parts.append(f"CSAT={state.customer_satisfaction}")
+
+        if state.follow_up_needed:
+            parts.append("FOLLOW_UP=YES")
+            if state.follow_up_reason:
+                parts.append(f"REASON={state.follow_up_reason}")
+
+        return f"[{':'.join(parts)}]"
+
+    @staticmethod
+    def _encode_refund_reference(refund: RefundReference) -> Optional[str]:
+        """
+        Encode refund reference (case-dependent)
+
+        Format: [REFUND:ATTR=VALUE:...]
+        Example: [REFUND:REF=RFD-908712:AMT=$14.99:METHOD=CARD_CREDIT:STATUS=INITIATED:TIMELINE=3-5d]
+        """
+        if not refund:
+            return None
+
+        parts = ["REFUND"]
+
+        if refund.reference_number:
+            parts.append(f"REF={refund.reference_number}")
+
+        if refund.amount:
+            parts.append(f"AMT={refund.amount}")
+
+        if refund.method:
+            parts.append(f"METHOD={refund.method}")
+
+        if refund.status:
+            parts.append(f"STATUS={refund.status}")
+
+        if refund.timeline:
+            parts.append(f"TIMELINE={refund.timeline}")
+
+        if refund.original_transaction_id:
+            parts.append(f"ORIG_TXN={refund.original_transaction_id}")
+
+        if len(parts) == 1:  # Only "REFUND" with no attributes
+            return None
+
+        return f"[{':'.join(parts)}]"
+
+    @staticmethod
+    def _encode_timeline(timeline: ConversationTimeline) -> Optional[str]:
+        """
+        Encode conversation timeline
+
+        Format: [TIMELINE:EVENT1→EVENT2→EVENT3:METRICS]
+        Example: [TIMELINE:ISSUE_RAISED→INVESTIGATION→ACTION_TAKEN→RESOLVED:TTR=5:TTFA=2]
+        """
+        if not timeline or not timeline.events:
+            return None
+
+        # Compress events to just types (limit to 8 events)
+        event_chain = "→".join(e.event_type for e in timeline.events[:8])
+
+        parts = ["TIMELINE", event_chain]
+
+        if timeline.time_to_resolution is not None:
+            parts.append(f"TTR={timeline.time_to_resolution}")
+
+        if timeline.time_to_first_action is not None:
+            parts.append(f"TTFA={timeline.time_to_first_action}")
+
+        return f"[{':'.join(parts)}]"
+
+    @staticmethod
+    def _encode_promises(promises: list[PromiseCommitment]) -> Optional[str]:
+        """
+        Encode agent promises
+
+        Format: [PROMISES:TYPE1(TIMELINE):TYPE2(AMT):...]
+        Example: [PROMISES:CALLBACK(24h):REFUND_PROMISE($14.99,3-5d):TECHNICIAN_VISIT(MONDAY)]
+        """
+        if not promises:
+            return None
+
+        promise_parts = []
+        for p in promises:
+            details = []
+            if p.amount:
+                details.append(p.amount)
+            if p.timeline:
+                details.append(p.timeline)
+
+            if details:
+                promise_parts.append(f"{p.type}({','.join(details)})")
+            else:
+                promise_parts.append(p.type)
+
+        return f"[PROMISES:{':'.join(promise_parts)}]"

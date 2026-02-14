@@ -1,0 +1,2587 @@
+{
+  "text": "Thank you for calling [ORGANIZATION] [ORGANIZATION] [ORGANIZATION] [ORGANIZATION]. If you know your party's extension, you may dial it at any time. For the [ORGANIZATION] [ORGANIZATION], [ORGANIZATION] [ORGANIZATION], press [PHONE_NUMBER]. [ORGANIZATION] [ORGANIZATION]. You are currently caller [PHONE_NUMBER] waiting to speak with a [OCCUPATION]. The estimated hold time is currently [DURATION] [DURATION]. Thank you for your patience, [PERSON_NAME]. Your call is now first in line and will be answered by the next available [OCCUPATION]. Thank you for your patience. [ORGANIZATION] [ORGANIZATION], this is [PERSON_NAME]. Hey, [PERSON_NAME]. This is [PERSON_NAME] [PERSON_NAME]. I just have [DURATION] [DURATION] quick questions. First, I want to see if my Sorento is still under factory warranty. What [DURATION] is it? It's [DATE_INTERVAL]. How many miles are on it? 47,000, 145. Okay. Are you the original owner? I am now. Like, you bought the vehicle brand new or did you buy it used? Used. Okay, so you have. When you buy a used [ORGANIZATION], the only thing that transfers is [DURATION] [DURATION] or 60,000 miles, whichever comes first for your basic and your powertrain. So you're still under warranty, but it's only until 60,000. Okay. Okay, that's perfect then. Because my power steering is acting up in my. My AC is kind of acting ify. So could I possibly schedule an appointment to bring it up there as soon as possible so I can have you guys look at it? Is it drivable? Yes, I. I can bring it up there and drop it off. Okay, if you can drop it off, I can get you in sooner because like, appointment wise, I don't have anything until [DATE] [DATE]. But you would have to drop it off and leave it with me for [DURATION] [DURATION] [DURATION]. Okay, you don't have it. But so basically I got a better chance of beginning looked at instead of being an appointment if I just bring it up to you today, correct? Yeah, it is. It's going to take [DURATION] [DURATION] [DURATION] [DURATION], but it'd be easier that way or sooner. Okay, that's perfectly fine. Okay. Yeah, you can do that. I'll try to get that today. All right. Thank you. Okay. You're welcome. Okay.",
+  "confidence": 0.9595454,
+  "audio_duration": 236,
+  "words": [
+    {
+      "text": "Thank",
+      "start": 1360,
+      "end": 1560,
+      "confidence": 0.9855957,
+      "speaker": null
+    },
+    {
+      "text": "you",
+      "start": 1560,
+      "end": 1720,
+      "confidence": 0.9980469,
+      "speaker": null
+    },
+    {
+      "text": "for",
+      "start": 1720,
+      "end": 1880,
+      "confidence": 0.99853516,
+      "speaker": null
+    },
+    {
+      "text": "calling",
+      "start": 1880,
+      "end": 2160,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "[ORGANIZATION]",
+      "start": 2160,
+      "end": 2760,
+      "confidence": 0.94775,
+      "speaker": null
+    },
+    {
+      "text": "[ORGANIZATION]",
+      "start": 2760,
+      "end": 3080,
+      "confidence": 0.46313477,
+      "speaker": null
+    },
+    {
+      "text": "[ORGANIZATION]",
+      "start": 3080,
+      "end": 3320,
+      "confidence": 0.98291016,
+      "speaker": null
+    },
+    {
+      "text": "[ORGANIZATION].",
+      "start": 3320,
+      "end": 3920,
+      "confidence": 0.99609375,
+      "speaker": null
+    },
+    {
+      "text": "If",
+      "start": 4000,
+      "end": 4320,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "you",
+      "start": 4320,
+      "end": 4520,
+      "confidence": 0.9980469,
+      "speaker": null
+    },
+    {
+      "text": "know",
+      "start": 4520,
+      "end": 4680,
+      "confidence": 0.99853516,
+      "speaker": null
+    },
+    {
+      "text": "your",
+      "start": 4680,
+      "end": 4840,
+      "confidence": 0.99121094,
+      "speaker": null
+    },
+    {
+      "text": "party's",
+      "start": 4840,
+      "end": 5240,
+      "confidence": 0.95410156,
+      "speaker": null
+    },
+    {
+      "text": "extension,",
+      "start": 5240,
+      "end": 5720,
+      "confidence": 0.8833008,
+      "speaker": null
+    },
+    {
+      "text": "you",
+      "start": 5720,
+      "end": 5960,
+      "confidence": 0.99853516,
+      "speaker": null
+    },
+    {
+      "text": "may",
+      "start": 5960,
+      "end": 6120,
+      "confidence": 0.98583984,
+      "speaker": null
+    },
+    {
+      "text": "dial",
+      "start": 6120,
+      "end": 6400,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "it",
+      "start": 6400,
+      "end": 6640,
+      "confidence": 0.9921875,
+      "speaker": null
+    },
+    {
+      "text": "at",
+      "start": 6640,
+      "end": 6840,
+      "confidence": 0.98291016,
+      "speaker": null
+    },
+    {
+      "text": "any",
+      "start": 6840,
+      "end": 7080,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "time.",
+      "start": 7080,
+      "end": 7440,
+      "confidence": 0.9711914,
+      "speaker": null
+    },
+    {
+      "text": "For",
+      "start": 8080,
+      "end": 8360,
+      "confidence": 0.9892578,
+      "speaker": null
+    },
+    {
+      "text": "the",
+      "start": 8360,
+      "end": 8520,
+      "confidence": 0.9838867,
+      "speaker": null
+    },
+    {
+      "text": "[ORGANIZATION]",
+      "start": 8520,
+      "end": 8800,
+      "confidence": 0.9633789,
+      "speaker": null
+    },
+    {
+      "text": "[ORGANIZATION],",
+      "start": 8800,
+      "end": 9120,
+      "confidence": 0.96533203,
+      "speaker": null
+    },
+    {
+      "text": "[ORGANIZATION]",
+      "start": 10640,
+      "end": 11040,
+      "confidence": 0.99609375,
+      "speaker": null
+    },
+    {
+      "text": "[ORGANIZATION],",
+      "start": 11040,
+      "end": 11440,
+      "confidence": 0.9946289,
+      "speaker": null
+    },
+    {
+      "text": "press",
+      "start": 11840,
+      "end": 12240,
+      "confidence": 0.99072266,
+      "speaker": null
+    },
+    {
+      "text": "[PHONE_NUMBER].",
+      "start": 12240,
+      "end": 12640,
+      "confidence": 0.8457,
+      "speaker": null
+    },
+    {
+      "text": "[ORGANIZATION]",
+      "start": 13040,
+      "end": 13560,
+      "confidence": 0.8093262,
+      "speaker": null
+    },
+    {
+      "text": "[ORGANIZATION].",
+      "start": 13560,
+      "end": 13840,
+      "confidence": 0.99072,
+      "speaker": null
+    },
+    {
+      "text": "You",
+      "start": 17440,
+      "end": 17760,
+      "confidence": 0.98828125,
+      "speaker": null
+    },
+    {
+      "text": "are",
+      "start": 17760,
+      "end": 17960,
+      "confidence": 0.99658203,
+      "speaker": null
+    },
+    {
+      "text": "currently",
+      "start": 17960,
+      "end": 18240,
+      "confidence": 0.9975586,
+      "speaker": null
+    },
+    {
+      "text": "caller",
+      "start": 18560,
+      "end": 19200,
+      "confidence": 0.9790039,
+      "speaker": null
+    },
+    {
+      "text": "[PHONE_NUMBER]",
+      "start": 19840,
+      "end": 20240,
+      "confidence": 0.73828,
+      "speaker": null
+    },
+    {
+      "text": "waiting",
+      "start": 20640,
+      "end": 21080,
+      "confidence": 0.9987793,
+      "speaker": null
+    },
+    {
+      "text": "to",
+      "start": 21080,
+      "end": 21320,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "speak",
+      "start": 21320,
+      "end": 21560,
+      "confidence": 0.99975586,
+      "speaker": null
+    },
+    {
+      "text": "with",
+      "start": 21560,
+      "end": 21720,
+      "confidence": 0.9980469,
+      "speaker": null
+    },
+    {
+      "text": "a",
+      "start": 21720,
+      "end": 21880,
+      "confidence": 0.98046875,
+      "speaker": null
+    },
+    {
+      "text": "[OCCUPATION].",
+      "start": 21880,
+      "end": 22560,
+      "confidence": 0.7651367,
+      "speaker": null
+    },
+    {
+      "text": "The",
+      "start": 22880,
+      "end": 23200,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "estimated",
+      "start": 23200,
+      "end": 23760,
+      "confidence": 0.9996745,
+      "speaker": null
+    },
+    {
+      "text": "hold",
+      "start": 23760,
+      "end": 24080,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "time",
+      "start": 24080,
+      "end": 24480,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "is",
+      "start": 24560,
+      "end": 24880,
+      "confidence": 0.9970703,
+      "speaker": null
+    },
+    {
+      "text": "currently",
+      "start": 24880,
+      "end": 25200,
+      "confidence": 0.99560547,
+      "speaker": null
+    },
+    {
+      "text": "[DURATION]",
+      "start": 26170,
+      "end": 26410,
+      "confidence": 0.9941406,
+      "speaker": null
+    },
+    {
+      "text": "[DURATION].",
+      "start": 26730,
+      "end": 27370,
+      "confidence": 0.99975586,
+      "speaker": null
+    },
+    {
+      "text": "Thank",
+      "start": 27450,
+      "end": 27810,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "you",
+      "start": 27810,
+      "end": 27970,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "for",
+      "start": 27970,
+      "end": 28130,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "your",
+      "start": 28130,
+      "end": 28330,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "patience,",
+      "start": 28330,
+      "end": 28810,
+      "confidence": 0.9074707,
+      "speaker": null
+    },
+    {
+      "text": "[PERSON_NAME].",
+      "start": 52600,
+      "end": 64440,
+      "confidence": 0.6413574,
+      "speaker": null
+    },
+    {
+      "text": "Your",
+      "start": 92600,
+      "end": 92800,
+      "confidence": 0.97314453,
+      "speaker": null
+    },
+    {
+      "text": "call",
+      "start": 92800,
+      "end": 93080,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "is",
+      "start": 93080,
+      "end": 93320,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "now",
+      "start": 93320,
+      "end": 93600,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "first",
+      "start": 93600,
+      "end": 93920,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "in",
+      "start": 93920,
+      "end": 94200,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "line",
+      "start": 94200,
+      "end": 94520,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "and",
+      "start": 94520,
+      "end": 94880,
+      "confidence": 0.99658203,
+      "speaker": null
+    },
+    {
+      "text": "will",
+      "start": 94880,
+      "end": 95120,
+      "confidence": 0.99853516,
+      "speaker": null
+    },
+    {
+      "text": "be",
+      "start": 95120,
+      "end": 95280,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "answered",
+      "start": 95280,
+      "end": 95600,
+      "confidence": 0.9996745,
+      "speaker": null
+    },
+    {
+      "text": "by",
+      "start": 95600,
+      "end": 95760,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "the",
+      "start": 95760,
+      "end": 95920,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "next",
+      "start": 95920,
+      "end": 96160,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "available",
+      "start": 96160,
+      "end": 96520,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "[OCCUPATION].",
+      "start": 96600,
+      "end": 97320,
+      "confidence": 0.83935547,
+      "speaker": null
+    },
+    {
+      "text": "Thank",
+      "start": 97800,
+      "end": 98120,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "you",
+      "start": 98120,
+      "end": 98240,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "for",
+      "start": 98240,
+      "end": 98400,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "your",
+      "start": 98400,
+      "end": 98600,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "patience.",
+      "start": 98600,
+      "end": 99160,
+      "confidence": 0.998291,
+      "speaker": null
+    },
+    {
+      "text": "[ORGANIZATION]",
+      "start": 123530,
+      "end": 123690,
+      "confidence": 0.93359375,
+      "speaker": null
+    },
+    {
+      "text": "[ORGANIZATION],",
+      "start": 123690,
+      "end": 123970,
+      "confidence": 0.98876953,
+      "speaker": null
+    },
+    {
+      "text": "this",
+      "start": 123970,
+      "end": 124210,
+      "confidence": 0.9946289,
+      "speaker": null
+    },
+    {
+      "text": "is",
+      "start": 124210,
+      "end": 124370,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "[PERSON_NAME].",
+      "start": 124370,
+      "end": 124970,
+      "confidence": 0.9169922,
+      "speaker": null
+    },
+    {
+      "text": "Hey,",
+      "start": 125530,
+      "end": 125890,
+      "confidence": 0.9951172,
+      "speaker": null
+    },
+    {
+      "text": "[PERSON_NAME].",
+      "start": 125890,
+      "end": 126370,
+      "confidence": 0.91748047,
+      "speaker": null
+    },
+    {
+      "text": "This",
+      "start": 126370,
+      "end": 126490,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "is",
+      "start": 126490,
+      "end": 126650,
+      "confidence": 0.73095703,
+      "speaker": null
+    },
+    {
+      "text": "[PERSON_NAME]",
+      "start": 126650,
+      "end": 127090,
+      "confidence": 0.8878581,
+      "speaker": null
+    },
+    {
+      "text": "[PERSON_NAME].",
+      "start": 127090,
+      "end": 127450,
+      "confidence": 0.5957031,
+      "speaker": null
+    },
+    {
+      "text": "I",
+      "start": 127450,
+      "end": 127650,
+      "confidence": 0.99853516,
+      "speaker": null
+    },
+    {
+      "text": "just",
+      "start": 127650,
+      "end": 127890,
+      "confidence": 0.98535156,
+      "speaker": null
+    },
+    {
+      "text": "have",
+      "start": 127890,
+      "end": 128090,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "[DURATION]",
+      "start": 128090,
+      "end": 128210,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "[DURATION]",
+      "start": 128210,
+      "end": 128490,
+      "confidence": 0.99975586,
+      "speaker": null
+    },
+    {
+      "text": "quick",
+      "start": 128490,
+      "end": 128729,
+      "confidence": 0.99853516,
+      "speaker": null
+    },
+    {
+      "text": "questions.",
+      "start": 128729,
+      "end": 129250,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "First,",
+      "start": 129250,
+      "end": 129490,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "I",
+      "start": 129490,
+      "end": 129650,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "want",
+      "start": 129650,
+      "end": 129810,
+      "confidence": 0.9941406,
+      "speaker": null
+    },
+    {
+      "text": "to",
+      "start": 129810,
+      "end": 129930,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "see",
+      "start": 129930,
+      "end": 130050,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "if",
+      "start": 130050,
+      "end": 130210,
+      "confidence": 0.9941406,
+      "speaker": null
+    },
+    {
+      "text": "my",
+      "start": 130210,
+      "end": 130410,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "Sorento",
+      "start": 130410,
+      "end": 131090,
+      "confidence": 0.9674072,
+      "speaker": null
+    },
+    {
+      "text": "is",
+      "start": 131090,
+      "end": 131210,
+      "confidence": 0.9589844,
+      "speaker": null
+    },
+    {
+      "text": "still",
+      "start": 131210,
+      "end": 131370,
+      "confidence": 0.99365234,
+      "speaker": null
+    },
+    {
+      "text": "under",
+      "start": 131370,
+      "end": 131610,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "factory",
+      "start": 131610,
+      "end": 132090,
+      "confidence": 0.9589844,
+      "speaker": null
+    },
+    {
+      "text": "warranty.",
+      "start": 132090,
+      "end": 132570,
+      "confidence": 0.99121094,
+      "speaker": null
+    },
+    {
+      "text": "What",
+      "start": 135210,
+      "end": 135530,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "[DURATION]",
+      "start": 135530,
+      "end": 135730,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "is",
+      "start": 135730,
+      "end": 135890,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "it?",
+      "start": 135890,
+      "end": 136170,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "It's",
+      "start": 136890,
+      "end": 137330,
+      "confidence": 0.99658203,
+      "speaker": null
+    },
+    {
+      "text": "[DATE_INTERVAL].",
+      "start": 137330,
+      "end": 138090,
+      "confidence": 0.9939,
+      "speaker": null
+    },
+    {
+      "text": "How",
+      "start": 140400,
+      "end": 140480,
+      "confidence": 0.9951172,
+      "speaker": null
+    },
+    {
+      "text": "many",
+      "start": 140480,
+      "end": 140640,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "miles",
+      "start": 140640,
+      "end": 140920,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "are",
+      "start": 140920,
+      "end": 141040,
+      "confidence": 0.91845703,
+      "speaker": null
+    },
+    {
+      "text": "on",
+      "start": 141040,
+      "end": 141160,
+      "confidence": 0.9980469,
+      "speaker": null
+    },
+    {
+      "text": "it?",
+      "start": 141160,
+      "end": 141440,
+      "confidence": 0.99658203,
+      "speaker": null
+    },
+    {
+      "text": "47,000,",
+      "start": 142160,
+      "end": 143060,
+      "confidence": 0.94147,
+      "speaker": null
+    },
+    {
+      "text": "145.",
+      "start": 143260,
+      "end": 144160,
+      "confidence": 0.94147,
+      "speaker": null
+    },
+    {
+      "text": "Okay.",
+      "start": 145600,
+      "end": 146160,
+      "confidence": 0.9288737,
+      "speaker": null
+    },
+    {
+      "text": "Are",
+      "start": 146480,
+      "end": 146720,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "you",
+      "start": 146720,
+      "end": 146840,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "the",
+      "start": 146840,
+      "end": 147000,
+      "confidence": 0.99853516,
+      "speaker": null
+    },
+    {
+      "text": "original",
+      "start": 147000,
+      "end": 147360,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "owner?",
+      "start": 147360,
+      "end": 147840,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "I",
+      "start": 149280,
+      "end": 149560,
+      "confidence": 0.9760742,
+      "speaker": null
+    },
+    {
+      "text": "am",
+      "start": 149560,
+      "end": 149840,
+      "confidence": 0.9921875,
+      "speaker": null
+    },
+    {
+      "text": "now.",
+      "start": 149840,
+      "end": 150240,
+      "confidence": 0.9716797,
+      "speaker": null
+    },
+    {
+      "text": "Like,",
+      "start": 152080,
+      "end": 152400,
+      "confidence": 0.953125,
+      "speaker": null
+    },
+    {
+      "text": "you",
+      "start": 152400,
+      "end": 152600,
+      "confidence": 0.99853516,
+      "speaker": null
+    },
+    {
+      "text": "bought",
+      "start": 152600,
+      "end": 152800,
+      "confidence": 0.99890137,
+      "speaker": null
+    },
+    {
+      "text": "the",
+      "start": 152800,
+      "end": 152880,
+      "confidence": 0.9980469,
+      "speaker": null
+    },
+    {
+      "text": "vehicle",
+      "start": 152880,
+      "end": 153200,
+      "confidence": 0.99975586,
+      "speaker": null
+    },
+    {
+      "text": "brand",
+      "start": 153200,
+      "end": 153440,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "new",
+      "start": 153440,
+      "end": 153640,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "or",
+      "start": 153640,
+      "end": 153800,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "did",
+      "start": 153800,
+      "end": 153920,
+      "confidence": 0.9975586,
+      "speaker": null
+    },
+    {
+      "text": "you",
+      "start": 153920,
+      "end": 154040,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "buy",
+      "start": 154040,
+      "end": 154200,
+      "confidence": 0.99853516,
+      "speaker": null
+    },
+    {
+      "text": "it",
+      "start": 154200,
+      "end": 154359,
+      "confidence": 0.99316406,
+      "speaker": null
+    },
+    {
+      "text": "used?",
+      "start": 154359,
+      "end": 154639,
+      "confidence": 0.99658203,
+      "speaker": null
+    },
+    {
+      "text": "Used.",
+      "start": 158800,
+      "end": 159200,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "Okay,",
+      "start": 160320,
+      "end": 160960,
+      "confidence": 0.88411456,
+      "speaker": null
+    },
+    {
+      "text": "so",
+      "start": 161440,
+      "end": 161840,
+      "confidence": 0.9902344,
+      "speaker": null
+    },
+    {
+      "text": "you",
+      "start": 161840,
+      "end": 162200,
+      "confidence": 0.98876953,
+      "speaker": null
+    },
+    {
+      "text": "have.",
+      "start": 162200,
+      "end": 162560,
+      "confidence": 0.98291016,
+      "speaker": null
+    },
+    {
+      "text": "When",
+      "start": 164330,
+      "end": 164450,
+      "confidence": 0.9873047,
+      "speaker": null
+    },
+    {
+      "text": "you",
+      "start": 164450,
+      "end": 164570,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "buy",
+      "start": 164570,
+      "end": 164690,
+      "confidence": 0.9970703,
+      "speaker": null
+    },
+    {
+      "text": "a",
+      "start": 164690,
+      "end": 164810,
+      "confidence": 0.95458984,
+      "speaker": null
+    },
+    {
+      "text": "used",
+      "start": 164810,
+      "end": 165050,
+      "confidence": 0.90966797,
+      "speaker": null
+    },
+    {
+      "text": "[ORGANIZATION],",
+      "start": 165050,
+      "end": 165530,
+      "confidence": 0.9812012,
+      "speaker": null
+    },
+    {
+      "text": "the",
+      "start": 165850,
+      "end": 166130,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "only",
+      "start": 166130,
+      "end": 166330,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "thing",
+      "start": 166330,
+      "end": 166530,
+      "confidence": 0.9970703,
+      "speaker": null
+    },
+    {
+      "text": "that",
+      "start": 166530,
+      "end": 166730,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "transfers",
+      "start": 166730,
+      "end": 167650,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "is",
+      "start": 167650,
+      "end": 168010,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "[DURATION]",
+      "start": 168170,
+      "end": 168530,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "[DURATION]",
+      "start": 168530,
+      "end": 168890,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "or",
+      "start": 169050,
+      "end": 169410,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "60,000",
+      "start": 169410,
+      "end": 170130,
+      "confidence": 0.99683,
+      "speaker": null
+    },
+    {
+      "text": "miles,",
+      "start": 170130,
+      "end": 170490,
+      "confidence": 0.99560547,
+      "speaker": null
+    },
+    {
+      "text": "whichever",
+      "start": 170490,
+      "end": 170970,
+      "confidence": 0.9812012,
+      "speaker": null
+    },
+    {
+      "text": "comes",
+      "start": 170970,
+      "end": 171250,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "first",
+      "start": 171250,
+      "end": 171610,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "for",
+      "start": 172010,
+      "end": 172330,
+      "confidence": 0.9980469,
+      "speaker": null
+    },
+    {
+      "text": "your",
+      "start": 172330,
+      "end": 172530,
+      "confidence": 0.9975586,
+      "speaker": null
+    },
+    {
+      "text": "basic",
+      "start": 172530,
+      "end": 172970,
+      "confidence": 0.99975586,
+      "speaker": null
+    },
+    {
+      "text": "and",
+      "start": 172970,
+      "end": 173250,
+      "confidence": 0.53125,
+      "speaker": null
+    },
+    {
+      "text": "your",
+      "start": 173250,
+      "end": 173490,
+      "confidence": 0.98876953,
+      "speaker": null
+    },
+    {
+      "text": "powertrain.",
+      "start": 173490,
+      "end": 174250,
+      "confidence": 0.98461914,
+      "speaker": null
+    },
+    {
+      "text": "So",
+      "start": 175210,
+      "end": 175490,
+      "confidence": 0.9682617,
+      "speaker": null
+    },
+    {
+      "text": "you're",
+      "start": 175490,
+      "end": 175730,
+      "confidence": 0.98502606,
+      "speaker": null
+    },
+    {
+      "text": "still",
+      "start": 175730,
+      "end": 175890,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "under",
+      "start": 175890,
+      "end": 176130,
+      "confidence": 0.98779297,
+      "speaker": null
+    },
+    {
+      "text": "warranty,",
+      "start": 176130,
+      "end": 176570,
+      "confidence": 0.8984375,
+      "speaker": null
+    },
+    {
+      "text": "but",
+      "start": 176570,
+      "end": 176770,
+      "confidence": 0.9980469,
+      "speaker": null
+    },
+    {
+      "text": "it's",
+      "start": 176770,
+      "end": 176970,
+      "confidence": 0.99104816,
+      "speaker": null
+    },
+    {
+      "text": "only",
+      "start": 176970,
+      "end": 177130,
+      "confidence": 0.99853516,
+      "speaker": null
+    },
+    {
+      "text": "until",
+      "start": 177130,
+      "end": 177450,
+      "confidence": 0.99072266,
+      "speaker": null
+    },
+    {
+      "text": "60,000.",
+      "start": 177530,
+      "end": 178250,
+      "confidence": 0.99365,
+      "speaker": null
+    },
+    {
+      "text": "Okay.",
+      "start": 180330,
+      "end": 180770,
+      "confidence": 0.94954425,
+      "speaker": null
+    },
+    {
+      "text": "Okay,",
+      "start": 180770,
+      "end": 181170,
+      "confidence": 0.97591144,
+      "speaker": null
+    },
+    {
+      "text": "that's",
+      "start": 181170,
+      "end": 181530,
+      "confidence": 0.99283856,
+      "speaker": null
+    },
+    {
+      "text": "perfect",
+      "start": 181530,
+      "end": 181850,
+      "confidence": 0.9742839,
+      "speaker": null
+    },
+    {
+      "text": "then.",
+      "start": 181850,
+      "end": 182170,
+      "confidence": 0.5966797,
+      "speaker": null
+    },
+    {
+      "text": "Because",
+      "start": 182170,
+      "end": 182410,
+      "confidence": 0.6542969,
+      "speaker": null
+    },
+    {
+      "text": "my",
+      "start": 182410,
+      "end": 182650,
+      "confidence": 0.99365234,
+      "speaker": null
+    },
+    {
+      "text": "power",
+      "start": 182650,
+      "end": 182930,
+      "confidence": 0.99853516,
+      "speaker": null
+    },
+    {
+      "text": "steering",
+      "start": 182930,
+      "end": 183370,
+      "confidence": 0.9934082,
+      "speaker": null
+    },
+    {
+      "text": "is",
+      "start": 183370,
+      "end": 183570,
+      "confidence": 0.9145508,
+      "speaker": null
+    },
+    {
+      "text": "acting",
+      "start": 183570,
+      "end": 183810,
+      "confidence": 0.81591797,
+      "speaker": null
+    },
+    {
+      "text": "up",
+      "start": 183810,
+      "end": 183970,
+      "confidence": 0.9926758,
+      "speaker": null
+    },
+    {
+      "text": "in",
+      "start": 183970,
+      "end": 184090,
+      "confidence": 0.8354492,
+      "speaker": null
+    },
+    {
+      "text": "my.",
+      "start": 184090,
+      "end": 184330,
+      "confidence": 0.8334961,
+      "speaker": null
+    },
+    {
+      "text": "My",
+      "start": 184730,
+      "end": 185050,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "AC",
+      "start": 185050,
+      "end": 185370,
+      "confidence": 0.9614258,
+      "speaker": null
+    },
+    {
+      "text": "is",
+      "start": 185370,
+      "end": 185650,
+      "confidence": 0.9819336,
+      "speaker": null
+    },
+    {
+      "text": "kind",
+      "start": 185650,
+      "end": 185810,
+      "confidence": 0.98779297,
+      "speaker": null
+    },
+    {
+      "text": "of",
+      "start": 185810,
+      "end": 186010,
+      "confidence": 0.86279297,
+      "speaker": null
+    },
+    {
+      "text": "acting",
+      "start": 186010,
+      "end": 186490,
+      "confidence": 0.9519043,
+      "speaker": null
+    },
+    {
+      "text": "ify.",
+      "start": 187130,
+      "end": 187770,
+      "confidence": 0.4597168,
+      "speaker": null
+    },
+    {
+      "text": "So",
+      "start": 189130,
+      "end": 189410,
+      "confidence": 0.9707031,
+      "speaker": null
+    },
+    {
+      "text": "could",
+      "start": 189410,
+      "end": 189570,
+      "confidence": 0.95166016,
+      "speaker": null
+    },
+    {
+      "text": "I",
+      "start": 189570,
+      "end": 189730,
+      "confidence": 0.9975586,
+      "speaker": null
+    },
+    {
+      "text": "possibly",
+      "start": 189730,
+      "end": 190010,
+      "confidence": 0.8878581,
+      "speaker": null
+    },
+    {
+      "text": "schedule",
+      "start": 190010,
+      "end": 190330,
+      "confidence": 0.99768066,
+      "speaker": null
+    },
+    {
+      "text": "an",
+      "start": 190330,
+      "end": 190410,
+      "confidence": 0.9863281,
+      "speaker": null
+    },
+    {
+      "text": "appointment",
+      "start": 190410,
+      "end": 190690,
+      "confidence": 0.9739583,
+      "speaker": null
+    },
+    {
+      "text": "to",
+      "start": 190690,
+      "end": 190810,
+      "confidence": 0.5605469,
+      "speaker": null
+    },
+    {
+      "text": "bring",
+      "start": 191040,
+      "end": 191160,
+      "confidence": 0.9848633,
+      "speaker": null
+    },
+    {
+      "text": "it",
+      "start": 191160,
+      "end": 191280,
+      "confidence": 0.9975586,
+      "speaker": null
+    },
+    {
+      "text": "up",
+      "start": 191280,
+      "end": 191400,
+      "confidence": 0.9970703,
+      "speaker": null
+    },
+    {
+      "text": "there",
+      "start": 191400,
+      "end": 191560,
+      "confidence": 0.9975586,
+      "speaker": null
+    },
+    {
+      "text": "as",
+      "start": 191560,
+      "end": 191720,
+      "confidence": 0.9790039,
+      "speaker": null
+    },
+    {
+      "text": "soon",
+      "start": 191720,
+      "end": 191880,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "as",
+      "start": 191880,
+      "end": 192040,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "possible",
+      "start": 192040,
+      "end": 192240,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "so",
+      "start": 192240,
+      "end": 192400,
+      "confidence": 0.9951172,
+      "speaker": null
+    },
+    {
+      "text": "I",
+      "start": 192400,
+      "end": 192520,
+      "confidence": 0.9863281,
+      "speaker": null
+    },
+    {
+      "text": "can",
+      "start": 192520,
+      "end": 192640,
+      "confidence": 0.9970703,
+      "speaker": null
+    },
+    {
+      "text": "have",
+      "start": 192640,
+      "end": 192760,
+      "confidence": 0.9916992,
+      "speaker": null
+    },
+    {
+      "text": "you",
+      "start": 192760,
+      "end": 192880,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "guys",
+      "start": 192880,
+      "end": 193080,
+      "confidence": 0.9975586,
+      "speaker": null
+    },
+    {
+      "text": "look",
+      "start": 193080,
+      "end": 193240,
+      "confidence": 0.99658203,
+      "speaker": null
+    },
+    {
+      "text": "at",
+      "start": 193240,
+      "end": 193400,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "it?",
+      "start": 193400,
+      "end": 193680,
+      "confidence": 0.99609375,
+      "speaker": null
+    },
+    {
+      "text": "Is",
+      "start": 195600,
+      "end": 195920,
+      "confidence": 0.9921875,
+      "speaker": null
+    },
+    {
+      "text": "it",
+      "start": 195920,
+      "end": 196120,
+      "confidence": 0.9970703,
+      "speaker": null
+    },
+    {
+      "text": "drivable?",
+      "start": 196120,
+      "end": 196720,
+      "confidence": 0.8699544,
+      "speaker": null
+    },
+    {
+      "text": "Yes,",
+      "start": 197840,
+      "end": 198200,
+      "confidence": 0.9519043,
+      "speaker": null
+    },
+    {
+      "text": "I.",
+      "start": 198200,
+      "end": 198480,
+      "confidence": 0.75146484,
+      "speaker": null
+    },
+    {
+      "text": "I",
+      "start": 198560,
+      "end": 198840,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "can",
+      "start": 198840,
+      "end": 198960,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "bring",
+      "start": 198960,
+      "end": 199080,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "it",
+      "start": 199080,
+      "end": 199200,
+      "confidence": 0.99853516,
+      "speaker": null
+    },
+    {
+      "text": "up",
+      "start": 199200,
+      "end": 199280,
+      "confidence": 0.9980469,
+      "speaker": null
+    },
+    {
+      "text": "there",
+      "start": 199280,
+      "end": 199400,
+      "confidence": 0.9145508,
+      "speaker": null
+    },
+    {
+      "text": "and",
+      "start": 199400,
+      "end": 199520,
+      "confidence": 0.9946289,
+      "speaker": null
+    },
+    {
+      "text": "drop",
+      "start": 199520,
+      "end": 199680,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "it",
+      "start": 199680,
+      "end": 199800,
+      "confidence": 0.9975586,
+      "speaker": null
+    },
+    {
+      "text": "off.",
+      "start": 199800,
+      "end": 200080,
+      "confidence": 0.9770508,
+      "speaker": null
+    },
+    {
+      "text": "Okay,",
+      "start": 200960,
+      "end": 201440,
+      "confidence": 0.99527997,
+      "speaker": null
+    },
+    {
+      "text": "if",
+      "start": 201440,
+      "end": 201640,
+      "confidence": 0.99853516,
+      "speaker": null
+    },
+    {
+      "text": "you",
+      "start": 201640,
+      "end": 201800,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "can",
+      "start": 201800,
+      "end": 201960,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "drop",
+      "start": 201960,
+      "end": 202160,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "it",
+      "start": 202160,
+      "end": 202280,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "off,",
+      "start": 202280,
+      "end": 202520,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "I",
+      "start": 202520,
+      "end": 202720,
+      "confidence": 0.99853516,
+      "speaker": null
+    },
+    {
+      "text": "can",
+      "start": 202720,
+      "end": 202840,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "get",
+      "start": 202840,
+      "end": 203000,
+      "confidence": 0.99853516,
+      "speaker": null
+    },
+    {
+      "text": "you",
+      "start": 203000,
+      "end": 203160,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "in",
+      "start": 203160,
+      "end": 203320,
+      "confidence": 0.99609375,
+      "speaker": null
+    },
+    {
+      "text": "sooner",
+      "start": 203320,
+      "end": 203680,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "because",
+      "start": 203680,
+      "end": 203880,
+      "confidence": 0.8613281,
+      "speaker": null
+    },
+    {
+      "text": "like,",
+      "start": 203880,
+      "end": 204040,
+      "confidence": 0.9980469,
+      "speaker": null
+    },
+    {
+      "text": "appointment",
+      "start": 204040,
+      "end": 204440,
+      "confidence": 0.98795575,
+      "speaker": null
+    },
+    {
+      "text": "wise,",
+      "start": 204440,
+      "end": 204680,
+      "confidence": 0.97802734,
+      "speaker": null
+    },
+    {
+      "text": "I",
+      "start": 204680,
+      "end": 204800,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "don't",
+      "start": 204800,
+      "end": 204960,
+      "confidence": 0.9998372,
+      "speaker": null
+    },
+    {
+      "text": "have",
+      "start": 204960,
+      "end": 205080,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "anything",
+      "start": 205080,
+      "end": 205360,
+      "confidence": 0.8112793,
+      "speaker": null
+    },
+    {
+      "text": "until",
+      "start": 205360,
+      "end": 205640,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "[DATE]",
+      "start": 205640,
+      "end": 205960,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "[DATE].",
+      "start": 205960,
+      "end": 206480,
+      "confidence": 0.96899,
+      "speaker": null
+    },
+    {
+      "text": "But",
+      "start": 207040,
+      "end": 207360,
+      "confidence": 0.98046875,
+      "speaker": null
+    },
+    {
+      "text": "you",
+      "start": 207360,
+      "end": 207560,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "would",
+      "start": 207560,
+      "end": 207720,
+      "confidence": 0.99609375,
+      "speaker": null
+    },
+    {
+      "text": "have",
+      "start": 207720,
+      "end": 207880,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "to",
+      "start": 207880,
+      "end": 208000,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "drop",
+      "start": 208000,
+      "end": 208160,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "it",
+      "start": 208160,
+      "end": 208280,
+      "confidence": 0.9921875,
+      "speaker": null
+    },
+    {
+      "text": "off",
+      "start": 208280,
+      "end": 208400,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "and",
+      "start": 208400,
+      "end": 208520,
+      "confidence": 0.99853516,
+      "speaker": null
+    },
+    {
+      "text": "leave",
+      "start": 208520,
+      "end": 208720,
+      "confidence": 0.99975586,
+      "speaker": null
+    },
+    {
+      "text": "it",
+      "start": 208720,
+      "end": 208800,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "with",
+      "start": 208800,
+      "end": 208920,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "me",
+      "start": 208920,
+      "end": 209040,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "for",
+      "start": 209040,
+      "end": 209160,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "[DURATION]",
+      "start": 209160,
+      "end": 209280,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "[DURATION]",
+      "start": 209280,
+      "end": 209440,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "[DURATION].",
+      "start": 209440,
+      "end": 209760,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "Okay,",
+      "start": 212640,
+      "end": 213120,
+      "confidence": 0.9864909,
+      "speaker": null
+    },
+    {
+      "text": "you",
+      "start": 213120,
+      "end": 213320,
+      "confidence": 0.4501953,
+      "speaker": null
+    },
+    {
+      "text": "don't",
+      "start": 213320,
+      "end": 213440,
+      "confidence": 0.98746747,
+      "speaker": null
+    },
+    {
+      "text": "have",
+      "start": 213440,
+      "end": 213560,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "it.",
+      "start": 213560,
+      "end": 213680,
+      "confidence": 0.46313477,
+      "speaker": null
+    },
+    {
+      "text": "But",
+      "start": 213680,
+      "end": 213840,
+      "confidence": 0.9038086,
+      "speaker": null
+    },
+    {
+      "text": "so",
+      "start": 213840,
+      "end": 214040,
+      "confidence": 0.9765625,
+      "speaker": null
+    },
+    {
+      "text": "basically",
+      "start": 214040,
+      "end": 214360,
+      "confidence": 0.99658203,
+      "speaker": null
+    },
+    {
+      "text": "I",
+      "start": 214360,
+      "end": 214560,
+      "confidence": 0.9868164,
+      "speaker": null
+    },
+    {
+      "text": "got",
+      "start": 214560,
+      "end": 214640,
+      "confidence": 0.9824219,
+      "speaker": null
+    },
+    {
+      "text": "a",
+      "start": 214640,
+      "end": 214720,
+      "confidence": 0.99365234,
+      "speaker": null
+    },
+    {
+      "text": "better",
+      "start": 214720,
+      "end": 214880,
+      "confidence": 0.98535156,
+      "speaker": null
+    },
+    {
+      "text": "chance",
+      "start": 214880,
+      "end": 215120,
+      "confidence": 0.99731445,
+      "speaker": null
+    },
+    {
+      "text": "of",
+      "start": 215120,
+      "end": 215200,
+      "confidence": 0.8701172,
+      "speaker": null
+    },
+    {
+      "text": "beginning",
+      "start": 215200,
+      "end": 215440,
+      "confidence": 0.7297363,
+      "speaker": null
+    },
+    {
+      "text": "looked",
+      "start": 215440,
+      "end": 215680,
+      "confidence": 0.86694336,
+      "speaker": null
+    },
+    {
+      "text": "at",
+      "start": 215680,
+      "end": 215760,
+      "confidence": 0.9868164,
+      "speaker": null
+    },
+    {
+      "text": "instead",
+      "start": 215760,
+      "end": 216000,
+      "confidence": 0.7866211,
+      "speaker": null
+    },
+    {
+      "text": "of",
+      "start": 216000,
+      "end": 216160,
+      "confidence": 0.99365234,
+      "speaker": null
+    },
+    {
+      "text": "being",
+      "start": 216160,
+      "end": 216340,
+      "confidence": 0.89453125,
+      "speaker": null
+    },
+    {
+      "text": "an",
+      "start": 216490,
+      "end": 216610,
+      "confidence": 0.93408203,
+      "speaker": null
+    },
+    {
+      "text": "appointment",
+      "start": 216610,
+      "end": 216850,
+      "confidence": 0.95458984,
+      "speaker": null
+    },
+    {
+      "text": "if",
+      "start": 216850,
+      "end": 216970,
+      "confidence": 0.6123047,
+      "speaker": null
+    },
+    {
+      "text": "I",
+      "start": 216970,
+      "end": 217050,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "just",
+      "start": 217050,
+      "end": 217130,
+      "confidence": 0.99609375,
+      "speaker": null
+    },
+    {
+      "text": "bring",
+      "start": 217130,
+      "end": 217250,
+      "confidence": 0.9902344,
+      "speaker": null
+    },
+    {
+      "text": "it",
+      "start": 217250,
+      "end": 217370,
+      "confidence": 0.9975586,
+      "speaker": null
+    },
+    {
+      "text": "up",
+      "start": 217370,
+      "end": 217450,
+      "confidence": 0.9970703,
+      "speaker": null
+    },
+    {
+      "text": "to",
+      "start": 217450,
+      "end": 217530,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "you",
+      "start": 217530,
+      "end": 217650,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "today,",
+      "start": 217650,
+      "end": 217930,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "correct?",
+      "start": 219130,
+      "end": 219650,
+      "confidence": 0.9998372,
+      "speaker": null
+    },
+    {
+      "text": "Yeah,",
+      "start": 219650,
+      "end": 219970,
+      "confidence": 0.9998372,
+      "speaker": null
+    },
+    {
+      "text": "it",
+      "start": 219970,
+      "end": 220170,
+      "confidence": 0.7753906,
+      "speaker": null
+    },
+    {
+      "text": "is.",
+      "start": 220170,
+      "end": 220450,
+      "confidence": 0.9394531,
+      "speaker": null
+    },
+    {
+      "text": "It's",
+      "start": 220450,
+      "end": 220730,
+      "confidence": 0.9946289,
+      "speaker": null
+    },
+    {
+      "text": "going",
+      "start": 220730,
+      "end": 220850,
+      "confidence": 0.7128906,
+      "speaker": null
+    },
+    {
+      "text": "to",
+      "start": 220850,
+      "end": 220970,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "take",
+      "start": 220970,
+      "end": 221090,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "[DURATION]",
+      "start": 221090,
+      "end": 221210,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "[DURATION]",
+      "start": 221210,
+      "end": 221370,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "[DURATION]",
+      "start": 221370,
+      "end": 221490,
+      "confidence": 0.9951172,
+      "speaker": null
+    },
+    {
+      "text": "[DURATION],",
+      "start": 221490,
+      "end": 221650,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "but",
+      "start": 221650,
+      "end": 221930,
+      "confidence": 0.90478516,
+      "speaker": null
+    },
+    {
+      "text": "it'd",
+      "start": 221930,
+      "end": 222330,
+      "confidence": 0.96988934,
+      "speaker": null
+    },
+    {
+      "text": "be",
+      "start": 222330,
+      "end": 222450,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "easier",
+      "start": 222450,
+      "end": 222810,
+      "confidence": 0.99975586,
+      "speaker": null
+    },
+    {
+      "text": "that",
+      "start": 222810,
+      "end": 223010,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "way",
+      "start": 223010,
+      "end": 223290,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "or",
+      "start": 223690,
+      "end": 223970,
+      "confidence": 0.99853516,
+      "speaker": null
+    },
+    {
+      "text": "sooner.",
+      "start": 223970,
+      "end": 224370,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "Okay,",
+      "start": 224370,
+      "end": 224970,
+      "confidence": 0.84228516,
+      "speaker": null
+    },
+    {
+      "text": "that's",
+      "start": 225450,
+      "end": 225810,
+      "confidence": 0.99593097,
+      "speaker": null
+    },
+    {
+      "text": "perfectly",
+      "start": 225810,
+      "end": 226250,
+      "confidence": 0.9744873,
+      "speaker": null
+    },
+    {
+      "text": "fine.",
+      "start": 226250,
+      "end": 226650,
+      "confidence": 0.99975586,
+      "speaker": null
+    },
+    {
+      "text": "Okay.",
+      "start": 227370,
+      "end": 228010,
+      "confidence": 0.9905599,
+      "speaker": null
+    },
+    {
+      "text": "Yeah,",
+      "start": 228010,
+      "end": 228330,
+      "confidence": 0.99869794,
+      "speaker": null
+    },
+    {
+      "text": "you",
+      "start": 228330,
+      "end": 228410,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "can",
+      "start": 228410,
+      "end": 228530,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "do",
+      "start": 228530,
+      "end": 228650,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "that.",
+      "start": 228650,
+      "end": 228730,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "I'll",
+      "start": 228730,
+      "end": 228970,
+      "confidence": 0.7861328,
+      "speaker": null
+    },
+    {
+      "text": "try",
+      "start": 228970,
+      "end": 229050,
+      "confidence": 0.99902344,
+      "speaker": null
+    },
+    {
+      "text": "to",
+      "start": 229050,
+      "end": 229130,
+      "confidence": 0.99560547,
+      "speaker": null
+    },
+    {
+      "text": "get",
+      "start": 229130,
+      "end": 229210,
+      "confidence": 0.9970703,
+      "speaker": null
+    },
+    {
+      "text": "that",
+      "start": 229210,
+      "end": 229450,
+      "confidence": 0.32421875,
+      "speaker": null
+    },
+    {
+      "text": "today.",
+      "start": 229450,
+      "end": 229810,
+      "confidence": 0.7626953,
+      "speaker": null
+    },
+    {
+      "text": "All",
+      "start": 229810,
+      "end": 230010,
+      "confidence": 0.9980469,
+      "speaker": null
+    },
+    {
+      "text": "right.",
+      "start": 230010,
+      "end": 230130,
+      "confidence": 0.6513672,
+      "speaker": null
+    },
+    {
+      "text": "Thank",
+      "start": 230130,
+      "end": 230330,
+      "confidence": 1.0,
+      "speaker": null
+    },
+    {
+      "text": "you.",
+      "start": 230330,
+      "end": 230570,
+      "confidence": 0.9995117,
+      "speaker": null
+    },
+    {
+      "text": "Okay.",
+      "start": 230890,
+      "end": 231370,
+      "confidence": 0.8014323,
+      "speaker": null
+    },
+    {
+      "text": "You're",
+      "start": 231370,
+      "end": 231610,
+      "confidence": 0.9998372,
+      "speaker": null
+    },
+    {
+      "text": "welcome.",
+      "start": 231610,
+      "end": 232010,
+      "confidence": 0.99283856,
+      "speaker": null
+    },
+    {
+      "text": "Okay.",
+      "start": 233930,
+      "end": 234570,
+      "confidence": 0.9376628,
+      "speaker": null
+    }
+  ],
+  "redacted_pii_policies": [
+    "account_number",
+    "banking_information",
+    "blood_type",
+    "credit_card_number",
+    "credit_card_expiration",
+    "credit_card_cvv",
+    "date",
+    "date_interval",
+    "date_of_birth",
+    "drivers_license",
+    "drug",
+    "duration",
+    "email_address",
+    "event",
+    "filename",
+    "gender_sexuality",
+    "healthcare_number",
+    "injury",
+    "ip_address",
+    "language",
+    "location",
+    "marital_status",
+    "medical_condition",
+    "medical_process",
+    "money_amount",
+    "nationality",
+    "number_sequence",
+    "occupation",
+    "organization",
+    "passport_number",
+    "password",
+    "person_age",
+    "person_name",
+    "phone_number",
+    "physical_attribute",
+    "political_affiliation",
+    "religion",
+    "statistics",
+    "time",
+    "url",
+    "us_social_security_number",
+    "username",
+    "vehicle_id",
+    "zodiac_sign"
+  ]
+}

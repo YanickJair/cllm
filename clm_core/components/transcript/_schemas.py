@@ -122,6 +122,87 @@ class CustomerProfile(BaseModel):
     email: Optional[str] = Field(default=None, description="Customer's email")
 
 
+class ResolutionState(BaseModel):
+    """Enhanced resolution state with granularity"""
+
+    type: str = Field(
+        default="UNKNOWN",
+        description="FULLY_RESOLVED, PARTIALLY_RESOLVED, PENDING, ESCALATED, UNRESOLVED",
+    )
+    completeness: Optional[str] = Field(
+        default=None, description="FULL, PARTIAL, NONE - how much of issue was addressed"
+    )
+    customer_satisfaction: Optional[str] = Field(
+        default=None, description="SATISFIED, NEUTRAL, DISSATISFIED"
+    )
+    follow_up_needed: bool = Field(default=False, description="Whether follow-up is required")
+    follow_up_reason: Optional[str] = Field(
+        default=None, description="PENDING_ACTION, VERIFICATION_NEEDED, SCHEDULED_CALLBACK"
+    )
+
+
+class RefundReference(BaseModel):
+    """Case-dependent refund information for billing/refund cases"""
+
+    reference_number: Optional[str] = Field(default=None, description="Refund reference ID")
+    amount: Optional[str] = Field(default=None, description="Refund amount like $14.99")
+    method: Optional[str] = Field(
+        default=None, description="CARD_CREDIT, ACCOUNT_CREDIT, CHECK, PAYPAL"
+    )
+    status: Optional[str] = Field(
+        default=None, description="INITIATED, PROCESSING, COMPLETED, PENDING_APPROVAL"
+    )
+    timeline: Optional[str] = Field(
+        default=None, description="Expected timeline: 3-5_DAYS, 24h, IMMEDIATE"
+    )
+    original_transaction_id: Optional[str] = Field(
+        default=None, description="Original transaction being refunded"
+    )
+
+
+class TimelineEvent(BaseModel):
+    """Single event in conversation timeline"""
+
+    event_type: str = Field(
+        ..., description="ISSUE_RAISED, ACTION_TAKEN, RESOLUTION_PROPOSED, etc."
+    )
+    description: Optional[str] = Field(default=None, description="Brief description of event")
+    turn_index: int = Field(..., description="Turn index where event occurred")
+    timestamp: Optional[float] = Field(default=None, description="Relative timestamp if available")
+    actor: str = Field(default="agent", description="Who triggered: agent, customer, system")
+
+
+class ConversationTimeline(BaseModel):
+    """Timeline of key events in conversation"""
+
+    events: list[TimelineEvent] = Field(default_factory=list, description="Ordered list of events")
+    first_issue_turn: Optional[int] = Field(
+        default=None, description="Turn index when issue was first raised"
+    )
+    first_resolution_turn: Optional[int] = Field(
+        default=None, description="Turn index when resolution was first proposed"
+    )
+    time_to_first_action: Optional[int] = Field(
+        default=None, description="Turns between issue and first action"
+    )
+    time_to_resolution: Optional[int] = Field(
+        default=None, description="Turns between issue and resolution"
+    )
+
+
+class PromiseCommitment(BaseModel):
+    """Agent promise/commitment to customer"""
+
+    type: str = Field(
+        ..., description="CALLBACK, FOLLOW_UP_EMAIL, TECHNICIAN_VISIT, CREDIT_PROMISE, etc."
+    )
+    description: str = Field(..., description="What was promised")
+    timeline: Optional[str] = Field(default=None, description="When promised: 24h, MONDAY, 3-5_DAYS")
+    amount: Optional[str] = Field(default=None, description="Amount if applicable (credit/refund)")
+    turn_index: int = Field(..., description="Turn where promise was made")
+    confidence: float = Field(default=0.8, description="Detection confidence 0.0-1.0")
+
+
 class TranscriptAnalysis(BaseModel):
     """Complete transcript analysis"""
 
@@ -132,6 +213,20 @@ class TranscriptAnalysis(BaseModel):
     actions: list[Action]
     resolution: Resolution
     sentiment_trajectory: SentimentTrajectory
+
+    # Case-dependent features
+    resolution_state: Optional[ResolutionState] = Field(
+        default=None, description="Enhanced resolution state"
+    )
+    refund_reference: Optional[RefundReference] = Field(
+        default=None, description="Refund details (only for billing/refund cases)"
+    )
+    timeline: Optional[ConversationTimeline] = Field(
+        default=None, description="Timeline of key events"
+    )
+    promises: list[PromiseCommitment] = Field(
+        default_factory=list, description="Agent promises/commitments"
+    )
 
     def to_dict(self):
         return {k: str(v) for k, v in self.model_dump().items()}

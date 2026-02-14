@@ -220,7 +220,7 @@ class QuestionExtractor(BaseExtractor):
             return None
 
         text_lower = text.lower()
-        domain, _ = self.domain_parser.detect(text)
+        domain, _ = self.domain_parser.detect(text, doc=doc)
 
         if any(text_lower.startswith(qw) for qw in self.question_words):
             attributes = self.attribute_enhancer.enhance("CONCEPT", text, doc)
@@ -238,7 +238,7 @@ class NounExtractor(BaseExtractor):
     def extract(self, text: str, doc: Doc) -> List[Target]:
         """Extract targets from nouns"""
         targets = []
-        domain, _ = self.domain_parser.detect(text)
+        domain, _ = self.domain_parser.detect(text, doc=doc)
 
         for token in doc:
             if token.pos_ in ["NOUN", "PROPN"]:
@@ -292,7 +292,7 @@ class CompoundExtractor(BaseExtractor):
         """Extract compound phrase targets"""
         targets = []
         text_lower = text.lower()
-        domain, _ = self.domain_parser.detect(text)
+        domain, _ = self.domain_parser.detect(text, doc=doc)
 
         for phrase, target_token in self.compound_phrases.items():
             if phrase in text_lower:
@@ -313,6 +313,13 @@ class PatternExtractor(BaseExtractor):
         self.demonstratives = self.vocab.DEMONSTRATIVES
         self.demonstratives_lower = [d.lower() for d in self.demonstratives]
 
+        # Precompile "for X" patterns to avoid regex compilation in loops
+        self._for_patterns: dict[str, re.Pattern] = {}
+        for target_token, synonyms in self.vocab.TARGET_TOKENS.items():
+            for syn in synonyms:
+                pattern = rf"for\s+(?:a|an|the|um|uma|o|a|un|une|le|la)?\s*(?:\w+\s+)*?{re.escape(syn)}"
+                self._for_patterns[(target_token, syn)] = re.compile(pattern, re.IGNORECASE)
+
     def extract(self, text: str, doc: Doc) -> List[Target]:
         """Extract from patterns like 'this X', 'for X', concepts
 
@@ -331,7 +338,7 @@ class PatternExtractor(BaseExtractor):
             [Target(text='this', domain='general', type='demonstrative')]
         """
         targets = []
-        domain, _ = self.domain_parser.detect(text)
+        domain, _ = self.domain_parser.detect(text, doc=doc)
 
         this_target = self._detect_this_pattern(doc, text)
         if this_target:
@@ -384,14 +391,13 @@ class PatternExtractor(BaseExtractor):
         """
         text_lower = text.lower()
 
-        for target_token, synonyms in self.vocab.TARGET_TOKENS.items():
-            for syn in synonyms:
-                pattern = rf"for\s+(?:a|an|the|um|uma|o|a|un|une|le|la)?\s*(?:\w+\s+)*?{re.escape(syn)}"
-                if re.search(pattern, text_lower):
-                    attributes = self.attribute_enhancer.enhance(
-                        target_token, text, doc
-                    )
-                    return Target(token=target_token, attributes=attributes)
+        # Use precompiled patterns for O(1) regex matching
+        for (target_token, syn), compiled_pattern in self._for_patterns.items():
+            if compiled_pattern.search(text_lower):
+                attributes = self.attribute_enhancer.enhance(
+                    target_token, text, doc
+                )
+                return Target(token=target_token, attributes=attributes)
 
         return None
 
@@ -503,5 +509,5 @@ class FallbackExtractor(BaseExtractor):
             'GEOGRAPHY'
         """
         attributes = self.attribute_enhancer.enhance(token, text, doc)
-        domain, _ = self.domain_parser.detect(text)
+        domain, _ = self.domain_parser.detect(text, doc=doc)
         return Target(token=token, attributes=attributes, domain=domain)

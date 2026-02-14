@@ -76,9 +76,10 @@ class IntentDetector:
         seen_tokens = set()
         unique_intents = []
 
-        for part in parts:
-            part_doc = self.nlp(part)
+        # Batch process all parts with nlp.pipe() for efficiency
+        part_docs = list(self.nlp.pipe(parts))
 
+        for part, part_doc in zip(parts, part_docs):
             req = self._detect_direct_synonym(part, part_doc)
             if not req:
                 req = self._detect_imperative(part_doc) or self._detect_root_based(

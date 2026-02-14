@@ -1,7 +1,9 @@
 import re
 from datetime import datetime
+from typing import Optional
 import spacy
 from spacy.matcher import Matcher
+from spacy.tokens import Doc
 
 try:
     import dateparser
@@ -11,12 +13,19 @@ except ImportError:
 from .._schemas import TemporalPattern
 from clm_core.dictionary.en.patterns import DAY_NAMES, WORD_TO_NUM
 
+# Dateparser settings optimized for English - avoids checking 615 locales
+_DATEPARSER_SETTINGS = {
+    "PREFER_DATES_FROM": "future",
+    "STRICT_PARSING": False,
+}
+
 
 class TemporalAnalyzer:
     """Temporal extractor with natural date, range, and frequency inference."""
 
-    def __init__(self, nlp: spacy.Language):
+    def __init__(self, nlp: spacy.Language, lang: str = "en"):
         self._nlp = nlp
+        self._lang = lang
         if "sentencizer" not in self._nlp.pipe_names:
             self._nlp.add_pipe("sentencizer")
         self.matcher = Matcher(self._nlp.vocab)
@@ -74,11 +83,12 @@ class TemporalAnalyzer:
             ],
         )
 
-    def extract(self, text: str) -> TemporalPattern:
+    def extract(self, text: str, doc: Optional[Doc] = None) -> TemporalPattern:
         """Extract temporal information from a given text.
 
         Args:
             text (str): The text to extract temporal information from.
+            doc (Optional[Doc]): Pre-computed spaCy Doc to avoid reprocessing.
 
         Returns:
             TemporalPattern: The extracted temporal information.
@@ -87,7 +97,8 @@ class TemporalAnalyzer:
             >>> analyzer.extract("from Monday to Friday")
             TemporalPattern(days=['MON', 'TUE', 'WED', 'THU', 'FRI'], times=None, duration=None, frequency=None, pattern=None)
         """
-        doc = self._nlp(text)
+        if doc is None:
+            doc = self._nlp(text)
 
         days = self._extract_days(text)
         times = self._extract_times(text)
@@ -264,7 +275,12 @@ class TemporalAnalyzer:
             return {}
 
         now = datetime.now()
-        parsed = dateparser.parse(text, settings={"RELATIVE_BASE": now})
+        # Use language hint to avoid checking all 615 locales
+        parsed = dateparser.parse(
+            text,
+            languages=[self._lang],
+            settings={**_DATEPARSER_SETTINGS, "RELATIVE_BASE": now},
+        )
         if not parsed:
             return {}
 
