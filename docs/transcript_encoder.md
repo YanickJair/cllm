@@ -39,6 +39,10 @@ The Transcript Encoder focuses on retaining information critical to understandin
 | **Actions Taken** | Troubleshooting steps, verification processes |
 | **Outcomes** | What worked, what didn't, next steps |
 | **Resolution** | How the call ended, follow-up required |
+| **Resolution State** | Granular resolution status, completeness, satisfaction |
+| **Refund Details** | Reference numbers, amounts, methods, timelines (billing cases) |
+| **Conversation Timeline** | Ordered events with time-to-resolution metrics |
+| **Agent Promises** | Commitments made (callbacks, credits, follow-ups) |
 | **Temporal Sequence** | Order of events (critical for troubleshooting) |
 | **Sentiment Trajectory** | Emotional journey (frustrated → satisfied) |
 | **Performance Metrics** | Agent quality indicators, compliance markers |
@@ -163,9 +167,11 @@ print(result.compressed)
 | **Agent Identity** | "Hi Raj" / "your help, Raj" | `AGENT=Raj` |
 | **Customer Contact** | "melissa.jordan@example.com" | `EMAIL=melissa.jordan@example.com` |
 | **Issue Type** | "extra charge... billed twice" | `BILLING_DISPUTE:SEVERITY=LOW` |
-| **Root Cause** | "system retried payment after first succeeded" | Implicit in `ACTION:TROUBLESHOOT` |
-| **Resolution** | "full refund... 3-5 business days" | `ACTION:REFUND:TIMELINE=3-5_DAYS` |
-| **Reference** | "RFD-908712" | `REFERENCE=RFD-908712` |
+| **Root Cause** | "system retried payment after first succeeded" | Implicit in `ACTION_CHAIN:TROUBLESHOOT` |
+| **Resolution** | "full refund... 3-5 business days" | `RESOLUTION:RESOLVED:TIMELINE=3-5d` |
+| **Resolution State** | Customer satisfied, issue fully resolved | `RES_STATE:FULLY_RESOLVED:CSAT=SATISFIED` |
+| **Refund Details** | "RFD-908712", card credit, 3-5 days | `REFUND:REF=RFD-908712:AMT=$89.99:METHOD=CARD_CREDIT` |
+| **Event Timeline** | Issue → investigation → action → confirmation | `TIMELINE:ISSUE_RAISED→...→CONFIRMATION_RECEIVED:TTR=4` |
 | **Sentiment Arc** | Concerned → Satisfied → Grateful | `NEUTRAL→SATISFIED→GRATEFUL` |
 
 ### Compression Metrics
@@ -307,6 +313,8 @@ if hasattr(result, 'metadata'):
     print(f"Sentiment trajectory: {result.metadata.get('sentiment')}")
 ```
 
+See [Case-Dependent Features](#case-dependent-features) for accessing resolution state, refund details, timeline, and agent promises.
+
 ---
 
 ## Token Structure
@@ -348,6 +356,43 @@ Call outcome:
 [RESOLUTION:FOLLOW_UP:DATE=2024-01-15]
 ```
 
+### RES_STATE Token
+Enhanced resolution state with granularity (case-dependent):
+```
+[RES_STATE:FULLY_RESOLVED:CSAT=SATISFIED]
+[RES_STATE:PARTIALLY_RESOLVED:COMPLETENESS=PARTIAL:FOLLOW_UP=YES:REASON=VERIFICATION_NEEDED]
+[RES_STATE:PENDING:CSAT=NEUTRAL]
+[RES_STATE:ESCALATED:CSAT=DISSATISFIED:FOLLOW_UP=YES:REASON=SCHEDULED_CALLBACK]
+```
+
+When the base `RESOLUTION` is `UNKNOWN` but a clearer state can be inferred (e.g., from customer satisfaction signals), only the `RES_STATE` token is emitted — avoiding redundant `UNKNOWN` output.
+
+### REFUND Token
+Refund details for billing/refund cases (case-dependent — only emitted when the issue involves billing disputes, refund requests, or duplicate charges):
+```
+[REFUND:REF=RFD-908712:AMT=$14.99:METHOD=CARD_CREDIT:STATUS=INITIATED:TIMELINE=3-5d]
+[REFUND:AMT=$89.99:METHOD=ACCOUNT_CREDIT:STATUS=COMPLETED]
+```
+
+### TIMELINE Token
+Conversation event timeline with performance metrics:
+```
+[TIMELINE:ISSUE_RAISED→INVESTIGATION_STARTED→ACTION_TAKEN→CONFIRMATION_RECEIVED:TTR=4:TTFA=2]
+```
+
+- `TTR` = Time to Resolution (turns between issue and resolution)
+- `TTFA` = Time to First Action (turns between issue and first agent action)
+- Events are limited to 8 per timeline
+
+### PROMISES Token
+Agent commitments extracted from the conversation:
+```
+[PROMISES:CALLBACK(24h):REFUND_PROMISE($14.99,3-5d):FOLLOW_UP_EMAIL]
+[PROMISES:TECHNICIAN_VISIT(MONDAY):CREDIT_PROMISE($50.00)]
+```
+
+Promise types: `CALLBACK`, `FOLLOW_UP_EMAIL`, `TECHNICIAN_VISIT`, `CREDIT_PROMISE`, `REFUND_PROMISE`, `DELIVERY_PROMISE`, `RESOLUTION_PROMISE`
+
 ### SENTIMENT Token
 Emotional trajectory:
 ```
@@ -356,6 +401,83 @@ Emotional trajectory:
 ```
 
 See [Token Hierarchy](advanced/clm_tokenization.md) for complete details.
+
+---
+
+## Case-Dependent Features
+
+The encoder now extracts **case-dependent features** — additional structured data that is only emitted when relevant to the conversation type. This avoids bloating output with empty or irrelevant fields.
+
+### Resolution State
+
+Provides granular resolution tracking beyond the basic `RESOLUTION` token:
+
+- **Type**: `FULLY_RESOLVED`, `PARTIALLY_RESOLVED`, `PENDING`, `ESCALATED`, `UNRESOLVED`, `RESOLVED_PENDING_VERIFICATION`
+- **Completeness**: `FULL`, `PARTIAL`, `NONE`
+- **Customer Satisfaction (CSAT)**: `SATISFIED`, `NEUTRAL`, `DISSATISFIED` — derived from final customer turns and sentiment
+- **Follow-up**: Whether follow-up is needed and the reason (`PENDING_ACTION`, `VERIFICATION_NEEDED`, `SCHEDULED_CALLBACK`)
+
+The encoder uses smart deduplication: when the base resolution is `UNKNOWN` but a clear state can be inferred, only `RES_STATE` is emitted.
+
+### Refund Reference
+
+Automatically extracted for billing-related cases (`BILLING_DISPUTE`, `REFUND_REQUEST`, `DUPLICATE_CHARGE`, etc.):
+
+- Reference number (pattern matching for `RFD-`, `REF-`, `CRD-` prefixes)
+- Amount, method (`CARD_CREDIT`, `ACCOUNT_CREDIT`, `CHECK`, `PAYPAL`, `BANK_TRANSFER`)
+- Status (`INITIATED`, `PROCESSING`, `COMPLETED`, `PENDING_APPROVAL`)
+- Expected timeline
+
+Only emitted when meaningful refund data is detected — skipped entirely for non-billing cases.
+
+### Conversation Timeline
+
+Tracks the sequence of key events with performance metrics:
+
+- **Event types**: `ISSUE_RAISED`, `INVESTIGATION_STARTED`, `ACTION_TAKEN`, `RESOLUTION_PROPOSED`, `CONFIRMATION_RECEIVED`, `ESCALATION_TRIGGERED`
+- **Metrics**: Time to Resolution (TTR), Time to First Action (TTFA) — measured in conversation turns
+
+### Agent Promises
+
+Detects and encodes commitments made by the agent:
+
+- **Types**: `CALLBACK`, `FOLLOW_UP_EMAIL`, `TECHNICIAN_VISIT`, `CREDIT_PROMISE`, `REFUND_PROMISE`, `DELIVERY_PROMISE`, `RESOLUTION_PROMISE`
+- Includes associated timelines and amounts where applicable
+- Confidence scoring (0.0–1.0) based on strength of language indicators
+- Automatic deduplication of identical promise types
+
+### Accessing Case-Dependent Features
+
+These features are available on the `TranscriptAnalysis` object:
+
+```python
+result = encoder.encode(input_=transcript, metadata=metadata)
+
+# Access via the analysis object
+analysis = encoder.analysis
+
+# Resolution state
+if analysis.resolution_state:
+    print(f"State: {analysis.resolution_state.type}")
+    print(f"CSAT: {analysis.resolution_state.customer_satisfaction}")
+    print(f"Follow-up: {analysis.resolution_state.follow_up_needed}")
+
+# Refund details (only present for billing cases)
+if analysis.refund_reference:
+    print(f"Ref: {analysis.refund_reference.reference_number}")
+    print(f"Amount: {analysis.refund_reference.amount}")
+    print(f"Status: {analysis.refund_reference.status}")
+
+# Timeline
+if analysis.timeline:
+    print(f"Events: {len(analysis.timeline.events)}")
+    print(f"Time to resolution: {analysis.timeline.time_to_resolution} turns")
+
+# Promises
+for promise in analysis.promises:
+    print(f"Promise: {promise.type} - {promise.description}")
+    print(f"  Timeline: {promise.timeline}, Confidence: {promise.confidence}")
+```
 
 ---
 
