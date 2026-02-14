@@ -1,7 +1,6 @@
 import re
 import spacy
 from spacy.tokens import Doc
-from clm_core.dictionary.en.patterns import NER_DOMAIN_PATTERNS
 
 
 class EntityExtractor:
@@ -13,7 +12,12 @@ class EntityExtractor:
         _ruler (spacy.pipeline.EntityRuler): The entity ruler used for custom entity recognition.
     """
 
-    def __init__(self, nlp: spacy.Language = None, model: str = "en_core_web_sm"):
+    def __init__(
+        self,
+        nlp: spacy.Language = None,
+        model: str = "en_core_web_sm",
+        ner_domain_patterns: dict[str, list] | None = None,
+    ):
         # Reuse provided nlp instance or load a new one
         if nlp is not None:
             self._nlp = nlp
@@ -27,8 +31,9 @@ class EntityExtractor:
         else:
             self._ruler = self._nlp.get_pipe("entity_ruler")
 
+        domain_patterns = ner_domain_patterns or {}
         ruler_patterns = []
-        for label, patterns in NER_DOMAIN_PATTERNS.items():
+        for label, patterns in domain_patterns.items():
             for pat in patterns:
                 ruler_patterns.append(
                     {

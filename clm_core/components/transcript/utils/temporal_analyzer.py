@@ -11,9 +11,8 @@ except ImportError:
     dateparser = None
 
 from .._schemas import TemporalPattern
-from clm_core.dictionary.en.patterns import DAY_NAMES, WORD_TO_NUM
 
-# Dateparser settings optimized for English - avoids checking 615 locales
+# Dateparser settings - avoids checking 615 locales
 _DATEPARSER_SETTINGS = {
     "PREFER_DATES_FROM": "future",
     "STRICT_PARSING": False,
@@ -23,9 +22,17 @@ _DATEPARSER_SETTINGS = {
 class TemporalAnalyzer:
     """Temporal extractor with natural date, range, and frequency inference."""
 
-    def __init__(self, nlp: spacy.Language, lang: str = "en"):
+    def __init__(
+        self,
+        nlp: spacy.Language,
+        day_names: dict[str, str] | None = None,
+        word_to_num: dict[str, int] | None = None,
+        lang: str = "en",
+    ):
         self._nlp = nlp
         self._lang = lang
+        self._day_names = day_names or {}
+        self._word_to_num = word_to_num or {}
         if "sentencizer" not in self._nlp.pipe_names:
             self._nlp.add_pipe("sentencizer")
         self.matcher = Matcher(self._nlp.vocab)
@@ -54,18 +61,45 @@ class TemporalAnalyzer:
             [
                 [
                     {
-                        "LOWER": {"IN": ["for", "past", "last", "over", "around"]},
+                        "LOWER": {
+                            "IN": [
+                                "for",
+                                "past",
+                                "last",
+                                "over",
+                                "around",
+                                "durante",
+                                "desde",
+                                "hace",
+                                "por",
+                            ]
+                        },
                         "OP": "?",
                     },
                     {
                         "LOWER": {
-                            "IN": list(WORD_TO_NUM.keys())
+                            "IN": list(self._word_to_num.keys())
                             + [str(i) for i in range(1, 10)]
                         }
                     },
                     {
                         "LOWER": {
-                            "IN": ["day", "days", "week", "weeks", "month", "months"]
+                            "IN": [
+                                "day",
+                                "days",
+                                "week",
+                                "weeks",
+                                "month",
+                                "months",
+                                "día",
+                                "días",
+                                "dia",
+                                "dias",
+                                "semana",
+                                "semanas",
+                                "mes",
+                                "meses",
+                            ]
                         }
                     },
                 ]
@@ -135,7 +169,7 @@ class TemporalAnalyzer:
         """
         found = []
         text_lower = text.lower()
-        for name, code in DAY_NAMES.items():
+        for name, code in self._day_names.items():
             if name in text_lower and code not in found:
                 found.append(code)
         return found
@@ -191,11 +225,17 @@ class TemporalAnalyzer:
             '6y'
         """
         text_lower = text.lower()
-        regex = r"(?:for|past|last|over|around)?\s*(\d+|one|two|three|four|five|six|seven|couple)\s+(day|week|month)s?"
+        word_alts = (
+            "|".join(re.escape(w) for w in self._word_to_num.keys())
+            if self._word_to_num
+            else ""
+        )
+        num_pattern = r"\d+" + (f"|{word_alts}" if word_alts else "")
+        regex = rf"(?:for|past|last|over|around|durante|desde|hace|por)?\s*({num_pattern})\s+(day|week|month|día|dias?|semana|mes(?:es)?)s?"
         match = re.search(regex, text_lower)
         if match:
-            num = WORD_TO_NUM.get(match.group(1), match.group(1))
-            unit = match.group(2)[0]
+            num = self._word_to_num.get(match.group(1), match.group(1))
+            unit = self._normalize_unit(match.group(2))
             return f"{num}{unit}"
 
         matches = self.matcher(doc)
@@ -205,8 +245,8 @@ class TemporalAnalyzer:
                 span = doc[start:end]
                 match = re.search(regex, span.text.lower())
                 if match:
-                    num = WORD_TO_NUM.get(match.group(1), match.group(1))
-                    unit = match.group(2)[0]
+                    num = self._word_to_num.get(match.group(1), match.group(1))
+                    unit = self._normalize_unit(match.group(2))
                     return f"{num}{unit}"
 
         if "since" in text_lower:
@@ -234,10 +274,10 @@ class TemporalAnalyzer:
             if rule_name == "DATE_RANGE":
                 span_text = doc[start:end].text.lower()
 
-                day_matches = [d for d in DAY_NAMES if d in span_text]
+                day_matches = [d for d in self._day_names if d in span_text]
                 if len(day_matches) >= 2:
-                    first = DAY_NAMES[day_matches[0]]
-                    second = DAY_NAMES[day_matches[1]]
+                    first = self._day_names[day_matches[0]]
+                    second = self._day_names[day_matches[1]]
                     duration_days = self._day_range_length(first, second)
                     return f"{duration_days}d"
 
@@ -293,7 +333,7 @@ class TemporalAnalyzer:
         elif abs(diff.days) > 7:
             duration = f"{abs(diff.days) // 7}w"
 
-        day_code = DAY_NAMES.get(parsed.strftime("%A").lower())
+        day_code = self._day_names.get(parsed.strftime("%A").lower())
 
         time_str = parsed.strftime("%H:%M") if parsed else None
 
@@ -398,6 +438,27 @@ class TemporalAnalyzer:
             return f"{num_occurrences}x_daily"
 
         return None
+
+    @staticmethod
+    def _normalize_unit(unit_str: str) -> str:
+        """Normalize a duration unit word to a single-letter abbreviation."""
+        _UNIT_MAP = {
+            "day": "d",
+            "days": "d",
+            "week": "w",
+            "weeks": "w",
+            "month": "m",
+            "months": "m",
+            "día": "d",
+            "dias": "d",
+            "dia": "d",
+            "días": "d",
+            "semana": "w",
+            "semanas": "w",
+            "mes": "m",
+            "meses": "m",
+        }
+        return _UNIT_MAP.get(unit_str.lower(), unit_str[0])
 
     @staticmethod
     def _build_pattern(times: list[str]) -> str | None:

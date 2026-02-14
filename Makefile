@@ -47,7 +47,7 @@ typecheck: venv
 	$(VENV_PIP) install mypy >/dev/null 2>&1 || true
 	$(VENV_PY) -m mypy .
 
-test: venv
+tests: venv
 	$(VENV_PIP) install pytest >/dev/null 2>&1 || true
 	$(VENV_PY) -m pytest -q
 

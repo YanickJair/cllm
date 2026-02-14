@@ -580,3 +580,166 @@ NER_ADDRESS_ABBREVIATIONS = {
     "Travessa": "Trav.",
     "Alameda": "Al.",
 }
+
+# ── Transcript analyzer patterns ──
+
+RESOLUTION_KEYWORDS = {
+    "RESOLVED": {"resolvido", "corrigido", "solucionado", "aprovado", "reembolso"},
+    "ESCALATED": {"escalar", "supervisor", "transferir"},
+    "PENDING_REPLACEMENT": {"substituir", "substituição", "troca"},
+}
+
+BILLING_CAUSE_KEYWORDS = {
+    "DUPLICATE_PROCESSING": {"duplicado", "processado duas vezes", "reprocessado"},
+    "DOUBLE_BILLING": {"cobrança dupla", "cobrado duas vezes"},
+    "PRORATION_CONFUSION": {"rateio", "pro rata"},
+    "SYSTEM_ERROR": {"erro", "engano"},
+    "MID_CYCLE_UPGRADE": {"upgrade", "melhoria"},
+    "MID_CYCLE_DOWNGRADE": {"downgrade", "redução"},
+    "BILLING_OVERLAP": {"sobreposição"},
+}
+
+ISSUE_TYPE_KEYWORDS = {
+    "BILLING_DISPUTE": {"fatura", "cobrança", "reembolso"},
+    "CONNECTIVITY": {"internet", "conexão", "wifi"},
+    "PERFORMANCE": {"lento", "velocidade"},
+}
+
+SEVERITY_KEYWORDS = {
+    "HIGH": {
+        "crítico",
+        "urgente",
+        "emergência",
+        "não funciona de jeito nenhum",
+        "não consigo trabalhar",
+    },
+    "MEDIUM": {
+        "frustrado",
+        "irritante",
+        "preciso para trabalhar",
+        "importante",
+    },
+}
+
+ISSUE_CONFIRMATION_MAP = {
+    "DUPLICATE_CHARGE_CONFIRMED": {
+        "duplicado",
+        "processado duas vezes",
+        "cobrança dupla",
+        "duas cobranças",
+    }
+}
+
+ACTION_EVENT_MAP = {
+    "VERIFY": "ACCOUNT_VERIFIED",
+    "TROUBLESHOOT": "TROUBLESHOOT",
+    "ESCALATE": "ESCALATION_CREATED",
+    "REPLACE": "REPLACEMENT_ORDERED",
+    "SCHEDULE": "APPOINTMENT_SCHEDULED",
+    "UPDATE_INFO": "ACCOUNT_UPDATED",
+    "CANCEL": "SERVICE_CANCELLED",
+    "OFFER_DISCOUNT": "DISCOUNT_APPLIED",
+    "APPROVE": "REQUEST_APPROVED",
+    "DENY": "REQUEST_DENIED",
+    "NOTIFY": "CUSTOMER_NOTIFIED",
+    "DOCUMENT": "DOCUMENTATION_UPDATED",
+    "ACTIVATE_TRIAL": "TRIAL_ACTIVATED",
+}
+
+EXPLICIT_ONLY_ACTIONS = {
+    "DOCUMENTATION_UPDATED",
+    "ACCOUNT_UPDATED",
+    "REQUEST_APPROVED",
+}
+
+SUPPORTED_ACTION_TYPES = {
+    "REFUND",
+    "CREDIT",
+    "TROUBLESHOOT",
+    "ESCALATE",
+    "REPLACE",
+    "CHARGE",
+    "PAYMENT",
+}
+
+ACTION_COMPLETION_KEYWORDS = {
+    "enviado",
+    "processado",
+    "concluído",
+    "arquivado",
+    "aplicado",
+    "emitido",
+    "pronto",
+    "feito",
+}
+
+ACTION_COMPLETION_PHRASES = {
+    "acabei de enviar",
+    "acabei de processar",
+    "já enviado",
+    "já processado",
+}
+
+ACTION_NOW_PATTERNS = [
+    r"(eu )?acabei de (enviar|processar|arquivar)\b",
+    r"estou (processando|enviando|arquivando) (isso|o|a)?\s*(agora)?\b",
+]
+
+POSITIVE_CUSTOMER_CONFIRMATIONS = {
+    "perfeito",
+    "ótimo",
+    "obrigado",
+    "entendi",
+    "recebido",
+    "agradeço",
+}
+
+AGENT_CONFIRMATION_PHRASES = {
+    "tudo pronto",
+    "está tudo certo",
+    "isso está feito",
+    "concluído",
+}
+
+EXPLICIT_ACTION_PHRASES = {
+    "DOCUMENTATION_UPDATED": {
+        "eu documentei",
+        "adicionei notas",
+        "registrei isso",
+        "adicionado ao ticket",
+        "atualizei as notas do caso",
+    },
+    "ACCOUNT_UPDATED": {
+        "atualizei sua conta",
+        "sua conta foi atualizada",
+        "alterei seu plano",
+        "alterei suas configurações",
+    },
+}
+
+TECHNICAL_ISSUE_MAP = {
+    "OUTAGE": ["queda", "fora do ar", "offline", "vários clientes"],
+    "PACKET_LOSS": ["perda de pacotes", "linha degradada"],
+    "INTERMITTENT_CONNECTIVITY": ["fica caindo", "intermitente"],
+}
+
+TROUBLESHOOTING_ACTIONS = {
+    "TROUBLESHOOTING_PERFORMED": {
+        "executei um teste",
+        "reiniciei",
+        "reiniciar",
+        "limpei",
+        "realizei",
+        "apliquei correção",
+    },
+    "DIAGNOSTIC_PERFORMED": {
+        "verifiquei",
+        "analisei",
+        "consigo ver",
+        "revisei os logs",
+        "estou vendo",
+        "consultei",
+        "executei diagnósticos",
+        "teste de linha",
+    },
+}

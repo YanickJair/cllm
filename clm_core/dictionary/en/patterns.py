@@ -1,6 +1,7 @@
 """
 Pattern definitions and constants for target extraction
 """
+
 EXPLICIT_ACTION_PHRASES = {
     "DOCUMENTATION_UPDATED": {
         "i have documented",

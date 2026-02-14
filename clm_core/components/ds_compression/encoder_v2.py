@@ -87,8 +87,7 @@ class SDEncoderV2:
 
     def _encode_table(self, rows: list[dict[str, Any]]) -> str:
         filtered_rows = [
-            self._filter_fields(self._normalize_object(r), path="")
-            for r in rows
+            self._filter_fields(self._normalize_object(r), path="") for r in rows
         ]
         filtered_rows = [r for r in filtered_rows if r]
 
@@ -143,7 +142,11 @@ class SDEncoderV2:
     def _normalize_value(self, value: Any, key: str) -> Any:
         if isinstance(value, dict):
             return self._normalize_object(value)
-        if isinstance(value, list) and value and all(isinstance(x, dict) for x in value):
+        if (
+            isinstance(value, list)
+            and value
+            and all(isinstance(x, dict) for x in value)
+        ):
             return [self._normalize_object(x) for x in value]
         if (
             isinstance(value, str)
@@ -185,8 +188,7 @@ class SDEncoderV2:
                 if first:
                     kept = set(first.keys())
                     filtered = [first] + [
-                        {k: item[k] for k in item if k in kept}
-                        for item in value[1:]
+                        {k: item[k] for k in item if k in kept} for item in value[1:]
                     ]
                     out[key] = filtered
             else:
@@ -219,8 +221,7 @@ class SDEncoderV2:
 
         if self._config.field_importance and key in self._config.field_importance:
             return (
-                self._config.field_importance[key]
-                >= self._config.importance_threshold
+                self._config.field_importance[key] >= self._config.importance_threshold
             )
 
         if self._config.auto_detect:
@@ -232,10 +233,7 @@ class SDEncoderV2:
         return True
 
     def _is_required_path(self, key: str) -> bool:
-        return any(
-            rp == key or rp.startswith(key + ".")
-            for rp in self._required_paths
-        )
+        return any(rp == key or rp.startswith(key + ".") for rp in self._required_paths)
 
     @staticmethod
     def _find_table_fields(

@@ -26,13 +26,18 @@ class CLMEncoder:
     def _nlp(self) -> spacy.Language:
         if self._lazy_nlp is None:
             self._lazy_nlp = self._cfg.nlp_model
+        print("NLP Model Loaded", self._cfg.nlp_model)
         return self._lazy_nlp
 
     @property
     def _ts_encoder(self) -> TranscriptEncoder:
         if self._lazy_ts_encoder is None:
             self._lazy_ts_encoder = TranscriptEncoder(
-                nlp=self._nlp, vocab=self._cfg.vocab, rules=self._cfg.rules
+                nlp=self._nlp,
+                vocab=self._cfg.vocab,
+                rules=self._cfg.rules,
+                patterns=self._cfg.patterns,
+                lang=self._cfg.lang,
             )
         return self._lazy_ts_encoder
 

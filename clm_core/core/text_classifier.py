@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Any
+import langdetect
 
 
 class DataTypes(Enum):
@@ -35,14 +36,40 @@ class DataClassifier:
             "the following",  # Often in system prompts
         ]
 
-        self._transcript_patterns: list[str] = [
-            "agent:",
-            "customer:",
-            "user:",
-            "assistant:",
-            "caller:",
-            "representative:",
-        ]
+        self._transcript_patterns: dict[str, tuple[str, ...]] = {
+            "en": (
+                "agent:",
+                "customer:",
+                "user:",
+                "assistant:",
+                "caller:",
+                "representative:",
+            ),
+            "es": (
+                "agente:",
+                "cliente:",
+                "usuario:",
+                "asistente:",
+                "llamante:",
+                "representante:",
+            ),
+            "pt": (
+                "agente:",
+                "cliente:",
+                "utilizador:",
+                "assistente:",
+                "usuario:",
+                "representante:",
+            ),
+            "fr": (
+                "agent :",
+                "client :",
+                "utilisateur :",
+                "assistant :",
+                "appelant :",
+                "représentant :",
+            ),
+        }
 
     def classifier(self, *, input_: Any) -> DataTypes:
         """
@@ -118,12 +145,12 @@ class DataClassifier:
         - Speaker labels (Agent:, Customer:, etc.)
         - Multiple exchanges (at least 2 speaker occurrences)
         """
-        # Check for speaker patterns
+        lang = langdetect.detect(normalized_text[:200])
+        patterns = self._transcript_patterns[lang]
         speaker_count = sum(
-            normalized_text.count(pattern) for pattern in self._transcript_patterns
+            normalized_text.count(pattern) for pattern in patterns[:250]
         )
 
-        # Need at least 2 speaker occurrences for a conversation
         return speaker_count >= 2
 
     def _is_system_prompt(self, normalized_text: str) -> bool:

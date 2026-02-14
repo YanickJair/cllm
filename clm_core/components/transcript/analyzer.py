@@ -2,19 +2,7 @@ import re
 from typing import Optional
 import spacy
 
-from clm_core.dictionary.en.patterns import (
-    SUPPORTED_ACTION_TYPES,
-    ACTION_COMPLETION_KEYWORDS,
-    ACTION_NOW_PATTERNS,
-    ACTION_COMPLETION_PHRASES,
-    POSITIVE_CUSTOMER_CONFIRMATIONS,
-    AGENT_CONFIRMATION_PHRASES,
-    RESOLUTION_KEYWORDS,
-    ISSUE_TYPE_KEYWORDS,
-    SEVERITY_KEYWORDS,
-    BILLING_CAUSE_KEYWORDS, ISSUE_CONFIRMATION_MAP, ACTION_EVENT_MAP, EXPLICIT_ONLY_ACTIONS, EXPLICIT_ACTION_PHRASES,
-    TECHNICAL_ISSUE_MAP, TROUBLESHOOTING_ACTIONS,
-)
+from .patterns import TranscriptPatterns
 from . import (
     CallInfo,
     Issue,
@@ -45,23 +33,41 @@ class TranscriptAnalyzer:
         nlp: spacy.Language,
         vocab: BaseVocabulary,
         rules: BaseRules,
+        patterns: TranscriptPatterns,
     ):
         self.nlp = nlp
+        self.patterns = patterns
         self.vocab = TranscriptVocabulary()
         self.intent_detector = IntentDetector(nlp=nlp, vocab=vocab)
         self.target_extractor = TargetExtractor(nlp, vocab=vocab, rules=rules)
-        self.temporal_extractor = TemporalAnalyzer(nlp=nlp)
-        self.sentiment_analyzer = SentimentAnalyzer()
-        self.entity_extractor = EntityExtractor(nlp=nlp)
+        self.temporal_extractor = TemporalAnalyzer(
+            nlp=nlp,
+            day_names=patterns.day_names,
+            word_to_num=patterns.word_to_num,
+        )
+        self.sentiment_analyzer = SentimentAnalyzer(
+            emotion_keywords=patterns.emotion_keywords,
+        )
+        self.entity_extractor = EntityExtractor(
+            nlp=nlp,
+            ner_domain_patterns=patterns.ner_domain_patterns,
+        )
 
-        # Pre-build reverse keyword indices for O(1) lookups
-        self._issue_type_index = self._build_keyword_index(ISSUE_TYPE_KEYWORDS)
-        self._severity_index = self._build_keyword_index(SEVERITY_KEYWORDS)
-        self._resolution_index = self._build_keyword_index(RESOLUTION_KEYWORDS)
-        self._billing_cause_index = self._build_keyword_index(BILLING_CAUSE_KEYWORDS)
-        self._technical_issue_index = self._build_keyword_index(TECHNICAL_ISSUE_MAP)
-        self._issue_confirmation_index = self._build_keyword_index(ISSUE_CONFIRMATION_MAP)
-        self._troubleshooting_index = self._build_keyword_index(TROUBLESHOOTING_ACTIONS)
+        self._issue_type_index = self._build_keyword_index(patterns.issue_type_keywords)
+        self._severity_index = self._build_keyword_index(patterns.severity_keywords)
+        self._resolution_index = self._build_keyword_index(patterns.resolution_keywords)
+        self._billing_cause_index = self._build_keyword_index(
+            patterns.billing_cause_keywords
+        )
+        self._technical_issue_index = self._build_keyword_index(
+            patterns.technical_issue_map
+        )
+        self._issue_confirmation_index = self._build_keyword_index(
+            patterns.issue_confirmation_map
+        )
+        self._troubleshooting_index = self._build_keyword_index(
+            patterns.troubleshooting_actions
+        )
         self._action_tokens_index = self._build_action_tokens_index()
 
     @staticmethod
@@ -75,7 +81,6 @@ class TranscriptAnalyzer:
         for category, keywords in keyword_dict.items():
             for kw in keywords:
                 pairs.append((kw.lower() if isinstance(kw, str) else kw, category))
-        # Sort by keyword length descending for greedy matching
         pairs.sort(key=lambda x: len(x[0]), reverse=True)
         return pairs
 
@@ -102,13 +107,21 @@ class TranscriptAnalyzer:
         """Build index for ACTION_TOKENS with explicit-only flag.
 
         Returns list of (keyword, action_event, is_explicit_only) tuples.
+        Merges language-specific patterns.action_tokens with vocab defaults.
         """
         pairs = []
+        # Merge: start with vocab defaults, then layer pattern overrides
+        merged: dict[str, list[str]] = {}
         for raw_action, keywords in self.vocab.ACTION_TOKENS.items():
-            if raw_action not in ACTION_EVENT_MAP:
+            merged[raw_action] = list(keywords)
+        for raw_action, keywords in self.patterns.action_tokens.items():
+            merged.setdefault(raw_action, []).extend(keywords)
+
+        for raw_action, keywords in merged.items():
+            if raw_action not in self.patterns.action_event_map:
                 continue
-            action_event = ACTION_EVENT_MAP[raw_action]
-            is_explicit = action_event in EXPLICIT_ONLY_ACTIONS
+            action_event = self.patterns.action_event_map[raw_action]
+            is_explicit = action_event in self.patterns.explicit_only_actions
             for kw in keywords:
                 pairs.append((kw.lower(), action_event, is_explicit))
         pairs.sort(key=lambda x: len(x[0]), reverse=True)
@@ -138,8 +151,6 @@ class TranscriptAnalyzer:
         actions = self._extract_actions(turns)
         resolution = self._extract_resolution(turns)
         sentiment_trajectory = self.sentiment_analyzer.track_trajectory(turns)
-
-        # Case-dependent features
         resolution_state = self._extract_resolution_state(turns, resolution)
         refund_reference = self._extract_refund_reference(turns, issues, actions)
         timeline = self._extract_conversation_timeline(turns)
@@ -167,9 +178,9 @@ class TranscriptAnalyzer:
                 continue
             speaker, text = line.split(":", 1)
             speaker = speaker.strip().lower()
-            if "agent" in speaker:
+            if "agent" in speaker or "agente" in speaker:
                 speaker = "agent"
-            elif "customer" in speaker or "caller" in speaker:
+            elif any(x in speaker for x in ("customer", "caller", "cliente", "client")):
                 speaker = "customer"
             else:
                 speaker = "system"
@@ -197,10 +208,7 @@ class TranscriptAnalyzer:
 
             for action_type in action_events:
                 if action_type not in actions:
-                    actions[action_type] = Action(
-                        type=action_type,
-                        attributes={}
-                    )
+                    actions[action_type] = Action(type=action_type, attributes={})
 
                 action = actions[action_type]
 
@@ -238,7 +246,7 @@ class TranscriptAnalyzer:
             if kw not in text_lower:
                 continue
             if is_explicit:
-                phrases = EXPLICIT_ACTION_PHRASES.get(action_event, set())
+                phrases = self.patterns.explicit_action_phrases.get(action_event, set())
                 if not any(p in text_lower for p in phrases):
                     continue
             seen.add(action_event)
@@ -275,7 +283,9 @@ class TranscriptAnalyzer:
                     res_type = key
                     next_steps = None
                 timeline = self._extract_timeline(text)
-                return Resolution(type=res_type, timeline=timeline, next_steps=next_steps)
+                return Resolution(
+                    type=res_type, timeline=timeline, next_steps=next_steps
+                )
 
         return Resolution(type="UNKNOWN", timeline=None, next_steps=None)
 
@@ -284,12 +294,29 @@ class TranscriptAnalyzer:
         return any(kw in text for kw in keywords)
 
     def _extract_timeline(self, text: str) -> Optional[str]:
+        text_lower = text.lower()
+
+        # Language-specific timeline patterns first (more specific, e.g. "3 a 5 días hábiles")
+        for regex, fmt in self.patterns.timeline_patterns:
+            if match := re.search(regex, text_lower, re.I):
+                groups = match.groups()
+                return fmt.format(*groups)
+
+        # Temporal extractor (duration inference)
         pattern = self.temporal_extractor.extract(text)
         if pattern and getattr(pattern, "duration", None):
             return str(pattern.duration).upper()
-        if "tomorrow" in text.lower():
+
+        # Language-specific timeline keywords
+        timeline_kw = self.patterns.timeline_keywords or {}
+        for kw, value in timeline_kw.items():
+            if kw in text_lower:
+                return value
+
+        # English defaults
+        if "tomorrow" in text_lower:
             return "TOMORROW"
-        if "today" in text.lower():
+        if "today" in text_lower:
             return "TODAY"
         if match := re.search(r"within\s+(\d+)\s*(hour|hours)", text, re.I):
             return f"{match.group(1)}h"
@@ -297,30 +324,30 @@ class TranscriptAnalyzer:
             return f"{match.group(1)}d"
         return None
 
-    @staticmethod
     def _determine_action_result(
-        turns: list[Turn], action_index: int, action_turn: Turn
+        self, turns: list[Turn], action_index: int, action_turn: Turn
     ) -> str:
         text_lower = action_turn.text.lower()
 
         if any(
             k in text_lower
-            for k in ACTION_COMPLETION_KEYWORDS | ACTION_COMPLETION_PHRASES
+            for k in self.patterns.action_completion_keywords
+            | self.patterns.action_completion_phrases
         ):
             return "COMPLETED"
 
-        for pattern in ACTION_NOW_PATTERNS:
+        for pattern in self.patterns.action_now_patterns:
             if re.search(pattern, text_lower):
                 return "COMPLETED"
 
         for t in turns[action_index + 1 : action_index + 3]:
             tl = t.text.lower()
             if t.speaker == "customer" and any(
-                k in tl for k in POSITIVE_CUSTOMER_CONFIRMATIONS
+                k in tl for k in self.patterns.positive_customer_confirmations
             ):
                 return "COMPLETED"
             if t.speaker == "agent" and any(
-                k in tl for k in AGENT_CONFIRMATION_PHRASES
+                k in tl for k in self.patterns.agent_confirmation_phrases
             ):
                 return "COMPLETED"
         return "PENDING"
@@ -544,8 +571,7 @@ class TranscriptAnalyzer:
     def _detect_severity(self, text: str) -> str:
         return self._lookup_category(text.lower(), self._severity_index) or "LOW"
 
-    @staticmethod
-    def _extract_disputed_amounts(turns: list[Turn]) -> list[str]:
+    def _extract_disputed_amounts(self, turns: list[Turn]) -> list[str]:
         """Extract disputed amounts from customer turns.
 
         Args:
@@ -557,15 +583,17 @@ class TranscriptAnalyzer:
             >>> _extract_disputed_amounts([Turn("customer", "I think my bill is wrong"), Turn("agent", "What amount do you think is wrong?"), Turn("customer", "I think it's $100")])
             ['$100']
         """
+        en_keywords = ["charge", "bill", "statement", "payment"]
+        keywords = en_keywords + (self.patterns.disputed_amount_keywords or [])
         amounts = []
         for t in (t for t in turns if t.speaker == "customer"):
-            if any(
-                k in t.text.lower() for k in ["charge", "bill", "statement", "payment"]
-            ):
+            if any(k in t.text.lower() for k in keywords):
                 amounts.extend(getattr(t, "entities", {}).get("money", []))
         return list(dict.fromkeys(amounts))
 
-    def _detect_billing_cause(self, turns: list[Turn]) -> tuple[Optional[str], Optional[str]]:
+    def _detect_billing_cause(
+        self, turns: list[Turn]
+    ) -> tuple[Optional[str], Optional[str]]:
         for t in (t for t in turns if t.speaker == "agent"):
             text = t.text.lower()
             cause = self._lookup_category(text, self._billing_cause_index)
@@ -573,7 +601,9 @@ class TranscriptAnalyzer:
                 plan_change = None
                 if cause in {"MID_CYCLE_UPGRADE", "MID_CYCLE_DOWNGRADE"}:
                     if match := re.search(r"from (\w+) to (\w+)", text):
-                        plan_change = f"{match.group(1).upper()}→{match.group(2).upper()}"
+                        plan_change = (
+                            f"{match.group(1).upper()}→{match.group(2).upper()}"
+                        )
                 return cause, plan_change
         return None, None
 
@@ -607,9 +637,25 @@ class TranscriptAnalyzer:
 
     # Common words that should not be extracted as agent names
     _NAME_BLACKLIST = {
-        "sorry", "happy", "glad", "pleased", "here", "calling", "able",
-        "going", "looking", "checking", "helping", "available", "ready",
-        "sure", "certain", "afraid", "delighted", "excited", "thrilled",
+        "sorry",
+        "happy",
+        "glad",
+        "pleased",
+        "here",
+        "calling",
+        "able",
+        "going",
+        "looking",
+        "checking",
+        "helping",
+        "available",
+        "ready",
+        "sure",
+        "certain",
+        "afraid",
+        "delighted",
+        "excited",
+        "thrilled",
     }
 
     @classmethod
@@ -644,10 +690,6 @@ class TranscriptAnalyzer:
                     return candidate
         return None
 
-    # ============================================================
-    # Case-dependent feature extraction methods
-    # ============================================================
-
     def _extract_resolution_state(
         self, turns: list[Turn], resolution: Resolution
     ) -> ResolutionState:
@@ -675,7 +717,10 @@ class TranscriptAnalyzer:
         recent = agent_turns[-5:] if agent_turns else []
         text = " ".join(t.text.lower() for t in recent)
 
-        for state, keywords in self.vocab.RESOLUTION_STATE_TOKENS.items():
+        tokens = (
+            self.patterns.resolution_state_tokens or self.vocab.RESOLUTION_STATE_TOKENS
+        )
+        for state, keywords in tokens.items():
             if any(kw in text for kw in keywords):
                 if state == "FULLY_RESOLVED":
                     return "FULL"
@@ -693,11 +738,14 @@ class TranscriptAnalyzer:
         final_turns = customer_turns[-3:]
         text = " ".join(t.text.lower() for t in final_turns)
 
-        for satisfaction, keywords in self.vocab.CUSTOMER_SATISFACTION_TOKENS.items():
+        tokens = (
+            self.patterns.customer_satisfaction_tokens
+            or self.vocab.CUSTOMER_SATISFACTION_TOKENS
+        )
+        for satisfaction, keywords in tokens.items():
             if any(kw in text for kw in keywords):
                 return satisfaction
 
-        # Fall back to sentiment
         if final_turns:
             final_sentiment = final_turns[-1].sentiment
             if final_sentiment in ["SATISFIED", "GRATEFUL", "RELIEVED"]:
@@ -714,7 +762,10 @@ class TranscriptAnalyzer:
         recent = agent_turns[-3:] if agent_turns else []
         text = " ".join(t.text.lower() for t in recent)
 
-        for reason, keywords in self.vocab.FOLLOW_UP_NEEDED_TOKENS.items():
+        tokens = (
+            self.patterns.follow_up_needed_tokens or self.vocab.FOLLOW_UP_NEEDED_TOKENS
+        )
+        for reason, keywords in tokens.items():
             if any(kw in text for kw in keywords):
                 return True, reason
 
@@ -831,14 +882,16 @@ class TranscriptAnalyzer:
 
     def _detect_refund_method(self, text: str) -> Optional[str]:
         """Detect refund method from text."""
-        for method, keywords in self.vocab.REFUND_METHOD_TOKENS.items():
+        tokens = self.patterns.refund_method_tokens or self.vocab.REFUND_METHOD_TOKENS
+        for method, keywords in tokens.items():
             if any(kw in text for kw in keywords):
                 return method
         return None
 
     def _detect_refund_status(self, text: str) -> Optional[str]:
         """Detect refund status from text."""
-        for status, keywords in self.vocab.REFUND_STATUS_TOKENS.items():
+        tokens = self.patterns.refund_status_tokens or self.vocab.REFUND_STATUS_TOKENS
+        for status, keywords in tokens.items():
             if any(kw in text for kw in keywords):
                 return status
         return None
@@ -872,7 +925,6 @@ class TranscriptAnalyzer:
                 ):
                     first_resolution_turn = idx
 
-        # Calculate metrics
         time_to_first_action = None
         time_to_resolution = None
 
@@ -894,16 +946,19 @@ class TranscriptAnalyzer:
             time_to_resolution=time_to_resolution,
         )
 
-    def _detect_timeline_event_type(
-        self, text: str, speaker: str
-    ) -> Optional[str]:
+    def _detect_timeline_event_type(self, text: str, speaker: str) -> Optional[str]:
         """Detect timeline event type from turn text."""
-        for event_type, keywords in self.vocab.TIMELINE_EVENT_TOKENS.items():
+        tokens = self.patterns.timeline_event_tokens or self.vocab.TIMELINE_EVENT_TOKENS
+        for event_type, keywords in tokens.items():
             # Issue raised typically by customer
             if event_type == "ISSUE_RAISED" and speaker != "customer":
                 continue
             # Most other events by agent
-            if event_type in ["ACTION_TAKEN", "RESOLUTION_PROPOSED", "INVESTIGATION_STARTED"] and speaker != "agent":
+            if (
+                event_type
+                in ["ACTION_TAKEN", "RESOLUTION_PROPOSED", "INVESTIGATION_STARTED"]
+                and speaker != "agent"
+            ):
                 continue
 
             if any(kw in text for kw in keywords):
@@ -929,13 +984,16 @@ class TranscriptAnalyzer:
             text = turn.text
             text_lower = text.lower()
 
-            for promise_type, keywords in self.vocab.PROMISE_COMMITMENT_TOKENS.items():
+            tokens = (
+                self.patterns.promise_commitment_tokens
+                or self.vocab.PROMISE_COMMITMENT_TOKENS
+            )
+            for promise_type, keywords in tokens.items():
                 matching_keyword = next(
                     (kw for kw in keywords if kw in text_lower), None
                 )
 
                 if matching_keyword:
-                    # Extract associated details
                     timeline = self._extract_promise_timeline(text_lower)
                     amount = None
 
@@ -966,7 +1024,7 @@ class TranscriptAnalyzer:
         if timeline:
             return timeline
 
-        patterns = [
+        en_patterns = [
             (r"within (\d+) hours?", lambda m: f"{m.group(1)}h"),
             (r"within (\d+) days?", lambda m: f"{m.group(1)}d"),
             (
@@ -980,22 +1038,37 @@ class TranscriptAnalyzer:
             ),
         ]
 
-        for pattern, formatter in patterns:
+        for pattern, formatter in en_patterns:
             if match := re.search(pattern, text, re.I):
                 return formatter(match)
 
+        # Language-specific day names for "by <day>" pattern
+        if self.patterns.day_names:
+            day_alts = "|".join(re.escape(d) for d in self.patterns.day_names)
+            if match := re.search(rf"(?:para el|antes del)\s+({day_alts})", text, re.I):
+                return self.patterns.day_names.get(
+                    match.group(1).lower(), match.group(1).upper()
+                )
+
         return None
 
-    @staticmethod
-    def _calculate_promise_confidence(text: str, promise_type: str) -> float:
+    def _calculate_promise_confidence(self, text: str, promise_type: str) -> float:
         """Calculate confidence in promise detection."""
         confidence = 0.6
 
         strong_indicators = ["will", "going to", "i'll", "we'll", "definitely"]
+        if self.patterns.promise_confidence_strong:
+            strong_indicators = (
+                strong_indicators + self.patterns.promise_confidence_strong
+            )
         if any(ind in text for ind in strong_indicators):
             confidence += 0.2
 
-        if re.search(r"within|by|before|tomorrow|today|\d+ (day|hour)", text, re.I):
+        timeline_re = r"within|by|before|tomorrow|today|\d+ (day|hour)"
+        if self.patterns.timeline_keywords:
+            kw_alts = "|".join(re.escape(k) for k in self.patterns.timeline_keywords)
+            timeline_re = rf"{timeline_re}|{kw_alts}"
+        if re.search(timeline_re, text, re.I):
             confidence += 0.1
 
         if promise_type in ["CREDIT_PROMISE", "REFUND_PROMISE"]:
