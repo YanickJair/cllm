@@ -206,15 +206,13 @@ class PromiseCommitment(BaseModel):
 class TranscriptAnalysis(BaseModel):
     """Complete transcript analysis"""
 
-    call_info: CallInfo
-    customer: CustomerProfile
-    turns: list[Turn]
-    issues: list[Issue]
-    actions: list[Action]
-    resolution: Resolution
-    sentiment_trajectory: SentimentTrajectory
-
-    # Case-dependent features
+    call_info: CallInfo = Field(..., description="Transcript metadata information")
+    customer: CustomerProfile = Field(..., description="Customer profile information")
+    turns: list[Turn] = Field(..., description="Turns information (Agent/Customer)")
+    issues: list[Issue] = Field(..., description="Issues information")
+    actions: list[Action] = Field(..., description="Actions performed by the agent during the conversation")
+    resolution: Resolution = Field(..., description="Resolution detected during the conversation")
+    sentiment_trajectory: SentimentTrajectory = Field(..., description="Sentiment trajectory information")
     resolution_state: Optional[ResolutionState] = Field(
         default=None, description="Enhanced resolution state"
     )

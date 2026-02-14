@@ -1,12 +1,13 @@
 from typing import Optional
 
 from .._schemas import SentimentTrajectory, Turn
-from clm_core.dictionary.en.patterns import EMOTION_KEYWORDS
 
 
 class SentimentAnalyzer:
-    @staticmethod
-    def analyze_turn(text: str, speaker: str) -> tuple[Optional[str], float]:
+    def __init__(self, emotion_keywords: dict = None):
+        self._emotion_keywords = emotion_keywords or {}
+
+    def analyze_turn(self, text: str, speaker: str) -> tuple[Optional[str], float]:
         """
         Analyze sentiment of a turn
 
@@ -20,7 +21,7 @@ class SentimentAnalyzer:
         text_lower = text.lower()
 
         detected_emotions = []
-        for emotion, config in EMOTION_KEYWORDS.items():
+        for emotion, config in self._emotion_keywords.items():
             for keyword in config["keywords"]:
                 if keyword in text_lower:
                     detected_emotions.append((emotion, config["intensity"]))

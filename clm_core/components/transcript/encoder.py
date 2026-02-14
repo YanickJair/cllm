@@ -3,8 +3,7 @@ from typing import Optional
 
 from spacy import Language
 from clm_core.components.transcript.analyzer import TranscriptAnalyzer
-
-from clm_core.dictionary.en.patterns import NER_ADDRESS_ABBREVIATIONS
+from clm_core.components.transcript.patterns import TranscriptPatterns
 
 from . import (
     Action,
@@ -35,8 +34,19 @@ class TranscriptEncoder(metaclass=SingletonMeta):
     Philosophy: Extends CLLMTokenizer format: [CALL:metadata][ISSUE:details][ACTION_CHAIN:action1→action2→...][RESOLUTION:details]
     """
 
-    def __init__(self, nlp: Language, vocab: BaseVocabulary, rules: BaseRules):
-        self._analyzer = TranscriptAnalyzer(nlp=nlp, vocab=vocab, rules=rules)
+    def __init__(
+        self,
+        nlp: Language,
+        vocab: BaseVocabulary,
+        rules: BaseRules,
+        patterns: TranscriptPatterns,
+        lang: str = "en",
+    ):
+        self._patterns = patterns
+        self._lang = lang
+        self._analyzer = TranscriptAnalyzer(
+            nlp=nlp, vocab=vocab, rules=rules, patterns=patterns,
+        )
         self.analysis: TranscriptAnalysis | None = None
 
     def encode(
@@ -103,19 +113,16 @@ class TranscriptEncoder(metaclass=SingletonMeta):
         )
 
         if resolution.type == "UNKNOWN" and has_clear_state:
-            # Skip UNKNOWN, show the clearer resolution state
             res_state_token = self._encode_resolution_state(resolution_state)
             tokens.append(res_state_token)
             if verbose:
                 print(f"Resolution State: {res_state_token}")
         elif resolution.type == "UNKNOWN":
-            # No clear state, only show UNKNOWN
             resolution_token = self._encode_resolution(resolution)
             tokens.append(resolution_token)
             if verbose:
                 print(f"Resolution: {resolution_token}")
         else:
-            # We have a clear base resolution, show both
             resolution_token = self._encode_resolution(resolution)
             tokens.append(resolution_token)
             if verbose:
@@ -174,7 +181,7 @@ class TranscriptEncoder(metaclass=SingletonMeta):
                 "compressed_length": len(compressed),
                 "verbs": verbs,
                 "noun_chunks": noun_chunks,
-                "language": "en",
+                "language": self._lang,
                 "has_numbers": bool(re.search(r"\d", transcript)),
                 "has_urls": bool(re.search(r"https?://", transcript)),
             },
@@ -440,8 +447,7 @@ class TranscriptEncoder(metaclass=SingletonMeta):
         trajectory_str = "→".join(trajectory)
         return f"[SENTIMENT:{trajectory_str}]"
 
-    @staticmethod
-    def _compress_address(address: str) -> str:
+    def _compress_address(self, address: str) -> str:
         """
         Compress address
 
@@ -458,7 +464,7 @@ class TranscriptEncoder(metaclass=SingletonMeta):
         """
         compressed = address.replace(" ", "_")
 
-        for full, abbrev in NER_ADDRESS_ABBREVIATIONS.items():
+        for full, abbrev in self._patterns.ner_address_abbreviations.items():
             compressed = compressed.replace(full, abbrev)
 
         return compressed

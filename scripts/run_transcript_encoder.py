@@ -298,7 +298,7 @@ def show_comparison(transcript: str, metadata: dict):
     print("\nToken count (approximate):")
     print(f"  Original:  {new_result.n_tokens:>6} tokens")
     print(
-        f"  Compressed:       {new_result.c_tokens:>6} tokens ({(1 - new_result.c_tokens / new_result.n_tokens) * 100:>5.1f}% compression)"
+        f"  Compressed:       {new_result.c_tokens:>6} tokens ({new_result.compression_ratio:>5.1f}% compression)"
     )
 
     print(f"🗜️  Compression Ratio: {new_result.compression_ratio:.1f}%")

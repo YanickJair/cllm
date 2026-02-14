@@ -18,7 +18,7 @@ from pydantic import (
 
 from clm_core.utils.parser_rules import BaseRules
 from clm_core.utils.vocabulary import BaseVocabulary
-from clm_core.dictionary import rules_map, vocab_map
+from clm_core.dictionary import rules_map, vocab_map, patterns_map
 
 ORIGINAL_INPUT: TypeAlias = Union[str, dict, list]
 LANG: TypeAlias = Literal["en", "fr", "es", "pt"]
@@ -275,19 +275,29 @@ class CLMConfig(BaseModel):
         """
         if self._nlp_cache is not None:
             return self._nlp_cache
-        match self.lang:
-            case "en":
-                self._nlp_cache = spacy.load("en_core_web_sm")
-            case _:
-                raise NotImplementedError(
-                    f"Model for language {self.lang} not supported yet"
-                )
+        model_map = {
+            "en": "en_core_web_sm",
+            "es": "es_core_news_sm",
+            "pt": "pt_core_news_sm",
+            "fr": "fr_core_news_sm",
+        }
+        model_name = model_map.get(self.lang)
+        if model_name is None:
+            raise NotImplementedError(
+                f"Model for language {self.lang} not supported yet"
+            )
+        self._nlp_cache = spacy.load(model_name)
         return self._nlp_cache
 
     @computed_field
     @property
     def rules(self) -> BaseRules:
         return rules_map[self.lang]
+
+    @computed_field(return_type=object)
+    @property
+    def patterns(self):
+        return patterns_map[self.lang]
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,

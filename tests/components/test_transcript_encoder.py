@@ -40,17 +40,24 @@ def rules():
 
 
 @pytest.fixture
-def encoder(nlp, vocab, rules):
+def patterns():
+    """English transcript patterns"""
+    from clm_core.dictionary import patterns_map
+    return patterns_map["en"]
+
+
+@pytest.fixture
+def encoder(nlp, vocab, rules, patterns):
     """Create encoder instance, clearing singleton"""
     # Clear singleton to allow fresh instance
     TranscriptEncoder._instances = {}
-    return TranscriptEncoder(nlp=nlp, vocab=vocab, rules=rules)
+    return TranscriptEncoder(nlp=nlp, vocab=vocab, rules=rules, patterns=patterns)
 
 
 class TestTranscriptEncoderInit:
-    def test_initialization(self, nlp, vocab, rules):
+    def test_initialization(self, nlp, vocab, rules, patterns):
         TranscriptEncoder._instances = {}
-        encoder = TranscriptEncoder(nlp=nlp, vocab=vocab, rules=rules)
+        encoder = TranscriptEncoder(nlp=nlp, vocab=vocab, rules=rules, patterns=patterns)
         assert encoder._analyzer is not None
         assert encoder.analysis is None
 
@@ -322,20 +329,20 @@ class TestEncodeSentiment:
 
 
 class TestCompressAddress:
-    def test_basic_address(self):
-        result = TranscriptEncoder._compress_address("123 Main Street")
+    def test_basic_address(self, encoder):
+        result = encoder._compress_address("123 Main Street")
         assert result == "123_Main_St"
 
-    def test_address_with_avenue(self):
-        result = TranscriptEncoder._compress_address("456 Oak Avenue")
+    def test_address_with_avenue(self, encoder):
+        result = encoder._compress_address("456 Oak Avenue")
         assert result == "456_Oak_Ave"
 
-    def test_address_with_lane(self):
-        result = TranscriptEncoder._compress_address("41 Riverbend Lane")
+    def test_address_with_lane(self, encoder):
+        result = encoder._compress_address("41 Riverbend Lane")
         assert result == "41_Riverbend_Ln"
 
-    def test_address_with_drive(self):
-        result = TranscriptEncoder._compress_address("789 Sunset Drive")
+    def test_address_with_drive(self, encoder):
+        result = encoder._compress_address("789 Sunset Drive")
         assert result == "789_Sunset_Dr"
 
 

@@ -572,3 +572,166 @@ NER_ADDRESS_ABBREVIATIONS = {
     "Chemin": "Ch.",
     "Allée": "All.",
 }
+
+# ── Transcript analyzer patterns ──
+
+RESOLUTION_KEYWORDS = {
+    "RESOLVED": {"résolu", "corrigé", "réglé", "approuvé", "remboursement"},
+    "ESCALATED": {"escalader", "superviseur", "transférer"},
+    "PENDING_REPLACEMENT": {"remplacer", "remplacement", "échange"},
+}
+
+BILLING_CAUSE_KEYWORDS = {
+    "DUPLICATE_PROCESSING": {"doublon", "traité deux fois", "retraité"},
+    "DOUBLE_BILLING": {"double facturation", "facturé deux fois"},
+    "PRORATION_CONFUSION": {"prorata", "au prorata"},
+    "SYSTEM_ERROR": {"erreur", "faute"},
+    "MID_CYCLE_UPGRADE": {"mise à niveau", "upgrade"},
+    "MID_CYCLE_DOWNGRADE": {"rétrogradation", "downgrade"},
+    "BILLING_OVERLAP": {"chevauchement"},
+}
+
+ISSUE_TYPE_KEYWORDS = {
+    "BILLING_DISPUTE": {"facture", "frais", "remboursement"},
+    "CONNECTIVITY": {"internet", "connexion", "wifi"},
+    "PERFORMANCE": {"lent", "vitesse", "débit"},
+}
+
+SEVERITY_KEYWORDS = {
+    "HIGH": {
+        "critique",
+        "urgent",
+        "urgence",
+        "ne fonctionne plus du tout",
+        "ne peux pas travailler",
+    },
+    "MEDIUM": {
+        "frustré",
+        "agaçant",
+        "j'en ai besoin pour travailler",
+        "important",
+    },
+}
+
+ISSUE_CONFIRMATION_MAP = {
+    "DUPLICATE_CHARGE_CONFIRMED": {
+        "doublon",
+        "traité deux fois",
+        "double facturation",
+        "deux frais",
+    }
+}
+
+ACTION_EVENT_MAP = {
+    "VERIFY": "ACCOUNT_VERIFIED",
+    "TROUBLESHOOT": "TROUBLESHOOT",
+    "ESCALATE": "ESCALATION_CREATED",
+    "REPLACE": "REPLACEMENT_ORDERED",
+    "SCHEDULE": "APPOINTMENT_SCHEDULED",
+    "UPDATE_INFO": "ACCOUNT_UPDATED",
+    "CANCEL": "SERVICE_CANCELLED",
+    "OFFER_DISCOUNT": "DISCOUNT_APPLIED",
+    "APPROVE": "REQUEST_APPROVED",
+    "DENY": "REQUEST_DENIED",
+    "NOTIFY": "CUSTOMER_NOTIFIED",
+    "DOCUMENT": "DOCUMENTATION_UPDATED",
+    "ACTIVATE_TRIAL": "TRIAL_ACTIVATED",
+}
+
+EXPLICIT_ONLY_ACTIONS = {
+    "DOCUMENTATION_UPDATED",
+    "ACCOUNT_UPDATED",
+    "REQUEST_APPROVED",
+}
+
+SUPPORTED_ACTION_TYPES = {
+    "REFUND",
+    "CREDIT",
+    "TROUBLESHOOT",
+    "ESCALATE",
+    "REPLACE",
+    "CHARGE",
+    "PAYMENT",
+}
+
+ACTION_COMPLETION_KEYWORDS = {
+    "envoyé",
+    "traité",
+    "terminé",
+    "classé",
+    "appliqué",
+    "émis",
+    "fait",
+    "effectué",
+}
+
+ACTION_COMPLETION_PHRASES = {
+    "je viens d'envoyer",
+    "je viens de traiter",
+    "déjà envoyé",
+    "déjà traité",
+}
+
+ACTION_NOW_PATTERNS = [
+    r"(j'ai|je viens de) (envoyer|traiter|classer)\b",
+    r"je suis en train de (traiter|envoyer|classer) (ça|le|la)?\s*(maintenant)?\b",
+]
+
+POSITIVE_CUSTOMER_CONFIRMATIONS = {
+    "parfait",
+    "super",
+    "merci",
+    "compris",
+    "reçu",
+    "j'apprécie",
+}
+
+AGENT_CONFIRMATION_PHRASES = {
+    "c'est tout bon",
+    "vous êtes prêt",
+    "c'est fait",
+    "terminé",
+}
+
+EXPLICIT_ACTION_PHRASES = {
+    "DOCUMENTATION_UPDATED": {
+        "j'ai documenté",
+        "j'ai ajouté des notes",
+        "j'ai enregistré ceci",
+        "ajouté au ticket",
+        "j'ai mis à jour les notes du dossier",
+    },
+    "ACCOUNT_UPDATED": {
+        "j'ai mis à jour votre compte",
+        "votre compte a été mis à jour",
+        "j'ai changé votre forfait",
+        "j'ai modifié vos paramètres",
+    },
+}
+
+TECHNICAL_ISSUE_MAP = {
+    "OUTAGE": ["panne", "en panne", "hors ligne", "plusieurs clients"],
+    "PACKET_LOSS": ["perte de paquets", "ligne dégradée"],
+    "INTERMITTENT_CONNECTIVITY": ["coupe sans arrêt", "intermittent"],
+}
+
+TROUBLESHOOTING_ACTIONS = {
+    "TROUBLESHOOTING_PERFORMED": {
+        "j'ai lancé un test",
+        "réinitialisé",
+        "redémarré",
+        "nettoyé",
+        "effectué",
+        "appliqué un correctif",
+    },
+    "DIAGNOSTIC_PERFORMED": {
+        "vérifié",
+        "examiné",
+        "je vois",
+        "consulté les journaux",
+        "je constate",
+        "consulté",
+        "lancé des diagnostics",
+        "test de ligne",
+    },
+}

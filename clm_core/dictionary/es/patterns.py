@@ -572,3 +572,504 @@ NER_ADDRESS_ABBREVIATIONS = {
     "Plaza": "Pza.",
     "Boulevard": "Blvd.",
 }
+
+# ── Transcript analyzer patterns ──
+
+RESOLUTION_KEYWORDS = {
+    "RESOLVED": {"resuelto", "solucionado", "arreglado", "aprobado", "reembolso"},
+    "ESCALATED": {"escalar", "supervisor", "transferir"},
+    "PENDING_REPLACEMENT": {"reemplazar", "reemplazo", "cambio"},
+}
+
+BILLING_CAUSE_KEYWORDS = {
+    "DUPLICATE_PROCESSING": {"duplicado", "procesado dos veces", "reintentado"},
+    "DOUBLE_BILLING": {"doble cobro", "cobro doble"},
+    "PRORATION_CONFUSION": {"prorrateo", "prorrateado"},
+    "SYSTEM_ERROR": {"error", "equivocación"},
+    "MID_CYCLE_UPGRADE": {"mejora", "upgrade"},
+    "MID_CYCLE_DOWNGRADE": {"degradación", "downgrade"},
+    "BILLING_OVERLAP": {"solapamiento", "superposición"},
+}
+
+ISSUE_TYPE_KEYWORDS = {
+    "BILLING_DISPUTE": {"factura", "cargo", "reembolso", "cobro"},
+    "CONNECTIVITY": {"internet", "conexión", "wifi"},
+    "PERFORMANCE": {"lento", "velocidad"},
+}
+
+SEVERITY_KEYWORDS = {
+    "HIGH": {
+        "crítico",
+        "urgente",
+        "emergencia",
+        "no funciona para nada",
+        "no puedo trabajar",
+    },
+    "MEDIUM": {
+        "frustrado",
+        "molesto",
+        "lo necesito para trabajar",
+        "importante",
+    },
+}
+
+ISSUE_CONFIRMATION_MAP = {
+    "DUPLICATE_CHARGE_CONFIRMED": {
+        "duplicado",
+        "procesado dos veces",
+        "doble cobro",
+        "dos cargos",
+    }
+}
+
+ACTION_EVENT_MAP = {
+    "VERIFY": "ACCOUNT_VERIFIED",
+    "TROUBLESHOOT": "TROUBLESHOOT",
+    "ESCALATE": "ESCALATION_CREATED",
+    "REPLACE": "REPLACEMENT_ORDERED",
+    "SCHEDULE": "APPOINTMENT_SCHEDULED",
+    "UPDATE_INFO": "ACCOUNT_UPDATED",
+    "CANCEL": "SERVICE_CANCELLED",
+    "OFFER_DISCOUNT": "DISCOUNT_APPLIED",
+    "APPROVE": "REQUEST_APPROVED",
+    "DENY": "REQUEST_DENIED",
+    "NOTIFY": "CUSTOMER_NOTIFIED",
+    "DOCUMENT": "DOCUMENTATION_UPDATED",
+    "ACTIVATE_TRIAL": "TRIAL_ACTIVATED",
+    "REFUND": "REFUND_SUBMITTED",
+    "CREDIT": "CREDIT_APPLIED",
+}
+
+EXPLICIT_ONLY_ACTIONS = {
+    "DOCUMENTATION_UPDATED",
+    "ACCOUNT_UPDATED",
+    "REQUEST_APPROVED",
+}
+
+SUPPORTED_ACTION_TYPES = {
+    "REFUND",
+    "CREDIT",
+    "TROUBLESHOOT",
+    "ESCALATE",
+    "REPLACE",
+    "CHARGE",
+    "PAYMENT",
+}
+
+ACTION_COMPLETION_KEYWORDS = {
+    "enviado",
+    "procesado",
+    "completado",
+    "archivado",
+    "aplicado",
+    "emitido",
+    "listo",
+    "hecho",
+}
+
+ACTION_COMPLETION_PHRASES = {
+    "acabo de enviar",
+    "acabo de procesar",
+    "ya enviado",
+    "ya procesado",
+}
+
+ACTION_NOW_PATTERNS = [
+    r"(he|acabo de) (enviar|procesar|archivar)\b",
+    r"estoy (procesando|enviando|archivando) (lo|el|la|eso)?\s*(ahora)?\b",
+]
+
+POSITIVE_CUSTOMER_CONFIRMATIONS = {
+    "perfecto",
+    "genial",
+    "gracias",
+    "entendido",
+    "recibido",
+    "agradezco",
+}
+
+AGENT_CONFIRMATION_PHRASES = {
+    "todo listo",
+    "ya está listo",
+    "eso está hecho",
+    "completado",
+}
+
+EXPLICIT_ACTION_PHRASES = {
+    "DOCUMENTATION_UPDATED": {
+        "he documentado",
+        "he añadido notas",
+        "lo registré",
+        "he registrado esto",
+        "añadido al ticket",
+        "actualicé las notas del caso",
+    },
+    "ACCOUNT_UPDATED": {
+        "he actualizado su cuenta",
+        "su cuenta ha sido actualizada",
+        "cambié su plan",
+        "he cambiado su configuración",
+    },
+}
+
+TECHNICAL_ISSUE_MAP = {
+    "OUTAGE": ["corte", "caído", "fuera de línea", "múltiples clientes"],
+    "PACKET_LOSS": ["pérdida de paquetes", "línea degradada"],
+    "INTERMITTENT_CONNECTIVITY": ["se cae constantemente", "intermitente"],
+}
+
+TROUBLESHOOTING_ACTIONS = {
+    "TROUBLESHOOTING_PERFORMED": {
+        "ejecuté una prueba",
+        "reinicié",
+        "reiniciar",
+        "limpié",
+        "realicé",
+        "apliqué corrección",
+    },
+    "DIAGNOSTIC_PERFORMED": {
+        "verifiqué",
+        "revisé",
+        "puedo ver",
+        "revisé los registros",
+        "veo",
+        "consulté",
+        "ejecuté diagnósticos",
+        "prueba de línea",
+    },
+}
+
+# ── Language-specific vocabulary tokens ──
+
+ACTION_TOKENS = {
+    "REFUND": [
+        "reembolso",
+        "solicitud de reembolso",
+        "devolver dinero",
+        "devolución",
+        "reintegro",
+        "procesar reembolso",
+        "emitir reembolso",
+        "reembolso parcial",
+        "reembolso completo",
+        "reversar cargo",
+        "ajuste de facturación",
+    ],
+    "CREDIT": [
+        "crédito",
+        "abono",
+        "crédito en cuenta",
+        "aplicar crédito",
+        "nota de crédito",
+    ],
+    "TROUBLESHOOT": [
+        "diagnosticar",
+        "verificar",
+        "revisar",
+        "prueba",
+        "reiniciar",
+        "restablecer",
+        "ejecutar diagnóstico",
+    ],
+    "ESCALATE": [
+        "escalar",
+        "transferir",
+        "supervisor",
+        "enviar a nivel superior",
+    ],
+    "REPLACE": [
+        "reemplazar",
+        "cambio",
+        "sustitución",
+        "enviar reemplazo",
+    ],
+    "SCHEDULE": [
+        "programar",
+        "cita",
+        "agendar",
+        "reservar",
+    ],
+    "VERIFY": [
+        "verificar",
+        "confirmar",
+        "validar",
+        "autenticar",
+    ],
+}
+
+PROMISE_COMMITMENT_TOKENS = {
+    "CALLBACK": [
+        "le llamaré",
+        "le devolveré la llamada",
+        "le contactaremos",
+        "espere una llamada",
+    ],
+    "FOLLOW_UP_EMAIL": [
+        "le enviaré un correo",
+        "recibirá un correo",
+        "le envío un email",
+        "correo de confirmación",
+        "correo electrónico de confirmación",
+        "enviar confirmación por correo",
+        "le llegará un correo",
+    ],
+    "CREDIT_PROMISE": [
+        "crédito en su cuenta",
+        "aplicar un crédito",
+        "abono en su cuenta",
+        "crédito de",
+    ],
+    "REFUND_PROMISE": [
+        "reembolso de",
+        "recibirá un reembolso",
+        "procesar el reembolso",
+        "devolución de",
+        "se le reembolsará",
+        "solicitud de reembolso",
+    ],
+    "DELIVERY_PROMISE": [
+        "será entregado",
+        "llegará",
+        "enviaremos",
+        "espere la entrega",
+    ],
+    "RESOLUTION_PROMISE": [
+        "será resuelto",
+        "quedará solucionado",
+        "nos encargaremos",
+        "vamos a solucionar",
+    ],
+}
+
+REFUND_STATUS_TOKENS = {
+    "INITIATED": [
+        "iniciado",
+        "enviado",
+        "solicitado",
+        "acabo de procesar",
+        "he enviado la solicitud",
+        "procesando su reembolso",
+    ],
+    "PROCESSING": [
+        "en proceso",
+        "siendo procesado",
+        "en trámite",
+        "en revisión",
+    ],
+    "COMPLETED": [
+        "completado",
+        "reembolsado",
+        "crédito aplicado",
+        "reembolso emitido",
+        "ya reembolsado",
+    ],
+    "PENDING_APPROVAL": [
+        "pendiente de aprobación",
+        "necesita aprobación",
+        "aprobación del supervisor",
+        "en espera de autorización",
+    ],
+}
+
+REFUND_METHOD_TOKENS = {
+    "CARD_CREDIT": [
+        "tarjeta de crédito",
+        "tarjeta",
+        "a su tarjeta",
+        "método de pago original",
+    ],
+    "ACCOUNT_CREDIT": [
+        "crédito en cuenta",
+        "crédito en su cuenta",
+        "saldo de cuenta",
+        "abono en cuenta",
+    ],
+    "CHECK": [
+        "cheque",
+        "cheque por correo",
+    ],
+    "PAYPAL": [
+        "paypal",
+        "cuenta de paypal",
+    ],
+    "BANK_TRANSFER": [
+        "transferencia bancaria",
+        "depósito directo",
+        "cuenta bancaria",
+    ],
+}
+
+TIMELINE_EVENT_TOKENS = {
+    "ISSUE_RAISED": [
+        "mi problema es",
+        "estoy teniendo problemas",
+        "el problema es",
+        "he notado",
+        "hay un problema",
+        "llamo por",
+        "necesito ayuda con",
+        "tengo un problema",
+    ],
+    "INVESTIGATION_STARTED": [
+        "déjeme revisar",
+        "voy a verificar",
+        "déjeme consultar",
+        "revisando ahora",
+        "viendo su cuenta",
+        "puedo ver",
+        "déjeme investigar",
+    ],
+    "ACTION_TAKEN": [
+        "he procesado",
+        "acabo de enviar",
+        "listo",
+        "completado",
+        "aplicado",
+        "programado",
+        "he iniciado",
+        "acabo de procesar",
+    ],
+    "RESOLUTION_PROPOSED": [
+        "esto debería",
+        "debería estar resuelto",
+        "debería ver",
+        "vamos a resolver",
+        "eso debería solucionar",
+    ],
+    "CONFIRMATION_RECEIVED": [
+        "sí, funciona",
+        "perfecto",
+        "se ve bien",
+        "ya lo veo",
+        "eso es correcto",
+        "ya funciona",
+    ],
+    "ESCALATION_TRIGGERED": [
+        "escalar",
+        "transferir a",
+        "supervisor",
+        "especialista",
+        "nivel superior",
+    ],
+}
+
+RESOLUTION_STATE_TOKENS = {
+    "FULLY_RESOLVED": [
+        "completamente resuelto",
+        "totalmente resuelto",
+        "todo listo",
+        "todo está arreglado",
+        "problema solucionado",
+        "asunto resuelto",
+        "todo resuelto",
+    ],
+    "PARTIALLY_RESOLVED": [
+        "parcialmente resuelto",
+        "casi arreglado",
+        "aún quedan algunos problemas",
+        "una cosa más",
+        "sin embargo",
+        "todavía falta",
+        "problema principal resuelto",
+    ],
+    "PENDING_VERIFICATION": [
+        "avísenos si",
+        "por favor confirme",
+        "llame si",
+        "monitoree",
+        "debería estar funcionando",
+        "pruébelo",
+    ],
+}
+
+CUSTOMER_SATISFACTION_TOKENS = {
+    "SATISFIED": [
+        "muchas gracias",
+        "excelente",
+        "perfecto",
+        "maravilloso",
+        "agradezco su ayuda",
+        "ha sido muy amable",
+        "eso funciona",
+        "genial",
+        "muy agradecido",
+    ],
+    "NEUTRAL": [
+        "está bien",
+        "de acuerdo",
+        "entiendo",
+        "ya veo",
+        "bien",
+        "ok",
+        "suena bien",
+    ],
+    "DISSATISFIED": [
+        "no estoy satisfecho",
+        "no estoy contento",
+        "sigo frustrado",
+        "esto no es aceptable",
+        "esperaba algo mejor",
+        "decepcionado",
+        "no ayudó",
+        "sigo con problemas",
+    ],
+}
+
+FOLLOW_UP_NEEDED_TOKENS = {
+    "PENDING_ACTION": [
+        "será procesado",
+        "dentro de",
+        "debería recibir",
+        "le enviaremos",
+        "será completado",
+        "tomará efecto",
+        "en los próximos",
+    ],
+    "VERIFICATION_NEEDED": [
+        "avísenos si",
+        "llame si",
+        "contáctenos si",
+        "por favor monitoree",
+        "confirme que",
+        "verifique que",
+    ],
+    "SCHEDULED_CALLBACK": [
+        "le llamaremos",
+        "le daré seguimiento",
+        "nos comunicaremos",
+        "espere una llamada",
+        "le llamaré mañana",
+    ],
+}
+
+TIMELINE_KEYWORDS = {
+    "mañana": "TOMORROW",
+    "hoy": "TODAY",
+}
+
+TIMELINE_PATTERNS = [
+    (r"(\d+)\s*a\s*(\d+)\s*días\s*hábiles", "{0}-{1}d"),
+    (r"dentro de (\d+)\s*días", "{0}d"),
+    (r"dentro de (\d+)\s*horas?", "{0}h"),
+    (r"en (\d+)\s*a\s*(\d+)\s*días", "{0}-{1}d"),
+]
+
+PROMISE_CONFIDENCE_STRONG = [
+    "voy a",
+    "le enviaré",
+    "le envío",
+    "vamos a",
+    "le garantizo",
+    "definitivamente",
+    "sin duda",
+    "por supuesto",
+]
+
+DISPUTED_AMOUNT_KEYWORDS = [
+    "cargo",
+    "factura",
+    "cobro",
+    "pago",
+    "monto",
+    "importe",
+]
