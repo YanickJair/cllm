@@ -64,7 +64,9 @@ def _build_patterns_map():
             refund_method_tokens=getattr(mod, "REFUND_METHOD_TOKENS", {}),
             timeline_event_tokens=getattr(mod, "TIMELINE_EVENT_TOKENS", {}),
             resolution_state_tokens=getattr(mod, "RESOLUTION_STATE_TOKENS", {}),
-            customer_satisfaction_tokens=getattr(mod, "CUSTOMER_SATISFACTION_TOKENS", {}),
+            customer_satisfaction_tokens=getattr(
+                mod, "CUSTOMER_SATISFACTION_TOKENS", {}
+            ),
             follow_up_needed_tokens=getattr(mod, "FOLLOW_UP_NEEDED_TOKENS", {}),
             timeline_keywords=getattr(mod, "TIMELINE_KEYWORDS", {}),
             timeline_patterns=getattr(mod, "TIMELINE_PATTERNS", []),

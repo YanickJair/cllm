@@ -318,7 +318,9 @@ class PatternExtractor(BaseExtractor):
         for target_token, synonyms in self.vocab.TARGET_TOKENS.items():
             for syn in synonyms:
                 pattern = rf"for\s+(?:a|an|the|um|uma|o|a|un|une|le|la)?\s*(?:\w+\s+)*?{re.escape(syn)}"
-                self._for_patterns[(target_token, syn)] = re.compile(pattern, re.IGNORECASE)
+                self._for_patterns[(target_token, syn)] = re.compile(
+                    pattern, re.IGNORECASE
+                )
 
     def extract(self, text: str, doc: Doc) -> List[Target]:
         """Extract from patterns like 'this X', 'for X', concepts
@@ -394,9 +396,7 @@ class PatternExtractor(BaseExtractor):
         # Use precompiled patterns for O(1) regex matching
         for (target_token, syn), compiled_pattern in self._for_patterns.items():
             if compiled_pattern.search(text_lower):
-                attributes = self.attribute_enhancer.enhance(
-                    target_token, text, doc
-                )
+                attributes = self.attribute_enhancer.enhance(target_token, text, doc)
                 return Target(token=target_token, attributes=attributes)
 
         return None

@@ -45,7 +45,10 @@ class TranscriptEncoder(metaclass=SingletonMeta):
         self._patterns = patterns
         self._lang = lang
         self._analyzer = TranscriptAnalyzer(
-            nlp=nlp, vocab=vocab, rules=rules, patterns=patterns,
+            nlp=nlp,
+            vocab=vocab,
+            rules=rules,
+            patterns=patterns,
         )
         self.analysis: TranscriptAnalysis | None = None
 
@@ -107,9 +110,9 @@ class TranscriptEncoder(metaclass=SingletonMeta):
         resolution = self.analysis.resolution
         resolution_state = self.analysis.resolution_state
 
-        has_clear_state = (
-            resolution_state
-            and resolution_state.type not in ("UNKNOWN", "UNRESOLVED")
+        has_clear_state = resolution_state and resolution_state.type not in (
+            "UNKNOWN",
+            "UNRESOLVED",
         )
 
         if resolution.type == "UNKNOWN" and has_clear_state:

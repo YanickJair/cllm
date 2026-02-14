@@ -61,10 +61,19 @@ class TemporalAnalyzer:
             [
                 [
                     {
-                        "LOWER": {"IN": [
-                            "for", "past", "last", "over", "around",
-                            "durante", "desde", "hace", "por",
-                        ]},
+                        "LOWER": {
+                            "IN": [
+                                "for",
+                                "past",
+                                "last",
+                                "over",
+                                "around",
+                                "durante",
+                                "desde",
+                                "hace",
+                                "por",
+                            ]
+                        },
                         "OP": "?",
                     },
                     {
@@ -76,10 +85,20 @@ class TemporalAnalyzer:
                     {
                         "LOWER": {
                             "IN": [
-                                "day", "days", "week", "weeks", "month", "months",
-                                "día", "días", "dia", "dias",
-                                "semana", "semanas",
-                                "mes", "meses",
+                                "day",
+                                "days",
+                                "week",
+                                "weeks",
+                                "month",
+                                "months",
+                                "día",
+                                "días",
+                                "dia",
+                                "dias",
+                                "semana",
+                                "semanas",
+                                "mes",
+                                "meses",
                             ]
                         }
                     },
@@ -206,7 +225,11 @@ class TemporalAnalyzer:
             '6y'
         """
         text_lower = text.lower()
-        word_alts = "|".join(re.escape(w) for w in self._word_to_num.keys()) if self._word_to_num else ""
+        word_alts = (
+            "|".join(re.escape(w) for w in self._word_to_num.keys())
+            if self._word_to_num
+            else ""
+        )
         num_pattern = r"\d+" + (f"|{word_alts}" if word_alts else "")
         regex = rf"(?:for|past|last|over|around|durante|desde|hace|por)?\s*({num_pattern})\s+(day|week|month|día|dias?|semana|mes(?:es)?)s?"
         match = re.search(regex, text_lower)
@@ -420,12 +443,20 @@ class TemporalAnalyzer:
     def _normalize_unit(unit_str: str) -> str:
         """Normalize a duration unit word to a single-letter abbreviation."""
         _UNIT_MAP = {
-            "day": "d", "days": "d",
-            "week": "w", "weeks": "w",
-            "month": "m", "months": "m",
-            "día": "d", "dias": "d", "dia": "d", "días": "d",
-            "semana": "w", "semanas": "w",
-            "mes": "m", "meses": "m",
+            "day": "d",
+            "days": "d",
+            "week": "w",
+            "weeks": "w",
+            "month": "m",
+            "months": "m",
+            "día": "d",
+            "dias": "d",
+            "dia": "d",
+            "días": "d",
+            "semana": "w",
+            "semanas": "w",
+            "mes": "m",
+            "meses": "m",
         }
         return _UNIT_MAP.get(unit_str.lower(), unit_str[0])
 

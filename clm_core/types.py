@@ -125,11 +125,12 @@ class SDCompressionConfig(BaseModel):
         default=None, description="Never include these"
     )
     max_truncation_length: Optional[int] = Field(
-        default=200, description="Truncate long text. If max config truncation mapping not defined, will use this for all"
+        default=200,
+        description="Truncate long text. If max config truncation mapping not defined, will use this for all",
     )
     max_truncation_mapping: Optional[dict[str, int]] = Field(
         default=None,
-        description="Truncation mapping. This overrides max_truncation_mapping and truncate each field individually"
+        description="Truncation mapping. This overrides max_truncation_mapping and truncate each field individually",
     )
     preserve_structure: Optional[bool] = Field(
         default=True, description="Keep nested dicts/lists"

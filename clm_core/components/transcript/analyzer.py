@@ -56,10 +56,18 @@ class TranscriptAnalyzer:
         self._issue_type_index = self._build_keyword_index(patterns.issue_type_keywords)
         self._severity_index = self._build_keyword_index(patterns.severity_keywords)
         self._resolution_index = self._build_keyword_index(patterns.resolution_keywords)
-        self._billing_cause_index = self._build_keyword_index(patterns.billing_cause_keywords)
-        self._technical_issue_index = self._build_keyword_index(patterns.technical_issue_map)
-        self._issue_confirmation_index = self._build_keyword_index(patterns.issue_confirmation_map)
-        self._troubleshooting_index = self._build_keyword_index(patterns.troubleshooting_actions)
+        self._billing_cause_index = self._build_keyword_index(
+            patterns.billing_cause_keywords
+        )
+        self._technical_issue_index = self._build_keyword_index(
+            patterns.technical_issue_map
+        )
+        self._issue_confirmation_index = self._build_keyword_index(
+            patterns.issue_confirmation_map
+        )
+        self._troubleshooting_index = self._build_keyword_index(
+            patterns.troubleshooting_actions
+        )
         self._action_tokens_index = self._build_action_tokens_index()
 
     @staticmethod
@@ -200,10 +208,7 @@ class TranscriptAnalyzer:
 
             for action_type in action_events:
                 if action_type not in actions:
-                    actions[action_type] = Action(
-                        type=action_type,
-                        attributes={}
-                    )
+                    actions[action_type] = Action(type=action_type, attributes={})
 
                 action = actions[action_type]
 
@@ -278,7 +283,9 @@ class TranscriptAnalyzer:
                     res_type = key
                     next_steps = None
                 timeline = self._extract_timeline(text)
-                return Resolution(type=res_type, timeline=timeline, next_steps=next_steps)
+                return Resolution(
+                    type=res_type, timeline=timeline, next_steps=next_steps
+                )
 
         return Resolution(type="UNKNOWN", timeline=None, next_steps=None)
 
@@ -324,7 +331,8 @@ class TranscriptAnalyzer:
 
         if any(
             k in text_lower
-            for k in self.patterns.action_completion_keywords | self.patterns.action_completion_phrases
+            for k in self.patterns.action_completion_keywords
+            | self.patterns.action_completion_phrases
         ):
             return "COMPLETED"
 
@@ -583,7 +591,9 @@ class TranscriptAnalyzer:
                 amounts.extend(getattr(t, "entities", {}).get("money", []))
         return list(dict.fromkeys(amounts))
 
-    def _detect_billing_cause(self, turns: list[Turn]) -> tuple[Optional[str], Optional[str]]:
+    def _detect_billing_cause(
+        self, turns: list[Turn]
+    ) -> tuple[Optional[str], Optional[str]]:
         for t in (t for t in turns if t.speaker == "agent"):
             text = t.text.lower()
             cause = self._lookup_category(text, self._billing_cause_index)
@@ -591,7 +601,9 @@ class TranscriptAnalyzer:
                 plan_change = None
                 if cause in {"MID_CYCLE_UPGRADE", "MID_CYCLE_DOWNGRADE"}:
                     if match := re.search(r"from (\w+) to (\w+)", text):
-                        plan_change = f"{match.group(1).upper()}→{match.group(2).upper()}"
+                        plan_change = (
+                            f"{match.group(1).upper()}→{match.group(2).upper()}"
+                        )
                 return cause, plan_change
         return None, None
 
@@ -625,9 +637,25 @@ class TranscriptAnalyzer:
 
     # Common words that should not be extracted as agent names
     _NAME_BLACKLIST = {
-        "sorry", "happy", "glad", "pleased", "here", "calling", "able",
-        "going", "looking", "checking", "helping", "available", "ready",
-        "sure", "certain", "afraid", "delighted", "excited", "thrilled",
+        "sorry",
+        "happy",
+        "glad",
+        "pleased",
+        "here",
+        "calling",
+        "able",
+        "going",
+        "looking",
+        "checking",
+        "helping",
+        "available",
+        "ready",
+        "sure",
+        "certain",
+        "afraid",
+        "delighted",
+        "excited",
+        "thrilled",
     }
 
     @classmethod
@@ -689,7 +717,9 @@ class TranscriptAnalyzer:
         recent = agent_turns[-5:] if agent_turns else []
         text = " ".join(t.text.lower() for t in recent)
 
-        tokens = self.patterns.resolution_state_tokens or self.vocab.RESOLUTION_STATE_TOKENS
+        tokens = (
+            self.patterns.resolution_state_tokens or self.vocab.RESOLUTION_STATE_TOKENS
+        )
         for state, keywords in tokens.items():
             if any(kw in text for kw in keywords):
                 if state == "FULLY_RESOLVED":
@@ -708,7 +738,10 @@ class TranscriptAnalyzer:
         final_turns = customer_turns[-3:]
         text = " ".join(t.text.lower() for t in final_turns)
 
-        tokens = self.patterns.customer_satisfaction_tokens or self.vocab.CUSTOMER_SATISFACTION_TOKENS
+        tokens = (
+            self.patterns.customer_satisfaction_tokens
+            or self.vocab.CUSTOMER_SATISFACTION_TOKENS
+        )
         for satisfaction, keywords in tokens.items():
             if any(kw in text for kw in keywords):
                 return satisfaction
@@ -729,7 +762,9 @@ class TranscriptAnalyzer:
         recent = agent_turns[-3:] if agent_turns else []
         text = " ".join(t.text.lower() for t in recent)
 
-        tokens = self.patterns.follow_up_needed_tokens or self.vocab.FOLLOW_UP_NEEDED_TOKENS
+        tokens = (
+            self.patterns.follow_up_needed_tokens or self.vocab.FOLLOW_UP_NEEDED_TOKENS
+        )
         for reason, keywords in tokens.items():
             if any(kw in text for kw in keywords):
                 return True, reason
@@ -911,9 +946,7 @@ class TranscriptAnalyzer:
             time_to_resolution=time_to_resolution,
         )
 
-    def _detect_timeline_event_type(
-        self, text: str, speaker: str
-    ) -> Optional[str]:
+    def _detect_timeline_event_type(self, text: str, speaker: str) -> Optional[str]:
         """Detect timeline event type from turn text."""
         tokens = self.patterns.timeline_event_tokens or self.vocab.TIMELINE_EVENT_TOKENS
         for event_type, keywords in tokens.items():
@@ -921,7 +954,11 @@ class TranscriptAnalyzer:
             if event_type == "ISSUE_RAISED" and speaker != "customer":
                 continue
             # Most other events by agent
-            if event_type in ["ACTION_TAKEN", "RESOLUTION_PROPOSED", "INVESTIGATION_STARTED"] and speaker != "agent":
+            if (
+                event_type
+                in ["ACTION_TAKEN", "RESOLUTION_PROPOSED", "INVESTIGATION_STARTED"]
+                and speaker != "agent"
+            ):
                 continue
 
             if any(kw in text for kw in keywords):
@@ -947,7 +984,10 @@ class TranscriptAnalyzer:
             text = turn.text
             text_lower = text.lower()
 
-            tokens = self.patterns.promise_commitment_tokens or self.vocab.PROMISE_COMMITMENT_TOKENS
+            tokens = (
+                self.patterns.promise_commitment_tokens
+                or self.vocab.PROMISE_COMMITMENT_TOKENS
+            )
             for promise_type, keywords in tokens.items():
                 matching_keyword = next(
                     (kw for kw in keywords if kw in text_lower), None
@@ -1006,7 +1046,9 @@ class TranscriptAnalyzer:
         if self.patterns.day_names:
             day_alts = "|".join(re.escape(d) for d in self.patterns.day_names)
             if match := re.search(rf"(?:para el|antes del)\s+({day_alts})", text, re.I):
-                return self.patterns.day_names.get(match.group(1).lower(), match.group(1).upper())
+                return self.patterns.day_names.get(
+                    match.group(1).lower(), match.group(1).upper()
+                )
 
         return None
 
@@ -1016,7 +1058,9 @@ class TranscriptAnalyzer:
 
         strong_indicators = ["will", "going to", "i'll", "we'll", "definitely"]
         if self.patterns.promise_confidence_strong:
-            strong_indicators = strong_indicators + self.patterns.promise_confidence_strong
+            strong_indicators = (
+                strong_indicators + self.patterns.promise_confidence_strong
+            )
         if any(ind in text for ind in strong_indicators):
             confidence += 0.2
 

@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Any
 import langdetect
 
+
 class DataTypes(Enum):
     """Data types to start the CLM encoding process"""
 
@@ -42,7 +43,7 @@ class DataClassifier:
                 "user:",
                 "assistant:",
                 "caller:",
-                "representative:"
+                "representative:",
             ),
             "es": (
                 "agente:",
@@ -50,7 +51,7 @@ class DataClassifier:
                 "usuario:",
                 "asistente:",
                 "llamante:",
-                "representante:"
+                "representante:",
             ),
             "pt": (
                 "agente:",
@@ -58,7 +59,7 @@ class DataClassifier:
                 "utilizador:",
                 "assistente:",
                 "usuario:",
-                "representante:"
+                "representante:",
             ),
             "fr": (
                 "agent :",
@@ -66,8 +67,8 @@ class DataClassifier:
                 "utilisateur :",
                 "assistant :",
                 "appelant :",
-                "représentant :"
-            )
+                "représentant :",
+            ),
         }
 
     def classifier(self, *, input_: Any) -> DataTypes:
