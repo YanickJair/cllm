@@ -56,7 +56,7 @@ class AttributeEnhancer:
 
         attributes.update(self.rich_extractor.extract(text, target_token))
 
-        domain, _ = self.domain_detector.detect(text)
+        domain, _ = self.domain_detector.detect(text, doc=doc)
         if domain:
             attributes["DOMAIN"] = domain
 

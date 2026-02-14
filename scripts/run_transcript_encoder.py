@@ -289,6 +289,7 @@ def show_comparison(transcript: str, metadata: dict):
     new_chars = len(new_result.compressed)
 
     print("\nCharacter count:")
+    print(f"  Compressed:  {new_result.compressed}")
     print(f"  Original:  {original_chars:>6} chars")
     print(
         f"  Compressed:       {new_chars:>6} chars ({(1 - new_chars / original_chars) * 100:>5.1f}% compression)"
@@ -315,6 +316,7 @@ if __name__ == "__main__":
     # analysis, new_result = show_comparison(test)
     for transcript in transcripts:
         if transcript["metadata"]["channel"] == "voice":
+            print(transcript)
             analysis, new_result = show_comparison(
                 transcript.get("transcript"), metadata=transcript.get("metadata")
             )

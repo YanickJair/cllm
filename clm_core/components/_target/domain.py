@@ -1,5 +1,7 @@
 import re
+from typing import Optional
 from spacy import Language
+from spacy.tokens import Doc
 
 from clm_core.utils.parser_rules import BaseRules
 from clm_core.utils.vocabulary import BaseVocabulary
@@ -22,14 +24,25 @@ class DomainDetector:
         self.nlp = nlp
         self._vocab = vocab
         self._rules = rules
+        # Precompile domain regex patterns
+        self._compiled_domain_regex = {
+            domain: re.compile(pattern)
+            for domain, pattern in self._rules.DOMAIN_REGEX.items()
+        }
 
-    def detect(self, text: str) -> tuple[str, float]:
+    def detect(self, text: str, doc: Optional[Doc] = None) -> tuple[str, float]:
         """
         Returns (domain, confidence).
-        """
 
+        Args:
+            text: The text to analyze
+            doc: Optional pre-computed spaCy Doc to avoid reprocessing
+        """
         clean = text.strip().lower()
-        doc = self.nlp(clean)
+
+        # Reuse provided doc or create new one only if needed
+        if doc is None:
+            doc = self.nlp(clean)
 
         kw_scores = self._score_keyword_matches(clean)
         rg_scores = self._score_regex(clean)
@@ -49,8 +62,8 @@ class DomainDetector:
 
     def _score_regex(self, text: str) -> dict:
         scores = dict.fromkeys(self._rules.DOMAIN_REGEX, 0)
-        for domain, pattern in self._rules.DOMAIN_REGEX.items():
-            if re.search(pattern, text):
+        for domain, compiled_pattern in self._compiled_domain_regex.items():
+            if compiled_pattern.search(text):
                 scores[domain] += 2
         return scores
 

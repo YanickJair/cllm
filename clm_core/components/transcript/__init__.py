@@ -11,4 +11,10 @@ __all__ = [
     "CallInfo",
     "Turn",
     "TemporalPattern",
+    # Case-dependent features
+    "ResolutionState",
+    "RefundReference",
+    "TimelineEvent",
+    "ConversationTimeline",
+    "PromiseCommitment",
 ]

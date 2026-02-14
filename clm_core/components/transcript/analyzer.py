@@ -23,6 +23,11 @@ from . import (
     CustomerProfile,
     TranscriptAnalysis,
     Turn,
+    ResolutionState,
+    RefundReference,
+    TimelineEvent,
+    ConversationTimeline,
+    PromiseCommitment,
 )
 from .vocabulary import TranscriptVocabulary
 from clm_core.components.intent_detector import IntentDetector
@@ -134,6 +139,12 @@ class TranscriptAnalyzer:
         resolution = self._extract_resolution(turns)
         sentiment_trajectory = self.sentiment_analyzer.track_trajectory(turns)
 
+        # Case-dependent features
+        resolution_state = self._extract_resolution_state(turns, resolution)
+        refund_reference = self._extract_refund_reference(turns, issues, actions)
+        timeline = self._extract_conversation_timeline(turns)
+        promises = self._extract_promises(turns)
+
         return TranscriptAnalysis(
             call_info=call_info,
             customer=customer,
@@ -142,6 +153,10 @@ class TranscriptAnalyzer:
             actions=actions,
             resolution=resolution,
             sentiment_trajectory=sentiment_trajectory,
+            resolution_state=resolution_state,
+            refund_reference=refund_reference,
+            timeline=timeline,
+            promises=promises,
         )
 
     @staticmethod
@@ -590,8 +605,15 @@ class TranscriptAnalyzer:
             agent=agent_name,
         )
 
-    @staticmethod
-    def _detect_agent_name(turns: list[Turn]) -> Optional[str]:
+    # Common words that should not be extracted as agent names
+    _NAME_BLACKLIST = {
+        "sorry", "happy", "glad", "pleased", "here", "calling", "able",
+        "going", "looking", "checking", "helping", "available", "ready",
+        "sure", "certain", "afraid", "delighted", "excited", "thrilled",
+    }
+
+    @classmethod
+    def _detect_agent_name(cls, turns: list[Turn]) -> Optional[str]:
         """Detects the agent's name from the transcript.
         We will find the agent's name by looking for a PERSON entity
         in the text or by matching a pattern.
@@ -611,9 +633,394 @@ class TranscriptAnalyzer:
             if doc:
                 for ent in doc.ents:
                     if ent.label_ == "PERSON":
-                        return ent.text
+                        name = ent.text.lower()
+                        if name not in cls._NAME_BLACKLIST:
+                            return ent.text
             if match := re.search(
-                r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)", t.text, re.I
+                r"(?:my name is|this is)\s+([A-Z][a-z]+)", t.text, re.I
             ):
-                return match.group(1)
+                candidate = match.group(1)
+                if candidate.lower() not in cls._NAME_BLACKLIST:
+                    return candidate
         return None
+
+    # ============================================================
+    # Case-dependent feature extraction methods
+    # ============================================================
+
+    def _extract_resolution_state(
+        self, turns: list[Turn], resolution: Resolution
+    ) -> ResolutionState:
+        """Extract enhanced resolution state with granularity."""
+        agent_turns = [t for t in turns if t.speaker == "agent"]
+        customer_turns = [t for t in turns if t.speaker == "customer"]
+
+        completeness = self._detect_resolution_completeness(agent_turns)
+        customer_satisfaction = self._derive_customer_satisfaction(customer_turns)
+        follow_up_needed, follow_up_reason = self._detect_follow_up_needed(agent_turns)
+        resolution_type = self._map_resolution_to_state(
+            resolution.type, completeness, follow_up_needed, customer_satisfaction
+        )
+
+        return ResolutionState(
+            type=resolution_type,
+            completeness=completeness,
+            customer_satisfaction=customer_satisfaction,
+            follow_up_needed=follow_up_needed,
+            follow_up_reason=follow_up_reason,
+        )
+
+    def _detect_resolution_completeness(self, agent_turns: list[Turn]) -> Optional[str]:
+        """Detect if resolution was full, partial, or none."""
+        recent = agent_turns[-5:] if agent_turns else []
+        text = " ".join(t.text.lower() for t in recent)
+
+        for state, keywords in self.vocab.RESOLUTION_STATE_TOKENS.items():
+            if any(kw in text for kw in keywords):
+                if state == "FULLY_RESOLVED":
+                    return "FULL"
+                elif state == "PARTIALLY_RESOLVED":
+                    return "PARTIAL"
+        return None
+
+    def _derive_customer_satisfaction(
+        self, customer_turns: list[Turn]
+    ) -> Optional[str]:
+        """Derive satisfaction from final customer turns."""
+        if not customer_turns:
+            return None
+
+        final_turns = customer_turns[-3:]
+        text = " ".join(t.text.lower() for t in final_turns)
+
+        for satisfaction, keywords in self.vocab.CUSTOMER_SATISFACTION_TOKENS.items():
+            if any(kw in text for kw in keywords):
+                return satisfaction
+
+        # Fall back to sentiment
+        if final_turns:
+            final_sentiment = final_turns[-1].sentiment
+            if final_sentiment in ["SATISFIED", "GRATEFUL", "RELIEVED"]:
+                return "SATISFIED"
+            elif final_sentiment in ["FRUSTRATED", "ANGRY", "DISAPPOINTED"]:
+                return "DISSATISFIED"
+
+        return "NEUTRAL"
+
+    def _detect_follow_up_needed(
+        self, agent_turns: list[Turn]
+    ) -> tuple[bool, Optional[str]]:
+        """Detect if follow-up is needed and why."""
+        recent = agent_turns[-3:] if agent_turns else []
+        text = " ".join(t.text.lower() for t in recent)
+
+        for reason, keywords in self.vocab.FOLLOW_UP_NEEDED_TOKENS.items():
+            if any(kw in text for kw in keywords):
+                return True, reason
+
+        return False, None
+
+    @staticmethod
+    def _map_resolution_to_state(
+        resolution_type: str,
+        completeness: Optional[str],
+        follow_up_needed: bool,
+        customer_satisfaction: Optional[str] = None,
+    ) -> str:
+        """Map resolution to granular state, considering customer satisfaction."""
+        if resolution_type == "RESOLVED":
+            if completeness == "FULL" and not follow_up_needed:
+                return "FULLY_RESOLVED"
+            elif completeness == "PARTIAL":
+                return "PARTIALLY_RESOLVED"
+            else:
+                return "RESOLVED_PENDING_VERIFICATION"
+        elif resolution_type == "PENDING":
+            return "PENDING"
+        elif resolution_type == "ESCALATED":
+            return "ESCALATED"
+        else:
+            # If resolution is UNKNOWN but customer is satisfied, infer resolution
+            if customer_satisfaction == "SATISFIED":
+                if completeness == "FULL":
+                    return "FULLY_RESOLVED"
+                return "RESOLVED"
+            elif customer_satisfaction == "NEUTRAL":
+                return "RESOLVED_PENDING_VERIFICATION"
+            return "UNRESOLVED"
+
+    def _extract_refund_reference(
+        self, turns: list[Turn], issues: list[Issue], actions: list[Action]
+    ) -> Optional[RefundReference]:
+        """Extract refund details for billing/refund cases (case-dependent)."""
+        issue_types = [i.type for i in issues]
+        is_refund_case = any(
+            it in issue_types
+            for it in [
+                "BILLING_DISPUTE",
+                "REFUND_REQUEST",
+                "DUPLICATE_CHARGE",
+                "UNEXPECTED_CHARGE",
+                "MISSING_REFUND",
+            ]
+        )
+
+        has_refund_action = any(
+            "REFUND" in a.type or "CREDIT" in a.type for a in actions
+        )
+
+        if not is_refund_case and not has_refund_action:
+            return None
+
+        refund = RefundReference()
+
+        for turn in turns:
+            if turn.speaker != "agent":
+                continue
+
+            text = turn.text
+            text_lower = text.lower()
+
+            if not refund.reference_number:
+                refund.reference_number = self._extract_refund_reference_number(text)
+
+            if not refund.amount:
+                amount, _ = self._extract_financial_details(turn)
+                refund.amount = amount
+
+            if not refund.method:
+                refund.method = self._detect_refund_method(text_lower)
+
+            if not refund.status:
+                refund.status = self._detect_refund_status(text_lower)
+
+            if not refund.timeline:
+                refund.timeline = self._extract_timeline(text_lower)
+
+        # Also pull from action attributes
+        for action in actions:
+            if "REFUND" in action.type or "CREDIT" in action.type:
+                if not refund.reference_number and "reference" in action.attributes:
+                    refund.reference_number = action.attributes["reference"]
+                if not refund.amount and action.amount:
+                    refund.amount = action.amount
+                if not refund.method and action.payment_method:
+                    refund.method = action.payment_method
+
+        # Only return if we have meaningful data
+        if any([refund.reference_number, refund.amount, refund.status]):
+            return refund
+
+        return None
+
+    @staticmethod
+    def _extract_refund_reference_number(text: str) -> Optional[str]:
+        """Extract refund-specific reference numbers."""
+        patterns = [
+            r"\bRFD-?\d{5,10}\b",
+            r"\bREF-?\d{5,10}\b",
+            r"\bCRD-?\d{5,10}\b",
+            r"refund\s*(?:number|id|#)?\s*[:=]?\s*([A-Z0-9-]{5,15})",
+        ]
+
+        for pattern in patterns:
+            if match := re.search(pattern, text, re.I):
+                return match.group(0) if match.lastindex is None else match.group(1)
+
+        return None
+
+    def _detect_refund_method(self, text: str) -> Optional[str]:
+        """Detect refund method from text."""
+        for method, keywords in self.vocab.REFUND_METHOD_TOKENS.items():
+            if any(kw in text for kw in keywords):
+                return method
+        return None
+
+    def _detect_refund_status(self, text: str) -> Optional[str]:
+        """Detect refund status from text."""
+        for status, keywords in self.vocab.REFUND_STATUS_TOKENS.items():
+            if any(kw in text for kw in keywords):
+                return status
+        return None
+
+    def _extract_conversation_timeline(self, turns: list[Turn]) -> ConversationTimeline:
+        """Extract conversation timeline with key events."""
+        events = []
+        first_issue_turn = None
+        first_resolution_turn = None
+
+        for idx, turn in enumerate(turns):
+            text_lower = turn.text.lower()
+
+            event_type = self._detect_timeline_event_type(text_lower, turn.speaker)
+
+            if event_type:
+                event = TimelineEvent(
+                    event_type=event_type,
+                    description=self._summarize_event(turn.text, event_type),
+                    turn_index=idx,
+                    timestamp=turn.timestamp,
+                    actor=turn.speaker,
+                )
+                events.append(event)
+
+                if event_type == "ISSUE_RAISED" and first_issue_turn is None:
+                    first_issue_turn = idx
+                elif (
+                    event_type in ["RESOLUTION_PROPOSED", "ACTION_TAKEN"]
+                    and first_resolution_turn is None
+                ):
+                    first_resolution_turn = idx
+
+        # Calculate metrics
+        time_to_first_action = None
+        time_to_resolution = None
+
+        if first_issue_turn is not None:
+            first_action = next(
+                (e.turn_index for e in events if e.event_type == "ACTION_TAKEN"), None
+            )
+            if first_action is not None:
+                time_to_first_action = first_action - first_issue_turn
+
+            if first_resolution_turn is not None:
+                time_to_resolution = first_resolution_turn - first_issue_turn
+
+        return ConversationTimeline(
+            events=events,
+            first_issue_turn=first_issue_turn,
+            first_resolution_turn=first_resolution_turn,
+            time_to_first_action=time_to_first_action,
+            time_to_resolution=time_to_resolution,
+        )
+
+    def _detect_timeline_event_type(
+        self, text: str, speaker: str
+    ) -> Optional[str]:
+        """Detect timeline event type from turn text."""
+        for event_type, keywords in self.vocab.TIMELINE_EVENT_TOKENS.items():
+            # Issue raised typically by customer
+            if event_type == "ISSUE_RAISED" and speaker != "customer":
+                continue
+            # Most other events by agent
+            if event_type in ["ACTION_TAKEN", "RESOLUTION_PROPOSED", "INVESTIGATION_STARTED"] and speaker != "agent":
+                continue
+
+            if any(kw in text for kw in keywords):
+                return event_type
+
+        return None
+
+    @staticmethod
+    def _summarize_event(text: str, event_type: str) -> str:
+        """Create brief summary of event."""
+        sentences = text.split(".")
+        summary = sentences[0] if sentences else text
+        return summary[:100].strip()
+
+    def _extract_promises(self, turns: list[Turn]) -> list[PromiseCommitment]:
+        """Extract agent promises and commitments (case-dependent)."""
+        promises = []
+
+        for idx, turn in enumerate(turns):
+            if turn.speaker != "agent":
+                continue
+
+            text = turn.text
+            text_lower = text.lower()
+
+            for promise_type, keywords in self.vocab.PROMISE_COMMITMENT_TOKENS.items():
+                matching_keyword = next(
+                    (kw for kw in keywords if kw in text_lower), None
+                )
+
+                if matching_keyword:
+                    # Extract associated details
+                    timeline = self._extract_promise_timeline(text_lower)
+                    amount = None
+
+                    if promise_type in ["CREDIT_PROMISE", "REFUND_PROMISE"]:
+                        amount, _ = self._extract_financial_details(turn)
+
+                    confidence = self._calculate_promise_confidence(
+                        text_lower, promise_type
+                    )
+
+                    promise = PromiseCommitment(
+                        type=promise_type,
+                        description=self._extract_promise_description(
+                            text, matching_keyword
+                        ),
+                        timeline=timeline,
+                        amount=amount,
+                        turn_index=idx,
+                        confidence=confidence,
+                    )
+                    promises.append(promise)
+
+        return self._dedupe_promises(promises)
+
+    def _extract_promise_timeline(self, text: str) -> Optional[str]:
+        """Extract timeline from promise text."""
+        timeline = self._extract_timeline(text)
+        if timeline:
+            return timeline
+
+        patterns = [
+            (r"within (\d+) hours?", lambda m: f"{m.group(1)}h"),
+            (r"within (\d+) days?", lambda m: f"{m.group(1)}d"),
+            (
+                r"by (monday|tuesday|wednesday|thursday|friday|saturday|sunday)",
+                lambda m: m.group(1).upper(),
+            ),
+            (r"next (week|month)", lambda m: f"NEXT_{m.group(1).upper()}"),
+            (
+                r"in the next (\d+[-\s]?\d*) ?(business )?days?",
+                lambda m: f"{m.group(1).strip()}d",
+            ),
+        ]
+
+        for pattern, formatter in patterns:
+            if match := re.search(pattern, text, re.I):
+                return formatter(match)
+
+        return None
+
+    @staticmethod
+    def _calculate_promise_confidence(text: str, promise_type: str) -> float:
+        """Calculate confidence in promise detection."""
+        confidence = 0.6
+
+        strong_indicators = ["will", "going to", "i'll", "we'll", "definitely"]
+        if any(ind in text for ind in strong_indicators):
+            confidence += 0.2
+
+        if re.search(r"within|by|before|tomorrow|today|\d+ (day|hour)", text, re.I):
+            confidence += 0.1
+
+        if promise_type in ["CREDIT_PROMISE", "REFUND_PROMISE"]:
+            if "$" in text or re.search(r"\d+\.?\d*", text):
+                confidence += 0.1
+
+        return min(confidence, 1.0)
+
+    @staticmethod
+    def _extract_promise_description(text: str, keyword: str) -> str:
+        """Extract the promise description around the keyword."""
+        sentences = text.split(".")
+        for sentence in sentences:
+            if keyword in sentence.lower():
+                return sentence.strip()[:150]
+        return text[:150]
+
+    @staticmethod
+    def _dedupe_promises(promises: list[PromiseCommitment]) -> list[PromiseCommitment]:
+        """Remove duplicate promises of the same type."""
+        seen_types = set()
+        unique = []
+        for p in promises:
+            key = (p.type, p.amount, p.timeline)
+            if key not in seen_types:
+                seen_types.add(key)
+                unique.append(p)
+        return unique

@@ -1232,6 +1232,325 @@ class TranscriptVocabulary(BaseVocabulary):
             ],
         }
 
+    @property
+    def RESOLUTION_STATE_TOKENS(self) -> dict[str, list[str]]:
+        return {
+            "FULLY_RESOLVED": [
+                "completely resolved",
+                "fully resolved",
+                "all set",
+                "everything is fixed",
+                "problem solved",
+                "taken care of completely",
+                "issue is resolved",
+                "all done",
+                "fully fixed",
+                "completely fixed",
+            ],
+            "PARTIALLY_RESOLVED": [
+                "partially resolved",
+                "mostly fixed",
+                "still some issues",
+                "one more thing",
+                "but there's still",
+                "however",
+                "still need to",
+                "remaining issue",
+                "main issue resolved",
+                "mostly working",
+            ],
+            "PENDING_VERIFICATION": [
+                "let me know if",
+                "please confirm",
+                "call back if",
+                "monitor and see",
+                "wait and see",
+                "should be working now",
+                "give it a try",
+                "test it out",
+                "let us know",
+            ],
+        }
+
+    @property
+    def CUSTOMER_SATISFACTION_TOKENS(self) -> dict[str, list[str]]:
+        return {
+            "SATISFIED": [
+                "thank you so much",
+                "that's great",
+                "perfect",
+                "excellent",
+                "wonderful",
+                "appreciate your help",
+                "you've been very helpful",
+                "that works",
+                "awesome",
+                "thanks a lot",
+                "really appreciate it",
+            ],
+            "NEUTRAL": [
+                "okay",
+                "alright",
+                "fine",
+                "i see",
+                "understood",
+                "got it",
+                "sounds good",
+                "that's fine",
+            ],
+            "DISSATISFIED": [
+                "not satisfied",
+                "not happy",
+                "still frustrated",
+                "this isn't acceptable",
+                "expected better",
+                "disappointed",
+                "didn't help",
+                "still having issues",
+                "not what i expected",
+            ],
+        }
+
+    @property
+    def FOLLOW_UP_NEEDED_TOKENS(self) -> dict[str, list[str]]:
+        return {
+            "PENDING_ACTION": [
+                "will be processed",
+                "within the next",
+                "expect to see",
+                "should receive",
+                "we'll send",
+                "will be completed",
+                "will take effect",
+            ],
+            "VERIFICATION_NEEDED": [
+                "let us know if",
+                "call back if",
+                "reach out if",
+                "please monitor",
+                "confirm that",
+                "check if",
+                "verify that",
+            ],
+            "SCHEDULED_CALLBACK": [
+                "will call you back",
+                "i'll follow up",
+                "we'll reach out",
+                "expect a call",
+                "call you tomorrow",
+                "call you within",
+            ],
+        }
+
+    @property
+    def REFUND_STATUS_TOKENS(self) -> dict[str, list[str]]:
+        return {
+            "INITIATED": [
+                "initiated",
+                "submitted",
+                "requested",
+                "just processed",
+                "started the refund",
+                "filed the refund",
+                "processing your refund",
+            ],
+            "PROCESSING": [
+                "processing",
+                "being processed",
+                "in progress",
+                "working on",
+                "going through",
+                "under review",
+            ],
+            "COMPLETED": [
+                "completed",
+                "refunded",
+                "credit applied",
+                "refund issued",
+                "money back",
+                "already refunded",
+                "has been credited",
+            ],
+            "PENDING_APPROVAL": [
+                "pending approval",
+                "needs approval",
+                "supervisor approval",
+                "management review",
+                "awaiting authorization",
+                "requires approval",
+            ],
+        }
+
+    @property
+    def REFUND_METHOD_TOKENS(self) -> dict[str, list[str]]:
+        return {
+            "CARD_CREDIT": [
+                "credit card",
+                "card",
+                "back to your card",
+                "original payment method",
+                "credit your card",
+                "credited to your card",
+            ],
+            "ACCOUNT_CREDIT": [
+                "account credit",
+                "credit to your account",
+                "credit on your account",
+                "account balance",
+                "credit your account",
+                "applied to your account",
+            ],
+            "CHECK": [
+                "check",
+                "mailed check",
+                "send a check",
+                "physical check",
+                "mail you a check",
+            ],
+            "PAYPAL": [
+                "paypal",
+                "paypal account",
+                "back to paypal",
+            ],
+            "BANK_TRANSFER": [
+                "bank transfer",
+                "direct deposit",
+                "bank account",
+                "wire transfer",
+            ],
+        }
+
+    @property
+    def TIMELINE_EVENT_TOKENS(self) -> dict[str, list[str]]:
+        return {
+            "ISSUE_RAISED": [
+                "my problem is",
+                "i'm having trouble",
+                "the issue is",
+                "i noticed",
+                "there's a problem",
+                "i'm calling about",
+                "i need help with",
+                "having an issue",
+                "experiencing problems",
+            ],
+            "INVESTIGATION_STARTED": [
+                "let me check",
+                "i'll look into",
+                "let me pull up",
+                "checking now",
+                "looking at your account",
+                "i can see",
+                "let me investigate",
+                "pulling up your info",
+            ],
+            "ACTION_TAKEN": [
+                "i've processed",
+                "i just submitted",
+                "done",
+                "completed",
+                "applied",
+                "scheduled",
+                "arranged",
+                "i've initiated",
+                "just processed",
+            ],
+            "RESOLUTION_PROPOSED": [
+                "this should",
+                "should be fixed",
+                "you should see",
+                "going to resolve",
+                "will take care of",
+                "that should fix",
+                "this will resolve",
+            ],
+            "CONFIRMATION_RECEIVED": [
+                "yes that works",
+                "perfect",
+                "looks good",
+                "i see it now",
+                "that's correct",
+                "working now",
+                "it's working",
+            ],
+            "ESCALATION_TRIGGERED": [
+                "escalate",
+                "transfer to",
+                "supervisor",
+                "specialist",
+                "tier 2",
+                "higher level",
+                "management",
+            ],
+        }
+
+    @property
+    def PROMISE_COMMITMENT_TOKENS(self) -> dict[str, list[str]]:
+        return {
+            "CALLBACK": [
+                "i'll call you back",
+                "we'll call you",
+                "expect a call",
+                "call you within",
+                "reach out to you",
+                "follow up with a call",
+                "give you a call",
+                "call you tomorrow",
+            ],
+            "FOLLOW_UP_EMAIL": [
+                "send you an email",
+                "email you",
+                "email confirmation",
+                "you'll receive an email",
+                "sending an email",
+                "email with details",
+            ],
+            "TECHNICIAN_VISIT": [
+                "technician will",
+                "send a technician",
+                "tech will come",
+                "schedule a visit",
+                "someone will come out",
+                "on-site visit",
+                "technician visit",
+                "dispatch a technician",
+            ],
+            "CREDIT_PROMISE": [
+                "credit your account",
+                "apply a credit",
+                "give you a credit",
+                "credit of",
+                "account credit",
+                "credit will be applied",
+            ],
+            "REFUND_PROMISE": [
+                "refund will",
+                "you'll receive a refund",
+                "process the refund",
+                "refund of",
+                "money back",
+                "issue a refund",
+                "refund will be processed",
+            ],
+            "DELIVERY_PROMISE": [
+                "will be delivered",
+                "arrive by",
+                "ship it",
+                "send you",
+                "expect delivery",
+                "shipped by",
+                "deliver within",
+            ],
+            "RESOLUTION_PROMISE": [
+                "will be resolved",
+                "should be fixed",
+                "take care of this",
+                "handle this",
+                "sort this out",
+                "fix this for you",
+            ],
+        }
+
     def get_issue_token(self, text: str) -> Optional[str]:
         """Find issue type from text"""
         text_lower = text.lower()
