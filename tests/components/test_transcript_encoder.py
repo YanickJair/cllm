@@ -11,6 +11,9 @@ from clm_core.components.transcript import (
     SentimentTrajectory,
     TranscriptAnalysis,
     Turn,
+    ResolutionState,
+    RefundReference,
+    PromiseCommitment,
 )
 from clm_core.types import CLMOutput
 
@@ -62,187 +65,83 @@ class TestTranscriptEncoderInit:
         assert encoder.analysis is None
 
 
-class TestEncodeCallInfo:
-    def test_basic_call_info(self):
+class TestEncodeInteraction:
+    def test_basic_interaction(self):
         call = CallInfo(
             call_id="123",
             type="SUPPORT",
             channel="voice",
             duration=10
         )
-        result = TranscriptEncoder._encode_call_info(call)
-        assert result == "[CALL:SUPPORT:DURATION=5m:CHANNEL=voice]"
+        result = TranscriptEncoder._encode_interaction(call)
+        assert result == "[INTERACTION:SUPPORT:CHANNEL=VOICE]"
 
-    def test_call_info_with_agent(self):
-        call = CallInfo(
-            call_id="123",
-            type="SUPPORT",
-            channel="voice",
-            duration=10,
-            agent="Sarah"
-        )
-        result = TranscriptEncoder._encode_call_info(call)
-        assert "AGENT=Sarah" in result
-        assert result.startswith("[CALL:SUPPORT")
-
-    def test_call_info_with_channel(self):
+    def test_interaction_chat_channel(self):
         call = CallInfo(
             call_id="123",
             type="BILLING",
             channel="chat",
             duration=8
         )
-        result = TranscriptEncoder._encode_call_info(call)
-        assert "CHANNEL=chat" in result
+        result = TranscriptEncoder._encode_interaction(call)
+        assert result == "[INTERACTION:BILLING:CHANNEL=CHAT]"
 
-    def test_call_info_duration_conversion(self):
-        # Duration is in turns, converted to minutes (turns / 2)
+    def test_interaction_email_channel(self):
         call = CallInfo(
             call_id="123",
             type="SUPPORT",
-            channel="voice",
-            duration=20  # 20 turns = 10 minutes
+            channel="email",
+            duration=4
         )
-        result = TranscriptEncoder._encode_call_info(call)
-        assert "DURATION=10m" in result
-
-    def test_call_info_minimum_duration(self):
-        call = CallInfo(
-            call_id="123",
-            type="SUPPORT",
-            channel="voice",
-            duration=1  # 1 turn = minimum 1 minute
-        )
-        result = TranscriptEncoder._encode_call_info(call)
-        assert "DURATION=1m" in result
+        result = TranscriptEncoder._encode_interaction(call)
+        assert result == "[INTERACTION:SUPPORT:CHANNEL=EMAIL]"
 
 
-class TestEncodeCustomer:
-    def test_basic_customer(self, encoder):
-        customer = CustomerProfile()
-        result = encoder._encode_customer(customer)
-        assert result == "[CUSTOMER]"
+class TestEncodeDuration:
+    def test_duration_conversion(self):
+        call = CallInfo(call_id="123", type="SUPPORT", channel="voice", duration=20)
+        result = TranscriptEncoder._encode_duration(call)
+        assert result == "[DURATION=10m]"
 
-    def test_customer_with_account(self, encoder):
-        customer = CustomerProfile(account="847-392-1045")
-        result = encoder._encode_customer(customer)
-        assert "ACCOUNT=847-392-1045" in result
+    def test_minimum_duration(self):
+        call = CallInfo(call_id="123", type="SUPPORT", channel="voice", duration=1)
+        result = TranscriptEncoder._encode_duration(call)
+        assert result == "[DURATION=1m]"
 
-    def test_customer_with_tier(self, encoder):
-        customer = CustomerProfile(tier="PREMIUM")
-        result = encoder._encode_customer(customer)
-        assert "TIER=PREMIUM" in result
-
-    def test_customer_with_tenure(self, encoder):
-        customer = CustomerProfile(tenure="5yr")
-        result = encoder._encode_customer(customer)
-        assert "TENURE=5yr" in result
-
-    def test_customer_with_address(self, encoder):
-        customer = CustomerProfile(
-            attributes={"address": "123 Main Street"}
-        )
-        result = encoder._encode_customer(customer)
-        assert "ADDRESS=" in result
-
-    def test_customer_with_organization(self, encoder):
-        customer = CustomerProfile(
-            attributes={"organization": "Acme Corp"}
-        )
-        result = encoder._encode_customer(customer)
-        assert "ORG=Acme_Corp" in result
-
-    def test_customer_with_location(self, encoder):
-        customer = CustomerProfile(
-            attributes={"location": "New York"}
-        )
-        result = encoder._encode_customer(customer)
-        assert "LOCATION=New York" in result
-
-    def test_customer_full_profile(self, encoder):
-        customer = CustomerProfile(
-            account="123456",
-            tier="ENTERPRISE",
-            tenure="10yr",
-            attributes={
-                "address": "456 Oak Avenue",
-                "organization": "Big Company"
-            }
-        )
-        result = encoder._encode_customer(customer)
-        assert "ACCOUNT=123456" in result
-        assert "TIER=ENTERPRISE" in result
-        assert "TENURE=10yr" in result
-        assert "ADDRESS=" in result
-        assert "ORG=Big_Company" in result
+    def test_no_duration(self):
+        call = CallInfo(call_id="123", type="SUPPORT", channel="voice", duration=0)
+        result = TranscriptEncoder._encode_duration(call)
+        assert result is None
 
 
-class TestEncodeIssue:
-    def test_basic_issue(self):
-        issue = Issue(type="INTERNET_OUTAGE")
-        result = TranscriptEncoder._encode_issue(issue, [])
-        assert result == "[ISSUE:INTERNET_OUTAGE:SEVERITY=LOW]"
+class TestEncodeLang:
+    def test_lang_en(self):
+        result = TranscriptEncoder._encode_lang("en")
+        assert result == "[LANG=EN]"
 
-    def test_issue_with_severity(self):
-        issue = Issue(type="BILLING_DISPUTE", severity="HIGH")
-        result = TranscriptEncoder._encode_issue(issue, [])
-        assert "SEVERITY=HIGH" in result
+    def test_lang_pt(self):
+        result = TranscriptEncoder._encode_lang("pt")
+        assert result == "[LANG=PT]"
 
-    def test_issue_with_frequency(self):
-        issue = Issue(type="INTERNET_OUTAGE", frequency="3x_daily")
-        result = TranscriptEncoder._encode_issue(issue, [])
-        assert "FREQ=3x_daily" in result
-
-    def test_issue_with_duration(self):
-        issue = Issue(type="SERVICE_INTERRUPTION", duration="3d")
-        result = TranscriptEncoder._encode_issue(issue, [])
-        assert "DURATION=3d" in result
-
-    def test_issue_with_pattern(self):
-        issue = Issue(type="INTERNET_OUTAGE", pattern="9am+1pm+6pm")
-        result = TranscriptEncoder._encode_issue(issue, [])
-        assert "PATTERN=9am+1pm+6pm" in result
-
-    def test_issue_with_days(self):
-        issue = Issue(
-            type="INTERNET_OUTAGE",
-            attributes={"days": ["MON", "TUE", "WED"]}
-        )
-        result = TranscriptEncoder._encode_issue(issue, [])
-        assert "DAYS=MON+TUE+WED" in result
-
-    def test_issue_with_impact(self):
-        issue = Issue(type="INTERNET_OUTAGE", impact="WORK_FROM_HOME")
-        result = TranscriptEncoder._encode_issue(issue, [])
-        assert "IMPACT=WORK_FROM_HOME" in result
-
-    def test_billing_issue_with_amounts(self):
-        issue = Issue(type="BILLING_DISPUTE")
-        turns = [
-            Turn(
-                speaker="customer",
-                text="I was charged $14.99",
-                entities={"money": ["$14.99", "$16.99"]}
-            )
-        ]
-        result = TranscriptEncoder._encode_issue(issue, turns)
-        assert "AMOUNTS=$14.99+$16.99" in result
+    def test_lang_es(self):
+        result = TranscriptEncoder._encode_lang("es")
+        assert result == "[LANG=ES]"
 
 
-class TestEncodeActionChain:
+class TestEncodeAgentActions:
     def test_single_action(self):
-        actions = [Action(type="TROUBLESHOOT")]
-        result = TranscriptEncoder._encode_action_chain(actions)
-        assert result == "[ACTION_CHAIN:TROUBLESHOOT]"
+        actions = [Action(type="ACCOUNT_VERIFIED")]
+        result = TranscriptEncoder._encode_agent_actions(actions)
+        assert result == "[AGENT_ACTIONS:ACCOUNT_VERIFIED]"
 
     def test_multiple_actions(self):
         actions = [
-            Action(type="TROUBLESHOOT"),
             Action(type="ACCOUNT_VERIFIED"),
-            Action(type="REFUND_PROCESSED")
+            Action(type="DIAGNOSTIC_PERFORMED"),
+            Action(type="REFUND_INITIATED")
         ]
-        result = TranscriptEncoder._encode_action_chain(actions)
-        assert result == "[ACTION_CHAIN:TROUBLESHOOT→ACCOUNT_VERIFIED→REFUND_PROCESSED]"
+        result = TranscriptEncoder._encode_agent_actions(actions)
+        assert result == "[AGENT_ACTIONS:ACCOUNT_VERIFIED→DIAGNOSTIC_PERFORMED→REFUND_INITIATED]"
 
     def test_action_chain_preserves_order(self):
         actions = [
@@ -250,51 +149,201 @@ class TestEncodeActionChain:
             Action(type="TROUBLESHOOT"),
             Action(type="DOCUMENTATION_UPDATED")
         ]
-        result = TranscriptEncoder._encode_action_chain(actions)
-        assert result == "[ACTION_CHAIN:ACCOUNT_VERIFIED→TROUBLESHOOT→DOCUMENTATION_UPDATED]"
+        result = TranscriptEncoder._encode_agent_actions(actions)
+        assert result == "[AGENT_ACTIONS:ACCOUNT_VERIFIED→TROUBLESHOOT→DOCUMENTATION_UPDATED]"
 
     def test_two_actions(self):
         actions = [
-            Action(type="REFUND"),
-            Action(type="CREDIT")
+            Action(type="REFUND_INITIATED"),
+            Action(type="CUSTOMER_NOTIFIED")
         ]
-        result = TranscriptEncoder._encode_action_chain(actions)
-        assert result == "[ACTION_CHAIN:REFUND→CREDIT]"
+        result = TranscriptEncoder._encode_agent_actions(actions)
+        assert result == "[AGENT_ACTIONS:REFUND_INITIATED→CUSTOMER_NOTIFIED]"
+
+
+class TestEncodeSystemActions:
+    def test_single_system_action(self):
+        result = TranscriptEncoder._encode_system_actions(["PAYMENT_RETRY_DETECTED"])
+        assert result == "[SYSTEM_ACTIONS:PAYMENT_RETRY_DETECTED]"
+
+    def test_multiple_system_actions(self):
+        result = TranscriptEncoder._encode_system_actions(
+            ["PAYMENT_RETRY_DETECTED", "NOTIFICATION_SENT"]
+        )
+        assert result == "[SYSTEM_ACTIONS:PAYMENT_RETRY_DETECTED→NOTIFICATION_SENT]"
 
 
 class TestEncodeResolution:
-    def test_basic_resolution(self):
+    def test_resolved(self):
         resolution = Resolution(type="RESOLVED")
         result = TranscriptEncoder._encode_resolution(resolution)
-        assert result == "[RESOLUTION:RESOLVED]"
+        assert result == "[RESOLUTION:ISSUE_RESOLVED]"
 
-    def test_resolution_with_timeline(self):
-        resolution = Resolution(type="PENDING", timeline="24h")
+    def test_pending(self):
+        resolution = Resolution(type="PENDING")
         result = TranscriptEncoder._encode_resolution(resolution)
-        assert "TIMELINE=24h" in result
+        assert result == "[RESOLUTION:PENDING]"
 
-    def test_resolution_with_ticket(self):
-        resolution = Resolution(type="ESCALATED", ticket_id="TK12345")
+    def test_escalated(self):
+        resolution = Resolution(type="ESCALATED")
         result = TranscriptEncoder._encode_resolution(resolution)
-        assert "TICKET=TK12345" in result
+        assert result == "[RESOLUTION:ESCALATED]"
 
-    def test_resolution_with_next_steps(self):
-        resolution = Resolution(type="PENDING", next_steps="callback tomorrow")
+    def test_unknown_with_next_steps(self):
+        resolution = Resolution(type="UNKNOWN", next_steps="callback tomorrow")
         result = TranscriptEncoder._encode_resolution(resolution)
-        assert "NEXT=callback_tomorrow" in result
+        assert result == "[RESOLUTION:CALLBACK_TOMORROW]"
 
-    def test_resolution_full(self):
-        resolution = Resolution(
-            type="PENDING",
-            timeline="48h",
-            ticket_id="TK-999",
-            next_steps="await confirmation"
+    def test_unknown_no_next_steps(self):
+        resolution = Resolution(type="UNKNOWN")
+        result = TranscriptEncoder._encode_resolution(resolution)
+        assert result is None
+
+
+class TestEncodeState:
+    def test_resolved_state(self):
+        resolution = Resolution(type="RESOLVED")
+        state = ResolutionState(type="FULLY_RESOLVED")
+        result = TranscriptEncoder._encode_state(resolution, state)
+        assert result == "[STATE:RESOLVED]"
+
+    def test_pending_state(self):
+        resolution = Resolution(type="PENDING")
+        state = ResolutionState(type="PENDING")
+        result = TranscriptEncoder._encode_state(resolution, state)
+        assert result == "[STATE:PENDING_SETTLEMENT]"
+
+    def test_escalated_state(self):
+        resolution = Resolution(type="ESCALATED")
+        state = ResolutionState(type="ESCALATED")
+        result = TranscriptEncoder._encode_state(resolution, state)
+        assert result == "[STATE:ESCALATED]"
+
+    def test_unresolved_state(self):
+        resolution = Resolution(type="UNKNOWN")
+        state = None
+        result = TranscriptEncoder._encode_state(resolution, state)
+        assert result == "[STATE:UNRESOLVED]"
+
+    def test_pending_verification_state(self):
+        resolution = Resolution(type="UNKNOWN")
+        state = ResolutionState(type="RESOLVED_PENDING_VERIFICATION")
+        result = TranscriptEncoder._encode_state(resolution, state)
+        assert result == "[STATE:PENDING_CUSTOMER]"
+
+
+class TestEncodeCommitments:
+    def test_single_commitment_with_timeline(self):
+        promises = [
+            PromiseCommitment(
+                type="REFUND_PROMISE",
+                description="Refund in 3-5 days",
+                timeline="3-5d",
+                turn_index=5
+            )
+        ]
+        result = TranscriptEncoder._encode_commitments(promises)
+        assert len(result) == 1
+        assert result[0] == "[COMMITMENT:REFUND_PROMISE_3-5d]"
+
+    def test_commitment_with_amount_and_timeline(self):
+        promises = [
+            PromiseCommitment(
+                type="CREDIT_PROMISE",
+                description="Credit of $14.99",
+                timeline="24h",
+                amount="$14.99",
+                turn_index=4
+            )
+        ]
+        result = TranscriptEncoder._encode_commitments(promises)
+        assert len(result) == 1
+        assert result[0] == "[COMMITMENT:CREDIT_PROMISE_24h_$14.99]"
+
+    def test_commitment_without_timeline(self):
+        promises = [
+            PromiseCommitment(
+                type="CALLBACK",
+                description="We'll call you back",
+                turn_index=6
+            )
+        ]
+        result = TranscriptEncoder._encode_commitments(promises)
+        assert len(result) == 1
+        assert result[0] == "[COMMITMENT:CALLBACK]"
+
+    def test_multiple_commitments(self):
+        promises = [
+            PromiseCommitment(
+                type="REFUND_PROMISE",
+                description="Refund",
+                timeline="3-5d",
+                turn_index=5
+            ),
+            PromiseCommitment(
+                type="FOLLOW_UP_EMAIL",
+                description="Confirmation email",
+                turn_index=6
+            )
+        ]
+        result = TranscriptEncoder._encode_commitments(promises)
+        assert len(result) == 2
+
+    def test_empty_commitments(self):
+        result = TranscriptEncoder._encode_commitments([])
+        assert result == []
+
+
+class TestEncodeArtifacts:
+    def test_refund_reference_artifact(self):
+        analysis = TranscriptAnalysis(
+            call_info=CallInfo(call_id="1", type="SUPPORT", channel="voice", duration=5),
+            customer=CustomerProfile(),
+            turns=[Turn(speaker="customer", text="Hello", entities={})],
+            issues=[],
+            actions=[],
+            resolution=Resolution(),
+            sentiment_trajectory=SentimentTrajectory(),
+            refund_reference=RefundReference(
+                reference_number="RFD-908712",
+                amount="$14.99"
+            )
         )
-        result = TranscriptEncoder._encode_resolution(resolution)
-        assert "RESOLUTION:PENDING" in result
-        assert "TIMELINE=48h" in result
-        assert "TICKET=TK-999" in result
-        assert "NEXT=await_confirmation" in result
+        result = TranscriptEncoder._encode_artifacts(analysis)
+        assert "[ARTIFACT:REFUND_REF=RFD-908712]" in result
+        assert "[ARTIFACT:REFUND_AMT=$14.99]" in result
+
+    def test_no_artifacts(self):
+        analysis = TranscriptAnalysis(
+            call_info=CallInfo(call_id="1", type="SUPPORT", channel="voice", duration=5),
+            customer=CustomerProfile(),
+            turns=[Turn(speaker="customer", text="Hello", entities={})],
+            issues=[],
+            actions=[],
+            resolution=Resolution(),
+            sentiment_trajectory=SentimentTrajectory()
+        )
+        result = TranscriptEncoder._encode_artifacts(analysis)
+        assert result == []
+
+    def test_identifier_artifacts(self):
+        analysis = TranscriptAnalysis(
+            call_info=CallInfo(call_id="1", type="SUPPORT", channel="voice", duration=5),
+            customer=CustomerProfile(),
+            turns=[
+                Turn(
+                    speaker="customer",
+                    text="Order XYZ-123",
+                    entities={"order_numbers": ["XYZ-123"]}
+                )
+            ],
+            issues=[],
+            actions=[],
+            resolution=Resolution(),
+            sentiment_trajectory=SentimentTrajectory()
+        )
+        result = TranscriptEncoder._encode_artifacts(analysis)
+        assert "[ARTIFACT:ORDER_ID=XYZ-123]" in result
 
 
 class TestEncodeSentiment:
@@ -319,124 +368,12 @@ class TestEncodeSentiment:
             turning_points=[(2, "NEUTRAL"), (3, "NEUTRAL"), (4, "SATISFIED")]
         )
         result = TranscriptEncoder._encode_sentiment(sentiment)
-        # Should not have duplicate NEUTRAL
         assert result.count("NEUTRAL") == 1
 
     def test_sentiment_default_neutral(self):
         sentiment = SentimentTrajectory()
         result = TranscriptEncoder._encode_sentiment(sentiment)
         assert "NEUTRAL" in result
-
-
-class TestCompressAddress:
-    def test_basic_address(self, encoder):
-        result = encoder._compress_address("123 Main Street")
-        assert result == "123_Main_St"
-
-    def test_address_with_avenue(self, encoder):
-        result = encoder._compress_address("456 Oak Avenue")
-        assert result == "456_Oak_Ave"
-
-    def test_address_with_lane(self, encoder):
-        result = encoder._compress_address("41 Riverbend Lane")
-        assert result == "41_Riverbend_Ln"
-
-    def test_address_with_drive(self, encoder):
-        result = encoder._compress_address("789 Sunset Drive")
-        assert result == "789_Sunset_Dr"
-
-
-class TestEncodeContactInfo:
-    def test_no_contact_info(self):
-        analysis = TranscriptAnalysis(
-            call_info=CallInfo(call_id="1", type="SUPPORT", channel="voice", duration=5),
-            customer=CustomerProfile(),
-            turns=[Turn(speaker="customer", text="Hello", entities={})],
-            issues=[],
-            actions=[],
-            resolution=Resolution(),
-            sentiment_trajectory=SentimentTrajectory()
-        )
-        result = TranscriptEncoder._encode_contact_info(analysis)
-        assert result is None
-
-    def test_with_email(self):
-        analysis = TranscriptAnalysis(
-            call_info=CallInfo(call_id="1", type="SUPPORT", channel="voice", duration=5),
-            customer=CustomerProfile(),
-            turns=[
-                Turn(
-                    speaker="customer",
-                    text="My email is test@example.com",
-                    entities={"emails": ["test@example.com"]}
-                )
-            ],
-            issues=[],
-            actions=[],
-            resolution=Resolution(),
-            sentiment_trajectory=SentimentTrajectory()
-        )
-        result = TranscriptEncoder._encode_contact_info(analysis)
-        assert result is not None
-        assert "EMAIL=test@example.com" in result
-
-    def test_with_phone(self):
-        analysis = TranscriptAnalysis(
-            call_info=CallInfo(call_id="1", type="SUPPORT", channel="voice", duration=5),
-            customer=CustomerProfile(),
-            turns=[
-                Turn(
-                    speaker="customer",
-                    text="Call me at 555-123-4567",
-                    entities={"phone_numbers": ["555-123-4567"]}
-                )
-            ],
-            issues=[],
-            actions=[],
-            resolution=Resolution(),
-            sentiment_trajectory=SentimentTrajectory()
-        )
-        result = TranscriptEncoder._encode_contact_info(analysis)
-        assert result is not None
-        assert "PHONE=555-123-4567" in result
-
-    def test_with_both(self):
-        analysis = TranscriptAnalysis(
-            call_info=CallInfo(call_id="1", type="SUPPORT", channel="voice", duration=5),
-            customer=CustomerProfile(),
-            turns=[
-                Turn(
-                    speaker="customer",
-                    text="Contact me",
-                    entities={
-                        "emails": ["user@test.com"],
-                        "phone_numbers": ["123-456-7890"]
-                    }
-                )
-            ],
-            issues=[],
-            actions=[],
-            resolution=Resolution(),
-            sentiment_trajectory=SentimentTrajectory()
-        )
-        result = TranscriptEncoder._encode_contact_info(analysis)
-        assert "EMAIL=user@test.com" in result
-        assert "PHONE=123-456-7890" in result
-
-
-class TestEncodeIdentifiers:
-    def test_no_identifiers(self):
-        analysis = TranscriptAnalysis(
-            call_info=CallInfo(call_id="1", type="SUPPORT", channel="voice", duration=5),
-            customer=CustomerProfile(),
-            turns=[Turn(speaker="customer", text="Hello", entities={})],
-            issues=[],
-            actions=[],
-            resolution=Resolution(),
-            sentiment_trajectory=SentimentTrajectory()
-        )
-        result = TranscriptEncoder._encode_identifiers(analysis)
-        assert result is None
 
 
 class TestTranscriptEncoderEncode:
@@ -468,6 +405,7 @@ Agent: I see. Let me look into that for you."""
         assert "noun_chunks" in result.metadata
         assert "language" in result.metadata
         assert result.metadata["language"] == "en"
+        assert result.metadata["schema_version"] == "2.0"
 
     def test_encode_preserves_call_id(self, encoder):
         transcript = "Customer: Hello\nAgent: Hi"
@@ -490,7 +428,6 @@ Agent: You're welcome. Is there anything else?"""
 
         assert result.n_tokens > 0
         assert result.c_tokens > 0
-        # Compression should reduce tokens
         assert result.c_tokens < result.n_tokens
 
     def test_encode_has_numbers_detection(self, encoder):
@@ -517,6 +454,45 @@ Agent: You're welcome. Is there anything else?"""
 
         assert result.metadata["has_urls"] is False
 
+    def test_v2_format_tokens_present(self, encoder):
+        transcript = """Customer: Hi, I noticed a duplicate charge on my account.
+Agent: I apologize for the inconvenience. Let me look into that for you.
+Customer: It's showing two charges of $29.99 on the same day.
+Agent: I can see the duplicate charge. I'll process a refund immediately.
+Customer: Great, how long will it take?
+Agent: The refund should appear within 3-5 business days.
+Customer: Thank you for your help!
+Agent: You're welcome. Have a great day!"""
+
+        metadata = {"call_id": "V2-001", "channel": "voice"}
+        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+
+        # v2 tokens should be present
+        assert "[INTERACTION:" in result.compressed
+        assert "[LANG=EN]" in result.compressed
+        assert "[DOMAIN:" in result.compressed
+        assert "[CUSTOMER_INTENT:" in result.compressed
+        assert "[STATE:" in result.compressed
+        assert "[SENTIMENT:" in result.compressed
+
+    def test_v2_no_legacy_tokens(self, encoder):
+        transcript = """Customer: Hi, I have a billing issue.
+Agent: Let me help. I've verified your account.
+Customer: Thanks."""
+
+        metadata = {"call_id": "V2-002"}
+        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+
+        # v1 tokens should NOT be present
+        assert "[CALL:" not in result.compressed
+        assert "[CUSTOMER:" not in result.compressed
+        assert "[CONTACT:" not in result.compressed
+        assert "[ISSUE:" not in result.compressed
+        assert "[ACTION_CHAIN:" not in result.compressed
+        assert "[RES_STATE:" not in result.compressed
+        assert "[PROMISES:" not in result.compressed
+        assert "[TIMELINE:" not in result.compressed
+
 
 class TestTranscriptEncoderIntegration:
     """Full integration tests for transcript encoding"""
@@ -534,11 +510,10 @@ Agent: You're welcome. Have a great day!"""
         metadata = {"call_id": "BILLING-001", "channel": "chat"}
         result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
 
-        # Should have compression
         assert result.compression_ratio > 0
-        # Should mention billing-related tokens
-        compressed_lower = result.compressed.lower()
-        assert "call" in compressed_lower or "support" in compressed_lower
+        assert "[INTERACTION:SUPPORT:CHANNEL=CHAT]" in result.compressed
+        assert "[DOMAIN:BILLING]" in result.compressed
+        assert "[SENTIMENT:" in result.compressed
 
     def test_technical_support_transcript(self, encoder):
         transcript = """Customer: My internet has been cutting out all day.
@@ -554,7 +529,8 @@ Customer: Yes, it seems to be working. Thank you!"""
 
         assert isinstance(result, CLMOutput)
         assert result.n_tokens > 0
-        assert "SENTIMENT" in result.compressed
+        assert "[SENTIMENT:" in result.compressed
+        assert "[INTERACTION:" in result.compressed
 
     def test_empty_metadata(self, encoder):
         transcript = "Customer: Hello\nAgent: Hi"
@@ -562,3 +538,28 @@ Customer: Yes, it seems to be working. Thank you!"""
 
         assert isinstance(result, CLMOutput)
         assert result.metadata.get("call_id") is None
+
+    def test_full_v2_example(self, encoder):
+        """Test the example from the v2 spec document."""
+        transcript = """Customer: Hi, I'm calling about a duplicate charge on my subscription.
+Agent: I'm sorry to hear that. Let me verify your account first.
+Customer: Sure, my email is john@example.com.
+Agent: Thank you. I've verified your account and I can see the duplicate charge.
+Agent: I've run a diagnostic and confirmed the issue. I'll initiate a refund now.
+Agent: Your refund reference is RFD-908712. It should appear within 3-5 business days.
+Customer: Thank you so much for the quick help!
+Agent: You're welcome! Is there anything else I can help with?"""
+
+        metadata = {"call_id": "V2-EXAMPLE", "channel": "voice"}
+        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+
+        compressed = result.compressed
+
+        # Verify v2 structure
+        assert "[INTERACTION:" in compressed
+        assert "[DURATION=" in compressed
+        assert "[LANG=EN]" in compressed
+        assert "[DOMAIN:" in compressed
+        assert "[CUSTOMER_INTENT:" in compressed
+        assert "[STATE:" in compressed
+        assert "[SENTIMENT:" in compressed

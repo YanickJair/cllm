@@ -105,7 +105,7 @@ elif result.component == "SD":
 
 **Format:** Depends on encoder type
 - **System Prompt:** Token hierarchy (PROMPT_MODE, ROLE, OUT_JSON, etc.)
-- **Transcript:** Domain tokens (CALL, ISSUE, ACTION, etc.)
+- **Transcript:** v2 semantic blocks (INTERACTION, DOMAIN, CUSTOMER_INTENT, AGENT_ACTIONS, STATE, etc.)
 - **Structured Data:** Header + row format `{fields}[values]`
 
 **Examples:**
@@ -115,14 +115,21 @@ elif result.component == "SD":
 compressed = "[REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=SUPPORT] [EXTRACT:SENTIMENT,URGENCY]"
 ```
 
-**Transcript:**
+**Transcript (v2):**
 ```python
-compressed = """[CALL:SUPPORT:AGENT=Raj:DURATION=9m:CHANNEL=voice]
-[CUSTOMER] [CONTACT:EMAIL=user@example.com]
-[ISSUE:BILLING_DISPUTE:SEVERITY=LOW]
-[ACTION:REFUND:RESULT=COMPLETED]
-[RESOLUTION:RESOLVED:TIMELINE=TODAY]
-[SENTIMENT:NEUTRAL→SATISFIED→GRATEFUL]"""
+compressed = """[INTERACTION:SUPPORT:CHANNEL=VOICE]
+[DURATION=6m]
+[LANG=EN]
+[DOMAIN:BILLING]
+[SERVICE:SUBSCRIPTION]
+[CUSTOMER_INTENT:REPORT_DUPLICATE_CHARGE]
+[CONTEXT:EMAIL_PROVIDED]
+[AGENT_ACTIONS:ACCOUNT_VERIFIED→DIAGNOSTIC_PERFORMED→REFUND_INITIATED]
+[RESOLUTION:ISSUE_RESOLVED]
+[STATE:RESOLVED]
+[COMMITMENT:REFUND_3-5_DAYS]
+[ARTIFACT:REFUND_REF=RFD-908712]
+[SENTIMENT:NEUTRAL→GRATEFUL]"""
 ```
 
 **Structured Data:**
@@ -154,16 +161,19 @@ compressed = "{id,action,priority}[NBA-001,Offer Premium Upgrade,high][NBA-002,C
 }
 ```
 
-**Transcript metadata:**
+**Transcript metadata (v2):**
 ```python
 {
-    "call_duration": "9m",
-    "agent": "Raj",
-    "channel": "voice",
-    "issue_type": "BILLING_DISPUTE",
-    "severity": "LOW",
-    "resolution_status": "RESOLVED",
-    "sentiment_trajectory": "NEUTRAL→SATISFIED→GRATEFUL"
+    "call_id": "CX-0001",
+    "analysis": {...},  # Full TranscriptAnalysis as dict
+    "original_length": 1450,
+    "compressed_length": 145,
+    "verbs": ["call", "charge", "look", ...],
+    "noun_chunks": ["extra charge", "billing ID", ...],
+    "language": "en",
+    "schema_version": "2.0",
+    "has_numbers": True,
+    "has_urls": False
 }
 ```
 
@@ -350,12 +360,16 @@ print("Original length:", len(result.original))
 
 print("Compressed:")
 print(result.compressed)
-# Output: [CALL:SUPPORT:AGENT=Raj:DURATION=9m:CHANNEL=voice]
-#         [CUSTOMER] [CONTACT:EMAIL=...]
-#         [ISSUE:BILLING_DISPUTE:SEVERITY=LOW]
-#         [ACTION:REFUND:REFERENCE=RFD-908712:TIMELINE=3-5_DAYS:RESULT=COMPLETED]
-#         [RESOLUTION:RESOLVED:TIMELINE=TODAY]
-#         [SENTIMENT:NEUTRAL→SATISFIED→GRATEFUL]
+# Output: [INTERACTION:SUPPORT:CHANNEL=VOICE]
+#         [DURATION=6m] [LANG=EN]
+#         [DOMAIN:BILLING] [SERVICE:SUBSCRIPTION]
+#         [CUSTOMER_INTENT:REPORT_DUPLICATE_CHARGE]
+#         [CONTEXT:EMAIL_PROVIDED]
+#         [AGENT_ACTIONS:ACCOUNT_VERIFIED→DIAGNOSTIC_PERFORMED→REFUND_INITIATED]
+#         [RESOLUTION:ISSUE_RESOLVED] [STATE:RESOLVED]
+#         [COMMITMENT:REFUND_3-5_DAYS]
+#         [ARTIFACT:REFUND_REF=RFD-908712]
+#         [SENTIMENT:NEUTRAL→GRATEFUL]
 
 print("Compressed length:", len(result.compressed))
 # Output: Compressed length: 280
@@ -647,17 +661,19 @@ except Exception as e:
 }
 ```
 
-**Transcript:**
+**Transcript (v2):**
 ```python
 {
-    "call_duration": str,
-    "agent": str,
-    "channel": str,
-    "issue_type": str,
-    "severity": str,
-    "resolution_status": str,
-    "sentiment_trajectory": str,
-    "actions_count": int
+    "call_id": str,
+    "analysis": dict,           # Full TranscriptAnalysis
+    "original_length": int,
+    "compressed_length": int,
+    "verbs": list[str],
+    "noun_chunks": list[str],
+    "language": str,            # "en", "pt", "es", "fr"
+    "schema_version": str,      # "2.0"
+    "has_numbers": bool,
+    "has_urls": bool
 }
 ```
 

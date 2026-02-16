@@ -251,6 +251,32 @@ class TranscriptAnalysis(BaseModel):
         default_factory=list, description="Agent promises/commitments"
     )
 
+    # v2 schema fields
+    domain: Optional[str] = Field(
+        default=None,
+        description="Domain classification: BILLING, AUTHENTICATION, BOOKINGS, API, PERFORMANCE, etc.",
+    )
+    service: Optional[str] = Field(
+        default=None,
+        description="Service area: SUBSCRIPTION, HOST_STAY, PAYMENT, DASHBOARD, EXPORTS, etc.",
+    )
+    customer_intent: Optional[str] = Field(
+        default=None,
+        description="Primary customer intent derived from customer utterances",
+    )
+    secondary_intent: Optional[str] = Field(
+        default=None,
+        description="Optional secondary customer intent",
+    )
+    context_provided: list[str] = Field(
+        default_factory=list,
+        description="Context provided by customer without PII: EMAIL_PROVIDED, BOOKING_ID_PROVIDED, etc.",
+    )
+    system_actions: list[str] = Field(
+        default_factory=list,
+        description="Automated system-level events: PAYMENT_RETRY_DETECTED, etc.",
+    )
+
     def to_dict(self):
         return {k: str(v) for k, v in self.model_dump().items()}
 

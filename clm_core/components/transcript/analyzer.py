@@ -156,6 +156,15 @@ class TranscriptAnalyzer:
         timeline = self._extract_conversation_timeline(turns)
         promises = self._extract_promises(turns)
 
+        # v2 schema extractions
+        domain = self._extract_domain(call_info, issues)
+        service = self._extract_service(issues, turns)
+        customer_intent, secondary_intent = self._extract_customer_intent(
+            issues, turns
+        )
+        context_provided = self._extract_context_provided(turns)
+        system_actions = self._extract_system_actions(turns)
+
         return TranscriptAnalysis(
             call_info=call_info,
             customer=customer,
@@ -168,6 +177,12 @@ class TranscriptAnalyzer:
             refund_reference=refund_reference,
             timeline=timeline,
             promises=promises,
+            domain=domain,
+            service=service,
+            customer_intent=customer_intent,
+            secondary_intent=secondary_intent,
+            context_provided=context_provided,
+            system_actions=system_actions,
         )
 
     @staticmethod
@@ -1097,3 +1112,314 @@ class TranscriptAnalyzer:
                 seen_types.add(key)
                 unique.append(p)
         return unique
+
+    # ============================================================
+    # v2 schema extraction methods
+    # ============================================================
+
+    # Maps issue types to v2 DOMAIN values
+    _ISSUE_TO_DOMAIN = {
+        "BILLING_DISPUTE": "BILLING",
+        "DUPLICATE_CHARGE": "BILLING",
+        "PAYMENT_FAILED": "BILLING",
+        "MISSING_REFUND": "BILLING",
+        "INVALID_COUPON": "BILLING",
+        "CREDIT_CARD_UPDATE": "BILLING",
+        "AUTO_RENEWAL_ISSUE": "BILLING",
+        "CARD_DECLINED": "BILLING",
+        "UNAUTHORIZED_TRANSACTION": "BILLING",
+        "MISSING_STATEMENT": "BILLING",
+        "INVOICE_REQUEST": "BILLING",
+        "REFUND_DELAY": "BILLING",
+        "UNEXPECTED_CHARGE": "BILLING",
+        "OVERCHARGE": "BILLING",
+        "PREMIUM_PAYMENT_ISSUE": "BILLING",
+        "LOGIN_FAILURE": "AUTHENTICATION",
+        "AUTHENTICATION_ERROR": "AUTHENTICATION",
+        "ACCOUNT_LOCKED": "AUTHENTICATION",
+        "ACCOUNT_HACKED": "AUTHENTICATION",
+        "KYC_VERIFICATION": "AUTHENTICATION",
+        "ACCOUNT_CREATION_ERROR": "AUTHENTICATION",
+        "INTERNET_OUTAGE": "PERFORMANCE",
+        "SLOW_INTERNET": "PERFORMANCE",
+        "SERVER_DOWN": "PERFORMANCE",
+        "APP_CRASH": "PERFORMANCE",
+        "OVERHEATING_DEVICE": "PERFORMANCE",
+        "CONNECTIVITY": "PERFORMANCE",
+        "PERFORMANCE": "PERFORMANCE",
+        "WIFI_ISSUE": "PERFORMANCE",
+        "DELIVERY_DELAY": "LOGISTICS",
+        "LOST_PACKAGE": "LOGISTICS",
+        "DAMAGED_PACKAGE": "LOGISTICS",
+        "WRONG_ITEM": "LOGISTICS",
+        "TRACKING_ISSUE": "LOGISTICS",
+        "CUSTOMS_HOLD": "LOGISTICS",
+        "PRODUCT_NOT_RECEIVED": "LOGISTICS",
+        "ADDRESS_CHANGE": "LOGISTICS",
+        "WAREHOUSE_DELAY": "LOGISTICS",
+        "OUT_OF_STOCK": "LOGISTICS",
+        "PREORDER_DELAY": "LOGISTICS",
+        "API_ERROR": "API",
+        "REPORTING_ISSUE": "API",
+        "DATA_EXPORT_ERROR": "API",
+        "EMAIL_INTEGRATION_ISSUE": "API",
+        "ACCOUNT_SYNC_ERROR": "API",
+        "APPOINTMENT_RESCHEDULE": "BOOKINGS",
+        "RETURN_REQUEST": "RETURNS",
+        "EXCHANGE_REQUEST": "RETURNS",
+        "RETURN_REFUSED": "RETURNS",
+        "EXPIRED_RETURN_WINDOW": "RETURNS",
+        "ORDER_CANCELLATION": "RETURNS",
+        "SUBSCRIPTION_CANCELLATION": "ACCOUNT_MANAGEMENT",
+        "PLAN_UPGRADE": "ACCOUNT_MANAGEMENT",
+        "PLAN_DOWNGRADE": "ACCOUNT_MANAGEMENT",
+        "PROFILE_UPDATE": "ACCOUNT_MANAGEMENT",
+        "DATA_PRIVACY_REQUEST": "ACCOUNT_MANAGEMENT",
+        "MULTIPLE_ACCOUNTS": "ACCOUNT_MANAGEMENT",
+    }
+
+    # Maps call type to domain fallback
+    _CALL_TYPE_TO_DOMAIN = {
+        "BILLING": "BILLING",
+        "TECHNICAL": "PERFORMANCE",
+        "SALES": "SALES",
+        "SUPPORT": "SUPPORT",
+        "RETENTION": "RETENTION",
+        "LOGISTICS": "LOGISTICS",
+        "ACCOUNT_MANAGEMENT": "ACCOUNT_MANAGEMENT",
+        "FEEDBACK": "FEEDBACK",
+        "RETURNS": "RETURNS",
+    }
+
+    @classmethod
+    def _extract_domain(
+        cls, call_info: CallInfo, issues: list[Issue]
+    ) -> Optional[str]:
+        """Extract v2 DOMAIN from issues and call info."""
+        if issues:
+            issue_type = issues[0].type
+            if issue_type in cls._ISSUE_TO_DOMAIN:
+                return cls._ISSUE_TO_DOMAIN[issue_type]
+        return cls._CALL_TYPE_TO_DOMAIN.get(call_info.type, "SUPPORT")
+
+    # Maps issue types to v2 SERVICE values
+    _ISSUE_TO_SERVICE = {
+        "SUBSCRIPTION_CANCELLATION": "SUBSCRIPTION",
+        "PLAN_UPGRADE": "SUBSCRIPTION",
+        "PLAN_DOWNGRADE": "SUBSCRIPTION",
+        "AUTO_RENEWAL_ISSUE": "SUBSCRIPTION",
+        "SUBSCRIPTION_RENEWAL_ISSUE": "SUBSCRIPTION",
+        "PAYMENT_FAILED": "PAYMENT",
+        "CREDIT_CARD_UPDATE": "PAYMENT",
+        "CARD_DECLINED": "PAYMENT",
+        "UNAUTHORIZED_TRANSACTION": "PAYMENT",
+        "MISSING_STATEMENT": "PAYMENT",
+        "PREMIUM_PAYMENT_ISSUE": "PAYMENT",
+        "BILLING_DISPUTE": "PAYMENT",
+        "DUPLICATE_CHARGE": "PAYMENT",
+        "MISSING_REFUND": "PAYMENT",
+        "REPORTING_ISSUE": "DASHBOARD",
+        "DATA_EXPORT_ERROR": "EXPORTS",
+        "API_ERROR": "API",
+        "DELIVERY_DELAY": "DELIVERY",
+        "LOST_PACKAGE": "DELIVERY",
+        "DAMAGED_PACKAGE": "DELIVERY",
+        "TRACKING_ISSUE": "DELIVERY",
+    }
+
+    @classmethod
+    def _extract_service(
+        cls, issues: list[Issue], turns: list[Turn]
+    ) -> Optional[str]:
+        """Extract v2 SERVICE from issues."""
+        if issues:
+            issue_type = issues[0].type
+            if issue_type in cls._ISSUE_TO_SERVICE:
+                return cls._ISSUE_TO_SERVICE[issue_type]
+        return None
+
+    # Maps issue types to v2 CUSTOMER_INTENT
+    _ISSUE_TO_INTENT = {
+        "BILLING_DISPUTE": "REPORT_BILLING_ISSUE",
+        "DUPLICATE_CHARGE": "REPORT_DUPLICATE_CHARGE",
+        "PAYMENT_FAILED": "REPORT_PAYMENT_FAILURE",
+        "MISSING_REFUND": "REQUEST_REFUND_STATUS",
+        "REFUND_DELAY": "REQUEST_REFUND_STATUS",
+        "REFUND_REQUEST": "REQUEST_REFUND",
+        "UNEXPECTED_CHARGE": "REPORT_UNEXPECTED_CHARGE",
+        "OVERCHARGE": "REPORT_OVERCHARGE",
+        "LOGIN_FAILURE": "REPORT_LOGIN_ISSUE",
+        "AUTHENTICATION_ERROR": "REPORT_AUTH_ERROR",
+        "ACCOUNT_LOCKED": "ACCOUNT_UNLOCK",
+        "ACCOUNT_HACKED": "REPORT_SECURITY_BREACH",
+        "INTERNET_OUTAGE": "REPORT_OUTAGE",
+        "SLOW_INTERNET": "REPORT_SLOW_PERFORMANCE",
+        "SERVER_DOWN": "REPORT_OUTAGE",
+        "CONNECTIVITY": "REPORT_CONNECTIVITY_ISSUE",
+        "WIFI_ISSUE": "REPORT_CONNECTIVITY_ISSUE",
+        "DELIVERY_DELAY": "REPORT_DELIVERY_DELAY",
+        "LOST_PACKAGE": "REPORT_LOST_PACKAGE",
+        "DAMAGED_PACKAGE": "REPORT_DAMAGED_ITEM",
+        "WRONG_ITEM": "REPORT_WRONG_ITEM",
+        "SUBSCRIPTION_CANCELLATION": "CANCEL_SUBSCRIPTION",
+        "PLAN_UPGRADE": "REQUEST_PLAN_CHANGE",
+        "PLAN_DOWNGRADE": "REQUEST_PLAN_CHANGE",
+        "RETURN_REQUEST": "REQUEST_RETURN",
+        "EXCHANGE_REQUEST": "REQUEST_EXCHANGE",
+        "ORDER_CANCELLATION": "CANCEL_ORDER",
+        "PRODUCT_DEFECT": "REPORT_DEFECTIVE_PRODUCT",
+        "FEATURE_NOT_WORKING": "FEATURE_INQUIRY",
+        "PROFILE_UPDATE": "REQUEST_PROFILE_UPDATE",
+        "DATA_PRIVACY_REQUEST": "REQUEST_DATA_DELETION",
+        "ESCALATION_REQUEST": "REQUEST_ESCALATION",
+        "APPOINTMENT_RESCHEDULE": "CANCEL_BOOKING",
+        "APP_CRASH": "REPORT_APP_ISSUE",
+        "TRACKING_ISSUE": "REQUEST_TRACKING_UPDATE",
+        "INVOICE_REQUEST": "REQUEST_INVOICE",
+        "CREDIT_CARD_UPDATE": "REQUEST_PAYMENT_UPDATE",
+    }
+
+    @classmethod
+    def _extract_customer_intent(
+        cls, issues: list[Issue], turns: list[Turn]
+    ) -> tuple[Optional[str], Optional[str]]:
+        """Extract v2 CUSTOMER_INTENT from issues and customer turns.
+
+        Returns (primary_intent, secondary_intent).
+        """
+        primary = None
+        secondary = None
+
+        if issues:
+            primary = cls._ISSUE_TO_INTENT.get(issues[0].type)
+            if len(issues) > 1:
+                secondary = cls._ISSUE_TO_INTENT.get(issues[1].type)
+
+        # Fallback: try to derive intent from customer text keywords
+        if not primary:
+            customer_text = " ".join(
+                t.text.lower() for t in turns if t.speaker == "customer"
+            )
+            if any(w in customer_text for w in ["refund", "money back", "reimburse"]):
+                primary = "REQUEST_REFUND"
+            elif any(w in customer_text for w in ["cancel", "terminate", "stop"]):
+                primary = "CANCEL_SUBSCRIPTION"
+            elif any(w in customer_text for w in ["unlock", "locked out", "can't log"]):
+                primary = "ACCOUNT_UNLOCK"
+            elif any(w in customer_text for w in ["how do", "how does", "what is"]):
+                primary = "FEATURE_INQUIRY"
+            elif any(
+                w in customer_text
+                for w in ["not working", "broken", "issue", "problem"]
+            ):
+                primary = "REPORT_ISSUE"
+
+        return primary, secondary
+
+    @staticmethod
+    def _extract_context_provided(turns: list[Turn]) -> list[str]:
+        """Extract v2 CONTEXT tokens indicating what information the customer provided.
+
+        Returns fact-of-information without leaking PII.
+        """
+        context = []
+        seen = set()
+
+        for turn in turns:
+            if turn.speaker != "customer":
+                continue
+            ents = getattr(turn, "entities", {}) or {}
+
+            if ents.get("emails") and "EMAIL_PROVIDED" not in seen:
+                context.append("EMAIL_PROVIDED")
+                seen.add("EMAIL_PROVIDED")
+
+            if ents.get("phone_numbers") and "PHONE_PROVIDED" not in seen:
+                context.append("PHONE_PROVIDED")
+                seen.add("PHONE_PROVIDED")
+
+            if (
+                ents.get("account_numbers") or ents.get("accounts")
+            ) and "ACCOUNT_ID_PROVIDED" not in seen:
+                context.append("ACCOUNT_ID_PROVIDED")
+                seen.add("ACCOUNT_ID_PROVIDED")
+
+            if ents.get("order_numbers") and "ORDER_ID_PROVIDED" not in seen:
+                context.append("ORDER_ID_PROVIDED")
+                seen.add("ORDER_ID_PROVIDED")
+
+            if ents.get("tracking_numbers") and "TRACKING_ID_PROVIDED" not in seen:
+                context.append("TRACKING_ID_PROVIDED")
+                seen.add("TRACKING_ID_PROVIDED")
+
+            if ents.get("money") and "PAYMENT_AMOUNT_PROVIDED" not in seen:
+                context.append("PAYMENT_AMOUNT_PROVIDED")
+                seen.add("PAYMENT_AMOUNT_PROVIDED")
+
+            if ents.get("ticket_numbers") and "TICKET_ID_PROVIDED" not in seen:
+                context.append("TICKET_ID_PROVIDED")
+                seen.add("TICKET_ID_PROVIDED")
+
+            if ents.get("case_numbers") and "CASE_ID_PROVIDED" not in seen:
+                context.append("CASE_ID_PROVIDED")
+                seen.add("CASE_ID_PROVIDED")
+
+            if ents.get("product_models") and "PRODUCT_ID_PROVIDED" not in seen:
+                context.append("PRODUCT_ID_PROVIDED")
+                seen.add("PRODUCT_ID_PROVIDED")
+
+        return context
+
+    # System action keyword patterns
+    _SYSTEM_ACTION_KEYWORDS = {
+        "PAYMENT_RETRY_DETECTED": [
+            "payment retry",
+            "auto-retry",
+            "automatic retry",
+            "system retried",
+        ],
+        "AUTO_ESCALATION_TRIGGERED": [
+            "auto-escalated",
+            "automatically escalated",
+            "system escalated",
+        ],
+        "SLA_BREACH_DETECTED": [
+            "sla breach",
+            "sla violation",
+            "exceeded sla",
+        ],
+        "FRAUD_ALERT_TRIGGERED": [
+            "fraud alert",
+            "fraud detected",
+            "suspicious activity",
+        ],
+        "ACCOUNT_AUTO_LOCKED": [
+            "account automatically locked",
+            "auto-locked",
+            "system locked",
+        ],
+        "NOTIFICATION_SENT": [
+            "notification sent",
+            "automated email",
+            "system notification",
+        ],
+    }
+
+    @classmethod
+    def _extract_system_actions(cls, turns: list[Turn]) -> list[str]:
+        """Extract v2 SYSTEM_ACTIONS from system turns and agent references."""
+        actions = []
+        seen = set()
+
+        system_text = " ".join(
+            t.text.lower()
+            for t in turns
+            if t.speaker in ("system", "agent")
+        )
+
+        for action, keywords in cls._SYSTEM_ACTION_KEYWORDS.items():
+            if action not in seen and any(kw in system_text for kw in keywords):
+                actions.append(action)
+                seen.add(action)
+
+        return actions
