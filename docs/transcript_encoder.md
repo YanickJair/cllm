@@ -34,18 +34,17 @@ The Transcript Encoder focuses on retaining information critical to understandin
 
 | Category | Examples |
 |----------|----------|
-| **Customer Issue** | What's wrong, error messages, symptoms |
-| **Customer Context** | Name, account details, history, sentiment |
-| **Actions Taken** | Troubleshooting steps, verification processes |
-| **Outcomes** | What worked, what didn't, next steps |
-| **Resolution** | How the call ended, follow-up required |
-| **Resolution State** | Granular resolution status, completeness, satisfaction |
-| **Refund Details** | Reference numbers, amounts, methods, timelines (billing cases) |
-| **Conversation Timeline** | Ordered events with time-to-resolution metrics |
-| **Agent Promises** | Commitments made (callbacks, credits, follow-ups) |
-| **Temporal Sequence** | Order of events (critical for troubleshooting) |
-| **Sentiment Trajectory** | Emotional journey (frustrated → satisfied) |
-| **Performance Metrics** | Agent quality indicators, compliance markers |
+| **Interaction Metadata** | Channel, duration, language |
+| **Domain & Service** | BILLING, SUBSCRIPTION, AUTHENTICATION, etc. |
+| **Customer Intent** | Derived from customer utterances (REPORT_DUPLICATE_CHARGE, REQUEST_REFUND) |
+| **Context Provided** | PII-safe fact-of-information (EMAIL_PROVIDED, BOOKING_ID_PROVIDED) |
+| **Agent Actions** | Ordered chain of agent operations (ACCOUNT_VERIFIED→REFUND_INITIATED) |
+| **System Actions** | Automated events (PAYMENT_RETRY_DETECTED, AUTO_ESCALATION_TRIGGERED) |
+| **Resolution** | Outcome type (ISSUE_RESOLVED, ESCALATED) |
+| **State** | Authoritative status (RESOLVED, PENDING_SETTLEMENT, ESCALATED) |
+| **Commitments** | SLA or promised actions (REFUND_3-5_DAYS, FOLLOWUP_BY_FRIDAY) |
+| **Artifacts** | Structured identifiers (REFUND_REF=RFD-908712, ORDER_ID=ORD-123) |
+| **Sentiment Trajectory** | Emotional journey (NEUTRAL→GRATEFUL) |
 
 ### ❌ What Gets Discarded
 
@@ -82,7 +81,7 @@ Result:
 ❌ Unclear relationships
 ```
 
-### CLM Approach
+### CLM Approach (v2)
 
 ```
 Original:
@@ -91,13 +90,17 @@ Original:
 ↓ Extract semantic structure
 
 Result:
-[CALL:SUPPORT:AGENT=Sarah] [ISSUE:INTERNET:DURATION=3_DAYS] 
-[ACTION:TROUBLESHOOT:RESULT=COMPLETED] [RESOLUTION:RESOLVED]
+[INTERACTION:SUPPORT:CHANNEL=VOICE] [DOMAIN:TECHNICAL]
+[CUSTOMER_INTENT:REPORT_INTERNET_OUTAGE]
+[AGENT_ACTIONS:ACCOUNT_VERIFIED→DIAGNOSTIC_PERFORMED]
+[RESOLUTION:ISSUE_RESOLVED] [STATE:RESOLVED]
+[SENTIMENT:FRUSTRATED→SATISFIED]
 
 ✅ Massive compression (85-92%)
 ✅ Structure preserved
 ✅ Semantic relationships intact
 ✅ All key information retained
+✅ PII-safe context representation
 ```
 
 ![Information Entropy Comparison](img/information-entropy.png)
@@ -146,33 +149,39 @@ result = encoder.encode(
 print(result.compressed)
 ```
 
-### Compressed Output
+### Compressed Output (v2)
 
 ```text
-[CALL:SUPPORT:AGENT=Raj:DURATION=9m:CHANNEL=voice]
-[CUSTOMER] [CONTACT:EMAIL=melissa.jordan@example.com]
-[ISSUE:BILLING_DISPUTE:SEVERITY=LOW]
-[ACTION_CHAIN:TROUBLESHOOT→REFUND_PROCESSED]
-[RESOLUTION:RESOLVED:TIMELINE=3-5d]
-[RES_STATE:FULLY_RESOLVED:CSAT=SATISFIED]
-[REFUND:REF=RFD-908712:AMT=$89.99:METHOD=CARD_CREDIT:STATUS=INITIATED:TIMELINE=3-5d]
-[TIMELINE:ISSUE_RAISED→INVESTIGATION_STARTED→ACTION_TAKEN→CONFIRMATION_RECEIVED:TTR=4]
-[SENTIMENT:NEUTRAL→SATISFIED→GRATEFUL]
+[INTERACTION:SUPPORT:CHANNEL=VOICE]
+[DURATION=6m]
+[LANG=EN]
+[DOMAIN:BILLING]
+[SERVICE:SUBSCRIPTION]
+[CUSTOMER_INTENT:REPORT_DUPLICATE_CHARGE]
+[CONTEXT:EMAIL_PROVIDED]
+[AGENT_ACTIONS:ACCOUNT_VERIFIED→DIAGNOSTIC_PERFORMED→REFUND_INITIATED]
+[SYSTEM_ACTIONS:PAYMENT_RETRY_DETECTED]
+[RESOLUTION:ISSUE_RESOLVED]
+[STATE:RESOLVED]
+[COMMITMENT:REFUND_3-5_DAYS]
+[ARTIFACT:REFUND_REF=RFD-908712]
+[SENTIMENT:NEUTRAL→GRATEFUL]
 ```
 
 ### What's Preserved
 
 | Element | Original | Compressed |
 |---------|----------|------------|
-| **Agent Identity** | "Hi Raj" / "your help, Raj" | `AGENT=Raj` |
-| **Customer Contact** | "melissa.jordan@example.com" | `EMAIL=melissa.jordan@example.com` |
-| **Issue Type** | "extra charge... billed twice" | `BILLING_DISPUTE:SEVERITY=LOW` |
-| **Root Cause** | "system retried payment after first succeeded" | Implicit in `ACTION_CHAIN:TROUBLESHOOT` |
-| **Resolution** | "full refund... 3-5 business days" | `RESOLUTION:RESOLVED:TIMELINE=3-5d` |
-| **Resolution State** | Customer satisfied, issue fully resolved | `RES_STATE:FULLY_RESOLVED:CSAT=SATISFIED` |
-| **Refund Details** | "RFD-908712", card credit, 3-5 days | `REFUND:REF=RFD-908712:AMT=$89.99:METHOD=CARD_CREDIT` |
-| **Event Timeline** | Issue → investigation → action → confirmation | `TIMELINE:ISSUE_RAISED→...→CONFIRMATION_RECEIVED:TTR=4` |
-| **Sentiment Arc** | Concerned → Satisfied → Grateful | `NEUTRAL→SATISFIED→GRATEFUL` |
+| **Interaction** | Voice call, support | `INTERACTION:SUPPORT:CHANNEL=VOICE` |
+| **Domain/Service** | Billing, subscription plan | `DOMAIN:BILLING`, `SERVICE:SUBSCRIPTION` |
+| **Customer Intent** | "extra charge... billed twice" | `CUSTOMER_INTENT:REPORT_DUPLICATE_CHARGE` |
+| **Context** | Customer provided email | `CONTEXT:EMAIL_PROVIDED` (PII-safe) |
+| **Root Cause** | "system retried payment" | `SYSTEM_ACTIONS:PAYMENT_RETRY_DETECTED` |
+| **Agent Actions** | Verified, diagnosed, refunded | `AGENT_ACTIONS:ACCOUNT_VERIFIED→DIAGNOSTIC_PERFORMED→REFUND_INITIATED` |
+| **Resolution** | Issue resolved | `RESOLUTION:ISSUE_RESOLVED`, `STATE:RESOLVED` |
+| **Commitment** | "3-5 business days" | `COMMITMENT:REFUND_3-5_DAYS` |
+| **Artifact** | "RFD-908712" | `ARTIFACT:REFUND_REF=RFD-908712` |
+| **Sentiment Arc** | Concerned → Grateful | `SENTIMENT:NEUTRAL→GRATEFUL` |
 
 ### Compression Metrics
 
@@ -317,86 +326,126 @@ See [Case-Dependent Features](#case-dependent-features) for accessing resolution
 
 ---
 
-## Token Structure
+## Token Structure (v2 Schema)
 
-Transcript compression uses specific token categories:
+CLM Transcript Schema v2 uses a sequence of structured semantic blocks. Each transcript produces tokens in a fixed order:
 
-### CALL Token
-Provides conversation context:
+### INTERACTION Token
+Interaction metadata:
 ```
-[CALL:SUPPORT:AGENT=Name:DURATION=Xm:CHANNEL=phone|chat|email]
-```
-
-### CUSTOMER Token
-Customer identification and contact:
-```
-[CUSTOMER] [CONTACT:EMAIL=user@example.com]
-[CUSTOMER:NAME=John_Doe:TIER=premium]
+[INTERACTION:SUPPORT:CHANNEL=VOICE|CHAT|EMAIL|SLACK]
 ```
 
-### ISSUE Token
-Problem description:
+### DURATION Token
+Call duration (approximate minutes):
 ```
-[ISSUE:BILLING_DISPUTE:SEVERITY=LOW|MEDIUM|HIGH]
-[ISSUE:TECHNICAL:CATEGORY=INTERNET:DURATION=3_DAYS]
+[DURATION=6m]
 ```
 
-### ACTION Token
-Actions taken during the call:
+### LANG Token
+Language metadata:
 ```
-[ACTION:TROUBLESHOOT:RESULT=COMPLETED|FAILED]
-[ACTION:REFUND:REFERENCE=REF123:TIMELINE=3-5_DAYS]
-[ACTION:ESCALATE:TEAM=TIER2:REASON=COMPLEX]
+[LANG=EN|ES|PT|FR]
+```
+
+### DOMAIN Token
+Explicit service area classification:
+```
+[DOMAIN:BILLING]
+[DOMAIN:AUTHENTICATION]
+[DOMAIN:BOOKINGS]
+[DOMAIN:API]
+[DOMAIN:PERFORMANCE]
+```
+
+### SERVICE Token
+Service area within domain:
+```
+[SERVICE:SUBSCRIPTION]
+[SERVICE:HOST_STAY]
+[SERVICE:PAYMENT]
+[SERVICE:DASHBOARD]
+[SERVICE:EXPORTS]
+```
+
+### CUSTOMER_INTENT Token (Mandatory)
+Derived strictly from customer utterances (not inferred from agent actions):
+```
+[CUSTOMER_INTENT:REPORT_DUPLICATE_CHARGE]
+[CUSTOMER_INTENT:REQUEST_REFUND]
+[CUSTOMER_INTENT:ACCOUNT_UNLOCK]
+[CUSTOMER_INTENT:FEATURE_INQUIRY]
+[CUSTOMER_INTENT:CANCEL_BOOKING]
+```
+
+One primary intent required. Optional secondary intent allowed.
+
+### CONTEXT Token
+Indicates fact-of-information without leaking PII:
+```
+[CONTEXT:EMAIL_PROVIDED]
+[CONTEXT:BOOKING_ID_PROVIDED]
+[CONTEXT:PAYMENT_METHOD_PROVIDED]
+[CONTEXT:PAYMENT_METHOD_REDACTED]
+```
+
+### AGENT_ACTIONS Token
+Operational actions performed by agent, joined as an ordered chain:
+```
+[AGENT_ACTIONS:ACCOUNT_VERIFIED→DIAGNOSTIC_PERFORMED→REFUND_INITIATED]
+[AGENT_ACTIONS:ACCOUNT_UNLOCKED]
+[AGENT_ACTIONS:API_KEY_ROTATED→ESCALATED_TIER2]
+```
+
+### SYSTEM_ACTIONS Token (Optional)
+Automated system-level events:
+```
+[SYSTEM_ACTIONS:PAYMENT_RETRY_DETECTED]
+[SYSTEM_ACTIONS:AUTO_ESCALATION_TRIGGERED→SLA_BREACH_DETECTED]
 ```
 
 ### RESOLUTION Token
-Call outcome:
+Describes outcome type:
 ```
-[RESOLUTION:RESOLVED:TIMELINE=TODAY|PENDING]
-[RESOLUTION:FOLLOW_UP:DATE=2024-01-15]
-```
-
-### RES_STATE Token
-Enhanced resolution state with granularity (case-dependent):
-```
-[RES_STATE:FULLY_RESOLVED:CSAT=SATISFIED]
-[RES_STATE:PARTIALLY_RESOLVED:COMPLETENESS=PARTIAL:FOLLOW_UP=YES:REASON=VERIFICATION_NEEDED]
-[RES_STATE:PENDING:CSAT=NEUTRAL]
-[RES_STATE:ESCALATED:CSAT=DISSATISFIED:FOLLOW_UP=YES:REASON=SCHEDULED_CALLBACK]
+[RESOLUTION:ISSUE_RESOLVED]
+[RESOLUTION:ACCOUNT_UNLOCKED]
+[RESOLUTION:ANSWER_PROVIDED]
+[RESOLUTION:ESCALATED]
 ```
 
-When the base `RESOLUTION` is `UNKNOWN` but a clearer state can be inferred (e.g., from customer satisfaction signals), only the `RES_STATE` token is emitted — avoiding redundant `UNKNOWN` output.
-
-### REFUND Token
-Refund details for billing/refund cases (case-dependent — only emitted when the issue involves billing disputes, refund requests, or duplicate charges):
+### STATE Token (Mutually Exclusive)
+Authoritative interaction status — only one STATE per transcript:
 ```
-[REFUND:REF=RFD-908712:AMT=$14.99:METHOD=CARD_CREDIT:STATUS=INITIATED:TIMELINE=3-5d]
-[REFUND:AMT=$89.99:METHOD=ACCOUNT_CREDIT:STATUS=COMPLETED]
-```
-
-### TIMELINE Token
-Conversation event timeline with performance metrics:
-```
-[TIMELINE:ISSUE_RAISED→INVESTIGATION_STARTED→ACTION_TAKEN→CONFIRMATION_RECEIVED:TTR=4:TTFA=2]
+[STATE:RESOLVED]
+[STATE:PENDING_SETTLEMENT]
+[STATE:PENDING_CUSTOMER]
+[STATE:ESCALATED]
+[STATE:UNRESOLVED]
 ```
 
-- `TTR` = Time to Resolution (turns between issue and resolution)
-- `TTFA` = Time to First Action (turns between issue and first agent action)
-- Events are limited to 8 per timeline
-
-### PROMISES Token
-Agent commitments extracted from the conversation:
+### COMMITMENT Token
+Encodes SLA or promised actions:
 ```
-[PROMISES:CALLBACK(24h):REFUND_PROMISE($14.99,3-5d):FOLLOW_UP_EMAIL]
-[PROMISES:TECHNICIAN_VISIT(MONDAY):CREDIT_PROMISE($50.00)]
+[COMMITMENT:REFUND_3-5_DAYS]
+[COMMITMENT:FOLLOWUP_BY_FRIDAY]
+[COMMITMENT:CALLBACK_24h]
 ```
 
-Promise types: `CALLBACK`, `FOLLOW_UP_EMAIL`, `TECHNICIAN_VISIT`, `CREDIT_PROMISE`, `REFUND_PROMISE`, `DELIVERY_PROMISE`, `RESOLUTION_PROMISE`
+### ARTIFACT Token
+Structured identifiers:
+```
+[ARTIFACT:REFUND_REF=RFD-908712]
+[ARTIFACT:REFUND_AMT=$14.99]
+[ARTIFACT:BOOKING_ID=XYZ123]
+[ARTIFACT:ORDER_ID=ORD-456]
+[ARTIFACT:TRACKING_ID=TRK-789]
+```
 
-### SENTIMENT Token
-Emotional trajectory:
+### SENTIMENT Token (Optional)
+Conversation-level sentiment trajectory:
 ```
 [SENTIMENT:FRUSTRATED→NEUTRAL→SATISFIED]
+[SENTIMENT:NEUTRAL→GRATEFUL]
 [SENTIMENT:ANGRY→CALM→GRATEFUL]
 ```
 
@@ -404,57 +453,46 @@ See [Token Hierarchy](advanced/clm_tokenization.md) for complete details.
 
 ---
 
-## Case-Dependent Features
+## v2 Design Principles
 
-The encoder now extracts **case-dependent features** — additional structured data that is only emitted when relevant to the conversation type. This avoids bloating output with empty or irrelevant fields.
+CLM Transcript Schema v2 follows these design principles:
 
-### Resolution State
+1. **Customer intent must be explicit** — derived from customer utterances, not inferred from agent actions
+2. **Domain/service context must be explicit** — classification of the interaction area
+3. **Agent and system actions must be separated** — human actions vs automated events
+4. **Resolution and state must not conflict** — RESOLUTION describes outcome type, STATE is authoritative status
+5. **PII must be protected** — CONTEXT tokens indicate fact-of-information without leaking data
+6. **Fields must be operationally useful** — every token serves analytics, routing, or SLA tracking
+7. **Schema must remain compact and versioned** — `CLM_SCHEMA_VERSION=2.0`
 
-Provides granular resolution tracking beyond the basic `RESOLUTION` token:
+### Taxonomy Governance
 
-- **Type**: `FULLY_RESOLVED`, `PARTIALLY_RESOLVED`, `PENDING`, `ESCALATED`, `UNRESOLVED`, `RESOLVED_PENDING_VERIFICATION`
-- **Completeness**: `FULL`, `PARTIAL`, `NONE`
-- **Customer Satisfaction (CSAT)**: `SATISFIED`, `NEUTRAL`, `DISSATISFIED` — derived from final customer turns and sentiment
-- **Follow-up**: Whether follow-up is needed and the reason (`PENDING_ACTION`, `VERIFICATION_NEEDED`, `SCHEDULED_CALLBACK`)
+To avoid semantic drift, the schema enforces limits:
 
-The encoder uses smart deduplication: when the base resolution is `UNKNOWN` but a clear state can be inferred, only `RES_STATE` is emitted.
+- DOMAIN types: 20–30 max
+- CUSTOMER_INTENT types: 20–40 max
+- ACTION types: 30–50 max
+- STATE types: 5–10 max
+- All enum changes must increment schema version
 
-### Refund Reference
+### Accessing Analysis Details
 
-Automatically extracted for billing-related cases (`BILLING_DISPUTE`, `REFUND_REQUEST`, `DUPLICATE_CHARGE`, etc.):
-
-- Reference number (pattern matching for `RFD-`, `REF-`, `CRD-` prefixes)
-- Amount, method (`CARD_CREDIT`, `ACCOUNT_CREDIT`, `CHECK`, `PAYPAL`, `BANK_TRANSFER`)
-- Status (`INITIATED`, `PROCESSING`, `COMPLETED`, `PENDING_APPROVAL`)
-- Expected timeline
-
-Only emitted when meaningful refund data is detected — skipped entirely for non-billing cases.
-
-### Conversation Timeline
-
-Tracks the sequence of key events with performance metrics:
-
-- **Event types**: `ISSUE_RAISED`, `INVESTIGATION_STARTED`, `ACTION_TAKEN`, `RESOLUTION_PROPOSED`, `CONFIRMATION_RECEIVED`, `ESCALATION_TRIGGERED`
-- **Metrics**: Time to Resolution (TTR), Time to First Action (TTFA) — measured in conversation turns
-
-### Agent Promises
-
-Detects and encodes commitments made by the agent:
-
-- **Types**: `CALLBACK`, `FOLLOW_UP_EMAIL`, `TECHNICIAN_VISIT`, `CREDIT_PROMISE`, `REFUND_PROMISE`, `DELIVERY_PROMISE`, `RESOLUTION_PROMISE`
-- Includes associated timelines and amounts where applicable
-- Confidence scoring (0.0–1.0) based on strength of language indicators
-- Automatic deduplication of identical promise types
-
-### Accessing Case-Dependent Features
-
-These features are available on the `TranscriptAnalysis` object:
+The full analysis is available on the `TranscriptAnalysis` object:
 
 ```python
 result = encoder.encode(input_=transcript, metadata=metadata)
 
 # Access via the analysis object
 analysis = encoder.analysis
+
+# Domain and intent
+print(f"Domain: {analysis.domain}")
+print(f"Service: {analysis.service}")
+print(f"Intent: {analysis.customer_intent}")
+
+# Context provided
+for ctx in analysis.context_provided:
+    print(f"Context: {ctx}")
 
 # Resolution state
 if analysis.resolution_state:
@@ -466,17 +504,15 @@ if analysis.resolution_state:
 if analysis.refund_reference:
     print(f"Ref: {analysis.refund_reference.reference_number}")
     print(f"Amount: {analysis.refund_reference.amount}")
-    print(f"Status: {analysis.refund_reference.status}")
 
-# Timeline
-if analysis.timeline:
-    print(f"Events: {len(analysis.timeline.events)}")
-    print(f"Time to resolution: {analysis.timeline.time_to_resolution} turns")
-
-# Promises
+# Promises / Commitments
 for promise in analysis.promises:
-    print(f"Promise: {promise.type} - {promise.description}")
+    print(f"Commitment: {promise.type} - {promise.description}")
     print(f"  Timeline: {promise.timeline}, Confidence: {promise.confidence}")
+
+# System actions
+for action in analysis.system_actions:
+    print(f"System: {action}")
 ```
 
 ---
@@ -581,10 +617,10 @@ result = encoder.encode(input_=transcript, metadata=metadata)
 # Check compression ratio is within expected range
 assert 0.75 <= result.compression_ratio <= 0.95, "Unexpected compression ratio"
 
-# Verify key entities are present
-assert 'AGENT=' in result.compressed, "Agent name missing"
-assert 'ISSUE:' in result.compressed, "Issue type missing"
-assert 'RESOLUTION:' in result.compressed, "Resolution missing"
+# Verify key v2 tokens are present
+assert 'INTERACTION:' in result.compressed, "Interaction metadata missing"
+assert 'CUSTOMER_INTENT:' in result.compressed, "Customer intent missing"
+assert 'STATE:' in result.compressed, "State missing"
 ```
 
 ### 4. Handle Long Transcripts
@@ -657,7 +693,7 @@ with ProcessPoolExecutor(max_workers=4) as executor:
 If compression is lower than expected:
 
 ```python
-# Check if transcript is already concise
+# Check if thread_encoder is already concise
 if result.compression_ratio < 0.70:
     print("Warning: Low compression ratio")
     print(f"Original tokens: {result.original_tokens}")

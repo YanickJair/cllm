@@ -2,6 +2,14 @@ import re
 from typing import Optional
 import spacy
 
+from clm_core.dictionary.en.patterns import (
+    SYSTEM_ACTION_KEYWORDS,
+    ISSUE_TO_INTENT,
+    ISSUE_TO_SERVICE,
+    ISSUE_TO_DOMAIN,
+    CUSTOMER_INTENT_KEYWORDS,
+    EXPLICIT_AGENT_ACTION_PHRASES,
+)
 from .patterns import TranscriptPatterns
 from . import (
     CallInfo,
@@ -69,6 +77,12 @@ class TranscriptAnalyzer:
             patterns.troubleshooting_actions
         )
         self._action_tokens_index = self._build_action_tokens_index()
+        self._customer_intent_index = self._build_keyword_index(
+            {k: set(v) for k, v in CUSTOMER_INTENT_KEYWORDS.items()}
+        )
+        self._explicit_agent_actions_index = self._build_keyword_index(
+            {k: set(v) for k, v in EXPLICIT_AGENT_ACTION_PHRASES.items()}
+        )
 
     @staticmethod
     def _build_keyword_index(keyword_dict: dict) -> list[tuple[str, str]]:
@@ -155,6 +169,11 @@ class TranscriptAnalyzer:
         refund_reference = self._extract_refund_reference(turns, issues, actions)
         timeline = self._extract_conversation_timeline(turns)
         promises = self._extract_promises(turns)
+        domain = self._extract_domain(call_info, issues)
+        service = self._extract_service(issues, turns)
+        customer_intent, secondary_intent = self._extract_customer_intent(issues, turns)
+        context_provided = self._extract_context_provided(turns, call_info)
+        system_actions = self._extract_system_actions(turns)
 
         return TranscriptAnalysis(
             call_info=call_info,
@@ -168,6 +187,12 @@ class TranscriptAnalyzer:
             refund_reference=refund_reference,
             timeline=timeline,
             promises=promises,
+            domain=domain,
+            service=service,
+            customer_intent=customer_intent,
+            secondary_intent=secondary_intent,
+            context_provided=context_provided,
+            system_actions=system_actions,
         )
 
     @staticmethod
@@ -230,16 +255,25 @@ class TranscriptAnalyzer:
         seen = set()
         events = []
 
+        # 1. Check explicit agent action phrases first (highest priority)
+        for kw, category in self._explicit_agent_actions_index:
+            if kw in text_lower and category not in seen:
+                seen.add(category)
+                events.append(category)
+
+        # 2. Issue confirmation patterns
         for kw, category in self._issue_confirmation_index:
             if kw in text_lower and category not in seen:
                 seen.add(category)
                 events.append(category)
 
+        # 3. Troubleshooting patterns
         for kw, category in self._troubleshooting_index:
             if kw in text_lower and category not in seen:
                 seen.add(category)
                 events.append(category)
 
+        # 4. Action tokens (keyword-based)
         for kw, action_event, is_explicit in self._action_tokens_index:
             if action_event in seen:
                 continue
@@ -385,8 +419,30 @@ class TranscriptAnalyzer:
             method = "ACCOUNT_CREDIT"
         return amount, method
 
-    @staticmethod
-    def _extract_reference_number(turn: Turn) -> Optional[str]:
+    # Common words that should never be extracted as reference numbers
+    _REF_BLACKLIST = {
+        "number",
+        "reference",
+        "confirmation",
+        "immediately",
+        "right",
+        "today",
+        "tomorrow",
+        "please",
+        "thank",
+        "thanks",
+        "okay",
+        "here",
+        "that",
+        "this",
+        "your",
+        "the",
+        "will",
+        "been",
+    }
+
+    @classmethod
+    def _extract_reference_number(cls, turn: Turn) -> Optional[str]:
         """
         Extracts reference numbers like:
          - RFD-908712
@@ -394,20 +450,29 @@ class TranscriptAnalyzer:
          - "reference number is RFD-..." or "confirmation #12345"
         """
         text = turn.text
+        # Structured PREFIX-DIGITS pattern (most reliable)
         if m := re.search(r"\b([A-Z]{2,5}-\d{3,})\b", text):
             return m.group(0)
 
+        # "reference/confirmation" followed by a code (require at least one digit)
         if m := re.search(
-            r"(?:reference|confirmation|ref)[^\w]{0,6}#?\s*([A-Z0-9-]{4,30})",
+            r"(?:reference|confirmation|ref)[^\w]{0,6}#?\s*([A-Z0-9-]*\d[A-Z0-9-]{2,29})",
             text,
             re.I,
         ):
-            return m.group(1)
+            candidate = m.group(1)
+            if candidate.lower() not in cls._REF_BLACKLIST:
+                return candidate
 
+        # "id/ticket/case/order" followed by a code (require at least one digit)
         if m := re.search(
-            r"(?:id|ticket|case|order)[^\w]{0,6}#?\s*([A-Z0-9-]{3,30})", text, re.I
+            r"(?:id|ticket|case|order)[^\w]{0,6}#?\s*([A-Z0-9-]*\d[A-Z0-9-]{2,29})",
+            text,
+            re.I,
         ):
-            return m.group(1)
+            candidate = m.group(1)
+            if candidate.lower() not in cls._REF_BLACKLIST:
+                return candidate
 
         return None
 
@@ -530,6 +595,12 @@ class TranscriptAnalyzer:
             t.text for t in turns if t.speaker == "customer"
         ).lower()
         issue_type = self._get_issue_type(customer_text)
+
+        # Fallback: if no issue found from customer turns, try agent turns
+        if not issue_type:
+            agent_text = " ".join(t.text for t in turns if t.speaker == "agent").lower()
+            issue_type = self._get_issue_type(agent_text)
+
         if not issue_type:
             return []
 
@@ -609,10 +680,10 @@ class TranscriptAnalyzer:
 
     def _extract_call_info(self, turns: list[Turn], metadata: dict) -> CallInfo:
         """
-        Extracts call information from the transcript.
+        Extracts call information from the thread_encoder.
 
         Args:
-            turns: List of turns in the transcript.
+            turns: List of turns in the thread_encoder.
             metadata: Metadata associated with the call.
 
         Returns:
@@ -660,12 +731,12 @@ class TranscriptAnalyzer:
 
     @classmethod
     def _detect_agent_name(cls, turns: list[Turn]) -> Optional[str]:
-        """Detects the agent's name from the transcript.
+        """Detects the agent's name from the thread_encoder.
         We will find the agent's name by looking for a PERSON entity
         in the text or by matching a pattern.
 
         Args:
-            turns: List of turns in the transcript.
+            turns: List of turns in the thread_encoder.
 
         Returns:
             The detected agent's name or None if not found.
@@ -868,10 +939,16 @@ class TranscriptAnalyzer:
     def _extract_refund_reference_number(text: str) -> Optional[str]:
         """Extract refund-specific reference numbers."""
         patterns = [
+            # Structured prefixes first (most reliable)
             r"\bRFD-?\d{5,10}\b",
             r"\bREF-?\d{5,10}\b",
             r"\bCRD-?\d{5,10}\b",
-            r"refund\s*(?:number|id|#)?\s*[:=]?\s*([A-Z0-9-]{5,15})",
+            r"\bBCR-?\d{5,10}\b",
+            # Generic PREFIX-DIGITS pattern (2-5 uppercase letters + dash + 3+ digits)
+            r"\b([A-Z]{2,5}-\d{3,})\b",
+            # "refund reference/number/id" followed by an alphanumeric code
+            # Require at least one digit to avoid matching plain words like "reference"
+            r"refund\s*(?:reference\s*)?(?:number|id|#)?\s*[:=—–-]?\s*([A-Z0-9-]*\d[A-Z0-9-]{3,14})",
         ]
 
         for pattern in patterns:
@@ -977,6 +1054,27 @@ class TranscriptAnalyzer:
         """Extract agent promises and commitments (case-dependent)."""
         promises = []
 
+        # Additional commitment patterns checked separately
+        extra_commitment_patterns = {
+            "CONFIRMATION_EMAIL": [
+                "send you a confirmation",
+                "confirmation email",
+                "you'll receive an email",
+                "email confirmation",
+            ],
+            "FOLLOWUP": [
+                "i'll follow up",
+                "follow up with you",
+                "personally follow up",
+                "follow up tomorrow",
+            ],
+            "MONITORING": [
+                "monitor",
+                "keep an eye on",
+                "watching",
+            ],
+        }
+
         for idx, turn in enumerate(turns):
             if turn.speaker != "agent":
                 continue
@@ -1015,6 +1113,23 @@ class TranscriptAnalyzer:
                         confidence=confidence,
                     )
                     promises.append(promise)
+
+            # Check extra commitment patterns
+            for commit_type, phrases in extra_commitment_patterns.items():
+                matching = next((p for p in phrases if p in text_lower), None)
+                if matching:
+                    timeline = self._extract_promise_timeline(text_lower)
+                    promises.append(
+                        PromiseCommitment(
+                            type=commit_type,
+                            description=self._extract_promise_description(
+                                text, matching
+                            ),
+                            timeline=timeline,
+                            turn_index=idx,
+                            confidence=0.8,
+                        )
+                    )
 
         return self._dedupe_promises(promises)
 
@@ -1097,3 +1212,175 @@ class TranscriptAnalyzer:
                 seen_types.add(key)
                 unique.append(p)
         return unique
+
+    @classmethod
+    def _extract_domain(cls, call_info: CallInfo, issues: list[Issue]) -> Optional[str]:
+        """Extract v2 DOMAIN from issues and call info."""
+        if issues:
+            issue_type = issues[0].type
+            if issue_type in ISSUE_TO_DOMAIN:
+                return ISSUE_TO_DOMAIN[issue_type]
+        return "UNCLASSIFIED"
+
+    @classmethod
+    def _extract_service(cls, issues: list[Issue], turns: list[Turn]) -> Optional[str]:
+        """Extract v2 SERVICE from issues."""
+        if issues:
+            issue_type = issues[0].type
+            if issue_type in ISSUE_TO_SERVICE:
+                return ISSUE_TO_SERVICE[issue_type]
+        return None
+
+    def _extract_customer_intent(
+        self, issues: list[Issue], turns: list[Turn]
+    ) -> tuple[Optional[str], Optional[str]]:
+        """Extract v2 CUSTOMER_INTENT from customer turns using direct keyword matching.
+
+        Scans customer turns only using CUSTOMER_INTENT_KEYWORDS (longest match first).
+        Falls back to ISSUE_TO_INTENT only if direct keyword match fails.
+
+        Returns (primary_intent, secondary_intent).
+        """
+        primary = None
+        secondary = None
+
+        # Primary: scan customer turns with direct keyword matching
+        customer_text = " ".join(
+            t.text.lower() for t in turns if t.speaker == "customer"
+        )
+
+        intents = self._lookup_all_categories(
+            customer_text, self._customer_intent_index
+        )
+        if intents:
+            primary = intents[0]
+            if len(intents) > 1:
+                secondary = intents[1]
+
+        # Fallback 1: try agent turns (agents often restate the issue)
+        if not primary:
+            agent_text = " ".join(t.text.lower() for t in turns if t.speaker == "agent")
+            intents = self._lookup_all_categories(
+                agent_text, self._customer_intent_index
+            )
+            if intents:
+                primary = intents[0]
+                if len(intents) > 1:
+                    secondary = intents[1]
+
+        # Fallback 2: derive from issue type
+        if not primary and issues:
+            primary = ISSUE_TO_INTENT.get(issues[0].type)
+            if len(issues) > 1 and not secondary:
+                secondary = ISSUE_TO_INTENT.get(issues[1].type)
+
+        return primary, secondary
+
+    @staticmethod
+    def _extract_context_provided(
+        turns: list[Turn], call_info: Optional[CallInfo] = None
+    ) -> list[str]:
+        """Extract v2 CONTEXT tokens indicating what information the customer provided.
+
+        Returns fact-of-information without leaking PII.
+        """
+        context = []
+        seen = set()
+
+        # Collect known agent names to exclude from NAME_PROVIDED
+        agent_names = set()
+        if call_info and call_info.agent:
+            agent_names.add(call_info.agent.lower())
+
+        def _add(token: str):
+            if token not in seen:
+                context.append(token)
+                seen.add(token)
+
+        for turn in turns:
+            if turn.speaker != "customer":
+                continue
+            ents = getattr(turn, "entities", {}) or {}
+            text_lower = turn.text.lower()
+
+            if ents.get("emails"):
+                _add("EMAIL_PROVIDED")
+
+            if ents.get("phone_numbers"):
+                _add("PHONE_NUMBER_PROVIDED")
+
+            if ents.get("account_numbers") or ents.get("accounts"):
+                _add("ACCOUNT_ID_PROVIDED")
+
+            if ents.get("order_numbers"):
+                _add("ORDER_ID_PROVIDED")
+
+            if ents.get("tracking_numbers"):
+                _add("TRACKING_ID_PROVIDED")
+
+            if ents.get("money"):
+                _add("PAYMENT_AMOUNT_PROVIDED")
+
+            if ents.get("ticket_numbers"):
+                _add("TICKET_ID_PROVIDED")
+
+            if ents.get("case_numbers"):
+                _add("CASE_ID_PROVIDED")
+
+            if ents.get("product_models"):
+                _add("PRODUCT_ID_PROVIDED")
+
+            if ents.get("escalation_ids"):
+                _add("ESCALATION_ID_PROVIDED")
+
+            if ents.get("verification_codes"):
+                _add("VERIFICATION_CODE_PROVIDED")
+
+            # NAME_PROVIDED — detect via spaCy PERSON entity in customer turns
+            # Exclude the agent's name (customer may thank them by name)
+            doc = getattr(turn, "doc", None)
+            if doc:
+                for ent in doc.ents:
+                    if ent.label_ == "PERSON":
+                        name = ent.text.lower()
+                        if name not in agent_names:
+                            _add("NAME_PROVIDED")
+                            break
+
+            # Detect "my name is" pattern
+            if re.search(r"\bmy name is\b", text_lower):
+                _add("NAME_PROVIDED")
+
+            # OLD_NAME_PROVIDED / NEW_NAME_PROVIDED — detect "change X to Y" patterns
+            if re.search(
+                r"\b(?:change|update)\s+(?:my\s+)?(?:name\s+)?(?:from\s+)?\w+\s+to\s+\w+",
+                text_lower,
+            ):
+                _add("OLD_NAME_PROVIDED")
+                _add("NEW_NAME_PROVIDED")
+
+            # DELAY_N_DAYS — customer mentions a duration of waiting
+            delay_match = re.search(r"\b(\d+)\s*days?\b", text_lower)
+            if delay_match and any(
+                w in text_lower for w in ["waiting", "been", "ago", "since"]
+            ):
+                days = delay_match.group(1)
+                _add(f"DELAY_{days}_DAYS")
+
+        return context
+
+    @classmethod
+    def _extract_system_actions(cls, turns: list[Turn]) -> list[str]:
+        """Extract v2 SYSTEM_ACTIONS from system turns and agent references."""
+        actions = []
+        seen = set()
+
+        system_text = " ".join(
+            t.text.lower() for t in turns if t.speaker in ("system", "agent")
+        )
+
+        for action, keywords in SYSTEM_ACTION_KEYWORDS.items():
+            if action not in seen and any(kw in system_text for kw in keywords):
+                actions.append(action)
+                seen.add(action)
+        return actions

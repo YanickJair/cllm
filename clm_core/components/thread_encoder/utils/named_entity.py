@@ -47,6 +47,20 @@ class EntityExtractor:
             "EMAIL": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
             "PHONE": r"\b(?:\(\d{3}\)\s*\d{3}-\d{4}|\d{3}-\d{3}-\d{4}|\d{10})\b",
             "URL": r"https?://[^\s<>'\"{}|\\^`\[\]]+",
+            "CASE_NUMBER": [
+                r"\bcase\s*(?:number)?\s*(?:is)?\s*(\d{4,})\b",
+                r"\bCASE-?\d{5,12}\b",
+            ],
+            "ESCALATION_ID": [
+                r"\bESC-?\d{4,10}\b",
+                r"\bTEC-?\d{4,10}\b",
+            ],
+            "VERIFICATION_CODE": [
+                r"\b(?:code|verification)\s*(?:is|:)?\s*(\d{4,8})\b",
+            ],
+            "ORDER_NUMBER": [
+                r"\border\s*(?:number)?\s*(?:is)?\s*(\d{4,})\b",
+            ],
         }
 
     def extract(self, text: str, doc: Doc = None) -> dict:
@@ -84,6 +98,9 @@ class EntityExtractor:
             "emails": [],
             "phone_numbers": [],
             "urls": [],
+            "escalation_ids": [],
+            "verification_codes": [],
+            "order_numbers": [],
         }
 
         for ent in doc.ents:
@@ -119,9 +136,11 @@ class EntityExtractor:
                 "DEVICE_ID",
                 "EMAIL",
                 "PHONE_NUMBER",
+                "ESCALATION_ID",
+                "VERIFICATION_CODE",
             ):
                 key = label.lower() + "s"
-                entities[key].append(ent.text)
+                entities.setdefault(key, []).append(ent.text)
 
         entities = self._map_regex_fallback(entities, text)
         for k in entities:

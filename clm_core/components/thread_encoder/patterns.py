@@ -1,6 +1,6 @@
 """
 TranscriptPatterns dataclass — bundles every language-specific constant
-needed by the transcript analyzer and encoder into a single object.
+needed by the thread_encoder analyzer and encoder into a single object.
 """
 
 from dataclasses import dataclass, field

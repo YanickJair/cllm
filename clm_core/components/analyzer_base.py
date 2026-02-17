@@ -6,7 +6,7 @@ class AnalyzerBase(ABC):
     """
     Generic base class for analyzers.
 
-    All analyzers (entity, sentiment, temporal, transcript-level)
+    All analyzers (entity, sentiment, temporal, thread_encoder-level)
     should subclass this and implement the `analyze` method.
     """
 

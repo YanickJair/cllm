@@ -61,7 +61,7 @@ def test_encode_transcript_routes_with_metadata_and_verbose(mocker: MockerFixtur
         metadata={}
     )
     mocked_ts_encode = mocker.patch(
-        "clm_core.components.transcript.encoder.TranscriptEncoder.encode",
+        "clm_core.components.thread_encoder.encoder.ThreadEncoder.encode",
         return_value=mocked_output
     )
 
@@ -138,7 +138,7 @@ def test_encode_transcript_handles_none_metadata(mocker: MockerFixture, cfg: CLM
         metadata={}
     )
     mocked_ts_encode = mocker.patch(
-        "clm_core.components.transcript.encoder.TranscriptEncoder.encode",
+        "clm_core.components.thread_encoder.encoder.ThreadEncoder.encode",
         return_value=mocked_output
     )
 
@@ -165,10 +165,10 @@ def test_constructor_uses_clmconfig_dependencies(mocker: MockerFixture, cfg: CLM
 def test_encode_propagates_verbose_flag_to_encoder(mocker: MockerFixture, cfg: CLMConfig):
     encoder = CLMEncoder(cfg=cfg)
 
-    # Test for transcript path with verbose True propagation
+    # Test for thread_encoder path with verbose True propagation
     mocker.patch.object(encoder._classifier, "classifier", return_value=DataTypes.TRANSCRIPT)
     mocked_ts_encode = mocker.patch(
-        "clm_core.components.transcript.encoder.TranscriptEncoder.encode",
+        "clm_core.components.thread_encoder.encoder.ThreadEncoder.encode",
         return_value=CLMOutput(
             original="Agent: Hello\nCustomer: Hi",
             component="TRANSCRIPT",

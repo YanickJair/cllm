@@ -107,7 +107,7 @@ sys_prompt = """
 You are a Call QA & Compliance Scoring System for customer service operations.
 
 TASK:
-Analyze the transcript and score the agent's compliance across required QA categories.
+Analyze the thread_encoder and score the agent's compliance across required QA categories.
 
 ANALYSIS CRITERIA:
 - Mandatory disclosures and verification steps
@@ -210,7 +210,7 @@ Learn more about [Structured Data Compression](sd_encoder.md).
 
 ### 3. Transcript Compression
 
-Compress customer service conversations while preserving context and sentiment:
+Compress customer service conversations while preserving context and sentiment using CLM Transcript Schema v2:
 
 ```python
 # Billing Issue - Customer Support Transcript
@@ -247,21 +247,32 @@ print(result.compressed)
 
 **Output:**
 ```text
-[CALL:SUPPORT:AGENT=Raj:DURATION=9m:CHANNEL=voice] 
-[CUSTOMER] [CONTACT:EMAIL=melissa.jordan@example.com] 
-[ISSUE:BILLING_DISPUTE:SEVERITY=LOW] 
-[ACTION:TROUBLESHOOT:RESULT=COMPLETED] 
-[ACTION:REFUND:REFERENCE=RFD-908712:TIMELINE=3-5_DAYS:RESULT=COMPLETED] 
-[RESOLUTION:RESOLVED:TIMELINE=TODAY] 
-[SENTIMENT:NEUTRAL→SATISFIED→GRATEFUL]
+[INTERACTION:SUPPORT:CHANNEL=VOICE]
+[DURATION=6m]
+[LANG=EN]
+[DOMAIN:BILLING]
+[SERVICE:SUBSCRIPTION]
+[CUSTOMER_INTENT:REPORT_DUPLICATE_CHARGE]
+[CONTEXT:EMAIL_PROVIDED]
+[AGENT_ACTIONS:ACCOUNT_VERIFIED→DIAGNOSTIC_PERFORMED→REFUND_INITIATED]
+[SYSTEM_ACTIONS:PAYMENT_RETRY_DETECTED]
+[RESOLUTION:ISSUE_RESOLVED]
+[STATE:RESOLVED]
+[COMMITMENT:REFUND_3-5_DAYS]
+[ARTIFACT:REFUND_REF=RFD-908712]
+[SENTIMENT:NEUTRAL→GRATEFUL]
 ```
 
 **What's Preserved:**
-- ✅ Representative's name (key information)
-- ✅ Customer contact details (key information)
-- ✅ Issue type and severity (important context)
-- ✅ Actions taken with attributes (TIMELINE, RESULT, REFERENCE)
-- ✅ Resolution outcome
+- ✅ Interaction metadata (channel, duration, language)
+- ✅ Domain and service context (BILLING, SUBSCRIPTION)
+- ✅ Customer intent derived from customer utterances
+- ✅ Context provided without PII leakage (EMAIL_PROVIDED, not the actual email)
+- ✅ Agent actions as an ordered chain
+- ✅ System-detected events (PAYMENT_RETRY_DETECTED)
+- ✅ Resolution outcome and authoritative state
+- ✅ Agent commitments (refund timeline)
+- ✅ Structured artifacts (refund reference)
 - ✅ Sentiment trajectory throughout conversation
 
 **Typical Compression: 85-92% for customer service transcripts**

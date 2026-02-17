@@ -139,7 +139,7 @@ class DataClassifier:
 
     def _is_transcript(self, normalized_text: str) -> bool:
         """
-        Check if text is a transcript (conversation).
+        Check if text is a thread_encoder (conversation).
 
         Transcripts have:
         - Speaker labels (Agent:, Customer:, etc.)

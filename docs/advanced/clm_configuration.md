@@ -189,7 +189,7 @@ Each vocabulary defines mappings from natural language to semantic tokens:
     "diagnose": "DIAGNOSE",
     
     # TARGET tokens
-    "transcript": "TRANSCRIPT",
+    "thread_encoder": "TRANSCRIPT",
     "document": "DOCUMENT",
     "invoice": "INVOICE",
     

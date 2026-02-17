@@ -23,7 +23,7 @@ This means you can write natural language prompts and CLM will automatically com
 | Encoder | System | Structure | Compression |
 |---------|--------|-----------|-------------|
 | **System Prompt** | 6-Token Hierarchy | Hierarchical instruction flow | 65-90% |
-| **Transcript** | Domain-Specific Tokens | Sequential conversation flow | 85-92% |
+| **Transcript** | v2 Semantic Blocks | Sequential semantic contract | 85-92% |
 | **Structured Data** | Header + Row Format | Tabular schema + data | 70-85% |
 
 ### Why Three Different Systems?
@@ -38,9 +38,9 @@ Each content type has fundamentally different characteristics:
 
 **Transcripts:**
 - Sequential conversations
-- Temporal flow (greeting → problem → actions → resolution)
-- Emotional trajectories
-- **Solution:** Domain-specific tokens (CALL, ISSUE, ACTION, SENTIMENT)
+- Temporal flow (metadata → intent → actions → resolution → sentiment)
+- Explicit semantic contract separating intent, actions, and state
+- **Solution:** v2 semantic blocks (INTERACTION, DOMAIN, CUSTOMER_INTENT, AGENT_ACTIONS, STATE, SENTIMENT)
 
 **Structured Data:**
 - Tabular information
@@ -1003,276 +1003,444 @@ See [Configuration Prompt Encoding](../sys_prompt/configuration_prompt.md) for c
 
 ---
 
-## Part 2: Transcript Tokenization
+## Part 2: Transcript Tokenization (v2 Schema)
 
 ### Purpose
 
-Compress customer service conversations while preserving:
-- Call metadata (who, when, how long)
-- Issue description
-- Actions taken
-- Resolution status
+Compress customer service conversations into an explicit semantic contract while preserving:
+- Interaction metadata (channel, duration, language)
+- Domain and service context
+- Customer intent (derived from customer utterances)
+- Context provided (PII-safe)
+- Agent and system actions (separated)
+- Resolution outcome and authoritative state
+- Commitments and artifacts
 - Emotional trajectory
 
-### The 7 Domain-Specific Tokens
+### The 14 Semantic Blocks
 
 ```
-┌─────────────────────────────────────────┐
-│  1. CALL - Call metadata                │  ← Setup
-│     [CALL:SUPPORT:AGENT=Raj:DURATION=9m]│
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│  1. INTERACTION - Interaction metadata           │  ← Setup
+│     [INTERACTION:SUPPORT:CHANNEL=VOICE]          │
+└──────────────────────────────────────────────────┘
            ↓
-┌─────────────────────────────────────────┐
-│  2. CUSTOMER - Customer info            │  ← Who
-│     [CUSTOMER]                          │
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│  2. DURATION - Call duration                     │  ← Time
+│     [DURATION=6m]                                │
+└──────────────────────────────────────────────────┘
            ↓
-┌─────────────────────────────────────────┐
-│  3. CONTACT - Contact details           │  ← How to reach
-│     [CONTACT:EMAIL=user@example.com]    │
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│  3. LANG - Language                              │  ← Language
+│     [LANG=EN]                                    │
+└──────────────────────────────────────────────────┘
            ↓
-┌─────────────────────────────────────────┐
-│  4. ISSUE - Problem description         │  ← What's wrong
-│     [ISSUE:BILLING_DISPUTE:SEVERITY=LOW]│
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│  4. DOMAIN - Service area classification         │  ← Domain
+│     [DOMAIN:BILLING]                             │
+└──────────────────────────────────────────────────┘
            ↓
-┌─────────────────────────────────────────┐
-│  5. ACTION(S) - What was done          │  ← Troubleshooting
-│     [ACTION:REFUND:RESULT=COMPLETED]    │
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│  5. SERVICE - Service within domain              │  ← Service
+│     [SERVICE:SUBSCRIPTION]                       │
+└──────────────────────────────────────────────────┘
            ↓
-┌─────────────────────────────────────────┐
-│  6. RESOLUTION - Final outcome          │  ← How it ended
-│     [RESOLUTION:RESOLVED:TIMELINE=TODAY]│
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│  6. CUSTOMER_INTENT - Customer's goal            │  ← Intent
+│     [CUSTOMER_INTENT:REPORT_DUPLICATE_CHARGE]    │
+└──────────────────────────────────────────────────┘
            ↓
-┌─────────────────────────────────────────┐
-│  7. SENTIMENT - Emotional journey       │  ← Feeling
-│     [SENTIMENT:NEUTRAL→SATISFIED→GRATEFUL]│
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│  7. CONTEXT - Facts provided (PII-safe)          │  ← Context
+│     [CONTEXT:EMAIL_PROVIDED]                     │
+└──────────────────────────────────────────────────┘
+           ↓
+┌──────────────────────────────────────────────────┐
+│  8. AGENT_ACTIONS - Agent operations chain       │  ← Actions
+│     [AGENT_ACTIONS:VERIFIED→DIAGNOSED→REFUNDED]  │
+└──────────────────────────────────────────────────┘
+           ↓
+┌──────────────────────────────────────────────────┐
+│  9. SYSTEM_ACTIONS - Automated events            │  ← System
+│     [SYSTEM_ACTIONS:PAYMENT_RETRY_DETECTED]      │
+└──────────────────────────────────────────────────┘
+           ↓
+┌──────────────────────────────────────────────────┐
+│  10. RESOLUTION - Outcome type                   │  ← Outcome
+│      [RESOLUTION:ISSUE_RESOLVED]                 │
+└──────────────────────────────────────────────────┘
+           ↓
+┌──────────────────────────────────────────────────┐
+│  11. STATE - Authoritative status                │  ← Status
+│      [STATE:RESOLVED]                            │
+└──────────────────────────────────────────────────┘
+           ↓
+┌──────────────────────────────────────────────────┐
+│  12. COMMITMENT - SLA / promised actions         │  ← Promises
+│      [COMMITMENT:REFUND_3-5_DAYS]                │
+└──────────────────────────────────────────────────┘
+           ↓
+┌──────────────────────────────────────────────────┐
+│  13. ARTIFACT - Structured identifiers           │  ← IDs
+│      [ARTIFACT:REFUND_REF=RFD-908712]            │
+└──────────────────────────────────────────────────┘
+           ↓
+┌──────────────────────────────────────────────────┐
+│  14. SENTIMENT - Emotional trajectory            │  ← Feeling
+│      [SENTIMENT:NEUTRAL→GRATEFUL]                │
+└──────────────────────────────────────────────────┘
 ```
 
 ### Token Definitions
 
 | Token | Format | Purpose | Example |
 |-------|--------|---------|---------|
-| **CALL** | `[CALL:TYPE:AGENT=name:DURATION=time:CHANNEL=channel]` | Call metadata | `[CALL:SUPPORT:AGENT=Raj:DURATION=9m:CHANNEL=voice]` |
-| **CUSTOMER** | `[CUSTOMER]` or `[CUSTOMER:NAME=name]` | Customer identifier | `[CUSTOMER]` |
-| **CONTACT** | `[CONTACT:EMAIL=email]` or `[CONTACT:PHONE=number]` | Contact info | `[CONTACT:EMAIL=melissa.jordan@example.com]` |
-| **ISSUE** | `[ISSUE:TYPE:SEVERITY=level]` | Problem description | `[ISSUE:BILLING_DISPUTE:SEVERITY=LOW]` |
-| **ACTION** | `[ACTION:TYPE:RESULT=outcome:REFERENCE=ref]` | Action taken | `[ACTION:REFUND:RESULT=COMPLETED:REFERENCE=RFD-908712]` |
-| **RESOLUTION** | `[RESOLUTION:STATUS:TIMELINE=when]` | Final outcome | `[RESOLUTION:RESOLVED:TIMELINE=TODAY]` |
-| **SENTIMENT** | `[SENTIMENT:START→MIDDLE→END]` | Emotional trajectory | `[SENTIMENT:NEUTRAL→SATISFIED→GRATEFUL]` |
+| **INTERACTION** | `[INTERACTION:TYPE:CHANNEL=ch]` | Interaction metadata | `[INTERACTION:SUPPORT:CHANNEL=VOICE]` |
+| **DURATION** | `[DURATION=Xm]` | Call duration | `[DURATION=6m]` |
+| **LANG** | `[LANG=XX]` | Language | `[LANG=EN]` |
+| **DOMAIN** | `[DOMAIN:TYPE]` | Domain classification | `[DOMAIN:BILLING]` |
+| **SERVICE** | `[SERVICE:TYPE]` | Service area | `[SERVICE:SUBSCRIPTION]` |
+| **CUSTOMER_INTENT** | `[CUSTOMER_INTENT:INTENT]` | Customer's goal | `[CUSTOMER_INTENT:REQUEST_REFUND]` |
+| **CONTEXT** | `[CONTEXT:TYPE]` | PII-safe context | `[CONTEXT:EMAIL_PROVIDED]` |
+| **AGENT_ACTIONS** | `[AGENT_ACTIONS:A1→A2→A3]` | Agent action chain | `[AGENT_ACTIONS:ACCOUNT_VERIFIED→REFUND_INITIATED]` |
+| **SYSTEM_ACTIONS** | `[SYSTEM_ACTIONS:E1→E2]` | System events | `[SYSTEM_ACTIONS:PAYMENT_RETRY_DETECTED]` |
+| **RESOLUTION** | `[RESOLUTION:TYPE]` | Outcome type | `[RESOLUTION:ISSUE_RESOLVED]` |
+| **STATE** | `[STATE:STATUS]` | Authoritative status | `[STATE:RESOLVED]` |
+| **COMMITMENT** | `[COMMITMENT:PROMISE]` | SLA/promised actions | `[COMMITMENT:REFUND_3-5_DAYS]` |
+| **ARTIFACT** | `[ARTIFACT:TYPE=VALUE]` | Structured identifiers | `[ARTIFACT:REFUND_REF=RFD-908712]` |
+| **SENTIMENT** | `[SENTIMENT:START→END]` | Emotional trajectory | `[SENTIMENT:NEUTRAL→GRATEFUL]` |
 
-### CALL Token
+### INTERACTION Token
 
-**Format:** `[CALL:TYPE:AGENT=name:DURATION=time:CHANNEL=channel]`
+**Format:** `[INTERACTION:TYPE:CHANNEL=channel]`
 
-**Attributes:**
-- `TYPE` - Call category: `SUPPORT`, `SALES`, `TECHNICAL`
-- `AGENT` - Agent name: `AGENT=Raj`, `AGENT=Sarah`
-- `DURATION` - Call length: `DURATION=9m`, `DURATION=15m30s`
-- `CHANNEL` - Communication method: `CHANNEL=voice`, `CHANNEL=chat`
+**Type values:**
+- `SUPPORT` - Customer support
+- `SALES` - Sales interaction
+- `BILLING` - Billing-specific
 
-**Examples:**
-```
-[CALL:SUPPORT:AGENT=Raj:DURATION=9m:CHANNEL=voice]
-[CALL:SALES:AGENT=Sarah:DURATION=15m:CHANNEL=phone]
-[CALL:TECHNICAL:DURATION=20m:CHANNEL=video]
-```
-
-### CUSTOMER Token
-
-**Format:** `[CUSTOMER]` or `[CUSTOMER:NAME=name]`
-
-**Purpose:** Identifies the customer (usually anonymous)
-
-**Examples:**
-```
-[CUSTOMER]
-[CUSTOMER:NAME=John_Smith]
-```
-
-### CONTACT Token
-
-**Format:** `[CONTACT:TYPE=value]`
-
-**Common types:**
-- `EMAIL` - Email address
-- `PHONE` - Phone number
-- `ACCOUNT` - Account ID
+**Channel values:**
+- `VOICE` - Phone call
+- `CHAT` - Live chat
+- `EMAIL` - Email
+- `SLACK` - Slack thread
 
 **Examples:**
 ```
-[CONTACT:EMAIL=melissa.jordan@example.com]
-[CONTACT:PHONE=555-0123]
-[CONTACT:ACCOUNT=ACC-789456]
+[INTERACTION:SUPPORT:CHANNEL=VOICE]
+[INTERACTION:SALES:CHANNEL=CHAT]
+[INTERACTION:BILLING:CHANNEL=EMAIL]
 ```
 
-### ISSUE Token
+### DURATION Token
 
-**Format:** `[ISSUE:TYPE:SEVERITY=level]`
+**Format:** `[DURATION=Xm]`
 
-**Common issue types:**
-- `BILLING_DISPUTE` - Billing problems
-- `TECHNICAL_ISSUE` - Technical problems
-- `ACCOUNT_ACCESS` - Login/access issues
-- `PRODUCT_INQUIRY` - Product questions
-- `SERVICE_COMPLAINT` - Service complaints
-
-**Severity levels:**
-- `LOW` - Minor issue
-- `MEDIUM` - Moderate issue
-- `HIGH` - Major issue
-- `CRITICAL` - Urgent issue
+**Purpose:** Approximate call duration in minutes (derived from turn count: ~2 turns/minute)
 
 **Examples:**
 ```
-[ISSUE:BILLING_DISPUTE:SEVERITY=LOW]
-[ISSUE:TECHNICAL_ISSUE:SEVERITY=HIGH]
-[ISSUE:ACCOUNT_ACCESS:SEVERITY=CRITICAL]
+[DURATION=6m]
+[DURATION=15m]
+[DURATION=1m]
 ```
 
-### ACTION Token
+### LANG Token
 
-**Format:** `[ACTION:TYPE:RESULT=outcome:REFERENCE=ref:TIMELINE=when]`
+**Format:** `[LANG=XX]`
 
-**Common action types:**
-- `TROUBLESHOOT` - Diagnostic steps
-- `REFUND` - Process refund
-- `RESET` - Reset account/password
-- `ESCALATE` - Escalate to higher tier
-- `VERIFY` - Verify information
-- `UPDATE` - Update account/info
+**Purpose:** Language metadata. Schema is language-invariant — extraction normalizes cross-language expressions to the same enums.
 
-**Result values:**
-- `COMPLETED` - Action finished successfully
-- `PENDING` - Action in progress
-- `FAILED` - Action unsuccessful
-- `SCHEDULED` - Action scheduled for later
+**Values:** `EN`, `ES`, `PT`, `FR`
 
-**Attributes:**
-- `RESULT` - Outcome: `RESULT=COMPLETED`, `RESULT=PENDING`
-- `REFERENCE` - Reference number: `REFERENCE=RFD-908712`
-- `TIMELINE` - When completed/expected: `TIMELINE=3-5_DAYS`, `TIMELINE=TODAY`
+### DOMAIN Token
+
+**Format:** `[DOMAIN:TYPE]`
+
+**Purpose:** Explicit service area classification
+
+**Domain types (20–30 max):**
+- `BILLING` - Payment and billing issues
+- `AUTHENTICATION` - Login, access, credentials
+- `BOOKINGS` - Reservations, scheduling
+- `API` - API-related issues
+- `PERFORMANCE` - Speed, reliability
+- `TECHNICAL` - Technical support
+- `SHIPPING` - Delivery and shipping
 
 **Examples:**
 ```
-[ACTION:TROUBLESHOOT:RESULT=COMPLETED]
-[ACTION:REFUND:REFERENCE=RFD-908712:TIMELINE=3-5_DAYS:RESULT=COMPLETED]
-[ACTION:ESCALATE:TEAM=TIER2:RESULT=PENDING]
-[ACTION:VERIFY:RESULT=COMPLETED]
+[DOMAIN:BILLING]
+[DOMAIN:AUTHENTICATION]
+[DOMAIN:TECHNICAL]
 ```
 
-**Multiple actions:**
+### SERVICE Token
+
+**Format:** `[SERVICE:TYPE]`
+
+**Purpose:** Service area within the domain
+
+**Service types:**
+- `SUBSCRIPTION` - Subscription management
+- `HOST_STAY` - Hospitality/hosting
+- `PAYMENT` - Payment processing
+- `DASHBOARD` - Dashboard/UI
+- `EXPORTS` - Data exports
+
+**Examples:**
 ```
-[ACTION:VERIFY:RESULT=COMPLETED]
-[ACTION:TROUBLESHOOT:RESULT=COMPLETED]
-[ACTION:REFUND:REFERENCE=RFD-908712:TIMELINE=3-5_DAYS:RESULT=COMPLETED]
+[SERVICE:SUBSCRIPTION]
+[SERVICE:PAYMENT]
+```
+
+### CUSTOMER_INTENT Token
+
+**Format:** `[CUSTOMER_INTENT:INTENT]`
+
+**Purpose:** Primary customer intent derived strictly from customer utterances. Must not be inferred solely from agent actions.
+
+**Intent types (20–40 max):**
+- `REQUEST_REFUND`
+- `REPORT_DUPLICATE_CHARGE`
+- `ACCOUNT_UNLOCK`
+- `FEATURE_INQUIRY`
+- `CANCEL_BOOKING`
+- `REPORT_OUTAGE`
+- `REQUEST_UPGRADE`
+
+**Rules:**
+- One primary intent required
+- Optional secondary intent allowed
+- Must not be inferred solely from agent actions
+
+**Examples:**
+```
+[CUSTOMER_INTENT:REPORT_DUPLICATE_CHARGE]
+[CUSTOMER_INTENT:REQUEST_REFUND]
+[CUSTOMER_INTENT:ACCOUNT_UNLOCK]
+```
+
+### CONTEXT Token
+
+**Format:** `[CONTEXT:TYPE]`
+
+**Purpose:** Indicates fact-of-information provided by customer without leaking PII
+
+**Context types:**
+- `EMAIL_PROVIDED`
+- `PHONE_PROVIDED`
+- `BOOKING_ID_PROVIDED`
+- `PAYMENT_METHOD_PROVIDED`
+- `ACCOUNT_ID_PROVIDED`
+- `ORDER_ID_PROVIDED`
+- `TRACKING_ID_PROVIDED`
+
+**Redacted variant:**
+```
+[CONTEXT:PAYMENT_METHOD_REDACTED]
+```
+
+**Examples:**
+```
+[CONTEXT:EMAIL_PROVIDED]
+[CONTEXT:BOOKING_ID_PROVIDED]
+```
+
+### AGENT_ACTIONS Token
+
+**Format:** `[AGENT_ACTIONS:ACTION1→ACTION2→ACTION3]`
+
+**Purpose:** Operational actions performed by human agent, joined as an ordered chain with arrows (→)
+
+**Action types (30–50 max):**
+- `ACCOUNT_VERIFIED`
+- `DIAGNOSTIC_PERFORMED`
+- `REFUND_INITIATED`
+- `BOOKING_CANCELLED`
+- `ACCOUNT_UNLOCKED`
+- `API_KEY_ROTATED`
+- `ESCALATED_TIER2`
+
+**Avoid generic verbs:** `TROUBLESHOOT`, `CHECKED`, `ACTION_TAKEN`
+
+**Examples:**
+```
+[AGENT_ACTIONS:ACCOUNT_VERIFIED→DIAGNOSTIC_PERFORMED→REFUND_INITIATED]
+[AGENT_ACTIONS:ACCOUNT_UNLOCKED]
+[AGENT_ACTIONS:API_KEY_ROTATED→ESCALATED_TIER2]
+```
+
+### SYSTEM_ACTIONS Token
+
+**Format:** `[SYSTEM_ACTIONS:EVENT1→EVENT2]`
+
+**Purpose:** Automated system-level events (optional, only emitted when detected)
+
+**System action types:**
+- `PAYMENT_RETRY_DETECTED`
+- `AUTO_ESCALATION_TRIGGERED`
+- `SLA_BREACH_DETECTED`
+- `FRAUD_ALERT_TRIGGERED`
+- `ACCOUNT_AUTO_LOCKED`
+- `NOTIFICATION_SENT`
+
+**Examples:**
+```
+[SYSTEM_ACTIONS:PAYMENT_RETRY_DETECTED]
+[SYSTEM_ACTIONS:AUTO_ESCALATION_TRIGGERED→SLA_BREACH_DETECTED]
 ```
 
 ### RESOLUTION Token
 
-**Format:** `[RESOLUTION:STATUS:TIMELINE=when]`
+**Format:** `[RESOLUTION:TYPE]`
 
-**Status values:**
-- `RESOLVED` - Issue fixed
-- `PARTIAL` - Partially resolved
-- `UNRESOLVED` - Issue not fixed
+**Purpose:** Describes outcome type (not state)
+
+**Resolution types:**
+- `ISSUE_RESOLVED` - Issue fixed
+- `ACCOUNT_UNLOCKED` - Access restored
+- `ANSWER_PROVIDED` - Information given
 - `ESCALATED` - Sent to higher tier
 - `PENDING` - Awaiting resolution
-
-**Timeline values:**
-- `TODAY` - Resolved same day
-- `3-5_DAYS` - Expected timeframe
-- `PENDING` - No specific timeline
+- `CANCELLED` - Cancelled
 
 **Examples:**
 ```
-[RESOLUTION:RESOLVED:TIMELINE=TODAY]
-[RESOLUTION:PARTIAL:TIMELINE=3-5_DAYS]
-[RESOLUTION:ESCALATED:TIMELINE=PENDING]
+[RESOLUTION:ISSUE_RESOLVED]
+[RESOLUTION:ESCALATED]
+[RESOLUTION:ANSWER_PROVIDED]
+```
+
+### STATE Token
+
+**Format:** `[STATE:STATUS]`
+
+**Purpose:** Authoritative interaction status. Mutually exclusive — only one STATE per transcript.
+
+**State values (5–10 max):**
+- `RESOLVED` - Fully resolved
+- `PENDING_SETTLEMENT` - Awaiting settlement
+- `PENDING_CUSTOMER` - Awaiting customer action
+- `ESCALATED` - Escalated
+- `UNRESOLVED` - Not resolved
+
+**Examples:**
+```
+[STATE:RESOLVED]
+[STATE:PENDING_SETTLEMENT]
+[STATE:ESCALATED]
+```
+
+### COMMITMENT Token
+
+**Format:** `[COMMITMENT:PROMISE]`
+
+**Purpose:** Encodes SLA or promised actions by the agent
+
+**Examples:**
+```
+[COMMITMENT:REFUND_3-5_DAYS]
+[COMMITMENT:FOLLOWUP_BY_FRIDAY]
+[COMMITMENT:CALLBACK_24h]
+[COMMITMENT:TECHNICIAN_VISIT_MONDAY]
+```
+
+### ARTIFACT Token
+
+**Format:** `[ARTIFACT:TYPE=VALUE]`
+
+**Purpose:** Structured identifiers extracted from conversation
+
+**Artifact types:**
+- `REFUND_REF` - Refund reference number
+- `REFUND_AMT` - Refund amount
+- `BOOKING_ID` - Booking identifier
+- `ORDER_ID` - Order identifier
+- `TRACKING_ID` - Tracking number
+- `TICKET_ID` - Support ticket ID
+- `CASE_ID` - Case number
+- `CLAIM_ID` - Claim number
+- `PRODUCT_ID` - Product model
+
+**Examples:**
+```
+[ARTIFACT:REFUND_REF=RFD-908712]
+[ARTIFACT:REFUND_AMT=$14.99]
+[ARTIFACT:ORDER_ID=ORD-456789]
+[ARTIFACT:TRACKING_ID=TRK-1234]
 ```
 
 ### SENTIMENT Token
 
-**Format:** `[SENTIMENT:START→MIDDLE→END]`
+**Format:** `[SENTIMENT:START→END]`
 
 **Purpose:** Tracks emotional trajectory through conversation
 
-**Common sentiment values:**
-- `FRUSTRATED` - Upset, annoyed
-- `ANGRY` - Very upset
-- `CONCERNED` - Worried
-- `NEUTRAL` - Calm, neutral
-- `SATISFIED` - Content, pleased
-- `GRATEFUL` - Thankful
-- `POSITIVE` - Happy
-- `CALM` - Peaceful
+**Sentiment values:**
+- `FRUSTRATED`, `ANGRY`, `CONCERNED`
+- `NEUTRAL`, `CALM`
+- `SATISFIED`, `GRATEFUL`, `POSITIVE`
 
-**Special notation:** Uses arrows (→) to show progression
+**Special notation:** Uses arrows (→) to show progression. Turning points are deduplicated.
 
 **Examples:**
 ```
 [SENTIMENT:FRUSTRATED→NEUTRAL→SATISFIED]
+[SENTIMENT:NEUTRAL→GRATEFUL]
 [SENTIMENT:ANGRY→CALM→GRATEFUL]
-[SENTIMENT:NEUTRAL→SATISFIED→GRATEFUL]
-[SENTIMENT:CONCERNED→NEUTRAL→POSITIVE]
 ```
 
-### Complete Transcript Example
+### Complete Transcript Example (v2)
 
-**Original conversation (9-minute billing dispute call):**
+**Original conversation (billing dispute call):**
 ```
 Agent Raj: Thank you for calling customer support. My name is Raj. How can I help you today?
 
-Customer: Hi Raj, I have a billing issue. I was charged twice this month for my subscription - once on the 1st and again on the 15th. I should only be charged once.
+Customer: Hi Raj, I have a billing issue. I was charged twice this month for my subscription.
 
-Agent Raj: I'm sorry to hear about that double charge. That's definitely frustrating. Let me look into your account right away. Can I have your email address to pull up your account?
+Agent Raj: I'm sorry to hear that. Let me look into your account. Can I have your email?
 
 Customer: Sure, it's melissa.jordan@example.com
 
-Agent Raj: Thank you. I see your account now. You're right - I can see two charges this month. Let me investigate what happened...
+Agent Raj: I see two charges. The system retried payment after the first succeeded.
+I'll process a full refund. Reference number RFD-908712, 3 to 5 business days.
 
-[... agent checks system ...]
-
-Agent Raj: I found the issue. There was a system error during our billing cycle update that caused some accounts to be charged twice. I apologize for this inconvenience. I'm going to process a full refund for the duplicate charge right now.
-
-Customer: Oh, thank you! How long will that take?
-
-Agent Raj: The refund will be processed within 3 to 5 business days. You'll receive a confirmation email with reference number RFD-908712. Is there anything else I can help you with today?
-
-Customer: No, that's perfect. Thank you so much for your help!
-
-Agent Raj: You're very welcome! Thank you for being so patient with us. Have a great day!
+Customer: Thank you so much for your help!
 ```
 
-**Compressed:**
+**Compressed (v2):**
 ```
-[CALL:SUPPORT:AGENT=Raj:DURATION=9m:CHANNEL=voice]
-[CUSTOMER] [CONTACT:EMAIL=melissa.jordan@example.com]
-[ISSUE:BILLING_DISPUTE:SEVERITY=LOW]
-[ACTION:TROUBLESHOOT:RESULT=COMPLETED]
-[ACTION:REFUND:REFERENCE=RFD-908712:TIMELINE=3-5_DAYS:RESULT=COMPLETED]
-[RESOLUTION:RESOLVED:TIMELINE=TODAY]
-[SENTIMENT:NEUTRAL→SATISFIED→GRATEFUL]
+[INTERACTION:SUPPORT:CHANNEL=VOICE]
+[DURATION=6m]
+[LANG=EN]
+[DOMAIN:BILLING]
+[SERVICE:SUBSCRIPTION]
+[CUSTOMER_INTENT:REPORT_DUPLICATE_CHARGE]
+[CONTEXT:EMAIL_PROVIDED]
+[AGENT_ACTIONS:ACCOUNT_VERIFIED→DIAGNOSTIC_PERFORMED→REFUND_INITIATED]
+[SYSTEM_ACTIONS:PAYMENT_RETRY_DETECTED]
+[RESOLUTION:ISSUE_RESOLVED]
+[STATE:RESOLVED]
+[COMMITMENT:REFUND_3-5_DAYS]
+[ARTIFACT:REFUND_REF=RFD-908712]
+[SENTIMENT:NEUTRAL→GRATEFUL]
 ```
 
-**Original:** ~1,450 tokens  
-**Compressed:** ~145 tokens  
+**Original:** ~1,450 tokens
+**Compressed:** ~145 tokens
 **Reduction:** 90%
 
 ### Key Differences from System Prompts
 
-| Aspect | System Prompts | Transcripts |
-|--------|----------------|-------------|
-| **Token Types** | REQ, TARGET, EXTRACT, CTX, OUT, REF | CALL, CUSTOMER, ISSUE, ACTION, RESOLUTION, SENTIMENT |
-| **Structure** | Hierarchical (instruction flow) | Sequential (conversation flow) |
-| **Purpose** | Instruction compression | Conversation compression |
-| **Flow** | Logical (what→how→output) | Temporal (start→problem→actions→end) |
-| **Special Features** | Nested JSON with types/enums | Sentiment trajectories with arrows (→) |
-| **Multiple Items** | Comma-separated: `REQ:ACTION1,ACTION2` | Repeated tokens: multiple `[ACTION:...]` |
+| Aspect | System Prompts | Transcripts (v2) |
+|--------|----------------|-------------------|
+| **Token Types** | REQ, TARGET, EXTRACT, CTX, OUT, REF | INTERACTION, DOMAIN, CUSTOMER_INTENT, AGENT_ACTIONS, STATE, SENTIMENT, etc. |
+| **Structure** | Hierarchical (instruction flow) | Sequential (semantic blocks) |
+| **Purpose** | Instruction compression | Conversation compression as explicit semantic contract |
+| **Flow** | Logical (what→how→output) | Temporal (metadata→intent→actions→outcome→sentiment) |
+| **Special Features** | Nested JSON with types/enums | PII-safe context, separated agent/system actions |
+| **Actions** | Comma-separated: `REQ:ACTION1,ACTION2` | Arrow-chained: `AGENT_ACTIONS:A1→A2→A3` |
 
 ---
 
@@ -1407,7 +1575,7 @@ Despite using different systems, all three encoders share core principles:
 
 All three systems preserve the essential meaning of the original content, just using different methods:
 - System Prompts: Hierarchical semantic tokens
-- Transcripts: Sequential domain tokens
+- Transcripts: Sequential semantic blocks (v2 schema)
 - Structured Data: Schema-based compression
 
 ### 2. LLM-Native Format
@@ -1418,7 +1586,7 @@ All three formats are designed to be understood by modern LLMs (GPT-4, Claude, e
 
 ```
 System Prompt:  [REQ:ANALYZE] [TARGET:TRANSCRIPT] [EXTRACT:SENTIMENT]
-Transcript:     [ISSUE:BILLING_DISPUTE] [ACTION:REFUND:RESULT=COMPLETED]
+Transcript:     [DOMAIN:BILLING] [CUSTOMER_INTENT:REQUEST_REFUND] [STATE:RESOLVED]
 Structured:     [NBA_CATALOG:2]{ID,ACTION} [NBA-001,UPGRADE] [NBA-002,CROSS_SELL]
 ```
 
@@ -1459,9 +1627,10 @@ Tabular Data → Structured Data Encoder
 - Use CTX for conditions and escalation rules
 
 **Transcripts:**
-- Follow conversation flow (CALL → ISSUE → ACTION → RESOLUTION)
-- Use multiple ACTION tokens for sequential steps
-- Capture sentiment trajectories with arrows (→)
+- Follow semantic block order (INTERACTION → DOMAIN → INTENT → ACTIONS → STATE → SENTIMENT)
+- Use AGENT_ACTIONS chain for ordered agent operations
+- Separate system events into SYSTEM_ACTIONS
+- Use CONTEXT tokens for PII-safe fact-of-information
 
 **Structured Data:**
 - Define clear field schema in header
