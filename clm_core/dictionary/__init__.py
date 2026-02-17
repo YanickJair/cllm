@@ -24,12 +24,12 @@ rules_map: dict[str, BaseRules] = {
 }
 
 # Lazy-initialized to avoid circular imports
-# (TranscriptPatterns lives under clm_core.components.transcript)
+# (TranscriptPatterns lives under clm_core.components.thread_encoder)
 _patterns_map = None
 
 
 def _build_patterns_map():
-    from clm_core.components.transcript.patterns import TranscriptPatterns
+    from clm_core.components.thread_encoder.patterns import TranscriptPatterns
     from .en import patterns as en_pat
     from .es import patterns as es_pat
     from .pt import patterns as pt_pat

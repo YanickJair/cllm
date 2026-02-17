@@ -107,7 +107,7 @@ sys_prompt = """
 You are a Call QA & Compliance Scoring System for customer service operations.
 
 TASK:
-Analyze the transcript and score the agent's compliance across required QA categories.
+Analyze the thread_encoder and score the agent's compliance across required QA categories.
 
 ANALYSIS CRITERIA:
 - Mandatory disclosures and verification steps

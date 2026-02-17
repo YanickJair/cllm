@@ -223,7 +223,7 @@ class PromiseCommitment(BaseModel):
 
 
 class TranscriptAnalysis(BaseModel):
-    """Complete transcript analysis"""
+    """Complete thread_encoder analysis"""
 
     call_info: CallInfo = Field(..., description="Transcript metadata information")
     customer: CustomerProfile = Field(..., description="Customer profile information")

@@ -26,7 +26,7 @@ class ENRules(BaseRules):
         return {
             "SUPPORT": r"\b(call|ticket|csr|customer|support|helpdesk)\b",
             "TECHNICAL": r"\b(error|bug|crash|stacktrace|api|debug|server|exception)\b",
-            "DOCUMENT": r"\b(document|article|manual|writeup|transcript)\b",
+            "DOCUMENT": r"\b(document|article|manual|writeup|thread_encoder)\b",
             "BUSINESS": r"\b(report|executive|analysis|kpi|dashboard)\b",
             "LEGAL": r"\b(contract|policy|compliance|clause|gdpr)\b",
             "FINANCE": r"\b(invoice|billing|payment|refund|transaction)\b",

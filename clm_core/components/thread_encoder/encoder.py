@@ -2,8 +2,8 @@ import re
 from typing import Optional
 
 from spacy import Language
-from clm_core.components.transcript.analyzer import TranscriptAnalyzer
-from clm_core.components.transcript.patterns import TranscriptPatterns
+from clm_core.components.thread_encoder.analyzer import TranscriptAnalyzer
+from clm_core.components.thread_encoder.patterns import TranscriptPatterns
 
 from . import (
     Action,
@@ -24,13 +24,13 @@ from clm_core.types import CLMOutput
 from ...utils.parser_rules import BaseRules
 from ...utils.vocabulary import BaseVocabulary
 
-COMPONENT = "TRANSCRIPT"
+COMPONENT = "THREAD_ENCODER"
 CLM_SCHEMA_VERSION = "2.0"
 
 
-class TranscriptEncoder(metaclass=SingletonMeta):
+class ThreadEncoder(metaclass=SingletonMeta):
     """
-    Encodes transcript analysis into CLM Transcript Schema v2 compressed tokens.
+    Encodes thread_encoder analysis into CLM Thread Encoder Schema v2 compressed tokens.
 
     v2 Format:
     [INTERACTION:SUPPORT:CHANNEL=VOICE]
@@ -71,7 +71,13 @@ class TranscriptEncoder(metaclass=SingletonMeta):
         self, *, transcript: str, metadata: dict, verbose: bool = False
     ) -> CLMOutput:
         """
-        Encode transcript analysis to CLM Transcript Schema v2 format.
+        Encode thread_encoder analysis to CLM Transcript Schema v2 format.
+
+        The encoder works as a pipeline with multiple layers for each Token:
+        - The analyzer function is the first in the pipeline.
+        - It tries to normalize the thread interaction (Define Channel, etc.)
+        - Tries to estimate the duration of the thread interaction
+        - The encode_lang function tries to predict the language of the thread interaction
         """
         self.analysis = self._analyzer.analyze(transcript, metadata)
 
@@ -144,7 +150,9 @@ class TranscriptEncoder(metaclass=SingletonMeta):
                 print(f"System Actions: {sys_token}")
 
         # 7. Resolution
-        resolution_token = self._encode_resolution(self.analysis.resolution)
+        resolution_token = self._encode_resolution(
+            self.analysis.resolution, self.analysis.actions
+        )
         if resolution_token:
             tokens.append(resolution_token)
             if verbose:
@@ -152,7 +160,11 @@ class TranscriptEncoder(metaclass=SingletonMeta):
 
         # 8. State (mutually exclusive)
         state_token = self._encode_state(
-            self.analysis.resolution, self.analysis.resolution_state
+            self.analysis.resolution,
+            self.analysis.resolution_state,
+            actions=self.analysis.actions,
+            domain=self.analysis.domain,
+            issues=self.analysis.issues,
         )
         tokens.append(state_token)
         if verbose:
@@ -205,10 +217,6 @@ class TranscriptEncoder(metaclass=SingletonMeta):
                 "has_urls": bool(re.search(r"https?://", transcript)),
             },
         )
-
-    # ============================================================
-    # v2 encoding methods
-    # ============================================================
 
     @staticmethod
     def _encode_interaction(call: CallInfo) -> str:
@@ -264,7 +272,6 @@ class TranscriptEncoder(metaclass=SingletonMeta):
         chain = "→".join(system_actions)
         return f"[SYSTEM_ACTIONS:{chain}]"
 
-    # Maps resolution types and actions to v2 resolution descriptions
     _RESOLUTION_MAP = {
         "RESOLVED": "ISSUE_RESOLVED",
         "PENDING": "PENDING",
@@ -274,13 +281,46 @@ class TranscriptEncoder(metaclass=SingletonMeta):
         "CANCELLED": "CANCELLED",
     }
 
+    # Actions that represent a specific resolution outcome
+    _ACTION_TO_RESOLUTION = {
+        "REFUND_INITIATED": "REFUND_INITIATED",
+        "PROFILE_UPDATED": "PROFILE_UPDATED",
+        "ESCALATION_CREATED": "ESCALATED",
+        "PLAN_UPGRADED": "PLAN_UPGRADED",
+        "SERVICE_RESTORED": "SERVICE_RESTORED",
+        "SUBSCRIPTION_PAUSED": "SUBSCRIPTION_PAUSED",
+        "TRIAL_ACTIVATED": "TRIAL_ACTIVATED",
+        "FEE_WAIVED": "FEE_REVERSED",
+        "CREDIT_APPLIED": "CREDIT_APPLIED",
+        "PASSWORD_RESET": "LOGIN_RESTORED",
+        "REPLACEMENT_ORDERED": "REPLACEMENT_CONFIRMED",
+        "DUPLICATE_PAYMENT_CONFIRMED": "REFUND_INITIATED",
+        "ACCOUNT_VERIFIED": None,
+        "DIAGNOSTIC_PERFORMED": None,
+        "ACCOUNT_LOOKUP": None,
+        "CASE_REVIEWED": None,
+        "LOGS_REVIEWED": None,
+        "FEE_REVIEWED": None,
+        "ORDER_STATUS_CHECKED": None,
+    }
+
     @classmethod
-    def _encode_resolution(cls, resolution: Resolution) -> Optional[str]:
+    def _encode_resolution(cls, resolution: Resolution, actions: Optional[list] = None) -> Optional[str]:
         """
         Encode resolution outcome.
 
-        Format: [RESOLUTION:REFUND_ISSUED]
+        Derives resolution from agent actions when possible (the last significant action
+        IS the resolution). Falls back to resolution type mapping.
+
+        Format: [RESOLUTION:REFUND_INITIATED]
         """
+        # Try to derive resolution from the last significant agent action
+        if actions:
+            for action in reversed(actions):
+                action_res = cls._ACTION_TO_RESOLUTION.get(action.type)
+                if action_res is not None:
+                    return f"[RESOLUTION:{action_res}]"
+
         res_type = cls._RESOLUTION_MAP.get(resolution.type)
         if res_type:
             return f"[RESOLUTION:{res_type}]"
@@ -292,7 +332,6 @@ class TranscriptEncoder(metaclass=SingletonMeta):
 
         return None
 
-    # Maps resolution state types to v2 STATE values
     _STATE_MAP = {
         "FULLY_RESOLVED": "RESOLVED",
         "PARTIALLY_RESOLVED": "RESOLVED",
@@ -306,42 +345,139 @@ class TranscriptEncoder(metaclass=SingletonMeta):
 
     @classmethod
     def _encode_state(
-        cls, resolution: Resolution, resolution_state: Optional[ResolutionState]
+        cls,
+        resolution: Resolution,
+        resolution_state: Optional[ResolutionState],
+        actions: Optional[list] = None,
+        domain: Optional[str] = None,
+        issues: Optional[list] = None,
     ) -> str:
         """
         Encode authoritative interaction state (mutually exclusive).
 
+        Uses contextual sub-state derivation for PENDING/ESCALATED states:
+        - PENDING + refund context → PENDING_PROCESSING
+        - PENDING + shipment context → PENDING_SHIPMENT
+        - PENDING + delivery context → PENDING_DELIVERY
+        - ESCALATED + technical context → PENDING_ENGINEERING_FIX
+        - PENDING + outage/restoration context → PENDING_RESTORATION
+
         Format: [STATE:RESOLVED]
         """
-        # Prefer resolution_state if available (more granular)
+        actions = actions or []
+        action_types = {a.type for a in actions}
+
+        # Determine base state
+        base_state = None
         if resolution_state and resolution_state.type != "UNKNOWN":
-            state = cls._STATE_MAP.get(resolution_state.type, "UNRESOLVED")
-            return f"[STATE:{state}]"
-
-        # Fall back to resolution type
-        if resolution.type == "RESOLVED":
-            return "[STATE:RESOLVED]"
+            base_state = cls._STATE_MAP.get(resolution_state.type, "UNRESOLVED")
+        elif resolution.type == "RESOLVED":
+            base_state = "RESOLVED"
         elif resolution.type == "PENDING":
-            return "[STATE:PENDING_SETTLEMENT]"
+            base_state = "PENDING_SETTLEMENT"
         elif resolution.type == "ESCALATED":
-            return "[STATE:ESCALATED]"
+            base_state = "ESCALATED"
         elif resolution.type == "CANCELLED":
-            return "[STATE:RESOLVED]"
+            base_state = "RESOLVED"
+        else:
+            base_state = "UNRESOLVED"
 
-        return "[STATE:UNRESOLVED]"
+        # Hard state machine rules
+        has_physical_shipment = any(
+            a in action_types
+            for a in ("REPLACEMENT_ORDERED", "PRIORITY_DISPATCH_FLAGGED")
+        )
+        has_refund = any(
+            a in action_types
+            for a in ("REFUND_INITIATED", "CREDIT_APPLIED")
+        )
+        has_escalation = "ESCALATION_CREATED" in action_types
+
+        # If physical shipment pending → NOT RESOLVED
+        if has_physical_shipment and base_state == "RESOLVED":
+            base_state = "PENDING_SHIPMENT"
+
+        # If refund processing → NOT RESOLVED (unless explicitly confirmed)
+        if has_refund and base_state == "RESOLVED":
+            base_state = "PENDING_SETTLEMENT"
+
+        # Contextual sub-states for PENDING/ESCALATED
+        if base_state in ("PENDING_SETTLEMENT", "PENDING_CUSTOMER"):
+            if has_physical_shipment:
+                if domain == "FULFILLMENT" or any(
+                    a in action_types for a in ("ORDER_STATUS_CHECKED",)
+                ):
+                    return "[STATE:PENDING_SHIPMENT]"
+                return "[STATE:PENDING_SHIPMENT]"
+            if has_refund:
+                return "[STATE:PENDING_SETTLEMENT]"
+
+        if base_state == "ESCALATED" or has_escalation:
+            if domain == "TECHNICAL" or any(
+                a in action_types for a in ("LOGS_REVIEWED",)
+            ):
+                return f"[STATE:PENDING_ENGINEERING_FIX]"
+            if has_refund:
+                return "[STATE:PENDING_PROCESSING]"
+            # Generic escalation with pending context
+            if resolution.type in ("PENDING", "UNKNOWN"):
+                return "[STATE:PENDING_PROCESSING]"
+            return "[STATE:ESCALATED]"
+
+        # Outage/restoration context
+        if domain == "TECHNICAL" and base_state in ("PENDING_SETTLEMENT",):
+            if any(a in action_types for a in ("SERVICE_RESTORED",)):
+                return "[STATE:RESOLVED]"
+            return "[STATE:PENDING_RESTORATION]"
+
+        # Delivery context
+        if domain == "FULFILLMENT" and base_state in ("PENDING_SETTLEMENT",):
+            return "[STATE:PENDING_DELIVERY]"
+
+        return f"[STATE:{base_state}]"
 
     @staticmethod
     def _encode_commitments(promises: list[PromiseCommitment]) -> list[str]:
         """
         Encode commitments from promises.
 
-        Format: [COMMITMENT:REFUND_3-5_DAYS]
+        Gold-style format examples:
+        - [COMMITMENT:REFUND_3-5_BUSINESS_DAYS]
+        - [COMMITMENT:CONFIRMATION_EMAIL_TODAY]
+        - [COMMITMENT:FOLLOWUP_TOMORROW]
+        - [COMMITMENT:TRACKING_WITHIN_HOURS]
         """
+        # Map promise types to shorter commitment labels
+        _TYPE_MAP = {
+            "REFUND_PROMISE": "REFUND",
+            "CREDIT_PROMISE": "CREDIT",
+            "DELIVERY_PROMISE": "DELIVERY",
+            "CALLBACK": "CALLBACK",
+            "FOLLOW_UP_EMAIL": "CONFIRMATION_EMAIL",
+            "CONFIRMATION_EMAIL": "CONFIRMATION_EMAIL",
+            "FOLLOWUP": "FOLLOWUP",
+            "MONITORING": "MONITORING",
+            "TECHNICIAN_VISIT": "TECHNICIAN_VISIT",
+            "RESOLUTION_PROMISE": "RESOLUTION",
+        }
+
+        # Map timeline shorthand to gold-style
+        _TIMELINE_MAP = {
+            "3-5d": "3-5_BUSINESS_DAYS",
+            "1-3d": "1-3_BUSINESS_DAYS",
+            "24h": "WITHIN_24_HOURS",
+            "48h": "WITHIN_48_HOURS",
+            "TODAY": "TODAY",
+            "TOMORROW": "TOMORROW",
+        }
+
         tokens = []
         for p in promises:
-            parts = [p.type]
+            label = _TYPE_MAP.get(p.type, p.type)
+            parts = [label]
             if p.timeline:
-                parts.append(p.timeline)
+                timeline_str = _TIMELINE_MAP.get(p.timeline, p.timeline)
+                parts.append(timeline_str)
             if p.amount:
                 parts.append(p.amount)
             commitment_str = "_".join(parts)
@@ -373,6 +509,7 @@ class TranscriptEncoder(metaclass=SingletonMeta):
             "order_numbers": "ORDER_ID",
             "ticket_numbers": "TICKET_ID",
             "case_numbers": "CASE_ID",
+            "escalation_ids": "ESCALATION_ID",
         }
 
         collected: dict[str, list[str]] = {key: [] for key in identifiers}

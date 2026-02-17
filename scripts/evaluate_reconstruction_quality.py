@@ -37,7 +37,7 @@ class SimpleDecoder:
 
         self.target_to_text = {
             "CODE": "this code",
-            "TRANSCRIPT": "this transcript",
+            "TRANSCRIPT": "this thread_encoder",
             "EMAIL": "this email",
             "DOCUMENT": "this document",
             "DATA": "this data",

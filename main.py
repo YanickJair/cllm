@@ -12,7 +12,7 @@ def main():
     test_prompts = [
         "Analyze this Python code and identify any potential bugs or security vulnerabilities.",
         "Extract all dates, names, and monetary amounts from this legal document and format as JSON.",
-        "Summarize this customer support transcript briefly and identify the main issue.",
+        "Summarize this customer support thread_encoder briefly and identify the main issue.",
         "Generate a professional email declining a job offer while expressing gratitude.",
         "Explain quantum computing to a 10-year-old using simple analogies.",
     ]

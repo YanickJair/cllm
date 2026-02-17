@@ -34,7 +34,7 @@ class CLLMDecoder:
             "CODE": "the code",
             "DATA": "the data",
             "DOCUMENT": "the document",
-            "TRANSCRIPT": "the transcript",
+            "TRANSCRIPT": "the thread_encoder",
             "EMAIL": "the email",
             "TICKET": "the ticket",
             "REPORT": "the report",

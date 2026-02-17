@@ -36,7 +36,7 @@ except ImportError:
 SYSTEM_PROMPT = """You are an NBA (Next Best Action) recommendation system for customer service agents.
 
 TASK:
-Analyze the customer service transcript and recommend the top 2 most relevant NBAs from the provided catalog.
+Analyze the customer service thread_encoder and recommend the top 2 most relevant NBAs from the provided catalog.
 
 ANALYSIS CRITERIA:
 - Customer's primary issue and intent
@@ -192,7 +192,7 @@ class RunGPTCLMBenchmark:
 
         Args:
             max_transcripts: Maximum number of transcripts to test
-            specific_index: Test only specific transcript index (for debugging)
+            specific_index: Test only specific thread_encoder index (for debugging)
             models_to_test: List of model names to test (None = test all)
         """
         print(f"\n{'=' * 70}")
@@ -207,7 +207,7 @@ class RunGPTCLMBenchmark:
         # CLM system prompt (compressed)
         clm_system_prompt = """You are an NBA recommendation system for customer service agents.
 
-Analyze the transcript and recommend the top 2 most relevant NBAs.
+Analyze the thread_encoder and recommend the top 2 most relevant NBAs.
 
 Consider these factors:
 - Primary issue and customer intent
@@ -289,7 +289,7 @@ Prioritize:
                                 {"role": "system", "content": clm_system_prompt},
                                 {
                                     "role": "user",
-                                    "content": f"""Analyze the following call transcript:
+                                    "content": f"""Analyze the following call thread_encoder:
 
                                     TRANSCRIPT:
                                     {tc}
@@ -349,7 +349,7 @@ Prioritize:
                                 {"role": "system", "content": SYSTEM_PROMPT},
                                 {
                                     "role": "user",
-                                    "content": f"""Analyze the following call transcript:
+                                    "content": f"""Analyze the following call thread_encoder:
 
                                     TRANSCRIPT:
                                     {to}
@@ -483,7 +483,7 @@ def main():
         "--index",
         type=int,
         default=None,
-        help="Test only specific transcript index (for debugging)",
+        help="Test only specific thread_encoder index (for debugging)",
     )
     parser.add_argument(
         "--models",

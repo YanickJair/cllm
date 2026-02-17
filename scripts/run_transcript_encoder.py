@@ -10,7 +10,7 @@ CX_TRANSCRIPTS = [
     {
         "id": "call_001",
         "issue": "INTERNET_OUTAGE",
-        "transcript": """
+        "thread_encoder": """
 Agent: Good morning, thank you for calling TechCorp support. My name is Sarah. How can I help you today?
 
 Customer: Hi Sarah, I’ve been having issues with my internet connection for the past three days. It keeps dropping every few hours, and I work from home so this is really frustrating.
@@ -39,7 +39,7 @@ Customer: Perfect. Thanks for the help.
     {
         "id": "call_002",
         "issue": "BILLING_DISPUTE",
-        "transcript": """
+        "thread_encoder": """
 Agent: Hello, this is Daniel from MobileWave billing. How can I help you today?
 
 Customer: Hi Daniel, I was charged twice for my plan this month. I only have one line, so I’m not sure why.
@@ -64,7 +64,7 @@ Customer: Nope, that’s all. Appreciate it!
     {
         "id": "call_003",
         "issue": "DELIVERY_DELAY",
-        "transcript": """
+        "thread_encoder": """
 Agent: Thanks for contacting ShopEase. This is Monica. How can I help?
 
 Customer: I ordered a blender last week and it still hasn’t arrived. The tracking hasn’t updated since Friday.
@@ -83,7 +83,7 @@ Agent: Not at all — I’ll email you tracking updates. You should get it soon.
     {
         "id": "call_004",
         "issue": "LOGIN_FAILURE",
-        "transcript": """
+        "thread_encoder": """
 Agent: Hi, this is Jason from CloudSync support. What seems to be the issue today?
 
 Customer: I can’t log into my account. It says “password incorrect” but I didn’t change it.
@@ -104,7 +104,7 @@ Customer: It works now. Thanks!
     {
         "id": "call_005",
         "issue": "PRODUCT_DEFECT",
-        "transcript": """
+        "thread_encoder": """
 Agent: Hello, this is Anita from HomePlus warranty. How can I help you today?
 
 Customer: Hi, my air purifier stopped working yesterday. The power light turns on, but no air is coming out.
@@ -124,7 +124,7 @@ Agent: Alright, we’ll replace it. You’ll receive a prepaid return label with
     {
         "id": "call_006",
         "issue": "INTERNET_OUTAGE",
-        "transcript": """
+        "thread_encoder": """
 Agent: Hi, you’ve reached TechLine Fiber Support. My name is Michael. How can I help?
 
 Customer: Hey, Michael. My internet’s been cutting out randomly for the last week. It disconnects, then comes back after a few minutes. It’s driving me crazy.
@@ -159,7 +159,7 @@ Agent: You’re very welcome. Once fixed, you’ll get a text confirmation and a
     {
         "id": "call_007",
         "issue": "ACCOUNT_HACKED",
-        "transcript": """
+        "thread_encoder": """
 Agent: Hello, thank you for calling GameHub Security. My name is Leo. How can I assist you?
 
 Customer: Hi Leo, I think my account got hacked. I can’t log in, and I got an email saying my password was changed.
@@ -183,7 +183,7 @@ Agent: My pleasure. Security first!
     {
         "id": "call_008",
         "issue": "DELIVERY_DELAY",
-        "transcript": """
+        "thread_encoder": """
 Agent: Hi, this is Maria from ParcelLink. How may I help?
 
 Customer: Hi Maria, my package was supposed to arrive three days ago. Tracking says “out for delivery,” but nothing’s come.
@@ -213,7 +213,7 @@ Customer: Appreciate that. You’ve been really helpful.
     {
         "id": "call_009",
         "issue": "BILLING_DISPUTE",
-        "transcript": """
+        "thread_encoder": """
 Agent: Hi, thank you for contacting Streamly billing. This is Raj. How can I assist?
 
 Customer: Hi Raj, I was just checking my card statement and saw two charges for my monthly subscription — one for $14.99 and another for $16.99. What’s going on?
@@ -242,7 +242,7 @@ Customer: Nope, that’s all!
     {
         "id": "call_010",
         "issue": "CLAIM_STATUS",
-        "transcript": """
+        "thread_encoder": """
 Agent: Good afternoon, you’ve reached SafeSure Insurance. My name is Priya. How can I help?
 
 Customer: Hi Priya, I filed a car accident claim two weeks ago and haven’t heard back.
@@ -289,7 +289,6 @@ def show_comparison(transcript: str, metadata: dict):
     new_chars = len(new_result.compressed)
 
     print("\nCharacter count:")
-    print(f"  Compressed:  {new_result.compressed}")
     print(f"  Original:  {original_chars:>6} chars")
     print(
         f"  Compressed:       {new_chars:>6} chars ({(1 - new_chars / original_chars) * 100:>5.1f}% compression)"
@@ -316,17 +315,15 @@ if __name__ == "__main__":
     # analysis, new_result = show_comparison(test)
     for transcript in transcripts:
         if transcript["metadata"]["channel"] == "voice":
-            print(transcript)
             analysis, new_result = show_comparison(
                 transcript.get("transcript"), metadata=transcript.get("metadata")
             )
             result.append(
                 {
-                    **analysis,
-                    "compressed": new_result.model_dump(),
+                    # **analysis,
+                    "compressed": new_result.compressed,
                     "original": transcript.get("transcript"),
                 }
             )
-            break
     with open("transcript_analysis.json", "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False)

@@ -174,7 +174,7 @@ class CXTrainingDataGenerator:
         }
 
     def generate_transcript(self, issue_category: str) -> str:
-        """Generate realistic customer support transcript"""
+        """Generate realistic customer support thread_encoder"""
 
         issue = random.choice(self.customer_issues[issue_category])
 
@@ -205,7 +205,7 @@ class CXTrainingDataGenerator:
         # Agent resolution
         agent_resolution = random.choice(self.agent_responses["resolution"])
 
-        # Build transcript
+        # Build thread_encoder
         transcript = f"""{customer_start}
 Agent: {agent_empathy} {agent_investigation}
 {customer_followup}
@@ -336,7 +336,7 @@ Priority: {"URGENT" if issue_category in ["complaint", "technical"] else "HIGH" 
         issue_category = random.choice(list(self.customer_issues.keys()))
         issue = random.choice(self.customer_issues[issue_category])
 
-        # Just the customer message (not full transcript)
+        # Just the customer message (not full thread_encoder)
         customer_message = f"Customer: {issue}"
 
         instruction = random.choice(
@@ -523,7 +523,7 @@ NEXT STEPS:
 
         print("\nAverage Character Lengths:")
         print(f"  Compressed Instruction:  {avg_instruction:.0f} chars")
-        print(f"  Input (transcript):      {avg_input:.0f} chars")
+        print(f"  Input (thread_encoder):      {avg_input:.0f} chars")
         print(f"  Expected Output:         {avg_output:.0f} chars")
 
         # Compression stats

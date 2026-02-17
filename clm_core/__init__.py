@@ -8,8 +8,8 @@ from clm_core.types import (
 from clm_core.components.sys_prompt import PromptMode, PromptTemplate
 from clm_core.components.ds_compression import SDEncoderV2, SDEncoder
 from clm_core.components.sys_prompt.encoder import SysPromptEncoder
-from clm_core.components.transcript.encoder import TranscriptEncoder
-from clm_core.components.transcript import (
+from clm_core.components.thread_encoder.encoder import ThreadEncoder
+from clm_core.components.thread_encoder import (
     TranscriptCompressionResult,
     TranscriptAnalysis,
 )
@@ -33,7 +33,7 @@ __all__ = [
     "TranscriptAnalysis",
     "SDEncoderV2",
     "SDEncoder",
-    "TranscriptEncoder",
+    "ThreadEncoder",
     "SysPromptEncoder",
 ]
 

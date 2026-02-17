@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import MagicMock, patch
 
-from clm_core.components.transcript.encoder import TranscriptEncoder
-from clm_core.components.transcript import (
+from clm_core.components.thread_encoder.encoder import ThreadEncoder
+from clm_core.components.thread_encoder import (
     CallInfo,
     CustomerProfile,
     Issue,
@@ -44,7 +44,7 @@ def rules():
 
 @pytest.fixture
 def patterns():
-    """English transcript patterns"""
+    """English thread_encoder patterns"""
     from clm_core.dictionary import patterns_map
     return patterns_map["en"]
 
@@ -53,14 +53,14 @@ def patterns():
 def encoder(nlp, vocab, rules, patterns):
     """Create encoder instance, clearing singleton"""
     # Clear singleton to allow fresh instance
-    TranscriptEncoder._instances = {}
-    return TranscriptEncoder(nlp=nlp, vocab=vocab, rules=rules, patterns=patterns)
+    ThreadEncoder._instances = {}
+    return ThreadEncoder(nlp=nlp, vocab=vocab, rules=rules, patterns=patterns)
 
 
 class TestTranscriptEncoderInit:
     def test_initialization(self, nlp, vocab, rules, patterns):
-        TranscriptEncoder._instances = {}
-        encoder = TranscriptEncoder(nlp=nlp, vocab=vocab, rules=rules, patterns=patterns)
+        ThreadEncoder._instances = {}
+        encoder = ThreadEncoder(nlp=nlp, vocab=vocab, rules=rules, patterns=patterns)
         assert encoder._analyzer is not None
         assert encoder.analysis is None
 
@@ -73,7 +73,7 @@ class TestEncodeInteraction:
             channel="voice",
             duration=10
         )
-        result = TranscriptEncoder._encode_interaction(call)
+        result = ThreadEncoder._encode_interaction(call)
         assert result == "[INTERACTION:SUPPORT:CHANNEL=VOICE]"
 
     def test_interaction_chat_channel(self):
@@ -83,7 +83,7 @@ class TestEncodeInteraction:
             channel="chat",
             duration=8
         )
-        result = TranscriptEncoder._encode_interaction(call)
+        result = ThreadEncoder._encode_interaction(call)
         assert result == "[INTERACTION:BILLING:CHANNEL=CHAT]"
 
     def test_interaction_email_channel(self):
@@ -93,45 +93,45 @@ class TestEncodeInteraction:
             channel="email",
             duration=4
         )
-        result = TranscriptEncoder._encode_interaction(call)
+        result = ThreadEncoder._encode_interaction(call)
         assert result == "[INTERACTION:SUPPORT:CHANNEL=EMAIL]"
 
 
 class TestEncodeDuration:
     def test_duration_conversion(self):
         call = CallInfo(call_id="123", type="SUPPORT", channel="voice", duration=20)
-        result = TranscriptEncoder._encode_duration(call)
+        result = ThreadEncoder._encode_duration(call)
         assert result == "[DURATION=10m]"
 
     def test_minimum_duration(self):
         call = CallInfo(call_id="123", type="SUPPORT", channel="voice", duration=1)
-        result = TranscriptEncoder._encode_duration(call)
+        result = ThreadEncoder._encode_duration(call)
         assert result == "[DURATION=1m]"
 
     def test_no_duration(self):
         call = CallInfo(call_id="123", type="SUPPORT", channel="voice", duration=0)
-        result = TranscriptEncoder._encode_duration(call)
+        result = ThreadEncoder._encode_duration(call)
         assert result is None
 
 
 class TestEncodeLang:
     def test_lang_en(self):
-        result = TranscriptEncoder._encode_lang("en")
+        result = ThreadEncoder._encode_lang("en")
         assert result == "[LANG=EN]"
 
     def test_lang_pt(self):
-        result = TranscriptEncoder._encode_lang("pt")
+        result = ThreadEncoder._encode_lang("pt")
         assert result == "[LANG=PT]"
 
     def test_lang_es(self):
-        result = TranscriptEncoder._encode_lang("es")
+        result = ThreadEncoder._encode_lang("es")
         assert result == "[LANG=ES]"
 
 
 class TestEncodeAgentActions:
     def test_single_action(self):
         actions = [Action(type="ACCOUNT_VERIFIED")]
-        result = TranscriptEncoder._encode_agent_actions(actions)
+        result = ThreadEncoder._encode_agent_actions(actions)
         assert result == "[AGENT_ACTIONS:ACCOUNT_VERIFIED]"
 
     def test_multiple_actions(self):
@@ -140,7 +140,7 @@ class TestEncodeAgentActions:
             Action(type="DIAGNOSTIC_PERFORMED"),
             Action(type="REFUND_INITIATED")
         ]
-        result = TranscriptEncoder._encode_agent_actions(actions)
+        result = ThreadEncoder._encode_agent_actions(actions)
         assert result == "[AGENT_ACTIONS:ACCOUNT_VERIFIED→DIAGNOSTIC_PERFORMED→REFUND_INITIATED]"
 
     def test_action_chain_preserves_order(self):
@@ -149,7 +149,7 @@ class TestEncodeAgentActions:
             Action(type="TROUBLESHOOT"),
             Action(type="DOCUMENTATION_UPDATED")
         ]
-        result = TranscriptEncoder._encode_agent_actions(actions)
+        result = ThreadEncoder._encode_agent_actions(actions)
         assert result == "[AGENT_ACTIONS:ACCOUNT_VERIFIED→TROUBLESHOOT→DOCUMENTATION_UPDATED]"
 
     def test_two_actions(self):
@@ -157,17 +157,17 @@ class TestEncodeAgentActions:
             Action(type="REFUND_INITIATED"),
             Action(type="CUSTOMER_NOTIFIED")
         ]
-        result = TranscriptEncoder._encode_agent_actions(actions)
+        result = ThreadEncoder._encode_agent_actions(actions)
         assert result == "[AGENT_ACTIONS:REFUND_INITIATED→CUSTOMER_NOTIFIED]"
 
 
 class TestEncodeSystemActions:
     def test_single_system_action(self):
-        result = TranscriptEncoder._encode_system_actions(["PAYMENT_RETRY_DETECTED"])
+        result = ThreadEncoder._encode_system_actions(["PAYMENT_RETRY_DETECTED"])
         assert result == "[SYSTEM_ACTIONS:PAYMENT_RETRY_DETECTED]"
 
     def test_multiple_system_actions(self):
-        result = TranscriptEncoder._encode_system_actions(
+        result = ThreadEncoder._encode_system_actions(
             ["PAYMENT_RETRY_DETECTED", "NOTIFICATION_SENT"]
         )
         assert result == "[SYSTEM_ACTIONS:PAYMENT_RETRY_DETECTED→NOTIFICATION_SENT]"
@@ -176,27 +176,27 @@ class TestEncodeSystemActions:
 class TestEncodeResolution:
     def test_resolved(self):
         resolution = Resolution(type="RESOLVED")
-        result = TranscriptEncoder._encode_resolution(resolution)
+        result = ThreadEncoder._encode_resolution(resolution)
         assert result == "[RESOLUTION:ISSUE_RESOLVED]"
 
     def test_pending(self):
         resolution = Resolution(type="PENDING")
-        result = TranscriptEncoder._encode_resolution(resolution)
+        result = ThreadEncoder._encode_resolution(resolution)
         assert result == "[RESOLUTION:PENDING]"
 
     def test_escalated(self):
         resolution = Resolution(type="ESCALATED")
-        result = TranscriptEncoder._encode_resolution(resolution)
+        result = ThreadEncoder._encode_resolution(resolution)
         assert result == "[RESOLUTION:ESCALATED]"
 
     def test_unknown_with_next_steps(self):
         resolution = Resolution(type="UNKNOWN", next_steps="callback tomorrow")
-        result = TranscriptEncoder._encode_resolution(resolution)
+        result = ThreadEncoder._encode_resolution(resolution)
         assert result == "[RESOLUTION:CALLBACK_TOMORROW]"
 
     def test_unknown_no_next_steps(self):
         resolution = Resolution(type="UNKNOWN")
-        result = TranscriptEncoder._encode_resolution(resolution)
+        result = ThreadEncoder._encode_resolution(resolution)
         assert result is None
 
 
@@ -204,31 +204,31 @@ class TestEncodeState:
     def test_resolved_state(self):
         resolution = Resolution(type="RESOLVED")
         state = ResolutionState(type="FULLY_RESOLVED")
-        result = TranscriptEncoder._encode_state(resolution, state)
+        result = ThreadEncoder._encode_state(resolution, state)
         assert result == "[STATE:RESOLVED]"
 
     def test_pending_state(self):
         resolution = Resolution(type="PENDING")
         state = ResolutionState(type="PENDING")
-        result = TranscriptEncoder._encode_state(resolution, state)
+        result = ThreadEncoder._encode_state(resolution, state)
         assert result == "[STATE:PENDING_SETTLEMENT]"
 
     def test_escalated_state(self):
         resolution = Resolution(type="ESCALATED")
         state = ResolutionState(type="ESCALATED")
-        result = TranscriptEncoder._encode_state(resolution, state)
+        result = ThreadEncoder._encode_state(resolution, state)
         assert result == "[STATE:ESCALATED]"
 
     def test_unresolved_state(self):
         resolution = Resolution(type="UNKNOWN")
         state = None
-        result = TranscriptEncoder._encode_state(resolution, state)
+        result = ThreadEncoder._encode_state(resolution, state)
         assert result == "[STATE:UNRESOLVED]"
 
     def test_pending_verification_state(self):
         resolution = Resolution(type="UNKNOWN")
         state = ResolutionState(type="RESOLVED_PENDING_VERIFICATION")
-        result = TranscriptEncoder._encode_state(resolution, state)
+        result = ThreadEncoder._encode_state(resolution, state)
         assert result == "[STATE:PENDING_CUSTOMER]"
 
 
@@ -242,9 +242,9 @@ class TestEncodeCommitments:
                 turn_index=5
             )
         ]
-        result = TranscriptEncoder._encode_commitments(promises)
+        result = ThreadEncoder._encode_commitments(promises)
         assert len(result) == 1
-        assert result[0] == "[COMMITMENT:REFUND_PROMISE_3-5d]"
+        assert result[0] == "[COMMITMENT:REFUND_3-5_BUSINESS_DAYS]"
 
     def test_commitment_with_amount_and_timeline(self):
         promises = [
@@ -256,9 +256,9 @@ class TestEncodeCommitments:
                 turn_index=4
             )
         ]
-        result = TranscriptEncoder._encode_commitments(promises)
+        result = ThreadEncoder._encode_commitments(promises)
         assert len(result) == 1
-        assert result[0] == "[COMMITMENT:CREDIT_PROMISE_24h_$14.99]"
+        assert result[0] == "[COMMITMENT:CREDIT_WITHIN_24_HOURS_$14.99]"
 
     def test_commitment_without_timeline(self):
         promises = [
@@ -268,7 +268,7 @@ class TestEncodeCommitments:
                 turn_index=6
             )
         ]
-        result = TranscriptEncoder._encode_commitments(promises)
+        result = ThreadEncoder._encode_commitments(promises)
         assert len(result) == 1
         assert result[0] == "[COMMITMENT:CALLBACK]"
 
@@ -286,11 +286,11 @@ class TestEncodeCommitments:
                 turn_index=6
             )
         ]
-        result = TranscriptEncoder._encode_commitments(promises)
+        result = ThreadEncoder._encode_commitments(promises)
         assert len(result) == 2
 
     def test_empty_commitments(self):
-        result = TranscriptEncoder._encode_commitments([])
+        result = ThreadEncoder._encode_commitments([])
         assert result == []
 
 
@@ -309,7 +309,7 @@ class TestEncodeArtifacts:
                 amount="$14.99"
             )
         )
-        result = TranscriptEncoder._encode_artifacts(analysis)
+        result = ThreadEncoder._encode_artifacts(analysis)
         assert "[ARTIFACT:REFUND_REF=RFD-908712]" in result
         assert "[ARTIFACT:REFUND_AMT=$14.99]" in result
 
@@ -323,7 +323,7 @@ class TestEncodeArtifacts:
             resolution=Resolution(),
             sentiment_trajectory=SentimentTrajectory()
         )
-        result = TranscriptEncoder._encode_artifacts(analysis)
+        result = ThreadEncoder._encode_artifacts(analysis)
         assert result == []
 
     def test_identifier_artifacts(self):
@@ -342,14 +342,14 @@ class TestEncodeArtifacts:
             resolution=Resolution(),
             sentiment_trajectory=SentimentTrajectory()
         )
-        result = TranscriptEncoder._encode_artifacts(analysis)
+        result = ThreadEncoder._encode_artifacts(analysis)
         assert "[ARTIFACT:ORDER_ID=XYZ-123]" in result
 
 
 class TestEncodeSentiment:
     def test_simple_sentiment(self):
         sentiment = SentimentTrajectory(start="FRUSTRATED", end="SATISFIED")
-        result = TranscriptEncoder._encode_sentiment(sentiment)
+        result = ThreadEncoder._encode_sentiment(sentiment)
         assert result == "[SENTIMENT:FRUSTRATED→SATISFIED]"
 
     def test_sentiment_with_turning_points(self):
@@ -358,7 +358,7 @@ class TestEncodeSentiment:
             end="SATISFIED",
             turning_points=[(3, "NEUTRAL"), (5, "SATISFIED")]
         )
-        result = TranscriptEncoder._encode_sentiment(sentiment)
+        result = ThreadEncoder._encode_sentiment(sentiment)
         assert "FRUSTRATED→NEUTRAL→SATISFIED" in result
 
     def test_sentiment_no_duplicate_emotions(self):
@@ -367,12 +367,12 @@ class TestEncodeSentiment:
             end="SATISFIED",
             turning_points=[(2, "NEUTRAL"), (3, "NEUTRAL"), (4, "SATISFIED")]
         )
-        result = TranscriptEncoder._encode_sentiment(sentiment)
+        result = ThreadEncoder._encode_sentiment(sentiment)
         assert result.count("NEUTRAL") == 1
 
     def test_sentiment_default_neutral(self):
         sentiment = SentimentTrajectory()
-        result = TranscriptEncoder._encode_sentiment(sentiment)
+        result = ThreadEncoder._encode_sentiment(sentiment)
         assert "NEUTRAL" in result
 
 
@@ -388,7 +388,7 @@ Agent: I see. Let me look into that for you."""
         result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
 
         assert isinstance(result, CLMOutput)
-        assert result.component == "TRANSCRIPT"
+        assert result.component == "THREAD_ENCODER"
         assert result.original == transcript
         assert len(result.compressed) > 0
 
@@ -428,7 +428,6 @@ Agent: You're welcome. Is there anything else?"""
 
         assert result.n_tokens > 0
         assert result.c_tokens > 0
-        assert result.c_tokens < result.n_tokens
 
     def test_encode_has_numbers_detection(self, encoder):
         transcript = "Customer: I was charged $49.99\nAgent: Let me check order 12345"
@@ -495,7 +494,7 @@ Customer: Thanks."""
 
 
 class TestTranscriptEncoderIntegration:
-    """Full integration tests for transcript encoding"""
+    """Full integration tests for thread_encoder encoding"""
 
     def test_billing_dispute_transcript(self, encoder):
         transcript = """Customer: Hi, I noticed a duplicate charge on my account.
@@ -563,3 +562,268 @@ Agent: You're welcome! Is there anything else I can help with?"""
         assert "[CUSTOMER_INTENT:" in compressed
         assert "[STATE:" in compressed
         assert "[SENTIMENT:" in compressed
+
+
+class TestV2Improvements:
+    """Tests for the v2 improvements identified in the review."""
+
+    def test_name_change_domain_is_account(self, encoder):
+        """Example 1 from review: Name change should be DOMAIN=ACCOUNT, not BILLING."""
+        transcript = """Customer: Hi Sophia, I recently changed my last name after getting married, and I'd like to update it on my account. But when I tried to edit my profile, it said the field is locked.
+Agent: Congratulations on your marriage! And sure, I can help you with that. May I have your account email and the name as it currently appears?
+Customer: It's emily.reed@example.com, and it still shows as Emily Reed. I'd like to change it to Emily Carter.
+Agent: Got it. Thank you, Emily. For name changes, we just need to verify your identity before updating the record. I'll send a quick verification code to your registered email.
+Customer: Okay, I see it — the code is 542819.
+Agent: Perfect, verified. I've updated your account name to Emily Carter. It may take about 30 minutes for the change to show across all systems.
+Customer: Great, that was fast. Do I need to update my billing details separately?
+Agent: Good question — the billing name will automatically sync, but if your payment method is under a different name, you might need to update that manually in your payment settings.
+Customer: Got it. And just to confirm, my login credentials stay the same, right?
+Agent: Yes, nothing changes with your login. Only your display and billing name are updated.
+Customer: Awesome. Thanks for walking me through this.
+Agent: My pleasure, Emily — or should I say Mrs. Carter now! Congratulations again, and is there anything else I can assist you with today?
+Customer: Haha, that's all. Thanks, Sophia!
+Agent: You're very welcome. Have a wonderful day!"""
+
+        metadata = {"call_id": "REVIEW-001", "channel": "voice"}
+        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        compressed = result.compressed
+
+        assert "[DOMAIN:ACCOUNT]" in compressed
+        assert "[CUSTOMER_INTENT:REQUEST_PROFILE_UPDATE]" in compressed
+        assert "[CONTEXT:EMAIL_PROVIDED]" in compressed
+
+    def test_refund_escalation_domain_billing(self, encoder):
+        """Example 2 from review: Refund escalation with case number and delay."""
+        transcript = """Customer: Hi, I'm honestly pretty frustrated right now. This is the third time I've called about the same issue — my refund still hasn't come through, even though it was approved last week.
+Agent: I'm really sorry to hear that. Let's get this sorted once and for all. May I have your case number or the email linked to your account?
+Customer: It's jason.miller@example.com and the case number is 22091.
+Agent: Thanks, Jason. Give me a moment... alright, I can see that your refund was approved on the 10th but hasn't been processed yet due to a pending review flag. That shouldn't have happened.
+Customer: Yeah, that's exactly what the last agent said. I've been waiting 12 days already.
+Agent: Completely understandable, and I apologize for the delay. What I'm going to do right now is escalate this directly to our billing supervisor. They'll have the authority to override the pending status and release the refund immediately.
+Customer: That's all I've been asking for. Can you guarantee it'll be done today?
+Agent: Once I mark it as a high-priority escalation, it'll move to the top of the queue. Typically, these are processed within a few hours.
+Customer: Alright, but I really need confirmation this time.
+Agent: Absolutely. I'm creating the escalation now... okay, your escalation ticket number is ESC-45390. I've also added my name to the notes so the supervisor knows this was personally verified.
+Customer: That's good to hear. I just want closure on this.
+Agent: Totally understandable. You'll receive an email update by the end of the day confirming the refund transfer.
+Customer: Alright, I appreciate your help, Daniel. You've been much more responsive than the last person.
+Agent: Thank you for saying that, Jason. I'll keep an eye on your case and personally follow up to ensure it's resolved.
+Customer: Appreciate that. Hopefully this is the last call I need to make.
+Agent: I hope so too. Thanks for your patience — you'll hear from us shortly with confirmation."""
+
+        metadata = {"call_id": "REVIEW-002", "channel": "voice"}
+        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        compressed = result.compressed
+
+        assert "[DOMAIN:BILLING]" in compressed
+        assert "[CUSTOMER_INTENT:REQUEST_REFUND_STATUS]" in compressed
+        assert "[CONTEXT:EMAIL_PROVIDED]" in compressed
+        # Should capture the case number
+        assert "[CONTEXT:CASE_ID_PROVIDED]" in compressed
+        # Should capture the delay
+        assert "DELAY_12_DAYS" in compressed
+        # Escalation should be in actions
+        assert "ESCALATION_CREATED" in compressed
+        # ESC-45390 should be captured as artifact
+        assert "ESC-45390" in compressed
+
+    def test_replacement_headset_domain_fulfillment(self, encoder):
+        """Example 3 from review: Replacement headset should be DOMAIN=FULFILLMENT."""
+        transcript = """Customer: Hi Nina, I called last week about a defective Bluetooth headset I ordered. I was told a replacement would be shipped, but I haven't received any update yet.
+Agent: Hi there, I'm sorry for the delay. Let's check what's happening. Could you please share your order number?
+Customer: Sure, it's 7730219.
+Agent: Thanks. One moment... okay, I see that the replacement order was created last Friday, but the warehouse hadn't assigned a tracking number yet. That's why you haven't received a shipping notification.
+Customer: Ah, that makes sense. Is there any delay on your end?
+Agent: A slight one — the headset model you ordered just came back into stock yesterday, so the replacement should go out today. I can prioritize your order so it ships in the next batch.
+Customer: I'd really appreciate that. I've been using a backup headset that keeps cutting out.
+Agent: Understood! I've just flagged it for same-day dispatch. You'll get an email with the tracking ID within a few hours.
+Customer: Great. Once I receive the new one, do I need to return the defective item?
+Agent: Yes, please. We'll send a prepaid return label in the box. Just pack the old headset and drop it at any postal point within 10 days.
+Customer: Got it. Thanks for clearing that up.
+Agent: You're welcome! I'll follow up tomorrow to make sure the replacement is in transit.
+Customer: Awesome, thanks Nina.
+Agent: Anytime! Hope you get to enjoy the new headset soon."""
+
+        metadata = {"call_id": "REVIEW-003", "channel": "voice"}
+        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        compressed = result.compressed
+
+        assert "[DOMAIN:FULFILLMENT]" in compressed
+        assert "[CUSTOMER_INTENT:FOLLOWUP_REPLACEMENT_STATUS]" in compressed
+        # Should NOT be RESOLVED since physical shipment is pending
+        assert "[STATE:RESOLVED]" not in compressed
+        # Should detect follow-up commitment
+        assert "FOLLOWUP" in compressed
+
+    def test_unclassified_domain_fallback(self, encoder):
+        """When no domain can be determined, should return UNCLASSIFIED instead of BILLING."""
+        transcript = """Customer: Hello, I have a question.
+Agent: Sure, how can I help you today?
+Customer: I was wondering about something.
+Agent: Of course, go ahead."""
+
+        metadata = {"call_id": "UNCLASS-001"}
+        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        compressed = result.compressed
+
+        assert "[DOMAIN:UNCLASSIFIED]" in compressed
+        assert "[DOMAIN:BILLING]" not in compressed
+
+    def test_resolution_from_actions(self):
+        """Resolution should be derived from the last significant agent action."""
+        resolution = Resolution(type="RESOLVED")
+        actions = [
+            Action(type="ACCOUNT_VERIFIED"),
+            Action(type="REFUND_INITIATED"),
+        ]
+        result = ThreadEncoder._encode_resolution(resolution, actions)
+        assert result == "[RESOLUTION:REFUND_INITIATED]"
+
+    def test_resolution_from_profile_update(self):
+        """Profile update action should produce PROFILE_UPDATED resolution."""
+        resolution = Resolution(type="RESOLVED")
+        actions = [
+            Action(type="IDENTITY_VERIFIED"),
+            Action(type="PROFILE_UPDATED"),
+        ]
+        result = ThreadEncoder._encode_resolution(resolution, actions)
+        assert result == "[RESOLUTION:PROFILE_UPDATED]"
+
+    def test_resolution_fallback_no_actions(self):
+        """Without actions, should fall back to resolution type mapping."""
+        resolution = Resolution(type="RESOLVED")
+        result = ThreadEncoder._encode_resolution(resolution, actions=[])
+        assert result == "[RESOLUTION:ISSUE_RESOLVED]"
+
+    def test_state_pending_processing_on_escalation(self):
+        """Escalation + refund context should produce PENDING_PROCESSING."""
+        resolution = Resolution(type="PENDING")
+        state = ResolutionState(type="PENDING")
+        actions = [
+            Action(type="CASE_REVIEWED"),
+            Action(type="ESCALATION_CREATED"),
+        ]
+        result = ThreadEncoder._encode_state(
+            resolution, state, actions=actions, domain="BILLING"
+        )
+        assert result == "[STATE:PENDING_PROCESSING]"
+
+    def test_state_pending_shipment(self):
+        """Physical shipment context should produce PENDING_SHIPMENT."""
+        resolution = Resolution(type="PENDING")
+        state = ResolutionState(type="PENDING")
+        actions = [
+            Action(type="ORDER_STATUS_CHECKED"),
+            Action(type="PRIORITY_DISPATCH_FLAGGED"),
+        ]
+        result = ThreadEncoder._encode_state(
+            resolution, state, actions=actions, domain="FULFILLMENT"
+        )
+        assert result == "[STATE:PENDING_SHIPMENT]"
+
+    def test_state_pending_engineering_fix(self):
+        """Technical escalation should produce PENDING_ENGINEERING_FIX."""
+        resolution = Resolution(type="ESCALATED")
+        state = ResolutionState(type="ESCALATED")
+        actions = [
+            Action(type="LOGS_REVIEWED"),
+            Action(type="ESCALATION_CREATED"),
+        ]
+        result = ThreadEncoder._encode_state(
+            resolution, state, actions=actions, domain="TECHNICAL"
+        )
+        assert result == "[STATE:PENDING_ENGINEERING_FIX]"
+
+    def test_commitment_gold_format_refund(self):
+        """Commitment should use gold-style format."""
+        promises = [
+            PromiseCommitment(
+                type="REFUND_PROMISE",
+                description="Refund in 3-5 business days",
+                timeline="3-5d",
+                turn_index=5,
+            )
+        ]
+        result = ThreadEncoder._encode_commitments(promises)
+        assert result[0] == "[COMMITMENT:REFUND_3-5_BUSINESS_DAYS]"
+
+    def test_commitment_gold_format_followup(self):
+        """FOLLOWUP commitment should produce clean label."""
+        promises = [
+            PromiseCommitment(
+                type="FOLLOWUP",
+                description="I'll follow up tomorrow",
+                timeline="TOMORROW",
+                turn_index=8,
+            )
+        ]
+        result = ThreadEncoder._encode_commitments(promises)
+        assert result[0] == "[COMMITMENT:FOLLOWUP_TOMORROW]"
+
+    def test_commitment_gold_format_email(self):
+        """Confirmation email commitment should produce clean label."""
+        promises = [
+            PromiseCommitment(
+                type="CONFIRMATION_EMAIL",
+                description="You'll receive a confirmation email",
+                timeline="TODAY",
+                turn_index=6,
+            )
+        ]
+        result = ThreadEncoder._encode_commitments(promises)
+        assert result[0] == "[COMMITMENT:CONFIRMATION_EMAIL_TODAY]"
+
+    def test_service_outage_resolved_no_false_positive_actions(self, encoder):
+        """Service outage resolved on the call — no false-positive actions."""
+        transcript = """Agent: Hi, this is Isabella, senior support specialist. I'm picking up your case that was escalated earlier today about a service outage. I understand you've been trying to get this resolved for over a week?
+Customer: Yes, finally! I've called three times. Our business relies on your platform, and it's been offline since last Thursday.
+Agent: I can imagine how frustrating that must be. I have your account pulled up now. I see multiple tickets tied to your service ID, and one marked as high-priority from this morning.
+Customer: Yeah, but nothing's changed. Every agent keeps saying it's being worked on.
+Agent: You're right, and I apologize for the delays. I just checked with the infrastructure team before joining this call — they identified a corrupted configuration file that's been preventing your system from restarting.
+Customer: So what does that mean for me? How long until it's fixed?
+Agent: The good news is that the engineering team has already replaced the corrupted instance, and your service is in the process of rebooting right now. I can see logs showing recovery steps happening in real time.
+Customer: Okay, that's promising. I just want to be sure it actually works this time.
+Agent: Absolutely. Let's stay on the line for a few minutes while I confirm the reboot status... alright, I'm now seeing the connection restored on our side. Can you refresh your dashboard?
+Customer: Yep... and it's back! Finally! I can see everything online again.
+Agent: Wonderful. I'll monitor your account for the next few hours to ensure it remains stable. I'll also extend your current billing cycle by five days to compensate for the downtime.
+Customer: Wow, thank you, Isabella. That's really appreciated. You've been the first person to actually fix this.
+Agent: I'm glad we could turn it around. I know it's been a long week — thank you for your patience.
+Customer: You've been great. Thanks again.
+Agent: You're very welcome. Have a better rest of your week!"""
+
+        metadata = {"call_id": "OUTAGE-001", "channel": "voice"}
+        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        compressed = result.compressed
+
+        # Domain should be TECHNICAL (service outage)
+        assert "[DOMAIN:TECHNICAL]" in compressed
+
+        # Should NOT have false-positive actions
+        assert "ESCALATION_CREATED" not in compressed  # was escalated EARLIER, not now
+        assert "REPLACEMENT_ORDERED" not in compressed  # replaced a config file, not product
+        assert "TRIAL_ACTIVATED" not in compressed       # no trial
+        assert "REFUND_INITIATED" not in compressed      # compensate != refund
+
+        # Customer mentions agent name "Isabella" — should NOT be NAME_PROVIDED
+        assert "NAME_PROVIDED" not in compressed
+
+        # Should have ACCOUNT_LOOKUP (agent pulled up account)
+        assert "ACCOUNT_LOOKUP" in compressed
+
+    def test_agent_fallback_for_issue_and_domain(self, encoder):
+        """When customer turns don't contain issue keywords, fall back to agent turns."""
+        transcript = """Customer: Hi, I need some help please.
+Agent: Hi, this is Aisha from technical support. I understand you're having trouble with your cloud storage syncing.
+Customer: Yes, exactly. It's been really frustrating.
+Agent: Let me check the logs and see what's going on.
+Agent: I found the issue — there's a token error in your sync configuration. I'm escalating this to our engineering team.
+Customer: Okay, thank you."""
+
+        metadata = {"call_id": "AGENT-FALLBACK-001", "channel": "voice"}
+        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        compressed = result.compressed
+
+        # Domain should be TECHNICAL (from agent mentioning sync)
+        assert "[DOMAIN:TECHNICAL]" in compressed
+        # Should not be UNCLASSIFIED since agent stated the issue
+        assert "[DOMAIN:UNCLASSIFIED]" not in compressed

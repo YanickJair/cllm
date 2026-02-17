@@ -12,7 +12,7 @@ import anthropic
 SYSTEM_PROMPT = """You are an NBA (Next Best Action) recommendation system for customer service agents.
 
 TASK:
-Analyze the customer service transcript and recommend the top 2 most relevant NBAs from the provided catalog.
+Analyze the customer service thread_encoder and recommend the top 2 most relevant NBAs from the provided catalog.
 
 ANALYSIS CRITERIA:
 - Customer's primary issue and intent
@@ -174,7 +174,7 @@ class RunCLMBenchmark:
                         messages=[
                             {
                                 "role": "user",
-                                "content": f"""Analyze the following call transcript:
+                                "content": f"""Analyze the following call thread_encoder:
                             TRANSCRIPT:
                             {tc}
     
@@ -213,7 +213,7 @@ class RunCLMBenchmark:
                         messages=[
                             {
                                 "role": "user",
-                                "content": f"""Analyze the following call transcript:
+                                "content": f"""Analyze the following call thread_encoder:
                             TRANSCRIPT:
                             {to}
     

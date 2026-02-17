@@ -20,6 +20,64 @@ EXPLICIT_ACTION_PHRASES = {
         "i changed your plan",
         "i have changed your settings",
     },
+    "ESCALATION_CREATED": {
+        "i'm escalating",
+        "i am escalating",
+        "i'll escalate",
+        "i will escalate",
+        "escalate this",
+        "creating the escalation",
+        "creating an escalation",
+        "submit to escalation",
+        "escalating this to",
+        "escalate this directly",
+        "open escalation case",
+    },
+    "REPLACEMENT_ORDERED": {
+        "ship replacement",
+        "send a replacement",
+        "replacement order",
+        "replacement will be shipped",
+        "send you a new one",
+        "ship a new one",
+        "replacement should go out",
+        "process replacement",
+        "issue replacement",
+        "replacement has been",
+        "ordering a replacement",
+    },
+    "TRIAL_ACTIVATED": {
+        "i'll activate your trial",
+        "trial activated",
+        "activated your trial",
+        "trial has been activated",
+        "started your trial",
+        "your trial is now active",
+        "enabled your trial",
+    },
+    "ACCOUNT_VERIFIED": {
+        "verified your account",
+        "i've verified your account",
+        "your account has been verified",
+        "verified your identity",
+        "identity verified",
+        "verification successful",
+        "i have verified your",
+        "account verified",
+        "just need to verify your identity",
+    },
+    "REFUND_INITIATED": {
+        "initiated a refund",
+        "refund has been initiated",
+        "processing your refund",
+        "submitted a refund",
+        "process a refund",
+        "i'll process a refund",
+        "issued a refund",
+        "refund will be processed",
+        "refund of",
+        "issue a refund",
+    },
 }
 TECHNICAL_ISSUE_MAP = {
     "OUTAGE": ["outage", "down", "offline", "multiple customers"],
@@ -30,6 +88,11 @@ EXPLICIT_ONLY_ACTIONS = {
     "DOCUMENTATION_UPDATED",
     "ACCOUNT_UPDATED",
     "REQUEST_APPROVED",
+    "ESCALATION_CREATED",
+    "REPLACEMENT_ORDERED",
+    "TRIAL_ACTIVATED",
+    "ACCOUNT_VERIFIED",
+    "REFUND_INITIATED",
 }
 TROUBLESHOOTING_ACTIONS = {
     "TROUBLESHOOTING_PERFORMED": {
@@ -67,6 +130,85 @@ ACTION_EVENT_MAP = {
     "NOTIFY": "CUSTOMER_NOTIFIED",
     "DOCUMENT": "DOCUMENTATION_UPDATED",
     "ACTIVATE_TRIAL": "TRIAL_ACTIVATED",
+    "REFUND": "REFUND_INITIATED",
+    "FOLLOW_UP": "FOLLOWUP_SCHEDULED",
+}
+
+# Explicit phrase-matched agent actions (bypass keyword index, require exact phrase match)
+EXPLICIT_AGENT_ACTION_PHRASES = {
+    "ACCOUNT_LOOKUP": [
+        "pulled up your account", "let me check your account",
+        "looking at your account", "i have your account",
+    ],
+    "CASE_REVIEWED": [
+        "reviewed your case", "looking at your case", "checked your case",
+        "reviewed the case",
+    ],
+    "ORDER_STATUS_CHECKED": [
+        "checked your order", "looking at your order", "i see your order",
+        "checked the order status",
+    ],
+    "FOLLOWUP_SCHEDULED": [
+        "i'll follow up", "follow up tomorrow", "personally follow up",
+        "follow up with you",
+    ],
+    "IDENTITY_VERIFIED": [
+        "verified your identity", "identity verified", "verification successful",
+        "identity has been verified",
+    ],
+    "PROFILE_UPDATED": [
+        "updated your account name", "changed your profile", "updated your profile",
+        "name has been updated", "profile has been updated", "updated your name",
+    ],
+    "PRIORITY_DISPATCH_FLAGGED": [
+        "flagged for same-day", "prioritize your order", "flagged it for",
+        "priority dispatch",
+    ],
+    "LOGS_REVIEWED": [
+        "reviewed the logs", "checked the logs", "looking at the logs",
+        "reviewed your logs",
+    ],
+    "FEE_REVIEWED": [
+        "reviewed the fee", "looked at the charge", "checked the fee",
+        "reviewed the charge",
+    ],
+    "FEE_WAIVED": [
+        "waived the fee", "removed the fee", "fee has been waived",
+        "waive that fee",
+    ],
+    "CREDIT_APPLIED": [
+        "applied a credit", "credit has been applied", "credited your account",
+        "applied the credit",
+    ],
+    "REFUND_INITIATED": [
+        "initiated a refund", "refund has been initiated", "processing your refund",
+        "submitted a refund", "process a refund", "i'll process a refund",
+    ],
+    "PASSWORD_RESET": [
+        "reset your password", "password has been reset", "sent a reset link",
+    ],
+    "SERVICE_RESTORED": [
+        "service has been restored", "restored your service", "service is back",
+    ],
+    "PLAN_UPGRADED": [
+        "upgraded your plan", "plan has been upgraded", "upgrade is complete",
+    ],
+    "SUBSCRIPTION_PAUSED": [
+        "paused your subscription", "subscription has been paused",
+        "put your subscription on hold",
+    ],
+    "DUPLICATE_PAYMENT_CONFIRMED": [
+        "confirmed the duplicate", "duplicate payment confirmed",
+        "can see the duplicate", "i can confirm the duplicate",
+    ],
+    "FEATURES_EXPLAINED": [
+        "let me explain the features", "the plan includes", "you'll get access to",
+        "comes with", "includes the following",
+    ],
+    "PRICING_EXPLAINED": [
+        "the pricing is", "it costs", "the price is", "monthly fee is",
+        "costs per month",
+    ],
 }
 ISSUE_CONFIRMATION_MAP = {
     "DUPLICATE_CHARGE_CONFIRMED": {
@@ -142,9 +284,21 @@ BILLING_CAUSE_KEYWORDS = {
 }
 
 ISSUE_TYPE_KEYWORDS = {
-    "BILLING_DISPUTE": {"bill", "charge", "refund"},
+    "BILLING_DISPUTE": {"bill", "charge", "refund", "charged"},
     "CONNECTIVITY": {"internet", "connection", "wifi"},
     "PERFORMANCE": {"slow", "speed"},
+    "ACCOUNT_UPDATE": {"update my", "change my name", "profile update", "locked out", "update my name"},
+    "REFUND_ISSUE": {"refund", "money back", "reimburse", "hasn't come through", "refund status"},
+    "DELIVERY_ISSUE": {"delivery", "shipped", "tracking", "replacement", "haven't received", "where is my order"},
+    "SECURITY_ISSUE": {"unauthorized", "hacked", "suspicious", "someone logged", "someone accessed"},
+    "SUBSCRIPTION_ISSUE": {"cancel subscription", "pause", "downgrade", "plan change", "cancel my subscription"},
+    "PRODUCT_ISSUE": {"defective", "not working", "broken", "installation"},
+    "OUTAGE": {"outage", "down", "offline", "service disruption", "service is down"},
+    "SYNC_ISSUE": {"sync", "syncing", "not syncing", "sync error"},
+    "DUPLICATE_CHARGE": {"duplicate charge", "charged twice", "double charged", "duplicate payment"},
+    "LOGIN_FAILURE": {"can't log in", "locked out", "can't access my account", "login issue"},
+    "PLAN_UPGRADE": {"upgrade", "what features", "upgrade my plan"},
+    "FEE_DISPUTE": {"fee", "charged a fee", "service fee", "late fee"},
 }
 
 SEVERITY_KEYWORDS = {
@@ -548,7 +702,7 @@ COMPOUND_PHRASES = {
     "customer support": "TICKET",
     "support ticket": "TICKET",
     "email message": "EMAIL",
-    "chat transcript": "TRANSCRIPT",
+    "chat thread_encoder": "TRANSCRIPT",
     "phone call": "CALL",
     "source code": "CODE",
 }
@@ -609,6 +763,16 @@ NER_DOMAIN_PATTERNS = {
         r"\bCS-?\d{5,12}\b",
         r"\bcase(?: number)?[:\s#]+([A-Z0-9-]+)\b",
         r"\bCSE-?\d{5,12}\b",
+        r"\bcase\s*(?:number)?\s*(?:is)?\s*(\d{4,})\b",
+    ],
+    "ESCALATION_ID": [
+        r"\bESC-?\d{4,10}\b",
+        r"\bTEC-?\d{4,10}\b",
+        r"\bescalation[:\s#]+([A-Z0-9-]+)\b",
+    ],
+    "VERIFICATION_CODE": [
+        r"\b(?:code|verification)\s*(?:is|:)?\s*(\d{4,8})\b",
+        r"\bverification\s+code\s*(?:is|:)?\s*(\d{4,8})\b",
     ],
     "PRODUCT_MODEL": [
         r"\b([A-Z]{2,4}-\d{3,5}[A-Z]?)\b",
@@ -874,14 +1038,47 @@ EMOTION_KEYWORDS = {
     "APATHETIC": {
         "keywords": [
             "whatever",
-            "doesn’t matter",
-            "I don’t care",
+            "doesn't matter",
+            "I don't care",
             "meh",
-            "it’s fine",
+            "it's fine",
             "not a big deal",
             "whatever you say",
         ],
         "intensity": 0.3,
+    },
+    "CURIOUS": {
+        "keywords": [
+            "curious",
+            "wondering",
+            "interested",
+            "what about",
+            "tell me more",
+            "i'd like to know",
+        ],
+        "intensity": 0.4,
+    },
+    "ALARMED": {
+        "keywords": [
+            "alarmed",
+            "panicked",
+            "someone accessed",
+            "unauthorized",
+            "scared",
+            "terrified",
+        ],
+        "intensity": 0.8,
+    },
+    "REASSURED": {
+        "keywords": [
+            "reassured",
+            "feel better",
+            "that's good to know",
+            "puts my mind at ease",
+            "good to hear",
+            "makes me feel better",
+        ],
+        "intensity": 0.5,
     },
 }
 
@@ -917,4 +1114,248 @@ NER_ADDRESS_ABBREVIATIONS = {
     "Boulevard": "Blvd",
     "Court": "Ct",
     "Place": "Pl",
+}
+
+SYSTEM_ACTION_KEYWORDS = {
+    "PAYMENT_RETRY_DETECTED": [
+        "payment retry",
+        "auto-retry",
+        "automatic retry",
+        "system retried",
+    ],
+    "AUTO_ESCALATION_TRIGGERED": [
+        "auto-escalated",
+        "automatically escalated",
+        "system escalated",
+    ],
+    "SLA_BREACH_DETECTED": [
+        "sla breach",
+        "sla violation",
+        "exceeded sla",
+    ],
+    "FRAUD_ALERT_TRIGGERED": [
+        "fraud alert",
+        "fraud detected",
+        "suspicious activity",
+    ],
+    "ACCOUNT_AUTO_LOCKED": [
+        "account automatically locked",
+        "auto-locked",
+        "system locked",
+    ],
+    "NOTIFICATION_SENT": [
+        "notification sent",
+        "automated email",
+        "system notification",
+    ],
+}
+
+ISSUE_TO_INTENT = {
+    "BILLING_DISPUTE": "REPORT_BILLING_ISSUE",
+    "DUPLICATE_CHARGE": "REPORT_DUPLICATE_CHARGE",
+    "PAYMENT_FAILED": "REPORT_PAYMENT_FAILURE",
+    "MISSING_REFUND": "REQUEST_REFUND_STATUS",
+    "REFUND_DELAY": "REQUEST_REFUND_STATUS",
+    "REFUND_REQUEST": "REQUEST_REFUND",
+    "UNEXPECTED_CHARGE": "REPORT_UNEXPECTED_CHARGE",
+    "OVERCHARGE": "REPORT_OVERCHARGE",
+    "LOGIN_FAILURE": "REPORT_LOGIN_ISSUE",
+    "AUTHENTICATION_ERROR": "REPORT_AUTH_ERROR",
+    "ACCOUNT_LOCKED": "ACCOUNT_UNLOCK",
+    "ACCOUNT_HACKED": "REPORT_SECURITY_BREACH",
+    "INTERNET_OUTAGE": "REPORT_OUTAGE",
+    "SLOW_INTERNET": "REPORT_SLOW_PERFORMANCE",
+    "SERVER_DOWN": "REPORT_OUTAGE",
+    "CONNECTIVITY": "REPORT_CONNECTIVITY_ISSUE",
+    "WIFI_ISSUE": "REPORT_CONNECTIVITY_ISSUE",
+    "DELIVERY_DELAY": "REPORT_DELIVERY_DELAY",
+    "LOST_PACKAGE": "REPORT_LOST_PACKAGE",
+    "DAMAGED_PACKAGE": "REPORT_DAMAGED_ITEM",
+    "WRONG_ITEM": "REPORT_WRONG_ITEM",
+    "SUBSCRIPTION_CANCELLATION": "CANCEL_SUBSCRIPTION",
+    "PLAN_UPGRADE": "REQUEST_PLAN_CHANGE",
+    "PLAN_DOWNGRADE": "REQUEST_PLAN_CHANGE",
+    "RETURN_REQUEST": "REQUEST_RETURN",
+    "EXCHANGE_REQUEST": "REQUEST_EXCHANGE",
+    "ORDER_CANCELLATION": "CANCEL_ORDER",
+    "PRODUCT_DEFECT": "REPORT_DEFECTIVE_PRODUCT",
+    "FEATURE_NOT_WORKING": "FEATURE_INQUIRY",
+    "PROFILE_UPDATE": "REQUEST_PROFILE_UPDATE",
+    "DATA_PRIVACY_REQUEST": "REQUEST_DATA_DELETION",
+    "ESCALATION_REQUEST": "REQUEST_ESCALATION",
+    "APPOINTMENT_RESCHEDULE": "CANCEL_BOOKING",
+    "APP_CRASH": "REPORT_APP_ISSUE",
+    "TRACKING_ISSUE": "REQUEST_TRACKING_UPDATE",
+    "INVOICE_REQUEST": "REQUEST_INVOICE",
+    "CREDIT_CARD_UPDATE": "REQUEST_PAYMENT_UPDATE",
+}
+CUSTOMER_INTENT_KEYWORDS = {
+    "REQUEST_PROFILE_UPDATE": [
+        "i'd like to change", "update my", "change my name", "change my address",
+        "update my name", "change my email",
+    ],
+    "REQUEST_REFUND_STATUS": [
+        "when will my refund", "hasn't come through", "refund status",
+        "where is my refund", "still waiting for my refund", "been waiting for a refund",
+    ],
+    "FOLLOWUP_REPLACEMENT_STATUS": [
+        "replacement", "haven't received", "where is my replacement",
+        "replacement status", "follow up on replacement",
+    ],
+    "REPORT_UNAUTHORIZED_LOGIN": [
+        "unauthorized", "someone logged in", "someone accessed",
+        "hacked", "suspicious activity", "didn't authorize",
+    ],
+    "REQUEST_CANCELLATION": [
+        "cancel", "cancel my subscription", "pause my subscription",
+        "want to cancel", "stop my subscription",
+    ],
+    "REQUEST_PLAN_UPGRADE": [
+        "upgrade", "upgrade my plan", "what features",
+        "switch to premium", "move to a higher plan",
+    ],
+    "INQUIRE_PLAN_FEATURES": [
+        "what features", "tell me about", "what does the plan include",
+        "what's included", "curious about the features",
+    ],
+    "REPORT_LOGIN_FAILURE": [
+        "can't log in", "locked out", "can't access my account",
+        "login issue", "unable to sign in",
+    ],
+    "REPORT_SERVICE_OUTAGE": [
+        "outage", "service is down", "not working at all",
+        "internet is out", "service outage", "completely down",
+    ],
+    "REPORT_SYNC_FAILURE": [
+        "not syncing", "sync error", "sync issue",
+        "won't sync", "syncing problem",
+    ],
+    "REPORT_INSTALLATION_ERROR": [
+        "installation error", "can't install", "install failed",
+        "installation issue",
+    ],
+    "REQUEST_SHIPMENT_STATUS": [
+        "tracking", "where is my order", "shipment status",
+        "when will it arrive", "order status",
+    ],
+    "DISPUTE_SERVICE_FEE": [
+        "fee", "charged a fee", "service fee",
+        "late fee", "unexpected fee",
+    ],
+    "REPORT_DUPLICATE_CHARGE": [
+        "duplicate charge", "charged twice", "double charged",
+        "two charges", "duplicate payment",
+    ],
+    "REQUEST_REFUND": [
+        "i want a refund", "refund please", "get my money back",
+        "process a refund",
+    ],
+    "REPORT_BILLING_ISSUE": [
+        "billing issue", "incorrect charge", "overcharged",
+        "wrong amount",
+    ],
+}
+
+ISSUE_TO_SERVICE = {
+    "SUBSCRIPTION_CANCELLATION": "SUBSCRIPTION",
+    "PLAN_UPGRADE": "SUBSCRIPTION",
+    "PLAN_DOWNGRADE": "SUBSCRIPTION",
+    "AUTO_RENEWAL_ISSUE": "SUBSCRIPTION",
+    "SUBSCRIPTION_RENEWAL_ISSUE": "SUBSCRIPTION",
+    "PAYMENT_FAILED": "PAYMENT",
+    "CREDIT_CARD_UPDATE": "PAYMENT",
+    "CARD_DECLINED": "PAYMENT",
+    "UNAUTHORIZED_TRANSACTION": "PAYMENT",
+    "MISSING_STATEMENT": "PAYMENT",
+    "PREMIUM_PAYMENT_ISSUE": "PAYMENT",
+    "BILLING_DISPUTE": "PAYMENT",
+    "DUPLICATE_CHARGE": "PAYMENT",
+    "MISSING_REFUND": "PAYMENT",
+    "REPORTING_ISSUE": "DASHBOARD",
+    "DATA_EXPORT_ERROR": "EXPORTS",
+    "API_ERROR": "API",
+    "DELIVERY_DELAY": "DELIVERY",
+    "LOST_PACKAGE": "DELIVERY",
+    "DAMAGED_PACKAGE": "DELIVERY",
+    "TRACKING_ISSUE": "DELIVERY",
+}
+ISSUE_TO_DOMAIN = {
+    "BILLING_DISPUTE": "BILLING",
+    "DUPLICATE_CHARGE": "BILLING",
+    "PAYMENT_FAILED": "BILLING",
+    "MISSING_REFUND": "BILLING",
+    "INVALID_COUPON": "BILLING",
+    "CREDIT_CARD_UPDATE": "BILLING",
+    "AUTO_RENEWAL_ISSUE": "BILLING",
+    "CARD_DECLINED": "BILLING",
+    "UNAUTHORIZED_TRANSACTION": "BILLING",
+    "MISSING_STATEMENT": "BILLING",
+    "INVOICE_REQUEST": "BILLING",
+    "REFUND_DELAY": "BILLING",
+    "UNEXPECTED_CHARGE": "BILLING",
+    "OVERCHARGE": "BILLING",
+    "PREMIUM_PAYMENT_ISSUE": "BILLING",
+    "REFUND_ISSUE": "BILLING",
+    "FEE_DISPUTE": "BILLING",
+    "LOGIN_FAILURE": "ACCOUNT",
+    "AUTHENTICATION_ERROR": "ACCOUNT",
+    "ACCOUNT_LOCKED": "ACCOUNT",
+    "KYC_VERIFICATION": "ACCOUNT",
+    "ACCOUNT_CREATION_ERROR": "ACCOUNT",
+    "ACCOUNT_UPDATE": "ACCOUNT",
+    "PROFILE_UPDATE": "ACCOUNT",
+    "ACCOUNT_HACKED": "SECURITY",
+    "SECURITY_ISSUE": "SECURITY",
+    "INTERNET_OUTAGE": "TECHNICAL",
+    "SLOW_INTERNET": "TECHNICAL",
+    "SERVER_DOWN": "TECHNICAL",
+    "APP_CRASH": "TECHNICAL",
+    "OVERHEATING_DEVICE": "TECHNICAL",
+    "CONNECTIVITY": "TECHNICAL",
+    "PERFORMANCE": "TECHNICAL",
+    "WIFI_ISSUE": "TECHNICAL",
+    "OUTAGE": "TECHNICAL",
+    "SYNC_ISSUE": "TECHNICAL",
+    "DELIVERY_DELAY": "FULFILLMENT",
+    "LOST_PACKAGE": "FULFILLMENT",
+    "DAMAGED_PACKAGE": "FULFILLMENT",
+    "WRONG_ITEM": "FULFILLMENT",
+    "TRACKING_ISSUE": "FULFILLMENT",
+    "CUSTOMS_HOLD": "FULFILLMENT",
+    "PRODUCT_NOT_RECEIVED": "FULFILLMENT",
+    "ADDRESS_CHANGE": "FULFILLMENT",
+    "WAREHOUSE_DELAY": "FULFILLMENT",
+    "OUT_OF_STOCK": "FULFILLMENT",
+    "PREORDER_DELAY": "FULFILLMENT",
+    "DELIVERY_ISSUE": "FULFILLMENT",
+    "API_ERROR": "API",
+    "REPORTING_ISSUE": "API",
+    "DATA_EXPORT_ERROR": "API",
+    "EMAIL_INTEGRATION_ISSUE": "API",
+    "ACCOUNT_SYNC_ERROR": "API",
+    "APPOINTMENT_RESCHEDULE": "BOOKINGS",
+    "RETURN_REQUEST": "RETURNS",
+    "EXCHANGE_REQUEST": "RETURNS",
+    "RETURN_REFUSED": "RETURNS",
+    "EXPIRED_RETURN_WINDOW": "RETURNS",
+    "ORDER_CANCELLATION": "RETURNS",
+    "SUBSCRIPTION_CANCELLATION": "SUBSCRIPTION",
+    "SUBSCRIPTION_ISSUE": "SUBSCRIPTION",
+    "PLAN_UPGRADE": "PRODUCT",
+    "PLAN_DOWNGRADE": "PRODUCT",
+    "PRODUCT_ISSUE": "PRODUCT",
+    "DATA_PRIVACY_REQUEST": "ACCOUNT",
+    "MULTIPLE_ACCOUNTS": "ACCOUNT",
+}
+
+CALL_TYPE_TO_DOMAIN = {
+    "BILLING": "BILLING",
+    "TECHNICAL": "PERFORMANCE",
+    "SALES": "SALES",
+    "SUPPORT": "SUPPORT",
+    "RETENTION": "RETENTION",
+    "LOGISTICS": "LOGISTICS",
+    "ACCOUNT_MANAGEMENT": "ACCOUNT_MANAGEMENT",
+    "FEEDBACK": "FEEDBACK",
+    "RETURNS": "RETURNS",
 }
