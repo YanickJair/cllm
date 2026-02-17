@@ -121,9 +121,7 @@ class ThreadEncoder(metaclass=SingletonMeta):
                 print(f"Customer Intent: {intent_token}")
 
         if self.analysis.secondary_intent:
-            secondary_token = (
-                f"[CUSTOMER_INTENT:{self.analysis.secondary_intent}]"
-            )
+            secondary_token = f"[CUSTOMER_INTENT:{self.analysis.secondary_intent}]"
             tokens.append(secondary_token)
             if verbose:
                 print(f"Secondary Intent: {secondary_token}")
@@ -305,7 +303,9 @@ class ThreadEncoder(metaclass=SingletonMeta):
     }
 
     @classmethod
-    def _encode_resolution(cls, resolution: Resolution, actions: Optional[list] = None) -> Optional[str]:
+    def _encode_resolution(
+        cls, resolution: Resolution, actions: Optional[list] = None
+    ) -> Optional[str]:
         """
         Encode resolution outcome.
 
@@ -388,8 +388,7 @@ class ThreadEncoder(metaclass=SingletonMeta):
             for a in ("REPLACEMENT_ORDERED", "PRIORITY_DISPATCH_FLAGGED")
         )
         has_refund = any(
-            a in action_types
-            for a in ("REFUND_INITIATED", "CREDIT_APPLIED")
+            a in action_types for a in ("REFUND_INITIATED", "CREDIT_APPLIED")
         )
         has_escalation = "ESCALATION_CREATED" in action_types
 

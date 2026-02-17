@@ -171,9 +171,7 @@ class TranscriptAnalyzer:
         promises = self._extract_promises(turns)
         domain = self._extract_domain(call_info, issues)
         service = self._extract_service(issues, turns)
-        customer_intent, secondary_intent = self._extract_customer_intent(
-            issues, turns
-        )
+        customer_intent, secondary_intent = self._extract_customer_intent(issues, turns)
         context_provided = self._extract_context_provided(turns, call_info)
         system_actions = self._extract_system_actions(turns)
 
@@ -423,9 +421,24 @@ class TranscriptAnalyzer:
 
     # Common words that should never be extracted as reference numbers
     _REF_BLACKLIST = {
-        "number", "reference", "confirmation", "immediately", "right",
-        "today", "tomorrow", "please", "thank", "thanks", "okay",
-        "here", "that", "this", "your", "the", "will", "been",
+        "number",
+        "reference",
+        "confirmation",
+        "immediately",
+        "right",
+        "today",
+        "tomorrow",
+        "please",
+        "thank",
+        "thanks",
+        "okay",
+        "here",
+        "that",
+        "this",
+        "your",
+        "the",
+        "will",
+        "been",
     }
 
     @classmethod
@@ -585,9 +598,7 @@ class TranscriptAnalyzer:
 
         # Fallback: if no issue found from customer turns, try agent turns
         if not issue_type:
-            agent_text = " ".join(
-                t.text for t in turns if t.speaker == "agent"
-            ).lower()
+            agent_text = " ".join(t.text for t in turns if t.speaker == "agent").lower()
             issue_type = self._get_issue_type(agent_text)
 
         if not issue_type:
@@ -1046,15 +1057,21 @@ class TranscriptAnalyzer:
         # Additional commitment patterns checked separately
         extra_commitment_patterns = {
             "CONFIRMATION_EMAIL": [
-                "send you a confirmation", "confirmation email",
-                "you'll receive an email", "email confirmation",
+                "send you a confirmation",
+                "confirmation email",
+                "you'll receive an email",
+                "email confirmation",
             ],
             "FOLLOWUP": [
-                "i'll follow up", "follow up with you", "personally follow up",
+                "i'll follow up",
+                "follow up with you",
+                "personally follow up",
                 "follow up tomorrow",
             ],
             "MONITORING": [
-                "monitor", "keep an eye on", "watching",
+                "monitor",
+                "keep an eye on",
+                "watching",
             ],
         }
 
@@ -1102,13 +1119,17 @@ class TranscriptAnalyzer:
                 matching = next((p for p in phrases if p in text_lower), None)
                 if matching:
                     timeline = self._extract_promise_timeline(text_lower)
-                    promises.append(PromiseCommitment(
-                        type=commit_type,
-                        description=self._extract_promise_description(text, matching),
-                        timeline=timeline,
-                        turn_index=idx,
-                        confidence=0.8,
-                    ))
+                    promises.append(
+                        PromiseCommitment(
+                            type=commit_type,
+                            description=self._extract_promise_description(
+                                text, matching
+                            ),
+                            timeline=timeline,
+                            turn_index=idx,
+                            confidence=0.8,
+                        )
+                    )
 
         return self._dedupe_promises(promises)
 
@@ -1193,9 +1214,7 @@ class TranscriptAnalyzer:
         return unique
 
     @classmethod
-    def _extract_domain(
-        cls, call_info: CallInfo, issues: list[Issue]
-    ) -> Optional[str]:
+    def _extract_domain(cls, call_info: CallInfo, issues: list[Issue]) -> Optional[str]:
         """Extract v2 DOMAIN from issues and call info."""
         if issues:
             issue_type = issues[0].type
@@ -1204,9 +1223,7 @@ class TranscriptAnalyzer:
         return "UNCLASSIFIED"
 
     @classmethod
-    def _extract_service(
-        cls, issues: list[Issue], turns: list[Turn]
-    ) -> Optional[str]:
+    def _extract_service(cls, issues: list[Issue], turns: list[Turn]) -> Optional[str]:
         """Extract v2 SERVICE from issues."""
         if issues:
             issue_type = issues[0].type
@@ -1232,7 +1249,9 @@ class TranscriptAnalyzer:
             t.text.lower() for t in turns if t.speaker == "customer"
         )
 
-        intents = self._lookup_all_categories(customer_text, self._customer_intent_index)
+        intents = self._lookup_all_categories(
+            customer_text, self._customer_intent_index
+        )
         if intents:
             primary = intents[0]
             if len(intents) > 1:
@@ -1240,10 +1259,10 @@ class TranscriptAnalyzer:
 
         # Fallback 1: try agent turns (agents often restate the issue)
         if not primary:
-            agent_text = " ".join(
-                t.text.lower() for t in turns if t.speaker == "agent"
+            agent_text = " ".join(t.text.lower() for t in turns if t.speaker == "agent")
+            intents = self._lookup_all_categories(
+                agent_text, self._customer_intent_index
             )
-            intents = self._lookup_all_categories(agent_text, self._customer_intent_index)
             if intents:
                 primary = intents[0]
                 if len(intents) > 1:
@@ -1341,9 +1360,7 @@ class TranscriptAnalyzer:
                 _add("NEW_NAME_PROVIDED")
 
             # DELAY_N_DAYS — customer mentions a duration of waiting
-            delay_match = re.search(
-                r"\b(\d+)\s*days?\b", text_lower
-            )
+            delay_match = re.search(r"\b(\d+)\s*days?\b", text_lower)
             if delay_match and any(
                 w in text_lower for w in ["waiting", "been", "ago", "since"]
             ):
@@ -1359,9 +1376,7 @@ class TranscriptAnalyzer:
         seen = set()
 
         system_text = " ".join(
-            t.text.lower()
-            for t in turns
-            if t.speaker in ("system", "agent")
+            t.text.lower() for t in turns if t.speaker in ("system", "agent")
         )
 
         for action, keywords in SYSTEM_ACTION_KEYWORDS.items():

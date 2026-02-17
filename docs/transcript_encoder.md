@@ -693,7 +693,7 @@ with ProcessPoolExecutor(max_workers=4) as executor:
 If compression is lower than expected:
 
 ```python
-# Check if transcript is already concise
+# Check if thread_encoder is already concise
 if result.compression_ratio < 0.70:
     print("Warning: Low compression ratio")
     print(f"Original tokens: {result.original_tokens}")
