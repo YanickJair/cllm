@@ -271,7 +271,7 @@ def show_comparison(transcript: str, metadata: dict):
     print("-" * 70)
     print(f"\nLength: {len(transcript)} characters")
 
-    cfg = CLMConfig(lang="en")
+    cfg = CLMConfig(lang="en", redaction_pattern="\[(.*?)\]")
     encoder = CLMEncoder(cfg=cfg)
     new_result = encoder.encode(input_=transcript, metadata={})
 

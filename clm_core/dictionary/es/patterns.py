@@ -1073,3 +1073,118 @@ DISPUTED_AMOUNT_KEYWORDS = [
     "monto",
     "importe",
 ]
+
+# ── Multilingual / speaker detection ──
+
+AGENT_SPEAKER_LABELS = ["agente", "agent"]
+CUSTOMER_SPEAKER_LABELS = ["cliente", "client", "customer", "llamante"]
+
+# ── Name extraction patterns ──
+
+NAME_INTRO_PATTERNS = [
+    r"(?:me llamo|mi nombre es|soy)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)",
+    r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)",
+]
+
+NAME_THANKS_PATTERNS = [
+    r"gracias,\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)",
+    r"thank(?:s| you),\s+([A-Z][a-z]+)",
+]
+
+NAME_CHANGE_PATTERNS = [
+    r"\b(?:cambiar|actualizar|modificar)\s+(?:mi\s+)?(?:nombre\s+)?(?:de\s+)?\w+\s+a\s+\w+",
+]
+
+AGENT_NAME_PATTERNS = [
+    r"(?:me llamo|mi nombre es|soy)\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)",
+    r"(?:my name is|this is)\s+([A-Z][a-z]+)",
+]
+
+# ── Delay context words ──
+
+DELAY_CONTEXT_WORDS = ["esperando", "llevo", "hace", "desde", "waiting", "been", "ago", "since"]
+
+# ── Call type detection ──
+
+CALL_TYPE_SALES_KEYWORDS = ["actualización", "precio", "comprar", "interesado en", "upgrade", "pricing"]
+
+# ── Amount reason context ──
+
+AMOUNT_REASON_CONTEXT = [
+    ("duplicado", "DUPLICATE_CHARGE"),
+    ("duplicate", "DUPLICATE_CHARGE"),
+    ("reembolso", "REFUND"),
+    ("refund", "REFUND"),
+    ("extra", "EXTRA_CHARGE"),
+    ("descuento", "DISCOUNT"),
+    ("discount", "DISCOUNT"),
+    ("crédito", "CREDIT"),
+    ("credit", "CREDIT"),
+    ("cargo", "CHARGE"),
+    ("cobro", "CHARGE"),
+    ("fee", "FEE"),
+    ("charge", "CHARGE"),
+    ("charged", "CHARGE"),
+]
+
+# ── Redacted field context ──
+
+REDACTED_FIELD_CONTEXT = [
+    ("email", "EMAIL_REDACTED"),
+    ("correo", "EMAIL_REDACTED"),
+    ("teléfono", "PHONE_REDACTED"),
+    ("telefono", "PHONE_REDACTED"),
+    ("phone", "PHONE_REDACTED"),
+    ("número", "PHONE_REDACTED"),
+    ("number", "PHONE_REDACTED"),
+    ("dirección", "ADDRESS_REDACTED"),
+    ("address", "ADDRESS_REDACTED"),
+    ("nombre", "NAME_REDACTED"),
+    ("name", "NAME_REDACTED"),
+]
+
+# ── Extra commitment patterns ──
+
+EXTRA_COMMITMENT_PATTERNS = {
+    "CONFIRMATION_EMAIL": [
+        "le enviaré una confirmación",
+        "correo de confirmación",
+        "recibirá un correo",
+        "confirmación por email",
+        "send you a confirmation",
+        "confirmation email",
+    ],
+    "FOLLOWUP": [
+        "le haré seguimiento",
+        "voy a hacer seguimiento",
+        "personalmente le haré seguimiento",
+        "seguimiento mañana",
+        "i'll follow up",
+        "follow up with you",
+    ],
+    "MONITORING": [
+        "monitorear",
+        "vigilar",
+        "monitoring",
+        "keep an eye on",
+    ],
+}
+
+# ── Promise timeline patterns ──
+
+PROMISE_TIMELINE_PATTERNS = [
+    (r"dentro\s+de\s+(\d+)\s*horas?", "{0}h"),
+    (r"dentro\s+de\s+(\d+)\s*días?", "{0}d"),
+    (r"para\s+el\s+(lunes|martes|miércoles|jueves|viernes|sábado|domingo)", "{0}"),
+    (r"antes\s+del\s+(lunes|martes|miércoles|jueves|viernes|sábado|domingo)", "{0}"),
+    (r"en\s+los?\s+próximos?\s+(\d+)\s*días?", "{0}d"),
+    (r"within\s+(\d+)\s*hours?", "{0}h"),
+    (r"within\s+(\d+)\s*days?", "{0}d"),
+]
+
+# ── Promise confidence strong indicators ──
+
+PROMISE_CONFIDENCE_STRONG = [
+    "voy a", "le enviaré", "vamos a", "definitivamente",
+    "sin duda", "por supuesto", "will", "going to", "i'll",
+]

@@ -735,3 +735,138 @@ TROUBLESHOOTING_ACTIONS = {
         "test de ligne",
     },
 }
+
+# ── Multilingual / speaker detection ──
+
+AGENT_SPEAKER_LABELS = ["agent", "conseiller", "conseillère"]
+CUSTOMER_SPEAKER_LABELS = ["client", "cliente", "customer", "appelant"]
+
+# ── Timeline defaults (French) ──
+
+TIMELINE_KEYWORDS = {
+    "demain": "TOMORROW",
+    "aujourd'hui": "TODAY",
+    "aujourd'hui": "TODAY",
+}
+
+TIMELINE_PATTERNS = [
+    (r"(\d+)\s*à\s*(\d+)\s*jours?\s*ouvrables?", "{0}-{1}d"),
+    (r"dans\s+(\d+)\s*heures?", "{0}h"),
+    (r"dans\s+(\d+)\s*jours?", "{0}d"),
+    (r"sous\s+(\d+)\s*heures?", "{0}h"),
+    (r"sous\s+(\d+)\s*jours?", "{0}d"),
+    (r"d'ici\s+(\d+)\s*jours?", "{0}d"),
+]
+
+# ── Disputed amount keywords ──
+
+DISPUTED_AMOUNT_KEYWORDS = ["frais", "facture", "paiement", "montant", "relevé", "charge", "payment"]
+
+# ── Amount reason context ──
+
+AMOUNT_REASON_CONTEXT = [
+    ("doublon", "DUPLICATE_CHARGE"),
+    ("duplicate", "DUPLICATE_CHARGE"),
+    ("remboursement", "REFUND"),
+    ("refund", "REFUND"),
+    ("extra", "EXTRA_CHARGE"),
+    ("réduction", "DISCOUNT"),
+    ("discount", "DISCOUNT"),
+    ("crédit", "CREDIT"),
+    ("credit", "CREDIT"),
+    ("frais", "FEE"),
+    ("fee", "FEE"),
+    ("facturation", "CHARGE"),
+    ("charge", "CHARGE"),
+    ("charged", "CHARGE"),
+]
+
+# ── Redacted field context ──
+
+REDACTED_FIELD_CONTEXT = [
+    ("email", "EMAIL_REDACTED"),
+    ("e-mail", "EMAIL_REDACTED"),
+    ("téléphone", "PHONE_REDACTED"),
+    ("telephone", "PHONE_REDACTED"),
+    ("phone", "PHONE_REDACTED"),
+    ("numéro", "PHONE_REDACTED"),
+    ("number", "PHONE_REDACTED"),
+    ("adresse", "ADDRESS_REDACTED"),
+    ("address", "ADDRESS_REDACTED"),
+    ("nom", "NAME_REDACTED"),
+    ("name", "NAME_REDACTED"),
+]
+
+# ── Call type detection ──
+
+CALL_TYPE_SALES_KEYWORDS = ["mise à niveau", "tarif", "acheter", "intéressé par", "upgrade", "pricing"]
+
+# ── Name extraction patterns ──
+
+NAME_INTRO_PATTERNS = [
+    r"(?:je m'appelle|mon nom est|je suis)\s+([A-ZÀÂÇÉÈÊËÎÏÔÙÛÜ][a-zàâçéèêëîïôùûü]+)",
+    r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)",
+]
+
+NAME_THANKS_PATTERNS = [
+    r"merci,\s+([A-ZÀÂÇÉÈÊËÎÏÔÙÛÜ][a-zàâçéèêëîïôùûü]+)",
+    r"thank(?:s| you),\s+([A-Z][a-z]+)",
+]
+
+NAME_CHANGE_PATTERNS = [
+    r"\b(?:changer|modifier|mettre à jour)\s+(?:mon\s+)?(?:nom\s+)?(?:de\s+)?\w+\s+en\s+\w+",
+]
+
+AGENT_NAME_PATTERNS = [
+    r"(?:je m'appelle|mon nom est|je suis)\s+([A-ZÀÂÇÉÈÊËÎÏÔÙÛÜ][a-zàâçéèêëîïôùûü]+)",
+    r"(?:my name is|this is)\s+([A-Z][a-z]+)",
+]
+
+# ── Delay context words ──
+
+DELAY_CONTEXT_WORDS = ["attendre", "j'attends", "depuis", "il y a", "waiting", "been", "ago", "since"]
+
+# ── Extra commitment patterns ──
+
+EXTRA_COMMITMENT_PATTERNS = {
+    "CONFIRMATION_EMAIL": [
+        "vous enverrai une confirmation",
+        "email de confirmation",
+        "vous recevrez un email",
+        "confirmation par email",
+        "send you a confirmation",
+        "confirmation email",
+    ],
+    "FOLLOWUP": [
+        "je ferai un suivi",
+        "je vais faire le suivi",
+        "personnellement je ferai le suivi",
+        "i'll follow up",
+        "follow up with you",
+    ],
+    "MONITORING": [
+        "surveiller",
+        "suivre",
+        "monitoring",
+        "keep an eye on",
+    ],
+}
+
+# ── Promise timeline patterns ──
+
+PROMISE_TIMELINE_PATTERNS = [
+    (r"dans\s+(\d+)\s*heures?", "{0}h"),
+    (r"dans\s+(\d+)\s*jours?", "{0}d"),
+    (r"sous\s+(\d+)\s*heures?", "{0}h"),
+    (r"pour\s+(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)", "{0}"),
+    (r"avant\s+(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)", "{0}"),
+    (r"within\s+(\d+)\s*hours?", "{0}h"),
+    (r"within\s+(\d+)\s*days?", "{0}d"),
+]
+
+# ── Promise confidence strong indicators ──
+
+PROMISE_CONFIDENCE_STRONG = [
+    "je vais", "nous allons", "je vais", "définitivement",
+    "certainement", "absolument", "will", "going to", "i'll",
+]

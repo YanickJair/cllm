@@ -1194,7 +1194,9 @@ WORD_TO_NUM = {
     "six": 6,
     "seven": 7,
     "couple": 2,
+    "a couple": 2,
     "few": 3,
+    "a few": 3,
 }
 
 DAY_ORDER = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
@@ -1608,3 +1610,113 @@ CALL_TYPE_TO_DOMAIN = {
     "FEEDBACK": "FEEDBACK",
     "RETURNS": "RETURNS",
 }
+
+# ── Multilingual / speaker detection ──
+
+AGENT_SPEAKER_LABELS = ["agent"]
+CUSTOMER_SPEAKER_LABELS = ["customer", "caller", "client"]
+
+# ── Timeline defaults (English) ──
+
+TIMELINE_KEYWORDS = {
+    "tomorrow": "TOMORROW",
+    "today": "TODAY",
+}
+
+TIMELINE_PATTERNS = [
+    (r"(\d+)\s*to\s*(\d+)\s*business\s*days?", "{0}-{1}d"),
+    (r"within\s+(\d+)\s*hours?", "{0}h"),
+    (r"within\s+(\d+)\s*(?:business\s+)?days?", "{0}d"),
+    (r"in\s+(?:a\s+)?(\d+)\s*hours?", "{0}h"),
+    (r"in\s+(?:a\s+)?(\d+)\s*(?:business\s+)?days?", "{0}d"),
+    (r"in\s+the\s+next\s+(\d+[-\s]?\d*)\s*(?:business\s+)?days?", "{0}d"),
+]
+
+# ── Amount reason context ──
+
+AMOUNT_REASON_CONTEXT = [
+    ("duplicate", "DUPLICATE_CHARGE"),
+    ("refund", "REFUND"),
+    ("extra", "EXTRA_CHARGE"),
+    ("discount", "DISCOUNT"),
+    ("credit", "CREDIT"),
+    ("fee", "FEE"),
+    ("charge", "CHARGE"),
+    ("charged", "CHARGE"),
+]
+
+# ── Redacted field context ──
+
+REDACTED_FIELD_CONTEXT = [
+    ("email", "EMAIL_REDACTED"),
+    ("phone", "PHONE_REDACTED"),
+    ("number", "PHONE_REDACTED"),
+    ("address", "ADDRESS_REDACTED"),
+    ("name", "NAME_REDACTED"),
+]
+
+# ── Call type detection ──
+
+CALL_TYPE_SALES_KEYWORDS = ["upgrade", "pricing", "buy", "interested in"]
+
+# ── Name extraction patterns ──
+
+NAME_INTRO_PATTERNS = [
+    r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)",
+]
+
+NAME_THANKS_PATTERNS = [
+    r"thank(?:s| you),\s+([A-Z][a-z]+)",
+]
+
+NAME_CHANGE_PATTERNS = [
+    r"\b(?:change|update)\s+(?:my\s+)?(?:name\s+)?(?:from\s+)?\w+\s+to\s+\w+",
+]
+
+AGENT_NAME_PATTERNS = [
+    r"(?:my name is|this is)\s+([A-Z][a-z]+)",
+]
+
+# ── Delay context words ──
+
+DELAY_CONTEXT_WORDS = ["waiting", "been", "ago", "since"]
+
+# ── Extra commitment patterns ──
+
+EXTRA_COMMITMENT_PATTERNS = {
+    "CONFIRMATION_EMAIL": [
+        "send you a confirmation",
+        "confirmation email",
+        "you'll receive an email",
+        "email confirmation",
+    ],
+    "FOLLOWUP": [
+        "i'll follow up",
+        "follow up with you",
+        "personally follow up",
+        "follow up tomorrow",
+    ],
+    "MONITORING": [
+        "monitor",
+        "keep an eye on",
+        "watching",
+    ],
+}
+
+# ── Promise timeline patterns ──
+
+PROMISE_TIMELINE_PATTERNS = [
+    (r"within\s+(\d+)\s*hours?", "{0}h"),
+    (r"within\s+(\d+)\s*days?", "{0}d"),
+    (r"by\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)", "{0}"),
+    (r"next\s+(week|month)", "NEXT_{0}"),
+    (r"in\s+the\s+next\s+(\d+[-\s]?\d*)\s*(?:business\s+)?days?", "{0}d"),
+]
+
+# ── Disputed amount keywords ──
+
+DISPUTED_AMOUNT_KEYWORDS = ["charge", "bill", "statement", "payment"]
+
+# ── Promise confidence strong indicators ──
+
+PROMISE_CONFIDENCE_STRONG = ["will", "going to", "i'll", "we'll", "definitely"]
