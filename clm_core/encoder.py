@@ -38,6 +38,7 @@ class CLMEncoder:
                 rules=self._cfg.rules,
                 patterns=self._cfg.patterns,
                 lang=self._cfg.lang,
+                redaction_pattern=self._cfg.redaction_pattern,
             )
         return self._lazy_ts_encoder
 

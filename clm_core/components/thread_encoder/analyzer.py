@@ -7,8 +7,10 @@ from clm_core.dictionary.en.patterns import (
     ISSUE_TO_INTENT,
     ISSUE_TO_SERVICE,
     ISSUE_TO_DOMAIN,
+    CALL_TYPE_TO_DOMAIN,
     CUSTOMER_INTENT_KEYWORDS,
     EXPLICIT_AGENT_ACTION_PHRASES,
+    TRIGGER_CAUSE_KEYWORDS,
 )
 from .patterns import TranscriptPatterns
 from . import (
@@ -24,6 +26,7 @@ from . import (
     TimelineEvent,
     ConversationTimeline,
     PromiseCommitment,
+    MonetaryAmount,
 )
 from .vocabulary import TranscriptVocabulary
 from clm_core.components.intent_detector import IntentDetector
@@ -35,6 +38,9 @@ from ...utils.parser_rules import BaseRules
 from ...utils.vocabulary import BaseVocabulary
 
 
+_DEFAULT_REDACTION_PATTERN = r"\[\*+REDACTED\*+\]|\*{3,}|\[REDACTED\]|<redacted>|XXX+|\[PII\]"
+
+
 class TranscriptAnalyzer:
     def __init__(
         self,
@@ -42,10 +48,12 @@ class TranscriptAnalyzer:
         vocab: BaseVocabulary,
         rules: BaseRules,
         patterns: TranscriptPatterns,
+        redaction_pattern: Optional[str] = None,
     ):
         self.nlp = nlp
         self.patterns = patterns
         self.vocab = TranscriptVocabulary()
+        self._redaction_pattern = redaction_pattern or _DEFAULT_REDACTION_PATTERN
         self.intent_detector = IntentDetector(nlp=nlp, vocab=vocab)
         self.target_extractor = TargetExtractor(nlp, vocab=vocab, rules=rules)
         self.temporal_extractor = TemporalAnalyzer(
@@ -171,9 +179,12 @@ class TranscriptAnalyzer:
         promises = self._extract_promises(turns)
         domain = self._extract_domain(call_info, issues)
         service = self._extract_service(issues, turns)
-        customer_intent, secondary_intent = self._extract_customer_intent(issues, turns)
+        customer_intent, secondary_intent = self._extract_customer_intent(issues, turns, actions)
+        trigger_cause = self._extract_trigger_cause(turns)
         context_provided = self._extract_context_provided(turns, call_info)
         system_actions = self._extract_system_actions(turns)
+        amounts = self._extract_all_amounts(turns)
+        redacted_fields = self._extract_redacted_fields(turns)
 
         return TranscriptAnalysis(
             call_info=call_info,
@@ -191,8 +202,11 @@ class TranscriptAnalyzer:
             service=service,
             customer_intent=customer_intent,
             secondary_intent=secondary_intent,
+            trigger_cause=trigger_cause,
             context_provided=context_provided,
             system_actions=system_actions,
+            amounts=amounts,
+            redacted_fields=redacted_fields,
         )
 
     @staticmethod
@@ -327,6 +341,8 @@ class TranscriptAnalyzer:
     def _match_any(text: str, keywords: list[str]) -> bool:
         return any(kw in text for kw in keywords)
 
+    _TIMELINE_WORD_TO_NUM = {"a couple": 2, "couple": 2, "a few": 3, "few": 3}
+
     def _extract_timeline(self, text: str) -> Optional[str]:
         text_lower = text.lower()
 
@@ -338,8 +354,11 @@ class TranscriptAnalyzer:
 
         # Temporal extractor (duration inference)
         pattern = self.temporal_extractor.extract(text)
-        if pattern and getattr(pattern, "duration", None):
-            return str(pattern.duration).upper()
+        if pattern:
+            if getattr(pattern, "resolved_date", None):
+                return pattern.resolved_date
+            if getattr(pattern, "duration", None):
+                return str(pattern.duration).upper()
 
         # Language-specific timeline keywords
         timeline_kw = self.patterns.timeline_keywords or {}
@@ -356,6 +375,20 @@ class TranscriptAnalyzer:
             return f"{match.group(1)}h"
         if match := re.search(r"within\s+(\d+)\s*(day|days)", text, re.I):
             return f"{match.group(1)}d"
+
+        # "in X hours/days" patterns with word number support
+        if match := re.search(
+            r"in\s+(a\s+)?(couple|few|\d+)\s+(?:of\s+)?(hour|hours)", text, re.I
+        ):
+            raw = ((match.group(1) or "") + match.group(2)).strip().lower()
+            num = self._TIMELINE_WORD_TO_NUM.get(raw, match.group(2))
+            return f"{num}h"
+        if match := re.search(
+            r"in\s+(a\s+)?(couple|few|\d+)\s+(?:of\s+)?(day|days)", text, re.I
+        ):
+            raw = ((match.group(1) or "") + match.group(2)).strip().lower()
+            num = self._TIMELINE_WORD_TO_NUM.get(raw, match.group(2))
+            return f"{num}d"
         return None
 
     def _determine_action_result(
@@ -661,6 +694,92 @@ class TranscriptAnalyzer:
             if any(k in t.text.lower() for k in keywords):
                 amounts.extend(getattr(t, "entities", {}).get("money", []))
         return list(dict.fromkeys(amounts))
+
+    _AMOUNT_REGEX = re.compile(
+        r"\$\s?[\d,]+(?:\.\d{1,2})?|\b[\d,]+(?:\.\d{1,2})?\s*(?:USD|EUR)\b",
+        re.I,
+    )
+    _AMOUNT_REASON_MAP = [
+        ("duplicate", "DUPLICATE_CHARGE"),
+        ("refund", "REFUND"),
+        ("extra", "EXTRA_CHARGE"),
+        ("discount", "DISCOUNT"),
+        ("credit", "CREDIT"),
+        ("fee", "FEE"),
+        ("charge", "CHARGE"),
+        ("charged", "CHARGE"),
+    ]
+
+    def _extract_all_amounts(self, turns: list[Turn]) -> list[MonetaryAmount]:
+        """Extract all monetary amounts from all turns with their reason."""
+        seen: set[tuple[str, Optional[str], str]] = set()
+        results: list[MonetaryAmount] = []
+
+        for idx, turn in enumerate(turns):
+            text = turn.text
+            for match in self._AMOUNT_REGEX.finditer(text):
+                amount_str = match.group(0).strip()
+                start, end = match.start(), match.end()
+                ctx_start = max(0, start - 50)
+                ctx_end = min(len(text), end + 50)
+                context = text[ctx_start:ctx_end].lower()
+
+                reason = None
+                for keyword, r in self._AMOUNT_REASON_MAP:
+                    if keyword in context:
+                        reason = r
+                        break
+
+                if not reason:
+                    continue  # skip bare uncontextualized amounts
+
+                key = (amount_str, reason, turn.speaker)
+                if key not in seen:
+                    seen.add(key)
+                    results.append(
+                        MonetaryAmount(
+                            amount=amount_str,
+                            reason=reason,
+                            speaker=turn.speaker,
+                            turn_index=idx,
+                        )
+                    )
+
+        return results
+
+    _REDACTED_FIELD_CONTEXT = [
+        ("email", "EMAIL_REDACTED"),
+        ("phone", "PHONE_REDACTED"),
+        ("number", "PHONE_REDACTED"),
+        ("address", "ADDRESS_REDACTED"),
+        ("name", "NAME_REDACTED"),
+    ]
+
+    def _extract_redacted_fields(self, turns: list[Turn]) -> list[str]:
+        """Detect redacted field tokens from all turns using configured redaction_pattern."""
+        pattern = re.compile(self._redaction_pattern, re.I)
+        seen: set[str] = set()
+        results: list[str] = []
+
+        for turn in turns:
+            text = turn.text
+            for match in pattern.finditer(text):
+                start, end = match.start(), match.end()
+                ctx_start = max(0, start - 40)
+                ctx_end = min(len(text), end + 40)
+                context = text[ctx_start:ctx_end].lower()
+
+                token = "FIELD_REDACTED"
+                for keyword, field_token in self._REDACTED_FIELD_CONTEXT:
+                    if keyword in context:
+                        token = field_token
+                        break
+
+                if token not in seen:
+                    seen.add(token)
+                    results.append(token)
+
+        return results
 
     def _detect_billing_cause(
         self, turns: list[Turn]
@@ -1215,11 +1334,34 @@ class TranscriptAnalyzer:
 
     @classmethod
     def _extract_domain(cls, call_info: CallInfo, issues: list[Issue]) -> Optional[str]:
-        """Extract v2 DOMAIN from issues and call info."""
+        """Extract v2 DOMAIN from issues and call info.
+
+        Issue-derived domain takes priority, except when the call type provides
+        stronger signal (e.g. a SALES call should not resolve to FULFILLMENT).
+        Falls back to call_info.type when no issue maps to a domain.
+        """
         if issues:
             issue_type = issues[0].type
             if issue_type in ISSUE_TO_DOMAIN:
-                return ISSUE_TO_DOMAIN[issue_type]
+                domain = ISSUE_TO_DOMAIN[issue_type]
+                # A SALES call should not resolve to FULFILLMENT — the shipment
+                # keywords likely matched incidentally (e.g. "analytics tracking").
+                # Try remaining issues for a better match first, then fall back to
+                # the call-type-derived domain.
+                if call_info.type == "SALES" and domain == "FULFILLMENT":
+                    for issue in issues[1:]:
+                        alt = ISSUE_TO_DOMAIN.get(issue.type)
+                        if alt and alt != "FULFILLMENT":
+                            return alt
+                    return CALL_TYPE_TO_DOMAIN.get(call_info.type, "PRODUCT")
+                return domain
+
+        # Fallback: derive domain from the detected call type, but only for
+        # call types that carry specific domain signal (not the generic SUPPORT type).
+        _INFORMATIVE_CALL_TYPES = {"BILLING", "TECHNICAL", "SALES", "RETENTION", "LOGISTICS", "RETURNS"}
+        if call_info.type in _INFORMATIVE_CALL_TYPES and call_info.type in CALL_TYPE_TO_DOMAIN:
+            return CALL_TYPE_TO_DOMAIN[call_info.type]
+
         return "UNCLASSIFIED"
 
     @classmethod
@@ -1232,17 +1374,19 @@ class TranscriptAnalyzer:
         return None
 
     def _extract_customer_intent(
-        self, issues: list[Issue], turns: list[Turn]
+        self, issues: list[Issue], turns: list[Turn], actions: Optional[list[Action]] = None
     ) -> tuple[Optional[str], Optional[str]]:
         """Extract v2 CUSTOMER_INTENT from customer turns using direct keyword matching.
 
         Scans customer turns only using CUSTOMER_INTENT_KEYWORDS (longest match first).
         Falls back to ISSUE_TO_INTENT only if direct keyword match fails.
+        Applies context-based narrowing when generic intents are detected.
 
         Returns (primary_intent, secondary_intent).
         """
         primary = None
         secondary = None
+        actions = actions or []
 
         # Primary: scan customer turns with direct keyword matching
         customer_text = " ".join(
@@ -1273,6 +1417,23 @@ class TranscriptAnalyzer:
             primary = ISSUE_TO_INTENT.get(issues[0].type)
             if len(issues) > 1 and not secondary:
                 secondary = ISSUE_TO_INTENT.get(issues[1].type)
+
+        # Context-based narrowing: refine generic intents using actions and issues
+        if primary == "REPORT_BILLING_ISSUE":
+            action_types = {a.type for a in actions}
+            issue_types = {i.type for i in issues}
+            if "REFUND_INITIATED" in action_types or "CREDIT_APPLIED" in action_types:
+                primary = "REQUEST_REFUND"
+            elif "DUPLICATE_CHARGE" in issue_types:
+                primary = "REPORT_DUPLICATE_CHARGE"
+            elif "UNEXPECTED_CHARGE" in issue_types:
+                primary = "REPORT_UNEXPECTED_CHARGE"
+
+        # Fallback 3: agent-action-based inference (if agent did refund, customer wanted refund)
+        if not primary and actions:
+            action_types = {a.type for a in actions}
+            if "REFUND_INITIATED" in action_types or "CREDIT_APPLIED" in action_types:
+                primary = "REQUEST_REFUND"
 
         return primary, secondary
 
@@ -1368,6 +1529,30 @@ class TranscriptAnalyzer:
                 _add(f"DELAY_{days}_DAYS")
 
         return context
+
+    def _extract_trigger_cause(self, turns: list[Turn]) -> Optional[str]:
+        """Extract the trigger cause — why the customer contacted support.
+
+        Scans customer turns for causal indicators (locked fields, missing delivery,
+        price increases, etc.) using TRIGGER_CAUSE_KEYWORDS sorted longest-first.
+        """
+        trigger_index = sorted(
+            [
+                (kw.lower(), cause)
+                for cause, kws in TRIGGER_CAUSE_KEYWORDS.items()
+                for kw in kws
+            ],
+            key=lambda x: len(x[0]),
+            reverse=True,
+        )
+
+        customer_text = " ".join(t.text.lower() for t in turns if t.speaker == "customer")
+
+        for kw, cause in trigger_index:
+            if kw in customer_text:
+                return cause
+
+        return None
 
     @classmethod
     def _extract_system_actions(cls, turns: list[Turn]) -> list[str]:

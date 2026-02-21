@@ -68,6 +68,7 @@ class TemporalAnalyzer:
                                 "last",
                                 "over",
                                 "around",
+                                "in",
                                 "durante",
                                 "desde",
                                 "hace",
@@ -85,6 +86,8 @@ class TemporalAnalyzer:
                     {
                         "LOWER": {
                             "IN": [
+                                "hour",
+                                "hours",
                                 "day",
                                 "days",
                                 "week",
@@ -151,6 +154,7 @@ class TemporalAnalyzer:
             duration=duration or natural_dates.get("duration"),
             frequency=frequency,
             pattern=pattern,
+            resolved_date=natural_dates.get("resolved_date"),
         )
 
     def _extract_days(self, text: str) -> list[str]:
@@ -231,7 +235,7 @@ class TemporalAnalyzer:
             else ""
         )
         num_pattern = r"\d+" + (f"|{word_alts}" if word_alts else "")
-        regex = rf"(?:for|past|last|over|around|durante|desde|hace|por)?\s*({num_pattern})\s+(day|week|month|día|dias?|semana|mes(?:es)?)s?"
+        regex = rf"(?:for|past|last|over|around|in|durante|desde|hace|por)?\s*(?:a\s+)?({num_pattern})\s+(?:of\s+)?(hour|day|week|month|día|dias?|semana|mes(?:es)?)s?"
         match = re.search(regex, text_lower)
         if match:
             num = self._word_to_num.get(match.group(1), match.group(1))
@@ -337,10 +341,13 @@ class TemporalAnalyzer:
 
         time_str = parsed.strftime("%H:%M") if parsed else None
 
+        resolved_date = parsed.strftime("%Y-%m-%d") if diff.days > 0 else None
+
         return {
             "days": [day_code] if day_code else None,
             "times": [time_str] if time_str and time_str != "00:00" else None,
             "duration": duration,
+            "resolved_date": resolved_date,
         }
 
     @staticmethod
@@ -443,6 +450,8 @@ class TemporalAnalyzer:
     def _normalize_unit(unit_str: str) -> str:
         """Normalize a duration unit word to a single-letter abbreviation."""
         _UNIT_MAP = {
+            "hour": "h",
+            "hours": "h",
             "day": "d",
             "days": "d",
             "week": "w",

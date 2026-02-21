@@ -11,6 +11,7 @@ __all__ = [
     "CallInfo",
     "Turn",
     "TemporalPattern",
+    "MonetaryAmount",
     # Case-dependent features
     "ResolutionState",
     "RefundReference",
