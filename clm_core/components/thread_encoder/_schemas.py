@@ -222,6 +222,18 @@ class PromiseCommitment(BaseModel):
     confidence: float = Field(default=0.8, description="Detection confidence 0.0-1.0")
 
 
+class MonetaryAmount(BaseModel):
+    """Monetary amount extracted from a conversation turn"""
+
+    amount: str = Field(..., description="Amount string e.g. '$2.99'")
+    reason: Optional[str] = Field(
+        default=None,
+        description="Reason category: REFUND, CHARGE, FEE, CREDIT, EXTRA_CHARGE, DUPLICATE_CHARGE, DISCOUNT",
+    )
+    speaker: str = Field(..., description="Who mentioned the amount: customer, agent, system")
+    turn_index: int = Field(..., description="Index of the turn where amount appeared")
+
+
 class TranscriptAnalysis(BaseModel):
     """Complete thread_encoder analysis"""
 
@@ -251,7 +263,16 @@ class TranscriptAnalysis(BaseModel):
         default_factory=list, description="Agent promises/commitments"
     )
 
-    # v2 schema fields
+    # v2 schema fields — amounts and redacted fields
+    amounts: list[MonetaryAmount] = Field(
+        default_factory=list,
+        description="All monetary amounts extracted from all turns with their reason",
+    )
+    redacted_fields: list[str] = Field(
+        default_factory=list,
+        description="Detected redacted field types: EMAIL_REDACTED, PHONE_REDACTED, etc.",
+    )
+
     domain: Optional[str] = Field(
         default=None,
         description="Domain classification: BILLING, AUTHENTICATION, BOOKINGS, API, PERFORMANCE, etc.",
@@ -267,6 +288,10 @@ class TranscriptAnalysis(BaseModel):
     secondary_intent: Optional[str] = Field(
         default=None,
         description="Optional secondary customer intent",
+    )
+    trigger_cause: Optional[str] = Field(
+        default=None,
+        description="Why the issue happened: the trigger/cause that prompted the customer to contact support (e.g. FIELD_LOCKED, MISSING_DELIVERY)",
     )
     context_provided: list[str] = Field(
         default_factory=list,
@@ -300,3 +325,6 @@ class TemporalPattern(BaseModel):
     duration: Optional[str] = Field(default=None, description="duration")
     frequency: Optional[str] = Field(default=None, description="frequency: 33x day")
     pattern: Optional[str] = Field(default=None, description="pattern")
+    resolved_date: Optional[str] = Field(
+        default=None, description="Resolved ISO date e.g. '2026-02-24'"
+    )

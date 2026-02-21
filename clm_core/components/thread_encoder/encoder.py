@@ -39,11 +39,13 @@ class ThreadEncoder(metaclass=SingletonMeta):
     [DOMAIN:BILLING]
     [SERVICE:SUBSCRIPTION]
     [CUSTOMER_INTENT:REPORT_DUPLICATE_CHARGE]
+    [CUSTOMER_INTENTS:PRIMARY=REQUEST_SHIPMENT_STATUS;SECONDARY=DISPUTE_SERVICE_FEE]
+    [SUPPORT_TRIGGER:FIELD_LOCKED]
     [CONTEXT:EMAIL_PROVIDED]
     [AGENT_ACTIONS:ACCOUNT_VERIFIED→DIAGNOSTIC_PERFORMED→REFUND_INITIATED]
     [SYSTEM_ACTIONS:PAYMENT_RETRY_DETECTED]
     [RESOLUTION:REFUND_ISSUED]
-    [STATE:RESOLVED]
+    [STATE:RESOLVED|ESCALATED|PENDING_SHIPMENT|PENDING_ENGINEERING|PENDING_CUSTOMER]
     [COMMITMENT:REFUND_3-5_DAYS]
     [ARTIFACT:REFUND_REF=RFD-908712]
     [SENTIMENT:NEUTRAL→GRATEFUL]
@@ -56,6 +58,7 @@ class ThreadEncoder(metaclass=SingletonMeta):
         rules: BaseRules,
         patterns: TranscriptPatterns,
         lang: str = "en",
+        redaction_pattern: Optional[str] = None,
     ):
         self._patterns = patterns
         self._lang = lang
@@ -64,6 +67,7 @@ class ThreadEncoder(metaclass=SingletonMeta):
             vocab=vocab,
             rules=rules,
             patterns=patterns,
+            redaction_pattern=redaction_pattern,
         )
         self.analysis: TranscriptAnalysis | None = None
 
@@ -114,17 +118,26 @@ class ThreadEncoder(metaclass=SingletonMeta):
                 print(f"Service: {service_token}")
 
         # 3. Customer intent (mandatory)
-        if self.analysis.customer_intent:
+        if self.analysis.customer_intent and self.analysis.secondary_intent:
+            intent_token = (
+                f"[CUSTOMER_INTENTS:PRIMARY={self.analysis.customer_intent}"
+                f";SECONDARY={self.analysis.secondary_intent}]"
+            )
+            tokens.append(intent_token)
+            if verbose:
+                print(f"Customer Intents: {intent_token}")
+        elif self.analysis.customer_intent:
             intent_token = f"[CUSTOMER_INTENT:{self.analysis.customer_intent}]"
             tokens.append(intent_token)
             if verbose:
                 print(f"Customer Intent: {intent_token}")
 
-        if self.analysis.secondary_intent:
-            secondary_token = f"[CUSTOMER_INTENT:{self.analysis.secondary_intent}]"
-            tokens.append(secondary_token)
+        # 3b. Trigger cause (why the issue happened)
+        if self.analysis.trigger_cause:
+            trigger_token = f"[SUPPORT_TRIGGER:{self.analysis.trigger_cause}]"
+            tokens.append(trigger_token)
             if verbose:
-                print(f"Secondary Intent: {secondary_token}")
+                print(f"Trigger: {trigger_token}")
 
         # 4. Context provided by customer
         for ctx in self.analysis.context_provided:
@@ -132,6 +145,13 @@ class ThreadEncoder(metaclass=SingletonMeta):
             tokens.append(ctx_token)
             if verbose:
                 print(f"Context: {ctx_token}")
+
+        # 4b. Redacted fields detected in transcript
+        for redacted in self.analysis.redacted_fields:
+            r_token = f"[CONTEXT:{redacted}]"
+            tokens.append(r_token)
+            if verbose:
+                print(f"Redacted: {r_token}")
 
         # 5. Agent actions
         if self.analysis.actions:
@@ -332,12 +352,14 @@ class ThreadEncoder(metaclass=SingletonMeta):
 
         return None
 
+    # Canonical state set: RESOLVED, ESCALATED, PENDING_SHIPMENT,
+    # PENDING_ENGINEERING, PENDING_CUSTOMER (+ UNRESOLVED as fallback)
     _STATE_MAP = {
         "FULLY_RESOLVED": "RESOLVED",
         "PARTIALLY_RESOLVED": "RESOLVED",
         "RESOLVED": "RESOLVED",
         "RESOLVED_PENDING_VERIFICATION": "PENDING_CUSTOMER",
-        "PENDING": "PENDING_SETTLEMENT",
+        "PENDING": "PENDING_CUSTOMER",
         "ESCALATED": "ESCALATED",
         "UNRESOLVED": "UNRESOLVED",
         "UNKNOWN": "UNRESOLVED",
@@ -355,12 +377,13 @@ class ThreadEncoder(metaclass=SingletonMeta):
         """
         Encode authoritative interaction state (mutually exclusive).
 
-        Uses contextual sub-state derivation for PENDING/ESCALATED states:
-        - PENDING + refund context → PENDING_PROCESSING
-        - PENDING + shipment context → PENDING_SHIPMENT
-        - PENDING + delivery context → PENDING_DELIVERY
-        - ESCALATED + technical context → PENDING_ENGINEERING_FIX
-        - PENDING + outage/restoration context → PENDING_RESTORATION
+        Canonical finite state set:
+        - RESOLVED
+        - ESCALATED
+        - PENDING_SHIPMENT  (physical delivery pending)
+        - PENDING_ENGINEERING  (technical/engineering fix pending)
+        - PENDING_CUSTOMER  (waiting on customer action, refund processing, etc.)
+        - UNRESOLVED  (fallback when no clear resolution path)
 
         Format: [STATE:RESOLVED]
         """
@@ -374,7 +397,7 @@ class ThreadEncoder(metaclass=SingletonMeta):
         elif resolution.type == "RESOLVED":
             base_state = "RESOLVED"
         elif resolution.type == "PENDING":
-            base_state = "PENDING_SETTLEMENT"
+            base_state = "PENDING_CUSTOMER"
         elif resolution.type == "ESCALATED":
             base_state = "ESCALATED"
         elif resolution.type == "CANCELLED":
@@ -392,46 +415,42 @@ class ThreadEncoder(metaclass=SingletonMeta):
         )
         has_escalation = "ESCALATION_CREATED" in action_types
 
-        # If physical shipment pending → NOT RESOLVED
+        # Physical shipment pending → PENDING_SHIPMENT (not RESOLVED)
         if has_physical_shipment and base_state == "RESOLVED":
             base_state = "PENDING_SHIPMENT"
 
-        # If refund processing → NOT RESOLVED (unless explicitly confirmed)
+        # Refund processing → PENDING_CUSTOMER (not RESOLVED)
         if has_refund and base_state == "RESOLVED":
-            base_state = "PENDING_SETTLEMENT"
+            base_state = "PENDING_CUSTOMER"
 
-        # Contextual sub-states for PENDING/ESCALATED
-        if base_state in ("PENDING_SETTLEMENT", "PENDING_CUSTOMER"):
+        # Contextual sub-states for PENDING_CUSTOMER
+        if base_state == "PENDING_CUSTOMER":
             if has_physical_shipment:
-                if domain == "FULFILLMENT" or any(
-                    a in action_types for a in ("ORDER_STATUS_CHECKED",)
-                ):
-                    return "[STATE:PENDING_SHIPMENT]"
                 return "[STATE:PENDING_SHIPMENT]"
-            if has_refund:
-                return "[STATE:PENDING_SETTLEMENT]"
+            # Refund/payment processing waits on customer's financial institution
+            return "[STATE:PENDING_CUSTOMER]"
 
         if base_state == "ESCALATED" or has_escalation:
             if domain == "TECHNICAL" or any(
                 a in action_types for a in ("LOGS_REVIEWED",)
             ):
-                return f"[STATE:PENDING_ENGINEERING_FIX]"
+                return "[STATE:PENDING_ENGINEERING]"
             if has_refund:
-                return "[STATE:PENDING_PROCESSING]"
+                return "[STATE:PENDING_CUSTOMER]"
             # Generic escalation with pending context
             if resolution.type in ("PENDING", "UNKNOWN"):
-                return "[STATE:PENDING_PROCESSING]"
+                return "[STATE:PENDING_CUSTOMER]"
             return "[STATE:ESCALATED]"
 
         # Outage/restoration context
-        if domain == "TECHNICAL" and base_state in ("PENDING_SETTLEMENT",):
+        if domain == "TECHNICAL" and base_state == "UNRESOLVED":
             if any(a in action_types for a in ("SERVICE_RESTORED",)):
                 return "[STATE:RESOLVED]"
-            return "[STATE:PENDING_RESTORATION]"
+            return "[STATE:PENDING_ENGINEERING]"
 
-        # Delivery context
-        if domain == "FULFILLMENT" and base_state in ("PENDING_SETTLEMENT",):
-            return "[STATE:PENDING_DELIVERY]"
+        # Delivery/fulfillment context
+        if domain == "FULFILLMENT" and base_state == "UNRESOLVED":
+            return "[STATE:PENDING_SHIPMENT]"
 
         return f"[STATE:{base_state}]"
 
@@ -489,8 +508,14 @@ class ThreadEncoder(metaclass=SingletonMeta):
         Encode structured identifiers as artifacts.
 
         Format: [ARTIFACT:REFUND_REF=RFD-908712]
+        Format: [ARTIFACT:AMT=$2.99/EXTRA_CHARGE]
         """
         artifacts = []
+
+        # Monetary amounts with reason
+        for amt in analysis.amounts:
+            if amt.reason:
+                artifacts.append(f"[ARTIFACT:AMT={amt.amount}/{amt.reason}]")
 
         # Refund reference
         if analysis.refund_reference:

@@ -211,7 +211,7 @@ class TestEncodeState:
         resolution = Resolution(type="PENDING")
         state = ResolutionState(type="PENDING")
         result = ThreadEncoder._encode_state(resolution, state)
-        assert result == "[STATE:PENDING_SETTLEMENT]"
+        assert result == "[STATE:PENDING_CUSTOMER]"
 
     def test_escalated_state(self):
         resolution = Resolution(type="ESCALATED")
@@ -696,7 +696,7 @@ Agent: Of course, go ahead."""
         assert result == "[RESOLUTION:ISSUE_RESOLVED]"
 
     def test_state_pending_processing_on_escalation(self):
-        """Escalation + refund context should produce PENDING_PROCESSING."""
+        """Escalation + billing + pending context should produce PENDING_CUSTOMER."""
         resolution = Resolution(type="PENDING")
         state = ResolutionState(type="PENDING")
         actions = [
@@ -706,7 +706,7 @@ Agent: Of course, go ahead."""
         result = ThreadEncoder._encode_state(
             resolution, state, actions=actions, domain="BILLING"
         )
-        assert result == "[STATE:PENDING_PROCESSING]"
+        assert result == "[STATE:PENDING_CUSTOMER]"
 
     def test_state_pending_shipment(self):
         """Physical shipment context should produce PENDING_SHIPMENT."""
@@ -722,7 +722,7 @@ Agent: Of course, go ahead."""
         assert result == "[STATE:PENDING_SHIPMENT]"
 
     def test_state_pending_engineering_fix(self):
-        """Technical escalation should produce PENDING_ENGINEERING_FIX."""
+        """Technical escalation should produce PENDING_ENGINEERING."""
         resolution = Resolution(type="ESCALATED")
         state = ResolutionState(type="ESCALATED")
         actions = [
@@ -732,7 +732,7 @@ Agent: Of course, go ahead."""
         result = ThreadEncoder._encode_state(
             resolution, state, actions=actions, domain="TECHNICAL"
         )
-        assert result == "[STATE:PENDING_ENGINEERING_FIX]"
+        assert result == "[STATE:PENDING_ENGINEERING]"
 
     def test_commitment_gold_format_refund(self):
         """Commitment should use gold-style format."""

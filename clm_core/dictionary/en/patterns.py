@@ -347,10 +347,13 @@ ISSUE_TYPE_KEYWORDS = {
     "DELIVERY_ISSUE": {
         "delivery",
         "shipped",
-        "tracking",
-        "replacement",
+        "tracking number",
+        "track my order",
+        "shipment tracking",
         "haven't received",
         "where is my order",
+        "where is my package",
+        "package hasn't arrived",
     },
     "SECURITY_ISSUE": {
         "unauthorized",
@@ -358,6 +361,12 @@ ISSUE_TYPE_KEYWORDS = {
         "suspicious",
         "someone logged",
         "someone accessed",
+        "someone signed into",
+        "signed in from",
+        "wasn't me",
+        "login alert",
+        "unexpected login",
+        "login from another",
     },
     "SUBSCRIPTION_ISSUE": {
         "cancel subscription",
@@ -382,7 +391,7 @@ ISSUE_TYPE_KEYWORDS = {
         "login issue",
     },
     "PLAN_UPGRADE": {"upgrade", "what features", "upgrade my plan"},
-    "FEE_DISPUTE": {"fee", "charged a fee", "service fee", "late fee"},
+    "FEE_DISPUTE": {"charged a fee", "service fee", "late fee", "unexpected fee"},
 }
 
 SEVERITY_KEYWORDS = {
@@ -1185,6 +1194,7 @@ WORD_TO_NUM = {
     "six": 6,
     "seven": 7,
     "couple": 2,
+    "few": 3,
 }
 
 DAY_ORDER = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
@@ -1301,6 +1311,13 @@ CUSTOMER_INTENT_KEYWORDS = {
         "unauthorized",
         "someone logged in",
         "someone accessed",
+        "someone signed into",
+        "signed into my account from",
+        "wasn't me",
+        "login alert",
+        "unexpected login alert",
+        "login from another",
+        "signed in from",
         "hacked",
         "suspicious activity",
         "didn't authorize",
@@ -1355,14 +1372,17 @@ CUSTOMER_INTENT_KEYWORDS = {
         "installation issue",
     ],
     "REQUEST_SHIPMENT_STATUS": [
-        "tracking",
-        "where is my order",
+        "tracking number",
+        "track my order",
         "shipment status",
+        "where is my order",
+        "where is my shipment",
         "when will it arrive",
         "order status",
+        "where is my package",
+        "has it shipped",
     ],
     "DISPUTE_SERVICE_FEE": [
-        "fee",
         "charged a fee",
         "service fee",
         "late fee",
@@ -1381,11 +1401,31 @@ CUSTOMER_INTENT_KEYWORDS = {
         "get my money back",
         "process a refund",
     ],
+    "INQUIRE_CHARGE_REASON": [
+        "why was i charged",
+        "what is this charge",
+        "what's this charge for",
+        "what was i charged for",
+        "can you explain this charge",
+    ],
+    "DISPUTE_UNAUTHORIZED_CHARGE": [
+        "i didn't authorize",
+        "i never signed up for",
+        "i didn't order",
+        "did not authorize",
+        "never authorized",
+        "i never agreed to",
+    ],
+    "DISPUTE_INCORRECT_AMOUNT": [
+        "incorrect amount",
+        "wrong amount",
+        "overcharged",
+        "charged the wrong amount",
+        "charged incorrectly",
+    ],
     "REPORT_BILLING_ISSUE": [
         "billing issue",
         "incorrect charge",
-        "overcharged",
-        "wrong amount",
     ],
 }
 
@@ -1481,10 +1521,86 @@ ISSUE_TO_DOMAIN = {
     "MULTIPLE_ACCOUNTS": "ACCOUNT",
 }
 
+TRIGGER_CAUSE_KEYWORDS = {
+    "FIELD_LOCKED": [
+        "field is locked", "field was locked", "field locked",
+        "can't edit the field", "cannot edit the field",
+        "field cannot be changed", "the field is locked",
+    ],
+    "ACCOUNT_LOCKED": [
+        "account is locked", "account locked", "locked out of",
+        "account has been locked", "account was locked",
+    ],
+    "MISSING_DELIVERY": [
+        "missing delivery", "not delivered", "delivery missing",
+        "never arrived", "didn't receive it", "hasn't arrived",
+        "still hasn't arrived", "not received",
+    ],
+    "PRICE_INCREASE": [
+        "price increase", "price went up", "cost more", "more expensive",
+        "rate increase", "bill increased", "prices went up", "price raised",
+    ],
+    "BETTER_ALTERNATIVE": [
+        "found a better", "switching to", "better deal",
+        "cheaper alternative", "found a competitor", "better option",
+    ],
+    "SYSTEM_ERROR": [
+        "system error", "got an error", "error message", "error code",
+        "site error", "app error", "it showed an error",
+    ],
+    "PRODUCT_FAILURE": [
+        "stopped working", "not working anymore", "broke down",
+        "has failed", "malfunction", "stopped functioning",
+    ],
+    "UNAUTHORIZED_ACTIVITY": [
+        "didn't authorize", "didn't do this", "wasn't me",
+        "someone else did", "i never authorized",
+    ],
+    "PAYMENT_DECLINED": [
+        "payment failed", "card declined", "payment rejected",
+        "payment was declined", "card was declined",
+    ],
+    "SERVICE_DISRUPTION": [
+        "service was down", "service stopped", "because of the outage",
+        "outage caused", "service disruption",
+    ],
+    "DUPLICATE_CHARGE": [
+        "charged twice", "charged me twice", "billed twice",
+        "two charges", "double charged", "duplicate charge",
+        "billed again", "charged again",
+    ],
+    "CONNECTIVITY_DROPS": [
+        "keeps dropping", "connection drops", "keeps disconnecting",
+        "intermittent connection", "connection keeps cutting out",
+        "drops every", "disconnects randomly", "keeps going out",
+    ],
+    "REFUND_NOT_RECEIVED": [
+        "refund hasn't", "haven't received my refund", "still waiting for my refund",
+        "refund not received", "where is my refund", "my refund hasn't come",
+        "never got my refund", "refund hasn't arrived",
+    ],
+    "TRACKING_NOT_ASSIGNED": [
+        "no tracking number", "tracking not assigned", "tracking hasn't been assigned",
+        "still no tracking", "replacement hasn't shipped", "hasn't been shipped yet",
+        "no shipment update",
+    ],
+    "UNAUTHORIZED_LOGIN_ALERT": [
+        "got an email saying someone signed", "unexpected login alert",
+        "login alert", "someone signed into my account from",
+        "signed in from another", "login from a different location",
+        "unauthorized login", "account access alert",
+    ],
+    "REQUEST_CANCELLATION": [
+        "want to cancel", "would like to cancel", "cancel my plan",
+        "looking to cancel", "need to cancel", "i'd like to cancel",
+        "thinking of cancelling", "cancelling my subscription",
+    ],
+}
+
 CALL_TYPE_TO_DOMAIN = {
     "BILLING": "BILLING",
     "TECHNICAL": "PERFORMANCE",
-    "SALES": "SALES",
+    "SALES": "PRODUCT",
     "SUPPORT": "SUPPORT",
     "RETENTION": "RETENTION",
     "LOGISTICS": "LOGISTICS",
