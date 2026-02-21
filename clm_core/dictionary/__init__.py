@@ -72,6 +72,18 @@ def _build_patterns_map():
             timeline_patterns=getattr(mod, "TIMELINE_PATTERNS", []),
             promise_confidence_strong=getattr(mod, "PROMISE_CONFIDENCE_STRONG", []),
             disputed_amount_keywords=getattr(mod, "DISPUTED_AMOUNT_KEYWORDS", []),
+            agent_speaker_labels=getattr(mod, "AGENT_SPEAKER_LABELS", []),
+            customer_speaker_labels=getattr(mod, "CUSTOMER_SPEAKER_LABELS", []),
+            amount_reason_context=getattr(mod, "AMOUNT_REASON_CONTEXT", []),
+            redacted_field_context=getattr(mod, "REDACTED_FIELD_CONTEXT", []),
+            call_type_sales_keywords=getattr(mod, "CALL_TYPE_SALES_KEYWORDS", []),
+            name_intro_patterns=getattr(mod, "NAME_INTRO_PATTERNS", []),
+            name_thanks_patterns=getattr(mod, "NAME_THANKS_PATTERNS", []),
+            name_change_patterns=getattr(mod, "NAME_CHANGE_PATTERNS", []),
+            agent_name_patterns=getattr(mod, "AGENT_NAME_PATTERNS", []),
+            delay_context_words=getattr(mod, "DELAY_CONTEXT_WORDS", []),
+            extra_commitment_patterns=getattr(mod, "EXTRA_COMMITMENT_PATTERNS", {}),
+            promise_timeline_patterns=getattr(mod, "PROMISE_TIMELINE_PATTERNS", []),
         )
 
     return {

@@ -62,3 +62,31 @@ class TranscriptPatterns:
     timeline_patterns: list[tuple[str, str]] = field(default_factory=list)
     promise_confidence_strong: list[str] = field(default_factory=list)
     disputed_amount_keywords: list[str] = field(default_factory=list)
+
+    # Speaker label detection
+    agent_speaker_labels: list[str] = field(default_factory=list)
+    customer_speaker_labels: list[str] = field(default_factory=list)
+
+    # Amount reason context mapping: list of (keyword, reason_code) tuples
+    amount_reason_context: list[tuple] = field(default_factory=list)
+
+    # Redacted field context mapping: list of (keyword, field_token) tuples
+    redacted_field_context: list[tuple] = field(default_factory=list)
+
+    # Call type detection
+    call_type_sales_keywords: list[str] = field(default_factory=list)
+
+    # Name extraction patterns (regex strings)
+    name_intro_patterns: list[str] = field(default_factory=list)
+    name_thanks_patterns: list[str] = field(default_factory=list)
+    name_change_patterns: list[str] = field(default_factory=list)
+    agent_name_patterns: list[str] = field(default_factory=list)
+
+    # Delay context words (for DELAY_N_DAYS context detection)
+    delay_context_words: list[str] = field(default_factory=list)
+
+    # Extra commitment patterns: dict of commitment_type -> list of phrases
+    extra_commitment_patterns: dict[str, list[str]] = field(default_factory=dict)
+
+    # Promise timeline patterns: list of (regex, format_string) tuples
+    promise_timeline_patterns: list[tuple] = field(default_factory=list)

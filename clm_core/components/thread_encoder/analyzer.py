@@ -209,17 +209,18 @@ class TranscriptAnalyzer:
             redacted_fields=redacted_fields,
         )
 
-    @staticmethod
-    def _parse_turns(transcript: str) -> list[Turn]:
+    def _parse_turns(self, transcript: str) -> list[Turn]:
+        agent_labels = self.patterns.agent_speaker_labels or ["agent", "agente"]
+        customer_labels = self.patterns.customer_speaker_labels or ["customer", "caller", "cliente", "client"]
         turns = []
         for line in transcript.strip().split("\n"):
             if not line or ":" not in line:
                 continue
             speaker, text = line.split(":", 1)
             speaker = speaker.strip().lower()
-            if "agent" in speaker or "agente" in speaker:
+            if any(label in speaker for label in agent_labels):
                 speaker = "agent"
-            elif any(x in speaker for x in ("customer", "caller", "cliente", "client")):
+            elif any(label in speaker for label in customer_labels):
                 speaker = "customer"
             else:
                 speaker = "system"
@@ -341,8 +342,6 @@ class TranscriptAnalyzer:
     def _match_any(text: str, keywords: list[str]) -> bool:
         return any(kw in text for kw in keywords)
 
-    _TIMELINE_WORD_TO_NUM = {"a couple": 2, "couple": 2, "a few": 3, "few": 3}
-
     def _extract_timeline(self, text: str) -> Optional[str]:
         text_lower = text.lower()
 
@@ -360,34 +359,23 @@ class TranscriptAnalyzer:
             if getattr(pattern, "duration", None):
                 return str(pattern.duration).upper()
 
-        # Language-specific timeline keywords
+        # Language-specific timeline keywords (includes "today"/"tomorrow" equivalents)
         timeline_kw = self.patterns.timeline_keywords or {}
         for kw, value in timeline_kw.items():
             if kw in text_lower:
                 return value
 
-        # English defaults
-        if "tomorrow" in text_lower:
-            return "TOMORROW"
-        if "today" in text_lower:
-            return "TODAY"
-        if match := re.search(r"within\s+(\d+)\s*(hour|hours)", text, re.I):
-            return f"{match.group(1)}h"
-        if match := re.search(r"within\s+(\d+)\s*(day|days)", text, re.I):
-            return f"{match.group(1)}d"
-
-        # "in X hours/days" patterns with word number support
-        if match := re.search(
-            r"in\s+(a\s+)?(couple|few|\d+)\s+(?:of\s+)?(hour|hours)", text, re.I
-        ):
+        # "in X hours/days" patterns with word number support (language-specific word_to_num)
+        word_to_num = self.patterns.word_to_num or {}
+        word_alts = "|".join(re.escape(w) for w in word_to_num) if word_to_num else None
+        num_pat = rf"(?:{word_alts}|\d+)" if word_alts else r"\d+"
+        if match := re.search(rf"in\s+(a\s+)?({num_pat})\s+(?:of\s+)?hours?", text_lower, re.I):
             raw = ((match.group(1) or "") + match.group(2)).strip().lower()
-            num = self._TIMELINE_WORD_TO_NUM.get(raw, match.group(2))
+            num = word_to_num.get(raw, match.group(2))
             return f"{num}h"
-        if match := re.search(
-            r"in\s+(a\s+)?(couple|few|\d+)\s+(?:of\s+)?(day|days)", text, re.I
-        ):
+        if match := re.search(rf"in\s+(a\s+)?({num_pat})\s+(?:of\s+)?days?", text_lower, re.I):
             raw = ((match.group(1) or "") + match.group(2)).strip().lower()
-            num = self._TIMELINE_WORD_TO_NUM.get(raw, match.group(2))
+            num = word_to_num.get(raw, match.group(2))
             return f"{num}d"
         return None
 
@@ -419,14 +407,12 @@ class TranscriptAnalyzer:
                 return "COMPLETED"
         return "PENDING"
 
-    @staticmethod
-    def _extract_financial_details(turn: Turn) -> tuple[Optional[str], Optional[str]]:
+    def _extract_financial_details(self, turn: Turn) -> tuple[Optional[str], Optional[str]]:
         """
         Prefer using named entities from turn.entities if present; otherwise fallback to regex heuristics.
         Returns (amount, payment_method)
         """
         amount = None
-        method = None
         ents = getattr(turn, "entities", {}) or {}
 
         money_candidates = ents.get("money") or ents.get("money_amounts") or []
@@ -437,19 +423,7 @@ class TranscriptAnalyzer:
             if m := re.search(r"\$\s?([\d,]+(?:\.\d{1,2})?)", turn.text):
                 amount = f"${m.group(1)}"
 
-        text_lower = turn.text.lower()
-        if "paypal" in text_lower:
-            method = "PAYPAL"
-        elif "check" in text_lower:
-            method = "CHECK"
-        elif "credit card" in text_lower or "card" in text_lower:
-            method = "CARD_CREDIT"
-        elif (
-            "account credit" in text_lower
-            or "account" in text_lower
-            and "credit" in text_lower
-        ):
-            method = "ACCOUNT_CREDIT"
+        method = self._detect_refund_method(turn.text.lower())
         return amount, method
 
     # Common words that should never be extracted as reference numbers
@@ -565,8 +539,7 @@ class TranscriptAnalyzer:
             return "BASIC"
         return "STANDARD"
 
-    @staticmethod
-    def _extract_customer_name(turns: list[Turn]) -> Optional[str]:
+    def _extract_customer_name(self, turns: list[Turn]) -> Optional[str]:
         """Extract the customer's name from the conversation.
 
         Args:
@@ -584,6 +557,8 @@ class TranscriptAnalyzer:
             >>> analyzer._extract_customer_name(turns)
             'John'
         """
+        intro_patterns = self.patterns.name_intro_patterns or [r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)"]
+        thanks_patterns = self.patterns.name_thanks_patterns or [r"thank(?:s| you),\s+([A-Z][a-z]+)"]
         for t in turns[:3]:
             if t.speaker == "agent":
                 doc = t.doc
@@ -591,12 +566,12 @@ class TranscriptAnalyzer:
                     for ent in doc.ents:
                         if ent.label_ == "PERSON":
                             return ent.text
-                if match := re.search(
-                    r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)", t.text, re.I
-                ):
-                    return match.group(1).title()
-                if match := re.search(r"thank(?:s| you),\s+([A-Z][a-z]+)", t.text):
-                    return match.group(1)
+                for pat in intro_patterns:
+                    if match := re.search(pat, t.text, re.I):
+                        return match.group(1).title()
+                for pat in thanks_patterns:
+                    if match := re.search(pat, t.text):
+                        return match.group(1)
         for t in turns:
             ents = getattr(t, "entities", {}) or {}
             emails = ents.get("emails") or []
@@ -687,8 +662,7 @@ class TranscriptAnalyzer:
             >>> _extract_disputed_amounts([Turn("customer", "I think my bill is wrong"), Turn("agent", "What amount do you think is wrong?"), Turn("customer", "I think it's $100")])
             ['$100']
         """
-        en_keywords = ["charge", "bill", "statement", "payment"]
-        keywords = en_keywords + (self.patterns.disputed_amount_keywords or [])
+        keywords = list(self.patterns.disputed_amount_keywords or [])
         amounts = []
         for t in (t for t in turns if t.speaker == "customer"):
             if any(k in t.text.lower() for k in keywords):
@@ -699,19 +673,10 @@ class TranscriptAnalyzer:
         r"\$\s?[\d,]+(?:\.\d{1,2})?|\b[\d,]+(?:\.\d{1,2})?\s*(?:USD|EUR)\b",
         re.I,
     )
-    _AMOUNT_REASON_MAP = [
-        ("duplicate", "DUPLICATE_CHARGE"),
-        ("refund", "REFUND"),
-        ("extra", "EXTRA_CHARGE"),
-        ("discount", "DISCOUNT"),
-        ("credit", "CREDIT"),
-        ("fee", "FEE"),
-        ("charge", "CHARGE"),
-        ("charged", "CHARGE"),
-    ]
 
     def _extract_all_amounts(self, turns: list[Turn]) -> list[MonetaryAmount]:
         """Extract all monetary amounts from all turns with their reason."""
+        amount_reason_map = self.patterns.amount_reason_context or []
         seen: set[tuple[str, Optional[str], str]] = set()
         results: list[MonetaryAmount] = []
 
@@ -725,7 +690,7 @@ class TranscriptAnalyzer:
                 context = text[ctx_start:ctx_end].lower()
 
                 reason = None
-                for keyword, r in self._AMOUNT_REASON_MAP:
+                for keyword, r in amount_reason_map:
                     if keyword in context:
                         reason = r
                         break
@@ -747,16 +712,9 @@ class TranscriptAnalyzer:
 
         return results
 
-    _REDACTED_FIELD_CONTEXT = [
-        ("email", "EMAIL_REDACTED"),
-        ("phone", "PHONE_REDACTED"),
-        ("number", "PHONE_REDACTED"),
-        ("address", "ADDRESS_REDACTED"),
-        ("name", "NAME_REDACTED"),
-    ]
-
     def _extract_redacted_fields(self, turns: list[Turn]) -> list[str]:
         """Detect redacted field tokens from all turns using configured redaction_pattern."""
+        redacted_field_context = self.patterns.redacted_field_context or []
         pattern = re.compile(self._redaction_pattern, re.I)
         seen: set[str] = set()
         results: list[str] = []
@@ -770,7 +728,7 @@ class TranscriptAnalyzer:
                 context = text[ctx_start:ctx_end].lower()
 
                 token = "FIELD_REDACTED"
-                for keyword, field_token in self._REDACTED_FIELD_CONTEXT:
+                for keyword, field_token in redacted_field_context:
                     if keyword in context:
                         token = field_token
                         break
@@ -810,11 +768,10 @@ class TranscriptAnalyzer:
         """
         agent_name = metadata.get("agent") or self._detect_agent_name(turns)
         full_text = " ".join(t.text.lower() for t in turns)
+        sales_keywords = self.patterns.call_type_sales_keywords or ["upgrade", "pricing", "buy", "interested in"]
         call_type = (
             "SALES"
-            if any(
-                x in full_text for x in ["upgrade", "pricing", "buy", "interested in"]
-            )
+            if any(x in full_text for x in sales_keywords)
             else "SUPPORT"
         )
         return CallInfo(
@@ -848,8 +805,7 @@ class TranscriptAnalyzer:
         "thrilled",
     }
 
-    @classmethod
-    def _detect_agent_name(cls, turns: list[Turn]) -> Optional[str]:
+    def _detect_agent_name(self, turns: list[Turn]) -> Optional[str]:
         """Detects the agent's name from the thread_encoder.
         We will find the agent's name by looking for a PERSON entity
         in the text or by matching a pattern.
@@ -864,20 +820,20 @@ class TranscriptAnalyzer:
             >>> _detect_agent_name([Turn("agent", "Hello, my name is John.")])
             'John'
         """
+        agent_patterns = self.patterns.agent_name_patterns or [r"(?:my name is|this is)\s+([A-Z][a-z]+)"]
         for t in (t for t in turns[:3] if t.speaker == "agent"):
             doc = getattr(t, "doc", None)
             if doc:
                 for ent in doc.ents:
                     if ent.label_ == "PERSON":
                         name = ent.text.lower()
-                        if name not in cls._NAME_BLACKLIST:
+                        if name not in self._NAME_BLACKLIST:
                             return ent.text
-            if match := re.search(
-                r"(?:my name is|this is)\s+([A-Z][a-z]+)", t.text, re.I
-            ):
-                candidate = match.group(1)
-                if candidate.lower() not in cls._NAME_BLACKLIST:
-                    return candidate
+            for pat in agent_patterns:
+                if match := re.search(pat, t.text, re.I):
+                    candidate = match.group(1)
+                    if candidate.lower() not in self._NAME_BLACKLIST:
+                        return candidate
         return None
 
     def _extract_resolution_state(
@@ -1173,26 +1129,8 @@ class TranscriptAnalyzer:
         """Extract agent promises and commitments (case-dependent)."""
         promises = []
 
-        # Additional commitment patterns checked separately
-        extra_commitment_patterns = {
-            "CONFIRMATION_EMAIL": [
-                "send you a confirmation",
-                "confirmation email",
-                "you'll receive an email",
-                "email confirmation",
-            ],
-            "FOLLOWUP": [
-                "i'll follow up",
-                "follow up with you",
-                "personally follow up",
-                "follow up tomorrow",
-            ],
-            "MONITORING": [
-                "monitor",
-                "keep an eye on",
-                "watching",
-            ],
-        }
+        # Additional commitment patterns checked separately (language-specific)
+        extra_commitment_patterns = self.patterns.extra_commitment_patterns or {}
 
         for idx, turn in enumerate(turns):
             if turn.speaker != "agent":
@@ -1258,31 +1196,12 @@ class TranscriptAnalyzer:
         if timeline:
             return timeline
 
-        en_patterns = [
-            (r"within (\d+) hours?", lambda m: f"{m.group(1)}h"),
-            (r"within (\d+) days?", lambda m: f"{m.group(1)}d"),
-            (
-                r"by (monday|tuesday|wednesday|thursday|friday|saturday|sunday)",
-                lambda m: m.group(1).upper(),
-            ),
-            (r"next (week|month)", lambda m: f"NEXT_{m.group(1).upper()}"),
-            (
-                r"in the next (\d+[-\s]?\d*) ?(business )?days?",
-                lambda m: f"{m.group(1).strip()}d",
-            ),
-        ]
-
-        for pattern, formatter in en_patterns:
-            if match := re.search(pattern, text, re.I):
-                return formatter(match)
-
-        # Language-specific day names for "by <day>" pattern
-        if self.patterns.day_names:
-            day_alts = "|".join(re.escape(d) for d in self.patterns.day_names)
-            if match := re.search(rf"(?:para el|antes del)\s+({day_alts})", text, re.I):
-                return self.patterns.day_names.get(
-                    match.group(1).lower(), match.group(1).upper()
-                )
+        # Language-specific promise timeline patterns (format-string based)
+        for regex, fmt in self.patterns.promise_timeline_patterns:
+            if match := re.search(regex, text, re.I):
+                groups = match.groups()
+                formatted = fmt.format(*[g.upper() if g else g for g in groups])
+                return formatted
 
         return None
 
@@ -1290,15 +1209,11 @@ class TranscriptAnalyzer:
         """Calculate confidence in promise detection."""
         confidence = 0.6
 
-        strong_indicators = ["will", "going to", "i'll", "we'll", "definitely"]
-        if self.patterns.promise_confidence_strong:
-            strong_indicators = (
-                strong_indicators + self.patterns.promise_confidence_strong
-            )
+        strong_indicators = list(self.patterns.promise_confidence_strong or [])
         if any(ind in text for ind in strong_indicators):
             confidence += 0.2
 
-        timeline_re = r"within|by|before|tomorrow|today|\d+ (day|hour)"
+        timeline_re = r"\d+ (?:day|hour)"
         if self.patterns.timeline_keywords:
             kw_alts = "|".join(re.escape(k) for k in self.patterns.timeline_keywords)
             timeline_re = rf"{timeline_re}|{kw_alts}"
@@ -1437,9 +1352,8 @@ class TranscriptAnalyzer:
 
         return primary, secondary
 
-    @staticmethod
     def _extract_context_provided(
-        turns: list[Turn], call_info: Optional[CallInfo] = None
+        self, turns: list[Turn], call_info: Optional[CallInfo] = None
     ) -> list[str]:
         """Extract v2 CONTEXT tokens indicating what information the customer provided.
 
@@ -1508,22 +1422,24 @@ class TranscriptAnalyzer:
                             _add("NAME_PROVIDED")
                             break
 
-            # Detect "my name is" pattern
-            if re.search(r"\bmy name is\b", text_lower):
+            # Detect name introduction patterns
+            intro_patterns = self.patterns.name_intro_patterns or [r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)"]
+            if any(re.search(pat, text_lower) for pat in intro_patterns):
                 _add("NAME_PROVIDED")
 
             # OLD_NAME_PROVIDED / NEW_NAME_PROVIDED — detect "change X to Y" patterns
-            if re.search(
-                r"\b(?:change|update)\s+(?:my\s+)?(?:name\s+)?(?:from\s+)?\w+\s+to\s+\w+",
-                text_lower,
-            ):
+            name_change_patterns = self.patterns.name_change_patterns or [
+                r"\b(?:change|update)\s+(?:my\s+)?(?:name\s+)?(?:from\s+)?\w+\s+to\s+\w+"
+            ]
+            if any(re.search(pat, text_lower) for pat in name_change_patterns):
                 _add("OLD_NAME_PROVIDED")
                 _add("NEW_NAME_PROVIDED")
 
             # DELAY_N_DAYS — customer mentions a duration of waiting
             delay_match = re.search(r"\b(\d+)\s*days?\b", text_lower)
+            delay_context = self.patterns.delay_context_words or ["waiting", "been", "ago", "since"]
             if delay_match and any(
-                w in text_lower for w in ["waiting", "been", "ago", "since"]
+                w in text_lower for w in delay_context
             ):
                 days = delay_match.group(1)
                 _add(f"DELAY_{days}_DAYS")
