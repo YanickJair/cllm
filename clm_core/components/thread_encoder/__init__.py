@@ -17,5 +17,5 @@ __all__ = [
     "TimelineEvent",
     "ConversationTimeline",
     "PromiseCommitment",
-    "ThreadOutput"
+    "ThreadOutput",
 ]

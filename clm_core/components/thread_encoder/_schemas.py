@@ -233,7 +233,9 @@ class MonetaryAmount(BaseModel):
         default=None,
         description="Reason category: REFUND, CHARGE, FEE, CREDIT, EXTRA_CHARGE, DUPLICATE_CHARGE, DISCOUNT",
     )
-    speaker: str = Field(..., description="Who mentioned the amount: customer, agent, system")
+    speaker: str = Field(
+        ..., description="Who mentioned the amount: customer, agent, system"
+    )
     turn_index: int = Field(..., description="Index of the turn where amount appeared")
 
 
@@ -332,6 +334,7 @@ class TemporalPattern(BaseModel):
         default=None, description="Resolved ISO date e.g. '2026-02-24'"
     )
 
+
 class ThreadOutput(CLMOutput):
     @staticmethod
     def _parse_commitment(commitment_str: str) -> dict:
@@ -360,7 +363,7 @@ class ThreadOutput(CLMOutput):
         for known_type in _KNOWN_TYPES:
             if commitment_str.startswith(known_type):
                 commitment_type = known_type
-                remainder = commitment_str[len(known_type):]
+                remainder = commitment_str[len(known_type) :]
                 if remainder.startswith("_"):
                     timeline_str = remainder[1:]
                 break

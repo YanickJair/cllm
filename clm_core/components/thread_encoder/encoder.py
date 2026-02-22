@@ -322,7 +322,10 @@ class ThreadEncoder(metaclass=SingletonMeta):
         # Cancellation deflection: agent made a retention offer and customer did not cancel
         if actions:
             action_types_set = {a.type for a in actions}
-            if "RETENTION_OFFER" in action_types_set and "SERVICE_CANCELLED" not in action_types_set:
+            if (
+                "RETENTION_OFFER" in action_types_set
+                and "SERVICE_CANCELLED" not in action_types_set
+            ):
                 return "[RESOLUTION:CANCELLATION_DEFLECTED]"
 
         # Try to derive resolution from the last significant agent action
@@ -405,7 +408,10 @@ class ThreadEncoder(metaclass=SingletonMeta):
             a in action_types for a in ("REFUND_INITIATED", "CREDIT_APPLIED")
         )
         has_escalation = "ESCALATION_CREATED" in action_types
-        has_paused = "SUBSCRIPTION_PAUSED" in action_types and "SERVICE_CANCELLED" not in action_types
+        has_paused = (
+            "SUBSCRIPTION_PAUSED" in action_types
+            and "SERVICE_CANCELLED" not in action_types
+        )
 
         # Paused subscription — account is in a frozen state, not pending customer action
         if has_paused:
@@ -587,11 +593,22 @@ class ThreadEncoder(metaclass=SingletonMeta):
 
         return artifacts
 
-    _VALID_SENTIMENTS = frozenset({
-        "NEUTRAL", "SATISFIED", "GRATEFUL", "FRUSTRATED", "ANGRY",
-        "DISAPPOINTED", "CONFUSED", "RELIEVED", "IMPATIENT", "HOPEFUL",
-        "CALM", "WORRIED",
-    })
+    _VALID_SENTIMENTS = frozenset(
+        {
+            "NEUTRAL",
+            "SATISFIED",
+            "GRATEFUL",
+            "FRUSTRATED",
+            "ANGRY",
+            "DISAPPOINTED",
+            "CONFUSED",
+            "RELIEVED",
+            "IMPATIENT",
+            "HOPEFUL",
+            "CALM",
+            "WORRIED",
+        }
+    )
 
     @classmethod
     def _normalize_sentiment(cls, s: str) -> str:

@@ -88,6 +88,7 @@ class CLMOutput(BaseModel):
     def to_dict(self) -> dict:
         raise NotImplementedError
 
+
 class FieldImportance(Enum):
     """Field importance levels
 
