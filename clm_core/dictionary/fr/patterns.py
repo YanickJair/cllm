@@ -760,7 +760,15 @@ TIMELINE_PATTERNS = [
 
 # ── Disputed amount keywords ──
 
-DISPUTED_AMOUNT_KEYWORDS = ["frais", "facture", "paiement", "montant", "relevé", "charge", "payment"]
+DISPUTED_AMOUNT_KEYWORDS = [
+    "frais",
+    "facture",
+    "paiement",
+    "montant",
+    "relevé",
+    "charge",
+    "payment",
+]
 
 # ── Amount reason context ──
 
@@ -799,7 +807,14 @@ REDACTED_FIELD_CONTEXT = [
 
 # ── Call type detection ──
 
-CALL_TYPE_SALES_KEYWORDS = ["mise à niveau", "tarif", "acheter", "intéressé par", "upgrade", "pricing"]
+CALL_TYPE_SALES_KEYWORDS = [
+    "mise à niveau",
+    "tarif",
+    "acheter",
+    "intéressé par",
+    "upgrade",
+    "pricing",
+]
 
 # ── Name extraction patterns ──
 
@@ -824,7 +839,16 @@ AGENT_NAME_PATTERNS = [
 
 # ── Delay context words ──
 
-DELAY_CONTEXT_WORDS = ["attendre", "j'attends", "depuis", "il y a", "waiting", "been", "ago", "since"]
+DELAY_CONTEXT_WORDS = [
+    "attendre",
+    "j'attends",
+    "depuis",
+    "il y a",
+    "waiting",
+    "been",
+    "ago",
+    "since",
+]
 
 # ── Extra commitment patterns ──
 
@@ -867,6 +891,13 @@ PROMISE_TIMELINE_PATTERNS = [
 # ── Promise confidence strong indicators ──
 
 PROMISE_CONFIDENCE_STRONG = [
-    "je vais", "nous allons", "je vais", "définitivement",
-    "certainement", "absolument", "will", "going to", "i'll",
+    "je vais",
+    "nous allons",
+    "je vais",
+    "définitivement",
+    "certainement",
+    "absolument",
+    "will",
+    "going to",
+    "i'll",
 ]

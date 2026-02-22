@@ -1102,11 +1102,27 @@ AGENT_NAME_PATTERNS = [
 
 # ── Delay context words ──
 
-DELAY_CONTEXT_WORDS = ["esperando", "llevo", "hace", "desde", "waiting", "been", "ago", "since"]
+DELAY_CONTEXT_WORDS = [
+    "esperando",
+    "llevo",
+    "hace",
+    "desde",
+    "waiting",
+    "been",
+    "ago",
+    "since",
+]
 
 # ── Call type detection ──
 
-CALL_TYPE_SALES_KEYWORDS = ["actualización", "precio", "comprar", "interesado en", "upgrade", "pricing"]
+CALL_TYPE_SALES_KEYWORDS = [
+    "actualización",
+    "precio",
+    "comprar",
+    "interesado en",
+    "upgrade",
+    "pricing",
+]
 
 # ── Amount reason context ──
 
@@ -1185,6 +1201,13 @@ PROMISE_TIMELINE_PATTERNS = [
 # ── Promise confidence strong indicators ──
 
 PROMISE_CONFIDENCE_STRONG = [
-    "voy a", "le enviaré", "vamos a", "definitivamente",
-    "sin duda", "por supuesto", "will", "going to", "i'll",
+    "voy a",
+    "le enviaré",
+    "vamos a",
+    "definitivamente",
+    "sin duda",
+    "por supuesto",
+    "will",
+    "going to",
+    "i'll",
 ]

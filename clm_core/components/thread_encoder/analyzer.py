@@ -38,7 +38,9 @@ from ...utils.parser_rules import BaseRules
 from ...utils.vocabulary import BaseVocabulary
 
 
-_DEFAULT_REDACTION_PATTERN = r"\[\*+REDACTED\*+\]|\*{3,}|\[REDACTED\]|<redacted>|XXX+|\[PII\]"
+_DEFAULT_REDACTION_PATTERN = (
+    r"\[\*+REDACTED\*+\]|\*{3,}|\[REDACTED\]|<redacted>|XXX+|\[PII\]"
+)
 
 
 class TranscriptAnalyzer:
@@ -179,8 +181,20 @@ class TranscriptAnalyzer:
         promises = self._extract_promises(turns)
         domain = self._extract_domain(call_info, issues)
         service = self._extract_service(issues, turns)
-        customer_intent, secondary_intent = self._extract_customer_intent(issues, turns, actions)
+        customer_intent, secondary_intent = self._extract_customer_intent(
+            issues, turns, actions
+        )
         trigger_cause = self._extract_trigger_cause(turns)
+
+        # Upgrade trigger when cancellation was deflected by a retention offer
+        if trigger_cause == "REQUEST_CANCELLATION":
+            action_types = {a.type for a in actions}
+            if (
+                "RETENTION_OFFER" in action_types
+                and "SERVICE_CANCELLED" not in action_types
+            ):
+                trigger_cause = "CANCELLATION_DEFLECTED"
+
         context_provided = self._extract_context_provided(turns, call_info)
         system_actions = self._extract_system_actions(turns)
         amounts = self._extract_all_amounts(turns)
@@ -211,7 +225,12 @@ class TranscriptAnalyzer:
 
     def _parse_turns(self, transcript: str) -> list[Turn]:
         agent_labels = self.patterns.agent_speaker_labels or ["agent", "agente"]
-        customer_labels = self.patterns.customer_speaker_labels or ["customer", "caller", "cliente", "client"]
+        customer_labels = self.patterns.customer_speaker_labels or [
+            "customer",
+            "caller",
+            "cliente",
+            "client",
+        ]
         turns = []
         for line in transcript.strip().split("\n"):
             if not line or ":" not in line:
@@ -369,11 +388,21 @@ class TranscriptAnalyzer:
         word_to_num = self.patterns.word_to_num or {}
         word_alts = "|".join(re.escape(w) for w in word_to_num) if word_to_num else None
         num_pat = rf"(?:{word_alts}|\d+)" if word_alts else r"\d+"
-        if match := re.search(rf"in\s+(a\s+)?({num_pat})\s+(?:of\s+)?hours?", text_lower, re.I):
+        if match := re.search(
+            rf"in\s+(a\s+)?({num_pat})\s+(?:of\s+)?hours?", text_lower, re.I
+        ):
             raw = ((match.group(1) or "") + match.group(2)).strip().lower()
             num = word_to_num.get(raw, match.group(2))
             return f"{num}h"
-        if match := re.search(rf"in\s+(a\s+)?({num_pat})\s+(?:of\s+)?days?", text_lower, re.I):
+        if match := re.search(
+            rf"in\s+(a\s+)?({num_pat})\s+(?:of\s+)?days?", text_lower, re.I
+        ):
+            raw = ((match.group(1) or "") + match.group(2)).strip().lower()
+            num = word_to_num.get(raw, match.group(2))
+            return f"{num}d"
+        if match := re.search(
+            rf"by\s+(a\s+)?({num_pat})\s+(?:of\s+)?days?", text_lower, re.I
+        ):
             raw = ((match.group(1) or "") + match.group(2)).strip().lower()
             num = word_to_num.get(raw, match.group(2))
             return f"{num}d"
@@ -407,7 +436,9 @@ class TranscriptAnalyzer:
                 return "COMPLETED"
         return "PENDING"
 
-    def _extract_financial_details(self, turn: Turn) -> tuple[Optional[str], Optional[str]]:
+    def _extract_financial_details(
+        self, turn: Turn
+    ) -> tuple[Optional[str], Optional[str]]:
         """
         Prefer using named entities from turn.entities if present; otherwise fallback to regex heuristics.
         Returns (amount, payment_method)
@@ -557,8 +588,12 @@ class TranscriptAnalyzer:
             >>> analyzer._extract_customer_name(turns)
             'John'
         """
-        intro_patterns = self.patterns.name_intro_patterns or [r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)"]
-        thanks_patterns = self.patterns.name_thanks_patterns or [r"thank(?:s| you),\s+([A-Z][a-z]+)"]
+        intro_patterns = self.patterns.name_intro_patterns or [
+            r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)"
+        ]
+        thanks_patterns = self.patterns.name_thanks_patterns or [
+            r"thank(?:s| you),\s+([A-Z][a-z]+)"
+        ]
         for t in turns[:3]:
             if t.speaker == "agent":
                 doc = t.doc
@@ -768,11 +803,14 @@ class TranscriptAnalyzer:
         """
         agent_name = metadata.get("agent") or self._detect_agent_name(turns)
         full_text = " ".join(t.text.lower() for t in turns)
-        sales_keywords = self.patterns.call_type_sales_keywords or ["upgrade", "pricing", "buy", "interested in"]
+        sales_keywords = self.patterns.call_type_sales_keywords or [
+            "upgrade",
+            "pricing",
+            "buy",
+            "interested in",
+        ]
         call_type = (
-            "SALES"
-            if any(x in full_text for x in sales_keywords)
-            else "SUPPORT"
+            "SALES" if any(x in full_text for x in sales_keywords) else "SUPPORT"
         )
         return CallInfo(
             call_id=metadata.get("call_id", "unknown"),
@@ -820,7 +858,9 @@ class TranscriptAnalyzer:
             >>> _detect_agent_name([Turn("agent", "Hello, my name is John.")])
             'John'
         """
-        agent_patterns = self.patterns.agent_name_patterns or [r"(?:my name is|this is)\s+([A-Z][a-z]+)"]
+        agent_patterns = self.patterns.agent_name_patterns or [
+            r"(?:my name is|this is)\s+([A-Z][a-z]+)"
+        ]
         for t in (t for t in turns[:3] if t.speaker == "agent"):
             doc = getattr(t, "doc", None)
             if doc:
@@ -1010,25 +1050,53 @@ class TranscriptAnalyzer:
 
         return None
 
-    @staticmethod
-    def _extract_refund_reference_number(text: str) -> Optional[str]:
-        """Extract refund-specific reference numbers."""
-        patterns = [
-            # Structured prefixes first (most reliable)
+    # Prefixes that identify non-refund reference IDs (escalation, ticket, incident, etc.)
+    _NON_REFUND_PREFIXES = frozenset(
+        {
+            "ESC",
+            "TKT",
+            "INC",
+            "CAS",
+            "TEC",
+            "SUP",
+            "SRQ",
+            "PRB",
+            "CHG",
+        }
+    )
+
+    @classmethod
+    def _extract_refund_reference_number(cls, text: str) -> Optional[str]:
+        """Extract refund-specific reference numbers.
+
+        Prefers known refund prefixes (RFD, REF, CRD, BCR) and explicitly
+        excludes known non-refund prefixes (ESC, TKT, INC, TEC, ...) from the
+        generic PREFIX-DIGITS fallback pattern.
+        """
+        # 1. Known refund-specific prefixes (most reliable)
+        for pattern in (
             r"\bRFD-?\d{5,10}\b",
             r"\bREF-?\d{5,10}\b",
             r"\bCRD-?\d{5,10}\b",
             r"\bBCR-?\d{5,10}\b",
-            # Generic PREFIX-DIGITS pattern (2-5 uppercase letters + dash + 3+ digits)
-            r"\b([A-Z]{2,5}-\d{3,})\b",
-            # "refund reference/number/id" followed by an alphanumeric code
-            # Require at least one digit to avoid matching plain words like "reference"
-            r"refund\s*(?:reference\s*)?(?:number|id|#)?\s*[:=—–-]?\s*([A-Z0-9-]*\d[A-Z0-9-]{3,14})",
-        ]
-
-        for pattern in patterns:
+        ):
             if match := re.search(pattern, text, re.I):
-                return match.group(0) if match.lastindex is None else match.group(1)
+                return match.group(0)
+
+        # 2. "refund reference/number/id" followed by an alphanumeric code
+        if match := re.search(
+            r"refund\s*(?:reference\s*)?(?:number|id|#)?\s*[:=—–-]?\s*([A-Z0-9-]*\d[A-Z0-9-]{3,14})",
+            text,
+            re.I,
+        ):
+            return match.group(1)
+
+        # 3. Generic PREFIX-DIGITS pattern — only if prefix is not a known
+        #    non-refund identifier type (e.g. ESC-, TKT-, INC-).
+        if match := re.search(r"\b([A-Z]{2,5})-(\d{3,})\b", text):
+            prefix = match.group(1).upper()
+            if prefix not in cls._NON_REFUND_PREFIXES:
+                return match.group(0)
 
         return None
 
@@ -1235,15 +1303,30 @@ class TranscriptAnalyzer:
                 return sentence.strip()[:150]
         return text[:150]
 
+    # Promise types where only the first detected instance is kept (no timeline variants).
+    # These promises describe a single outcome whose timeline is set on first mention;
+    # a later agent turn referencing the same promise with a different timeline
+    # (e.g. "later today" vs "3-5 business days") would otherwise emit a conflicting token.
+    _SINGLE_INSTANCE_PROMISE_TYPES = {"REFUND_PROMISE", "CREDIT_PROMISE"}
+
     @staticmethod
     def _dedupe_promises(promises: list[PromiseCommitment]) -> list[PromiseCommitment]:
-        """Remove duplicate promises of the same type."""
-        seen_types = set()
+        """Remove duplicate promises of the same type.
+
+        For REFUND_PROMISE and CREDIT_PROMISE, only the first detected instance per
+        (type, amount) pair is kept. This prevents a secondary agent turn (e.g. one that
+        says 'later today' after already establishing a 3-5 business day timeline) from
+        emitting a conflicting commitment token.
+        """
+        seen_keys: set = set()
         unique = []
         for p in promises:
-            key = (p.type, p.amount, p.timeline)
-            if key not in seen_types:
-                seen_types.add(key)
+            if p.type in TranscriptAnalyzer._SINGLE_INSTANCE_PROMISE_TYPES:
+                key = (p.type, p.amount)
+            else:
+                key = (p.type, p.amount, p.timeline)
+            if key not in seen_keys:
+                seen_keys.add(key)
                 unique.append(p)
         return unique
 
@@ -1273,8 +1356,18 @@ class TranscriptAnalyzer:
 
         # Fallback: derive domain from the detected call type, but only for
         # call types that carry specific domain signal (not the generic SUPPORT type).
-        _INFORMATIVE_CALL_TYPES = {"BILLING", "TECHNICAL", "SALES", "RETENTION", "LOGISTICS", "RETURNS"}
-        if call_info.type in _INFORMATIVE_CALL_TYPES and call_info.type in CALL_TYPE_TO_DOMAIN:
+        _INFORMATIVE_CALL_TYPES = {
+            "BILLING",
+            "TECHNICAL",
+            "SALES",
+            "RETENTION",
+            "LOGISTICS",
+            "RETURNS",
+        }
+        if (
+            call_info.type in _INFORMATIVE_CALL_TYPES
+            and call_info.type in CALL_TYPE_TO_DOMAIN
+        ):
             return CALL_TYPE_TO_DOMAIN[call_info.type]
 
         return "UNCLASSIFIED"
@@ -1289,7 +1382,10 @@ class TranscriptAnalyzer:
         return None
 
     def _extract_customer_intent(
-        self, issues: list[Issue], turns: list[Turn], actions: Optional[list[Action]] = None
+        self,
+        issues: list[Issue],
+        turns: list[Turn],
+        actions: Optional[list[Action]] = None,
     ) -> tuple[Optional[str], Optional[str]]:
         """Extract v2 CUSTOMER_INTENT from customer turns using direct keyword matching.
 
@@ -1423,7 +1519,9 @@ class TranscriptAnalyzer:
                             break
 
             # Detect name introduction patterns
-            intro_patterns = self.patterns.name_intro_patterns or [r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)"]
+            intro_patterns = self.patterns.name_intro_patterns or [
+                r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)"
+            ]
             if any(re.search(pat, text_lower) for pat in intro_patterns):
                 _add("NAME_PROVIDED")
 
@@ -1437,10 +1535,13 @@ class TranscriptAnalyzer:
 
             # DELAY_N_DAYS — customer mentions a duration of waiting
             delay_match = re.search(r"\b(\d+)\s*days?\b", text_lower)
-            delay_context = self.patterns.delay_context_words or ["waiting", "been", "ago", "since"]
-            if delay_match and any(
-                w in text_lower for w in delay_context
-            ):
+            delay_context = self.patterns.delay_context_words or [
+                "waiting",
+                "been",
+                "ago",
+                "since",
+            ]
+            if delay_match and any(w in text_lower for w in delay_context):
                 days = delay_match.group(1)
                 _add(f"DELAY_{days}_DAYS")
 
@@ -1462,7 +1563,9 @@ class TranscriptAnalyzer:
             reverse=True,
         )
 
-        customer_text = " ".join(t.text.lower() for t in turns if t.speaker == "customer")
+        customer_text = " ".join(
+            t.text.lower() for t in turns if t.speaker == "customer"
+        )
 
         for kw, cause in trigger_index:
             if kw in customer_text:

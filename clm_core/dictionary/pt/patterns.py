@@ -765,7 +765,15 @@ TIMELINE_PATTERNS = [
 
 # ── Disputed amount keywords ──
 
-DISPUTED_AMOUNT_KEYWORDS = ["cobrança", "fatura", "pagamento", "valor", "extrato", "charge", "payment"]
+DISPUTED_AMOUNT_KEYWORDS = [
+    "cobrança",
+    "fatura",
+    "pagamento",
+    "valor",
+    "extrato",
+    "charge",
+    "payment",
+]
 
 # ── Amount reason context ──
 
@@ -804,7 +812,14 @@ REDACTED_FIELD_CONTEXT = [
 
 # ── Call type detection ──
 
-CALL_TYPE_SALES_KEYWORDS = ["atualização", "preço", "comprar", "interessado em", "upgrade", "pricing"]
+CALL_TYPE_SALES_KEYWORDS = [
+    "atualização",
+    "preço",
+    "comprar",
+    "interessado em",
+    "upgrade",
+    "pricing",
+]
 
 # ── Name extraction patterns ──
 
@@ -830,7 +845,16 @@ AGENT_NAME_PATTERNS = [
 
 # ── Delay context words ──
 
-DELAY_CONTEXT_WORDS = ["esperando", "aguardando", "faz", "desde", "waiting", "been", "ago", "since"]
+DELAY_CONTEXT_WORDS = [
+    "esperando",
+    "aguardando",
+    "faz",
+    "desde",
+    "waiting",
+    "been",
+    "ago",
+    "since",
+]
 
 # ── Extra commitment patterns ──
 
@@ -872,6 +896,13 @@ PROMISE_TIMELINE_PATTERNS = [
 # ── Promise confidence strong indicators ──
 
 PROMISE_CONFIDENCE_STRONG = [
-    "vou", "vamos", "irei", "definitivamente",
-    "certamente", "com certeza", "will", "going to", "i'll",
+    "vou",
+    "vamos",
+    "irei",
+    "definitivamente",
+    "certamente",
+    "com certeza",
+    "will",
+    "going to",
+    "i'll",
 ]

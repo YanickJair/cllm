@@ -8,19 +8,14 @@ from clm_core.components.thread_encoder.patterns import TranscriptPatterns
 from . import (
     Action,
     CallInfo,
-    CustomerProfile,
-    Issue,
+    ThreadOutput,
     Resolution,
     SentimentTrajectory,
     TranscriptAnalysis,
-    Turn,
     ResolutionState,
-    RefundReference,
-    ConversationTimeline,
     PromiseCommitment,
 )
 from clm_core.utils.singleton import SingletonMeta
-from clm_core.types import CLMOutput
 from ...utils.parser_rules import BaseRules
 from ...utils.vocabulary import BaseVocabulary
 
@@ -73,7 +68,7 @@ class ThreadEncoder(metaclass=SingletonMeta):
 
     def encode(
         self, *, transcript: str, metadata: dict, verbose: bool = False
-    ) -> CLMOutput:
+    ) -> ThreadOutput:
         """
         Encode thread_encoder analysis to CLM Transcript Schema v2 format.
 
@@ -87,7 +82,6 @@ class ThreadEncoder(metaclass=SingletonMeta):
 
         tokens = []
 
-        # 1. Interaction metadata
         interaction_token = self._encode_interaction(self.analysis.call_info)
         tokens.append(interaction_token)
         if verbose:
@@ -104,7 +98,6 @@ class ThreadEncoder(metaclass=SingletonMeta):
         if verbose:
             print(f"Lang: {lang_token}")
 
-        # 2. Domain context
         if self.analysis.domain:
             domain_token = f"[DOMAIN:{self.analysis.domain}]"
             tokens.append(domain_token)
@@ -117,7 +110,6 @@ class ThreadEncoder(metaclass=SingletonMeta):
             if verbose:
                 print(f"Service: {service_token}")
 
-        # 3. Customer intent (mandatory)
         if self.analysis.customer_intent and self.analysis.secondary_intent:
             intent_token = (
                 f"[CUSTOMER_INTENTS:PRIMARY={self.analysis.customer_intent}"
@@ -132,42 +124,36 @@ class ThreadEncoder(metaclass=SingletonMeta):
             if verbose:
                 print(f"Customer Intent: {intent_token}")
 
-        # 3b. Trigger cause (why the issue happened)
         if self.analysis.trigger_cause:
             trigger_token = f"[SUPPORT_TRIGGER:{self.analysis.trigger_cause}]"
             tokens.append(trigger_token)
             if verbose:
                 print(f"Trigger: {trigger_token}")
 
-        # 4. Context provided by customer
         for ctx in self.analysis.context_provided:
             ctx_token = f"[CONTEXT:{ctx}]"
             tokens.append(ctx_token)
             if verbose:
                 print(f"Context: {ctx_token}")
 
-        # 4b. Redacted fields detected in transcript
         for redacted in self.analysis.redacted_fields:
             r_token = f"[CONTEXT:{redacted}]"
             tokens.append(r_token)
             if verbose:
                 print(f"Redacted: {r_token}")
 
-        # 5. Agent actions
         if self.analysis.actions:
             agent_actions_token = self._encode_agent_actions(self.analysis.actions)
             tokens.append(agent_actions_token)
             if verbose:
                 print(f"Agent Actions: {agent_actions_token}")
 
-        # 6. System actions (optional)
         if self.analysis.system_actions:
             sys_token = self._encode_system_actions(self.analysis.system_actions)
             tokens.append(sys_token)
             if verbose:
                 print(f"System Actions: {sys_token}")
 
-        # 7. Resolution
         resolution_token = self._encode_resolution(
             self.analysis.resolution, self.analysis.actions
         )
@@ -176,7 +162,6 @@ class ThreadEncoder(metaclass=SingletonMeta):
             if verbose:
                 print(f"Resolution: {resolution_token}")
 
-        # 8. State (mutually exclusive)
         state_token = self._encode_state(
             self.analysis.resolution,
             self.analysis.resolution_state,
@@ -188,21 +173,18 @@ class ThreadEncoder(metaclass=SingletonMeta):
         if verbose:
             print(f"State: {state_token}")
 
-        # 9. Commitments
         if self.analysis.promises:
             for commitment_token in self._encode_commitments(self.analysis.promises):
                 tokens.append(commitment_token)
                 if verbose:
                     print(f"Commitment: {commitment_token}")
 
-        # 10. Artifacts
         artifact_tokens = self._encode_artifacts(self.analysis)
         for artifact_token in artifact_tokens:
             tokens.append(artifact_token)
             if verbose:
                 print(f"Artifact: {artifact_token}")
 
-        # 11. Sentiment
         sentiment_token = self._encode_sentiment(self.analysis.sentiment_trajectory)
         tokens.append(sentiment_token)
         if verbose:
@@ -210,7 +192,6 @@ class ThreadEncoder(metaclass=SingletonMeta):
 
         compressed = " ".join(tokens)
 
-        # Extract verbs and noun_chunks from already-processed turn docs
         verbs = []
         noun_chunks = []
         for turn in self.analysis.turns:
@@ -218,7 +199,7 @@ class ThreadEncoder(metaclass=SingletonMeta):
                 verbs.extend(token.lemma_ for token in turn.doc if token.pos_ == "VERB")
                 noun_chunks.extend(chunk.text for chunk in turn.doc.noun_chunks)
 
-        return CLMOutput(
+        return ThreadOutput(
             compressed=compressed,
             original=transcript,
             component=COMPONENT,
@@ -235,6 +216,10 @@ class ThreadEncoder(metaclass=SingletonMeta):
                 "has_urls": bool(re.search(r"https?://", transcript)),
             },
         )
+
+    @classmethod
+    def to_recoder(cls):
+        pass
 
     @staticmethod
     def _encode_interaction(call: CallInfo) -> str:
@@ -334,6 +319,15 @@ class ThreadEncoder(metaclass=SingletonMeta):
 
         Format: [RESOLUTION:REFUND_INITIATED]
         """
+        # Cancellation deflection: agent made a retention offer and customer did not cancel
+        if actions:
+            action_types_set = {a.type for a in actions}
+            if (
+                "RETENTION_OFFER" in action_types_set
+                and "SERVICE_CANCELLED" not in action_types_set
+            ):
+                return "[RESOLUTION:CANCELLATION_DEFLECTED]"
+
         # Try to derive resolution from the last significant agent action
         if actions:
             for action in reversed(actions):
@@ -414,6 +408,14 @@ class ThreadEncoder(metaclass=SingletonMeta):
             a in action_types for a in ("REFUND_INITIATED", "CREDIT_APPLIED")
         )
         has_escalation = "ESCALATION_CREATED" in action_types
+        has_paused = (
+            "SUBSCRIPTION_PAUSED" in action_types
+            and "SERVICE_CANCELLED" not in action_types
+        )
+
+        # Paused subscription — account is in a frozen state, not pending customer action
+        if has_paused:
+            return "[STATE:PAUSED]"
 
         # Physical shipment pending → PENDING_SHIPMENT (not RESOLVED)
         if has_physical_shipment and base_state == "RESOLVED":
@@ -423,24 +425,42 @@ class ThreadEncoder(metaclass=SingletonMeta):
         if has_refund and base_state == "RESOLVED":
             base_state = "PENDING_CUSTOMER"
 
-        # Contextual sub-states for PENDING_CUSTOMER
-        if base_state == "PENDING_CUSTOMER":
-            if has_physical_shipment:
-                return "[STATE:PENDING_SHIPMENT]"
-            # Refund/payment processing waits on customer's financial institution
-            return "[STATE:PENDING_CUSTOMER]"
+        # Actions that definitively resolve an issue on the agent's side —
+        # the customer has nothing left to do, so PENDING_CUSTOMER is wrong.
+        _DEFINITIVE_RESOLUTION_ACTIONS = {
+            "PASSWORD_RESET",
+            "FEE_WAIVED",
+            "SERVICE_RESTORED",
+        }
 
+        # Escalation always takes precedence over derived PENDING_CUSTOMER /
+        # UNRESOLVED states — the escalation team is working on it.
         if base_state == "ESCALATED" or has_escalation:
             if domain == "TECHNICAL" or any(
                 a in action_types for a in ("LOGS_REVIEWED",)
             ):
                 return "[STATE:PENDING_ENGINEERING]"
-            if has_refund:
-                return "[STATE:PENDING_CUSTOMER]"
-            # Generic escalation with pending context
-            if resolution.type in ("PENDING", "UNKNOWN"):
-                return "[STATE:PENDING_CUSTOMER]"
+            # Escalation is handling the refund — customer is not pending any
+            # action; the billing team is.  Use ESCALATED, not PENDING_CUSTOMER.
             return "[STATE:ESCALATED]"
+
+        # Contextual sub-states for PENDING_CUSTOMER (only reached when no
+        # active escalation).
+        if base_state == "PENDING_CUSTOMER":
+            if has_physical_shipment:
+                return "[STATE:PENDING_SHIPMENT]"
+            # If the issue was definitively resolved by a specific action
+            # (e.g. password reset, fee waived) the state is RESOLVED, not
+            # PENDING_CUSTOMER.  The follow-up email promise does NOT make the
+            # outcome pending from the customer's perspective.
+            if action_types & _DEFINITIVE_RESOLUTION_ACTIONS:
+                return "[STATE:RESOLVED]"
+            # Outage or technical issue with dispatched technicians / pending fix
+            # — the engineering team is pending, not the customer.
+            if domain == "TECHNICAL":
+                return "[STATE:PENDING_ENGINEERING]"
+            # Refund/payment processing waits on customer's financial institution
+            return "[STATE:PENDING_CUSTOMER]"
 
         # Outage/restoration context
         if domain == "TECHNICAL" and base_state == "UNRESOLVED":
@@ -477,7 +497,12 @@ class ThreadEncoder(metaclass=SingletonMeta):
             "MONITORING": "MONITORING",
             "TECHNICIAN_VISIT": "TECHNICIAN_VISIT",
             "RESOLUTION_PROMISE": "RESOLUTION",
+            "BILLING_EXTENSION": "BILLING_EXTENSION",
+            "PAUSE_EXPIRY_REMINDER": "PAUSE_EXPIRY_REMINDER",
         }
+
+        # Commitment types where timeline is omitted (the timing is inherently future/contextual)
+        _NO_TIMELINE_TYPES = {"PAUSE_EXPIRY_REMINDER"}
 
         # Map timeline shorthand to gold-style
         _TIMELINE_MAP = {
@@ -490,20 +515,26 @@ class ThreadEncoder(metaclass=SingletonMeta):
         }
 
         tokens = []
+        seen: set[str] = set()
         for p in promises:
             label = _TYPE_MAP.get(p.type, p.type)
             parts = [label]
-            if p.timeline:
+            if p.timeline and p.type not in _NO_TIMELINE_TYPES:
                 timeline_str = _TIMELINE_MAP.get(p.timeline, p.timeline)
                 parts.append(timeline_str)
             if p.amount:
                 parts.append(p.amount)
             commitment_str = "_".join(parts)
-            tokens.append(f"[COMMITMENT:{commitment_str}]")
+            if commitment_str not in seen:
+                seen.add(commitment_str)
+                tokens.append(f"[COMMITMENT:{commitment_str}]")
         return tokens
 
-    @staticmethod
-    def _encode_artifacts(analysis: TranscriptAnalysis) -> list[str]:
+    # Pattern that looks like a reference/ticket/escalation ID (e.g. RFD-908712, ESC-45390)
+    _REF_ID_PATTERN = re.compile(r"^[A-Z]{2,5}-\d{3,}$")
+
+    @classmethod
+    def _encode_artifacts(cls, analysis: TranscriptAnalysis) -> list[str]:
         """
         Encode structured identifiers as artifacts.
 
@@ -543,32 +574,87 @@ class ThreadEncoder(metaclass=SingletonMeta):
                 for key in identifiers:
                     collected[key].extend(turn.entities.get(key, []))
 
+        # Already-encoded reference numbers (avoid duplication across artifact types)
+        encoded_refs: set[str] = set()
+        if analysis.refund_reference and analysis.refund_reference.reference_number:
+            encoded_refs.add(analysis.refund_reference.reference_number)
+
         for key, artifact_type in identifiers.items():
             unique_values = list(set(collected[key]))
             for val in unique_values:
+                # Skip values that look like reference/ticket IDs when encoding
+                # as PRODUCT_ID — entity extractors sometimes mis-classify them.
+                if artifact_type == "PRODUCT_ID" and cls._REF_ID_PATTERN.match(val):
+                    continue
+                # Skip if this value was already encoded as REFUND_REF
+                if val in encoded_refs:
+                    continue
                 artifacts.append(f"[ARTIFACT:{artifact_type}={val}]")
 
         return artifacts
 
-    @staticmethod
-    def _encode_sentiment(sentiment: SentimentTrajectory) -> str:
+    _VALID_SENTIMENTS = frozenset(
+        {
+            "NEUTRAL",
+            "SATISFIED",
+            "GRATEFUL",
+            "FRUSTRATED",
+            "ANGRY",
+            "DISAPPOINTED",
+            "CONFUSED",
+            "RELIEVED",
+            "IMPATIENT",
+            "HOPEFUL",
+            "CALM",
+            "WORRIED",
+        }
+    )
+
+    @classmethod
+    def _normalize_sentiment(cls, s: str) -> str:
+        """Normalize sentiment to a valid canonical label.
+
+        Handles malformed values like 'GRATEFUL_POSITIVE' → 'GRATEFUL'.
+        """
+        if not s:
+            return "NEUTRAL"
+        upper = s.upper()
+        if upper in cls._VALID_SENTIMENTS:
+            return upper
+        for valid in cls._VALID_SENTIMENTS:
+            if upper.startswith(valid):
+                return valid
+        return upper
+
+    @classmethod
+    def _encode_sentiment(cls, sentiment: SentimentTrajectory) -> str:
         """
         Encode sentiment trajectory.
 
         Format: [SENTIMENT:NEUTRAL→GRATEFUL]
+        Prevents regressions: once a sentiment appears in the trajectory it
+        is not appended again (e.g. NEUTRAL→SATISFIED→GRATEFUL→SATISFIED
+        becomes NEUTRAL→SATISFIED→GRATEFUL).
         """
-        checked_sentiment = set()
-        if not sentiment.turning_points:
-            return f"[SENTIMENT:{sentiment.start}→{sentiment.end}]"
+        start = cls._normalize_sentiment(sentiment.start or "NEUTRAL")
+        end = cls._normalize_sentiment(sentiment.end or "NEUTRAL")
 
-        trajectory = [sentiment.start]
+        if not sentiment.turning_points:
+            if start == end:
+                return f"[SENTIMENT:{start}]"
+            return f"[SENTIMENT:{start}→{end}]"
+
+        trajectory = [start]
+        seen = {start}
         for _, emotion in sentiment.turning_points:
-            if emotion != trajectory[-1] and emotion not in checked_sentiment:
-                checked_sentiment.add(emotion)
+            emotion = cls._normalize_sentiment(emotion)
+            if emotion != trajectory[-1] and emotion not in seen:
+                seen.add(emotion)
                 trajectory.append(emotion)
 
-        if trajectory[-1] != sentiment.end and sentiment.end is not None:
-            trajectory.append(sentiment.end)
+        # Append end only if it differs from the last label and hasn't appeared
+        if trajectory[-1] != end and end not in seen:
+            trajectory.append(end)
 
         trajectory_str = "→".join(trajectory)
         return f"[SENTIMENT:{trajectory_str}]"

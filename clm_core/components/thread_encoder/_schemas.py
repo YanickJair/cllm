@@ -1,7 +1,10 @@
+import re
 from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict
 from spacy.tokens import Doc
+
+from clm_core import CLMOutput
 from clm_core.components.sys_prompt import Intent, Target
 
 
@@ -230,7 +233,9 @@ class MonetaryAmount(BaseModel):
         default=None,
         description="Reason category: REFUND, CHARGE, FEE, CREDIT, EXTRA_CHARGE, DUPLICATE_CHARGE, DISCOUNT",
     )
-    speaker: str = Field(..., description="Who mentioned the amount: customer, agent, system")
+    speaker: str = Field(
+        ..., description="Who mentioned the amount: customer, agent, system"
+    )
     turn_index: int = Field(..., description="Index of the turn where amount appeared")
 
 
@@ -328,3 +333,128 @@ class TemporalPattern(BaseModel):
     resolved_date: Optional[str] = Field(
         default=None, description="Resolved ISO date e.g. '2026-02-24'"
     )
+
+
+class ThreadOutput(CLMOutput):
+    @staticmethod
+    def _parse_commitment(commitment_str: str) -> dict:
+        _KNOWN_TYPES = [
+            "CONFIRMATION_EMAIL",
+            "TECHNICIAN_VISIT",
+            "RESOLUTION",
+            "DELIVERY",
+            "CALLBACK",
+            "FOLLOWUP",
+            "MONITORING",
+            "CREDIT",
+            "REFUND",
+        ]
+        _TIMELINE_TO_DAYS = {
+            "3-5_BUSINESS_DAYS": 4,
+            "1-3_BUSINESS_DAYS": 2,
+            "WITHIN_24_HOURS": 1,
+            "WITHIN_48_HOURS": 2,
+            "WITHIN_HOURS": 0,
+            "TODAY": 0,
+            "TOMORROW": 1,
+        }
+        commitment_type = commitment_str
+        timeline_str = None
+        for known_type in _KNOWN_TYPES:
+            if commitment_str.startswith(known_type):
+                commitment_type = known_type
+                remainder = commitment_str[len(known_type) :]
+                if remainder.startswith("_"):
+                    timeline_str = remainder[1:]
+                break
+        result: dict = {"type": commitment_type}
+        if timeline_str is not None:
+            result["etaDays"] = _TIMELINE_TO_DAYS.get(timeline_str)
+        return result
+
+    def to_dict(self) -> dict:
+        """Parse compressed tokens into a structured dictionary.
+
+        All recognised token fields are present; absent tokens have value None.
+        """
+        result: dict = {
+            "id": self.metadata.get("id"),
+            "channel": None,
+            "lang": None,
+            "domain": None,
+            "service": None,
+            "customerIntent": None,
+            "secondaryIntent": None,
+            "state": None,
+            "resolution": None,
+            "sentiment": None,
+            "agentActions": None,
+            "systemActions": None,
+            "commitments": None,
+            "artifacts": None,
+            "createdAt": self.metadata.get("created_at"),
+            "durationSeconds": None,
+            "supportTrigger": None,
+            "context": None,
+        }
+
+        context_list: list[str] = []
+        artifacts_list: list[dict] = []
+        commitments_list: list[dict] = []
+
+        for token in re.findall(r"\[([^\]]+)\]", self.compressed):
+            if token.startswith("INTERACTION:"):
+                parts = token.split(":")
+                if len(parts) >= 3 and "=" in parts[2]:
+                    result["channel"] = parts[2].split("=", 1)[1]
+            elif token.startswith("DURATION="):
+                duration_str = token[9:]
+                if duration_str.endswith("m"):
+                    try:
+                        result["durationSeconds"] = int(duration_str[:-1]) * 60
+                    except ValueError:
+                        pass
+            elif token.startswith("LANG="):
+                result["lang"] = token[5:]
+            elif token.startswith("DOMAIN:"):
+                result["domain"] = token[7:]
+            elif token.startswith("SERVICE:"):
+                result["service"] = token[8:]
+            elif token.startswith("CUSTOMER_INTENTS:"):
+                for part in token[17:].split(";"):
+                    if part.startswith("PRIMARY="):
+                        result["customerIntent"] = part[8:]
+                    elif part.startswith("SECONDARY="):
+                        result["secondaryIntent"] = part[10:]
+            elif token.startswith("CUSTOMER_INTENT:"):
+                result["customerIntent"] = token[16:]
+            elif token.startswith("SUPPORT_TRIGGER:"):
+                result["supportTrigger"] = token[16:]
+            elif token.startswith("CONTEXT:"):
+                context_list.append(token[8:])
+            elif token.startswith("AGENT_ACTIONS:"):
+                result["agentActions"] = token[14:].split("\u2192")
+            elif token.startswith("SYSTEM_ACTIONS:"):
+                result["systemActions"] = token[15:].split("\u2192")
+            elif token.startswith("RESOLUTION:"):
+                result["resolution"] = token[11:]
+            elif token.startswith("STATE:"):
+                result["state"] = token[6:]
+            elif token.startswith("COMMITMENT:"):
+                commitments_list.append(self._parse_commitment(token[11:]))
+            elif token.startswith("ARTIFACT:"):
+                artifact_str = token[9:]
+                if "=" in artifact_str:
+                    key, value = artifact_str.split("=", 1)
+                    artifacts_list.append({"key": key, "value": value})
+            elif token.startswith("SENTIMENT:"):
+                result["sentiment"] = token[10:].split("\u2192")
+
+        if context_list:
+            result["context"] = context_list
+        if artifacts_list:
+            result["artifacts"] = artifacts_list
+        if commitments_list:
+            result["commitments"] = commitments_list
+
+        return result
