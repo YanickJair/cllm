@@ -765,7 +765,7 @@ config = SDCompressionConfig(
 
 ## Next Steps
 
-- **[Transcript Encoding](transcript_encoder.md)** - Compress conversations
+- **[Transcript Encoding](thread_encoder/transcript_encoder.md)** - Compress conversations
 - **[System Prompt Encoding](sys_prompt/index.md)** - Compress instructions
 - **[Advanced: Token Hierarchy](advanced/clm_tokenization.md)** - Understanding semantic tokens
 - **[Advanced: CLM Dictionary](advanced/clm_vocabulary.md)** - Language vocabularies

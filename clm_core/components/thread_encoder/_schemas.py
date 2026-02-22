@@ -428,8 +428,8 @@ class ThreadOutput(CLMOutput):
                         result["secondaryIntent"] = part[10:]
             elif token.startswith("CUSTOMER_INTENT:"):
                 result["customerIntent"] = token[16:]
-            elif token.startswith("SUPPORT_TRIGGER:"):
-                result["supportTrigger"] = token[16:]
+            elif token.startswith("INTERACTION_TRIGGER:"):
+                result["interactionTrigger"] = token[16:]
             elif token.startswith("CONTEXT:"):
                 context_list.append(token[8:])
             elif token.startswith("AGENT_ACTIONS:"):

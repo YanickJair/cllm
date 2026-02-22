@@ -1,5 +1,7 @@
 # Transcript Encoder
 
+> **Part of Thread Encoder** — Transcript is one of the encoding modes within the **Thread Encoder** component (`clm_core/components/thread_encoder`), which is the umbrella that handles all conversation-based compression. Thread Encoder provides the underlying analysis engine, schema definitions, and language-aware pattern matching that power transcript compression.
+
 ## Overview
 
 The Transcript Encoder is designed to compress customer service conversations between agents and customers. Unlike general conversation compression, this encoder is optimized for structured support interactions that follow predictable patterns.
@@ -103,7 +105,7 @@ Result:
 ✅ PII-safe context representation
 ```
 
-![Information Entropy Comparison](img/information-entropy.png)
+![Information Entropy Comparison](../img/information-entropy.png)
 
 ---
 
@@ -170,19 +172,20 @@ print(result.compressed)
 
 ### What's Preserved
 
-| Element | Original | Compressed |
-|---------|----------|------------|
-| **Interaction** | Voice call, support | `INTERACTION:SUPPORT:CHANNEL=VOICE` |
-| **Domain/Service** | Billing, subscription plan | `DOMAIN:BILLING`, `SERVICE:SUBSCRIPTION` |
-| **Customer Intent** | "extra charge... billed twice" | `CUSTOMER_INTENT:REPORT_DUPLICATE_CHARGE` |
-| **Context** | Customer provided email | `CONTEXT:EMAIL_PROVIDED` (PII-safe) |
-| **Root Cause** | "system retried payment" | `SYSTEM_ACTIONS:PAYMENT_RETRY_DETECTED` |
-| **Agent Actions** | Verified, diagnosed, refunded | `AGENT_ACTIONS:ACCOUNT_VERIFIED→DIAGNOSTIC_PERFORMED→REFUND_INITIATED` |
-| **Resolution** | Issue resolved | `RESOLUTION:ISSUE_RESOLVED`, `STATE:RESOLVED` |
-| **Commitment** | "3-5 business days" | `COMMITMENT:REFUND_3-5_DAYS` |
-| **Artifact** | "RFD-908712" | `ARTIFACT:REFUND_REF=RFD-908712` |
-| **Sentiment Arc** | Concerned → Grateful | `SENTIMENT:NEUTRAL→GRATEFUL` |
-
+| Element                 | Original | Compressed |
+|-------------------------|----------|------------|
+| **Interaction**         | Voice support call | `INTERACTION:SUPPORT:CHANNEL=VOICE` |
+| **Metadata**            | 7-minute call, English | `DURATION=7m`, `LANG=EN` |
+| **Domain/Service**      | Billing issue, payment processing | `DOMAIN:BILLING`, `SERVICE:PAYMENT` |
+| **Customer Intent**     | "extra charge… billed twice" | `CUSTOMER_INTENT:REPORT_BILLING_ISSUE` |
+| **Interaction Trigger** | Duplicate charge detected by customer | `INTERACTION_TRIGGER:DUPLICATE_CHARGE` |
+| **Context**             | Customer provided email and name | `CONTEXT:EMAIL_PROVIDED`, `CONTEXT:NAME_PROVIDED` |
+| **Root Cause**          | System retried payment after success | `SYSTEM_ACTIONS:PAYMENT_RETRY_DETECTED` |
+| **Agent Actions**       | Looked up account, diagnosed issue, confirmed duplicate, notified customer | `AGENT_ACTIONS:ACCOUNT_LOOKUP→TROUBLESHOOT→DIAGNOSTIC_PERFORMED→DUPLICATE_CHARGE_CONFIRMED→CUSTOMER_NOTIFIED` |
+| **Resolution/State**    | Refund processed and case closed | `STATE:RESOLVED` |
+| **Commitments**         | Confirmation email + refund in 3–5 business days | `COMMITMENT:CONFIRMATION_EMAIL`, `COMMITMENT:REFUND_3-5_BUSINESS_DAYS` |
+| **Artifact**            | Refund reference "RFD-908712" | `ARTIFACT:REFUND_REF=RFD-908712` |
+| **Sentiment Arc**       | Neutral → Satisfied → Grateful | `SENTIMENT:NEUTRAL→SATISFIED→GRATEFUL` |
 ### Compression Metrics
 
 ```
@@ -197,7 +200,7 @@ Semantic preservation: ✅ Complete
 
 ## Configuration
 
-The Transcript Encoder uses a simple configuration approach. Most complexity is handled automatically by CLLM's internal dictionary and language rules.
+The Transcript Encoder uses a simple configuration approach. All analysis decisions — what to extract, what to drop — are handled automatically by CLM's internal NLP pipeline and language dictionary.
 
 ### Basic Configuration
 
@@ -213,21 +216,21 @@ encoder = CLMEncoder(cfg=cfg)
 
 ```python
 cfg = CLMConfig(
-    lang="en",                          # Language: en, pt, es, fr
-    compression_level=2,                # 1=conservative, 2=balanced, 3=aggressive
-    preserve_numbers=True,              # Keep numeric values
-    preserve_entities=True,             # Keep names, emails, etc.
-    extract_sentiment=True,             # Track sentiment trajectory
-    track_actions=True,                 # Preserve action sequences
-    include_metadata=True               # Use provided metadata
+    lang="en",                    # Language: en, pt, es, fr
+    redaction_pattern=r"\[.*?\]"  # Optional: detect redacted PII fields
 )
 ```
 
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `lang` | `str` | `"en"` | Language for NLP model and dictionary |
+| `redaction_pattern` | `str` | Built-in | Regex pattern to detect redacted PII in text |
+
 ### Language-Specific Behavior
 
-When you select a language, CLLM automatically:
+When you select a language, CLM automatically:
 - Loads the appropriate spaCy model
-- Applies language-specific compression rules
+- Applies language-specific action and intent vocabulary
 - Uses the corresponding semantic dictionary
 - Adjusts entity recognition patterns
 
@@ -311,18 +314,31 @@ result = encoder.encode(input_=transcript, metadata=metadata)
 
 # Basic compression info
 print(f"Compressed text: {result.compressed}")
-print(f"Original tokens: {result.original_tokens}")
-print(f"Compressed tokens: {result.compressed_tokens}")
-print(f"Compression ratio: {result.compression_ratio:.1%}")
-
-# Additional metadata (if verbose=True)
-if hasattr(result, 'metadata'):
-    print(f"Entities extracted: {result.metadata.get('entities')}")
-    print(f"Actions identified: {result.metadata.get('actions')}")
-    print(f"Sentiment trajectory: {result.metadata.get('sentiment')}")
+print(f"Original tokens: {result.n_tokens}")
+print(f"Compressed tokens: {result.c_tokens}")
+print(f"Compression ratio: {result.compression_ratio:.1f}%")
 ```
 
-See [Case-Dependent Features](#case-dependent-features) for accessing resolution state, refund details, timeline, and agent promises.
+### Structured Output — `to_dict()`
+
+Parse the compressed token string into a typed Python dictionary for downstream use (APIs, databases, analytics):
+
+```python
+data = result.to_dict()
+
+print(data["channel"])         # "VOICE"
+print(data["domain"])          # "BILLING"
+print(data["customerIntent"])  # "REPORT_DUPLICATE_CHARGE"
+print(data["state"])           # "RESOLVED"
+print(data["agentActions"])    # ["ACCOUNT_VERIFIED", "DIAGNOSTIC_PERFORMED", "REFUND_INITIATED"]
+print(data["commitments"])     # [{"type": "REFUND", "etaDays": 4}]
+print(data["artifacts"])       # [{"key": "REFUND_REF", "value": "RFD-908712"}]
+print(data["sentiment"])       # ["NEUTRAL", "GRATEFUL"]
+```
+
+All recognised token fields are present in the dict; tokens absent from the output have `None` as their value. See the [Thread Encoder index](index.md) for the full dict schema.
+
+See [Case-Dependent Features](#case-dependent-features) for accessing resolution state, refund details, timeline, and agent promises via the raw analysis object.
 
 ---
 
@@ -378,7 +394,19 @@ Derived strictly from customer utterances (not inferred from agent actions):
 [CUSTOMER_INTENT:CANCEL_BOOKING]
 ```
 
-One primary intent required. Optional secondary intent allowed.
+One primary intent required. When a secondary intent is detected, both are encoded together:
+```
+[CUSTOMER_INTENTS:PRIMARY=REQUEST_SHIPMENT_STATUS;SECONDARY=DISPUTE_SERVICE_FEE]
+```
+
+### INTERACTION_TRIGGER Token (Optional)
+Encodes *why* the issue occurred — the root cause or trigger event that prompted the customer to contact support. This is distinct from customer intent (what they want) and agent actions (what was done):
+```
+[INTERACTION_TRIGGER:FIELD_LOCKED]
+[INTERACTION_TRIGGER:MISSING_DELIVERY]
+[INTERACTION_TRIGGER:DUPLICATE_AUTHORIZATION]
+[INTERACTION_TRIGGER:AUTO_ESCALATION_TRIGGERED]
+```
 
 ### CONTEXT Token
 Indicates fact-of-information without leaking PII:
@@ -449,7 +477,7 @@ Conversation-level sentiment trajectory:
 [SENTIMENT:ANGRY→CALM→GRATEFUL]
 ```
 
-See [Token Hierarchy](advanced/clm_tokenization.md) for complete details.
+See [Token Hierarchy](../advanced/clm_tokenization.md) for complete details.
 
 ---
 
@@ -521,34 +549,36 @@ for action in analysis.system_actions:
 
 ### Quality Assurance
 
-Compress transcripts for QA analysis while preserving compliance markers:
+Compress transcripts for QA analysis — the semantic tokens preserve compliance markers, agent actions, and resolution state exactly as-is:
 
 ```python
-# QA-focused compression
-qa_result = encoder.encode(
+result = encoder.encode(
     input_=transcript,
     metadata={
-        'qa_focus': True,
-        'compliance_check': True,
-        'extract_policy_violations': True
+        'call_id': 'QA-20240115-001',
+        'agent': 'Sarah Chen',
+        'team': 'Billing Support',
+        'channel': 'voice'
     }
 )
+
+# Feed the compressed token string into your QA scoring LLM
+qa_input = result.compressed
 ```
 
 ### Agent Performance Analysis
 
-Track agent behavior and effectiveness:
+Track agent behavior patterns by collecting the structured dict from many calls:
 
 ```python
-# Performance-focused compression
-perf_result = encoder.encode(
-    input_=transcript,
-    metadata={
-        'track_response_time': True,
-        'identify_upsell_opportunities': True,
-        'measure_empathy_indicators': True
-    }
-)
+result = encoder.encode(input_=transcript, metadata=metadata)
+call_data = result.to_dict()
+
+# Fields directly useful for performance tracking
+agent_actions   = call_data["agentActions"]   # Ordered action chain
+state           = call_data["state"]           # RESOLVED / ESCALATED / etc.
+sentiment_arc   = call_data["sentiment"]       # ["FRUSTRATED", "SATISFIED"]
+commitments     = call_data["commitments"]     # [{type, etaDays}]
 ```
 
 ### Training Data Preparation
@@ -556,17 +586,16 @@ perf_result = encoder.encode(
 Create compressed datasets for LLM training:
 
 ```python
-# Prepare training data
 training_samples = []
-for transcript in raw_transcripts:
-    compressed = encoder.encode(
-        input_=transcript['text'],
-        metadata=transcript['metadata']
+for item in raw_transcripts:
+    result = encoder.encode(
+        input_=item['text'],
+        metadata=item['metadata']
     )
     training_samples.append({
-        'input': compressed.compressed,
-        'expected_output': transcript['expected_analysis'],
-        'compression_ratio': compressed.compression_ratio
+        'input': result.compressed,
+        'compression_ratio': result.compression_ratio,
+        'structured': result.to_dict()
     })
 ```
 
@@ -594,20 +623,7 @@ metadata = {
 metadata = {'agent': 'Sarah', 'duration': '8m'}
 ```
 
-### 2. Choose Appropriate Compression Level
-
-```python
-# Conservative - Maximum information retention
-cfg = CLMConfig(lang="en", compression_level=1)  # ~75-80% compression
-
-# Balanced - Good trade-off (default)
-cfg = CLMConfig(lang="en", compression_level=2)  # ~85-90% compression
-
-# Aggressive - Maximum compression
-cfg = CLMConfig(lang="en", compression_level=3)  # ~90-95% compression
-```
-
-### 3. Validate Compressed Output
+### 2. Validate Compressed Output
 
 For critical applications, validate that essential information is preserved:
 
@@ -702,11 +718,10 @@ if result.compression_ratio < 0.70:
 
 ### Missing Information
 
-If key details are lost:
+If key details are lost, check that the transcript uses clear speaker labels (e.g. `Agent:` / `Customer:`) and that the relevant vocabulary exists in the language dictionary. For redacted fields, ensure `redaction_pattern` matches your format:
 
 ```python
-# Use conservative compression
-cfg = CLMConfig(lang="en", compression_level=1, preserve_entities=True)
+cfg = CLMConfig(lang="en", redaction_pattern=r"\[.*?\]")
 encoder = CLMEncoder(cfg=cfg)
 ```
 
@@ -724,9 +739,10 @@ cfg = CLMConfig(lang="en")  # Handles English with some non-English words
 
 ## Next Steps
 
-- **[System Prompt Encoding](sys_prompt/index.md)** - Compress agent instructions
-- **[Structured Data Encoding](sd_encoder.md)** - Compress NBA catalogs
-- **[Advanced: Token Hierarchy](advanced/clm_tokenization.md)** - Deep dive into token structure
-- **[Advanced: CLM Dictionary](advanced/clm_dictionary.md)** - Language-specific vocabularies
+- **[Thread Encoder Overview](index.md)** - Architecture, `ThreadOutput.to_dict()`, data models
+- **[System Prompt Encoding](../sys_prompt/index.md)** - Compress agent instructions
+- **[Structured Data Encoding](../sd_encoder.md)** - Compress NBA catalogs
+- **[Advanced: Token Hierarchy](../advanced/clm_tokenization.md)** - Deep dive into token structure
+- **[Advanced: CLM Dictionary](../advanced/clm_dictionary.md)** - Language-specific vocabularies
 
 ---

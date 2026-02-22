@@ -1,5 +1,6 @@
 import json
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -271,10 +272,12 @@ def show_comparison(transcript: str, metadata: dict):
     print("-" * 70)
     print(f"\nLength: {len(transcript)} characters")
 
+    st = time.perf_counter()
     cfg = CLMConfig(lang="en", redaction_pattern="\[(.*?)\]")
     encoder = CLMEncoder(cfg=cfg)
     new_result = encoder.encode(input_=transcript, metadata={})
-
+    print("Elapsed time:", time.perf_counter() - st)
+    print(new_result.to_dict())
     # INFORMATION PRESERVATION CHECK
     print("\n" + "=" * 70)
     print("🎯 INFORMATION PRESERVATION CHECK")
@@ -287,6 +290,7 @@ def show_comparison(transcript: str, metadata: dict):
 
     original_chars = len(transcript)
     new_chars = len(new_result.compressed)
+    new_result.to_dict()
 
     print("\nCharacter count:")
     print(f"  Original:  {original_chars:>6} chars")
@@ -325,5 +329,5 @@ if __name__ == "__main__":
                     "original": transcript.get("transcript"),
                 }
             )
-    with open("transcript_analysis.json", "w", encoding="utf-8") as f:
-        json.dump(result, f, ensure_ascii=False)
+            break
+
