@@ -12,10 +12,10 @@ __all__ = [
     "Turn",
     "TemporalPattern",
     "MonetaryAmount",
-    # Case-dependent features
     "ResolutionState",
     "RefundReference",
     "TimelineEvent",
     "ConversationTimeline",
     "PromiseCommitment",
+    "ThreadOutput"
 ]

@@ -1,6 +1,5 @@
 import json
 import re
-from email.policy import default
 from enum import Enum
 from typing import Optional, Self, Literal, Annotated, TypeAlias, Union
 
@@ -86,6 +85,8 @@ class CLMOutput(BaseModel):
             return 0.0
         return round((1 - self.c_tokens / self.n_tokens) * 100, 1)
 
+    def to_dict(self) -> dict:
+        raise NotImplementedError
 
 class FieldImportance(Enum):
     """Field importance levels

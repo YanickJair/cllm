@@ -696,7 +696,11 @@ Agent: Of course, go ahead."""
         assert result == "[RESOLUTION:ISSUE_RESOLVED]"
 
     def test_state_pending_processing_on_escalation(self):
-        """Escalation + billing + pending context should produce PENDING_CUSTOMER."""
+        """Escalation + billing context should produce ESCALATED.
+
+        The escalation team is handling the issue; the customer is not pending
+        any action, so PENDING_CUSTOMER would be misleading.
+        """
         resolution = Resolution(type="PENDING")
         state = ResolutionState(type="PENDING")
         actions = [
@@ -706,7 +710,7 @@ Agent: Of course, go ahead."""
         result = ThreadEncoder._encode_state(
             resolution, state, actions=actions, domain="BILLING"
         )
-        assert result == "[STATE:PENDING_CUSTOMER]"
+        assert result == "[STATE:ESCALATED]"
 
     def test_state_pending_shipment(self):
         """Physical shipment context should produce PENDING_SHIPMENT."""

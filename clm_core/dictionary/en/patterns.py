@@ -54,6 +54,25 @@ EXPLICIT_ACTION_PHRASES = {
         "started your trial",
         "your trial is now active",
         "enabled your trial",
+        "activate a trial for you",
+        "i can activate a trial",
+        "activate a 14-day trial",
+        "set you up with a trial",
+        "activating a trial",
+        "activate that for you",
+        "i'll activate a",
+    },
+    "APPOINTMENT_SCHEDULED": {
+        "i've scheduled an appointment",
+        "appointment has been scheduled",
+        "appointment has been booked",
+        "booked an appointment",
+        "scheduled a technician visit",
+        "booked a technician",
+        "appointment is confirmed",
+        "appointment is set",
+        "i've booked a",
+        "i have scheduled an appointment",
     },
     "ACCOUNT_VERIFIED": {
         "verified your account",
@@ -93,6 +112,9 @@ EXPLICIT_ONLY_ACTIONS = {
     "TRIAL_ACTIVATED",
     "ACCOUNT_VERIFIED",
     "REFUND_INITIATED",
+    "APPOINTMENT_SCHEDULED",
+    "SERVICE_CANCELLED",
+    "RETENTION_OFFER",
 }
 TROUBLESHOOTING_ACTIONS = {
     "TROUBLESHOOTING_PERFORMED": {
@@ -197,6 +219,14 @@ EXPLICIT_AGENT_ACTION_PHRASES = {
         "removed the fee",
         "fee has been waived",
         "waive that fee",
+        "waive it as a one-time courtesy",
+        "reversed the charge",
+        "reverse the charge",
+        "i've just reversed",
+        "reversed the fee",
+        "can waive it",
+        "waiving the fee",
+        "i've reversed",
     ],
     "CREDIT_APPLIED": [
         "applied a credit",
@@ -221,6 +251,10 @@ EXPLICIT_AGENT_ACTION_PHRASES = {
         "service has been restored",
         "restored your service",
         "service is back",
+        "connection restored",
+        "connection has been restored",
+        "i'm now seeing the connection",
+        "seeing the connection restored",
     ],
     "PLAN_UPGRADED": [
         "upgraded your plan",
@@ -231,6 +265,37 @@ EXPLICIT_AGENT_ACTION_PHRASES = {
         "paused your subscription",
         "subscription has been paused",
         "put your subscription on hold",
+        "i'll pause your subscription",
+        "pause your subscription",
+        "pausing your subscription",
+        "subscription will be paused",
+    ],
+    "SERVICE_CANCELLED": {
+        "cancelled your subscription",
+        "subscription has been cancelled",
+        "subscription is now cancelled",
+        "i've cancelled your",
+        "i have cancelled",
+        "cancellation is complete",
+        "cancellation has been processed",
+    },
+    "RETENTION_OFFER": [
+        "before i process it",
+        "before i cancel",
+        "i want to mention we offer",
+        "we offer a pause option",
+        "offer a pause option",
+        "offer you a pause",
+        "you can freeze your subscription",
+        "freeze your subscription",
+        "instead of canceling",
+        "instead of cancelling",
+        "as an alternative to cancellation",
+        "as an alternative to canceling",
+        "consider pausing",
+        "option to pause",
+        "you have the option to pause",
+        "offer you an alternative",
     ],
     "DUPLICATE_PAYMENT_CONFIRMED": [
         "confirmed the duplicate",
@@ -311,6 +376,18 @@ AGENT_CONFIRMATION_PHRASES = {
 }
 
 RESOLUTION_KEYWORDS = {
+    # Future/conditional phrases must come before "resolved"/"fixed" so they
+    # take priority when both appear in the same sentence
+    # (e.g. "expected to be resolved by this evening").
+    "PENDING": {
+        "expected to be resolved",
+        "expected to be fixed",
+        "will be resolved by",
+        "should be resolved by",
+        "expected to resolve",
+        "technicians have been dispatched",
+        "dispatched to resolve",
+    },
     "RESOLVED": {"resolved", "fixed", "solved", "approved", "payout"},
     "ESCALATED": {"escalate", "supervisor", "transfer"},
     "PENDING_REPLACEMENT": {"replace", "replacement", "exchange"},
@@ -390,7 +467,7 @@ ISSUE_TYPE_KEYWORDS = {
         "can't access my account",
         "login issue",
     },
-    "PLAN_UPGRADE": {"upgrade", "what features", "upgrade my plan"},
+    "PLAN_UPGRADE": {"upgrade", "upgrading", "what features", "upgrade my plan", "upgrade to", "considering upgrading"},
     "FEE_DISPUTE": {"charged a fee", "service fee", "late fee", "unexpected fee"},
 }
 
@@ -932,6 +1009,12 @@ EMOTION_KEYWORDS = {
             "sick of",
             "can’t deal",
             "bothered",
+            "called three times",
+            "called multiple times",
+            "nothing’s changed",
+            "nothing has changed",
+            "every agent keeps",
+            "keeps saying it’s being worked on",
         ],
         "intensity": 0.7,
     },
@@ -1284,6 +1367,11 @@ ISSUE_TO_INTENT = {
     "TRACKING_ISSUE": "REQUEST_TRACKING_UPDATE",
     "INVOICE_REQUEST": "REQUEST_INVOICE",
     "CREDIT_CARD_UPDATE": "REQUEST_PAYMENT_UPDATE",
+    "SYNC_ISSUE": "REPORT_SYNC_FAILURE",
+    "FEE_DISPUTE": "DISPUTE_SERVICE_FEE",
+    "PLAN_UPGRADE": "REQUEST_PLAN_UPGRADE",
+    "SUBSCRIPTION_ISSUE": "REQUEST_CANCELLATION",
+    "SECURITY_ISSUE": "REPORT_UNAUTHORIZED_LOGIN",
 }
 CUSTOMER_INTENT_KEYWORDS = {
     "REQUEST_PROFILE_UPDATE": [
@@ -1332,18 +1420,34 @@ CUSTOMER_INTENT_KEYWORDS = {
         "stop my subscription",
     ],
     "REQUEST_PLAN_UPGRADE": [
-        "upgrade",
         "upgrade my plan",
-        "what features",
         "switch to premium",
         "move to a higher plan",
+        "upgrade to",
+        "considering upgrading",
+        "want to upgrade",
+        "looking to upgrade",
+        "upgrade my subscription",
     ],
-    "INQUIRE_PLAN_FEATURES": [
+    "EVALUATE_PLAN_UPGRADE": [
         "what features",
-        "tell me about",
         "what does the plan include",
-        "what's included",
+        "what's included in",
         "curious about the features",
+        "wanted to know if it includes",
+        "does it include",
+        "what analytics",
+        "what analytics features",
+        "plan includes",
+    ],
+    "REQUEST_TRIAL": [
+        "trial",
+        "free trial",
+        "try it out",
+        "try the plan",
+        "test it",
+        "14-day trial",
+        "start a trial",
     ],
     "REPORT_LOGIN_FAILURE": [
         "can't log in",
@@ -1366,6 +1470,13 @@ CUSTOMER_INTENT_KEYWORDS = {
         "sync issue",
         "won't sync",
         "syncing problem",
+        "files aren't updating",
+        "files not updating",
+        "not updating on my",
+        "cloud storage syncing",
+        "data not syncing",
+        "syncing correctly",
+        "syncing issues",
     ],
     "REPORT_INSTALLATION_ERROR": [
         "installation error",
@@ -1624,6 +1735,7 @@ TIMELINE_KEYWORDS = {
 }
 
 TIMELINE_PATTERNS = [
+    (r"(\d+)\s*[–\-]\s*(\d+)\s*business\s*days?", "{0}-{1}d"),
     (r"(\d+)\s*to\s*(\d+)\s*business\s*days?", "{0}-{1}d"),
     (r"within\s+(\d+)\s*hours?", "{0}h"),
     (r"within\s+(\d+)\s*(?:business\s+)?days?", "{0}d"),
@@ -1657,7 +1769,20 @@ REDACTED_FIELD_CONTEXT = [
 
 # ── Call type detection ──
 
-CALL_TYPE_SALES_KEYWORDS = ["upgrade", "pricing", "buy", "interested in"]
+CALL_TYPE_SALES_KEYWORDS = [
+    "upgrade",
+    "upgrading",
+    "pricing",
+    "buy",
+    "interested in",
+    "trial",
+    "plan features",
+    "plan comparison",
+    "considering upgrading",
+    "switch to",
+    "move to a higher",
+    "business pro",
+]
 
 # ── Name extraction patterns ──
 
@@ -1684,22 +1809,78 @@ DELAY_CONTEXT_WORDS = ["waiting", "been", "ago", "since"]
 # ── Extra commitment patterns ──
 
 EXTRA_COMMITMENT_PATTERNS = {
+    "PAUSE_EXPIRY_REMINDER": [
+        "reminder before it resumes",
+        "reminder before your subscription resumes",
+        "remind you before it resumes",
+        "notify you before it resumes",
+        "get a reminder before",
+        "reminder when it's about to resume",
+        "reminder before the pause ends",
+        "notified before it resumes",
+        "get a reminder",
+    ],
     "CONFIRMATION_EMAIL": [
         "send you a confirmation",
         "confirmation email",
         "you'll receive an email",
         "email confirmation",
+        "include the refund reference",
+        "include the reference number",
+        "i'll include",
+        "email with the reference",
+        "email you the reference",
+        "send a confirmation",
+        "email once",
+        "email update",
     ],
     "FOLLOWUP": [
         "i'll follow up",
         "follow up with you",
         "personally follow up",
         "follow up tomorrow",
+        "mark your account for follow-up",
+        "i'll mark your account",
+        "you'll receive a message",
+        "receive a message once",
+        "message once the",
+        "once it's fully restored",
+        "once service is restored",
+        "once the network team",
+        "i'll call you back",
+        "schedule a callback",
+        "callback for you",
     ],
     "MONITORING": [
         "monitor",
         "keep an eye on",
         "watching",
+        "personally keep an eye",
+    ],
+    "BILLING_EXTENSION": [
+        "extend your current billing cycle",
+        "extend your billing cycle",
+        "billing cycle extension",
+        "extend billing cycle",
+        "billing extension",
+        "extend your billing",
+    ],
+    "CREDIT_PROMISE": [
+        "credit applied",
+        "you'll see a credit",
+        "credit within",
+        "credit will be applied",
+        "a credit of",
+        "credit you",
+        "reversed the charge",
+    ],
+    "REFUND_PROMISE": [
+        "file the refund",
+        "submit the refund",
+        "once i file the refund",
+        "once the refund",
+        "refund request",
+        "refund will reflect",
     ],
 }
 
@@ -1720,3 +1901,92 @@ DISPUTED_AMOUNT_KEYWORDS = ["charge", "bill", "statement", "payment"]
 # ── Promise confidence strong indicators ──
 
 PROMISE_CONFIDENCE_STRONG = ["will", "going to", "i'll", "we'll", "definitely"]
+
+# ── Promise commitment token overrides ──
+# Replaces vocabulary defaults for EN.  Key changes vs vocabulary:
+#   - DELIVERY_PROMISE: "send you" removed (too generic, causes false positives)
+#   - REFUND_PROMISE: added "file the refund", "once i file"
+#   - CREDIT_PROMISE: added "credit applied", "reversed the charge"
+#   - FOLLOW_UP_EMAIL: added "confirmation email", "email update"
+
+PROMISE_COMMITMENT_TOKENS = {
+    "CALLBACK": [
+        "i'll call you back",
+        "we'll call you",
+        "expect a call",
+        "call you within",
+        "reach out to you",
+        "follow up with a call",
+        "give you a call",
+        "call you tomorrow",
+    ],
+    "FOLLOW_UP_EMAIL": [
+        "send you an email",
+        "email you",
+        "email confirmation",
+        "you'll receive an email",
+        "sending an email",
+        "email with details",
+        "confirmation email",
+        "send a confirmation email",
+        "email update",
+        "email once",
+        "you'll get a confirmation email",
+    ],
+    "TECHNICIAN_VISIT": [
+        "technician will",
+        "send a technician",
+        "tech will come",
+        "schedule a visit",
+        "someone will come out",
+        "on-site visit",
+        "technician visit",
+        "dispatch a technician",
+    ],
+    "CREDIT_PROMISE": [
+        "credit your account",
+        "apply a credit",
+        "give you a credit",
+        "credit of",
+        "account credit",
+        "credit will be applied",
+        "credit applied",
+        "reversed the charge",
+        "credit you",
+        "you'll see a credit",
+        "credit within",
+    ],
+    "REFUND_PROMISE": [
+        "refund will",
+        "you'll receive a refund",
+        "process the refund",
+        "refund of",
+        "money back",
+        "issue a refund",
+        "refund will be processed",
+        "file the refund",
+        "once i file the refund",
+        "submit the refund",
+        "refund request",
+    ],
+    "DELIVERY_PROMISE": [
+        "will be delivered",
+        "arrive by",
+        "ship it",
+        "expect delivery",
+        "shipped by",
+        "deliver within",
+        "will be shipped",
+        "send you a replacement",
+        "send you a new",
+        "send you the",
+    ],
+    "RESOLUTION_PROMISE": [
+        "will be resolved",
+        "should be fixed",
+        "take care of this",
+        "handle this",
+        "sort this out",
+        "fix this for you",
+    ],
+}

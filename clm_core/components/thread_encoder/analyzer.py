@@ -181,6 +181,13 @@ class TranscriptAnalyzer:
         service = self._extract_service(issues, turns)
         customer_intent, secondary_intent = self._extract_customer_intent(issues, turns, actions)
         trigger_cause = self._extract_trigger_cause(turns)
+
+        # Upgrade trigger when cancellation was deflected by a retention offer
+        if trigger_cause == "REQUEST_CANCELLATION":
+            action_types = {a.type for a in actions}
+            if "RETENTION_OFFER" in action_types and "SERVICE_CANCELLED" not in action_types:
+                trigger_cause = "CANCELLATION_DEFLECTED"
+
         context_provided = self._extract_context_provided(turns, call_info)
         system_actions = self._extract_system_actions(turns)
         amounts = self._extract_all_amounts(turns)
@@ -374,6 +381,10 @@ class TranscriptAnalyzer:
             num = word_to_num.get(raw, match.group(2))
             return f"{num}h"
         if match := re.search(rf"in\s+(a\s+)?({num_pat})\s+(?:of\s+)?days?", text_lower, re.I):
+            raw = ((match.group(1) or "") + match.group(2)).strip().lower()
+            num = word_to_num.get(raw, match.group(2))
+            return f"{num}d"
+        if match := re.search(rf"by\s+(a\s+)?({num_pat})\s+(?:of\s+)?days?", text_lower, re.I):
             raw = ((match.group(1) or "") + match.group(2)).strip().lower()
             num = word_to_num.get(raw, match.group(2))
             return f"{num}d"
@@ -1010,25 +1021,43 @@ class TranscriptAnalyzer:
 
         return None
 
-    @staticmethod
-    def _extract_refund_reference_number(text: str) -> Optional[str]:
-        """Extract refund-specific reference numbers."""
-        patterns = [
-            # Structured prefixes first (most reliable)
+    # Prefixes that identify non-refund reference IDs (escalation, ticket, incident, etc.)
+    _NON_REFUND_PREFIXES = frozenset({
+        "ESC", "TKT", "INC", "CAS", "TEC", "SUP", "SRQ", "PRB", "CHG",
+    })
+
+    @classmethod
+    def _extract_refund_reference_number(cls, text: str) -> Optional[str]:
+        """Extract refund-specific reference numbers.
+
+        Prefers known refund prefixes (RFD, REF, CRD, BCR) and explicitly
+        excludes known non-refund prefixes (ESC, TKT, INC, TEC, ...) from the
+        generic PREFIX-DIGITS fallback pattern.
+        """
+        # 1. Known refund-specific prefixes (most reliable)
+        for pattern in (
             r"\bRFD-?\d{5,10}\b",
             r"\bREF-?\d{5,10}\b",
             r"\bCRD-?\d{5,10}\b",
             r"\bBCR-?\d{5,10}\b",
-            # Generic PREFIX-DIGITS pattern (2-5 uppercase letters + dash + 3+ digits)
-            r"\b([A-Z]{2,5}-\d{3,})\b",
-            # "refund reference/number/id" followed by an alphanumeric code
-            # Require at least one digit to avoid matching plain words like "reference"
-            r"refund\s*(?:reference\s*)?(?:number|id|#)?\s*[:=—–-]?\s*([A-Z0-9-]*\d[A-Z0-9-]{3,14})",
-        ]
-
-        for pattern in patterns:
+        ):
             if match := re.search(pattern, text, re.I):
-                return match.group(0) if match.lastindex is None else match.group(1)
+                return match.group(0)
+
+        # 2. "refund reference/number/id" followed by an alphanumeric code
+        if match := re.search(
+            r"refund\s*(?:reference\s*)?(?:number|id|#)?\s*[:=—–-]?\s*([A-Z0-9-]*\d[A-Z0-9-]{3,14})",
+            text,
+            re.I,
+        ):
+            return match.group(1)
+
+        # 3. Generic PREFIX-DIGITS pattern — only if prefix is not a known
+        #    non-refund identifier type (e.g. ESC-, TKT-, INC-).
+        if match := re.search(r"\b([A-Z]{2,5})-(\d{3,})\b", text):
+            prefix = match.group(1).upper()
+            if prefix not in cls._NON_REFUND_PREFIXES:
+                return match.group(0)
 
         return None
 
@@ -1235,15 +1264,30 @@ class TranscriptAnalyzer:
                 return sentence.strip()[:150]
         return text[:150]
 
+    # Promise types where only the first detected instance is kept (no timeline variants).
+    # These promises describe a single outcome whose timeline is set on first mention;
+    # a later agent turn referencing the same promise with a different timeline
+    # (e.g. "later today" vs "3-5 business days") would otherwise emit a conflicting token.
+    _SINGLE_INSTANCE_PROMISE_TYPES = {"REFUND_PROMISE", "CREDIT_PROMISE"}
+
     @staticmethod
     def _dedupe_promises(promises: list[PromiseCommitment]) -> list[PromiseCommitment]:
-        """Remove duplicate promises of the same type."""
-        seen_types = set()
+        """Remove duplicate promises of the same type.
+
+        For REFUND_PROMISE and CREDIT_PROMISE, only the first detected instance per
+        (type, amount) pair is kept. This prevents a secondary agent turn (e.g. one that
+        says 'later today' after already establishing a 3-5 business day timeline) from
+        emitting a conflicting commitment token.
+        """
+        seen_keys: set = set()
         unique = []
         for p in promises:
-            key = (p.type, p.amount, p.timeline)
-            if key not in seen_types:
-                seen_types.add(key)
+            if p.type in TranscriptAnalyzer._SINGLE_INSTANCE_PROMISE_TYPES:
+                key = (p.type, p.amount)
+            else:
+                key = (p.type, p.amount, p.timeline)
+            if key not in seen_keys:
+                seen_keys.add(key)
                 unique.append(p)
         return unique
 
