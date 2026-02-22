@@ -319,7 +319,7 @@ EXPLICIT_AGENT_ACTION_PHRASES = {
     ],
 }
 ISSUE_CONFIRMATION_MAP = {
-    "DUPLICATE_CHARGE_CONFIRMED": {
+    "DUPLICATE_PAYMENT_CONFIRMED": {
         "duplicate",
         "processed twice",
         "double charged",
