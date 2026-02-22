@@ -34,9 +34,9 @@ CLM is a patent-pending compression technology that reduces LLM token consumptio
 
 ### Three Core Compression Targets
 
-1. **Transcripts** - Customer service conversations, support calls, chat interactions
-2. **Structured Data** - Product catalogs, knowledge bases, business rules, configurations
-3. **System Prompts** - Task instructions, role definitions, operational guidelines
+1. **Thread Encoder** - Transcripts of conversation (usually two sides: user/system; customer/agent), support calls, chat interactions
+2. **Structured Data Encoder (SDE)** - Product catalogs, knowledge bases, business rules, configurations
+3. **System Prompts Encoder** - Task instructions, role definitions, operational guidelines
 
 **Key Benefits:**
 - 60-95% token reduction
@@ -277,7 +277,7 @@ print(result.compressed)
 
 **Typical Compression: 85-92% for customer service transcripts**
 
-Learn more about [Transcript Compression](transcript_encoder.md) and [token hierarchy](advanced/clm_tokenization.md).
+Learn more about the [Thread Encoder](thread_encoder/index.md), [Transcript Compression](thread_encoder/transcript_encoder.md), and [token hierarchy](advanced/clm_tokenization.md).
 
 ---
 
@@ -321,7 +321,8 @@ Based on production testing with 5,000+ samples:
   - [Task Prompts](sys_prompt/task_prompt.md) - Action-oriented instruction compression
   - [Configuration Prompts](sys_prompt/configuration_prompt.md) - Template-based agent configuration
 - **[Structured Data Encoding](sd_encoder.md)** - Configuration options and best practices
-- **[Transcript Encoding](transcript_encoder.md)** - Customer service conversation compression
+- **[Thread Encoder](thread_encoder/index.md)** - Conversation-based compression (calls, chats, emails)
+  - [Transcript Encoding](thread_encoder/transcript_encoder.md) - Customer service transcript compression
 - **[Advanced: CLM Dictionary](advanced/clm_dictionary.md)** - Understanding the vocabulary
 - **[Advanced: Tokenization](advanced/clm_tokenization.md)** - Token hierarchy and structure
 

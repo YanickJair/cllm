@@ -35,7 +35,7 @@ class ThreadEncoder(metaclass=SingletonMeta):
     [SERVICE:SUBSCRIPTION]
     [CUSTOMER_INTENT:REPORT_DUPLICATE_CHARGE]
     [CUSTOMER_INTENTS:PRIMARY=REQUEST_SHIPMENT_STATUS;SECONDARY=DISPUTE_SERVICE_FEE]
-    [SUPPORT_TRIGGER:FIELD_LOCKED]
+    [INTERACTION_TRIGGER:FIELD_LOCKED]
     [CONTEXT:EMAIL_PROVIDED]
     [AGENT_ACTIONS:ACCOUNT_VERIFIED→DIAGNOSTIC_PERFORMED→REFUND_INITIATED]
     [SYSTEM_ACTIONS:PAYMENT_RETRY_DETECTED]
@@ -125,7 +125,7 @@ class ThreadEncoder(metaclass=SingletonMeta):
                 print(f"Customer Intent: {intent_token}")
 
         if self.analysis.trigger_cause:
-            trigger_token = f"[SUPPORT_TRIGGER:{self.analysis.trigger_cause}]"
+            trigger_token = f"[INTERACTION_TRIGGER:{self.analysis.trigger_cause}]"
             tokens.append(trigger_token)
             if verbose:
                 print(f"Trigger: {trigger_token}")

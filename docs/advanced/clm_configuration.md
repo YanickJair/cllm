@@ -725,7 +725,7 @@ vocab = config.vocab
 - **[System Prompt Encoder](../sys_prompt/index.md)** - Overview of system prompt compression
   - [Task Prompts](../sys_prompt/task_prompt.md) - Action-oriented instruction compression
   - [Configuration Prompts](../sys_prompt/configuration_prompt.md) - Template-based agent configuration
-- **[Transcript Encoder](../transcript_encoder.md)** - Using transcript compression
+- **[Transcript Encoder](../thread_encoder/transcript_encoder.md)** - Using transcript compression
 - **[Structured Data Encoder](../sd_encoder.md)** - Using structured data compression
 
 ---
