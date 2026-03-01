@@ -171,7 +171,7 @@ class TranscriptAnalyzer:
 
         call_info = self._extract_call_info(turns, metadata)
         customer = self._extract_customer_profile(turns)
-        issues = self._extract_issues(turns)
+        issues = self._extract_issues(turns, call_type=call_info.type)
         actions = self._extract_actions(turns)
         resolution = self._extract_resolution(turns)
         sentiment_trajectory = self.sentiment_analyzer.track_trajectory(turns)
@@ -200,6 +200,13 @@ class TranscriptAnalyzer:
         amounts = self._extract_all_amounts(turns)
         redacted_fields = self._extract_redacted_fields(turns)
 
+        extraction_confidence = self._compute_extraction_confidence(
+            domain, customer_intent, trigger_cause, actions, resolution
+        )
+        requires_review = self._needs_review(
+            extraction_confidence, actions, issues, call_info.type, trigger_cause
+        )
+
         return TranscriptAnalysis(
             call_info=call_info,
             customer=customer,
@@ -221,7 +228,59 @@ class TranscriptAnalyzer:
             system_actions=system_actions,
             amounts=amounts,
             redacted_fields=redacted_fields,
+            extraction_confidence=extraction_confidence,
+            requires_review=requires_review,
         )
+
+    @staticmethod
+    def _compute_extraction_confidence(
+        domain: Optional[str],
+        customer_intent: Optional[str],
+        trigger_cause: Optional[str],
+        actions: list,
+        resolution,
+    ) -> float:
+        score = 0.5
+        if domain and domain != "UNCLASSIFIED":
+            score += 0.1
+        if customer_intent:
+            score += 0.1
+        if trigger_cause:
+            score += 0.1
+        if actions:
+            score += 0.1
+        if resolution.type not in ("UNKNOWN",):
+            score += 0.1
+        return min(score, 1.0)
+
+    @staticmethod
+    def _needs_review(
+        confidence: float,
+        actions: list,
+        issues: list,
+        call_type: str = "SUPPORT",
+        trigger_cause: Optional[str] = None,
+    ) -> bool:
+        if confidence < 0.7:
+            return True
+        if not actions and not issues:
+            return True
+        # Trigger missing — workflow activation event could not be determined
+        if not trigger_cause:
+            return True
+        # Sales interaction without at least one monetization action
+        if call_type == "SALES":
+            _MONETIZATION_ACTIONS = {
+                "PLAN_UPGRADED",
+                "ADDON_OFFERED",
+                "ADDON_ACTIVATED",
+                "DISCOUNT_OFFERED",
+                "DISCOUNT_APPLIED",
+                "TRIAL_ACTIVATED",
+            }
+            if not ({a.type for a in actions} & _MONETIZATION_ACTIONS):
+                return True
+        return False
 
     def _parse_turns(self, transcript: str) -> list[Turn]:
         agent_labels = self.patterns.agent_speaker_labels or ["agent", "agente"]
@@ -616,7 +675,9 @@ class TranscriptAnalyzer:
                     return local_part.split(".")[0].title()
         return None
 
-    def _extract_issues(self, turns: list[Turn]) -> list[Issue]:
+    def _extract_issues(
+        self, turns: list[Turn], call_type: str = "SUPPORT"
+    ) -> list[Issue]:
         """Extract issues from a list of turns.
 
         Args:
@@ -643,6 +704,16 @@ class TranscriptAnalyzer:
         if not issue_type:
             agent_text = " ".join(t.text for t in turns if t.speaker == "agent").lower()
             issue_type = self._get_issue_type(agent_text)
+
+        if not issue_type:
+            return []
+
+        # Monetary context guardrail: in a SALES context, amounts are pricing information,
+        # not billing disputes. Billing dispute requires unexpected charge language + refund
+        # context — money alone is not a billing issue.
+        _BILLING_ISSUE_TYPES = {"BILLING_DISPUTE", "UNEXPECTED_CHARGE"}
+        if call_type == "SALES" and issue_type in _BILLING_ISSUE_TYPES:
+            issue_type = None
 
         if not issue_type:
             return []
@@ -712,6 +783,7 @@ class TranscriptAnalyzer:
     def _extract_all_amounts(self, turns: list[Turn]) -> list[MonetaryAmount]:
         """Extract all monetary amounts from all turns with their reason."""
         amount_reason_map = self.patterns.amount_reason_context or []
+        billing_period_map = self.patterns.billing_period_context or []
         seen: set[tuple[str, Optional[str], str]] = set()
         results: list[MonetaryAmount] = []
 
@@ -729,6 +801,17 @@ class TranscriptAnalyzer:
                     if keyword in context:
                         reason = r
                         break
+
+                # Secondary pass: narrow 30-char suffix window for billing period
+                # indicators (MONTH/YEAR).  A wide context window causes adjacent
+                # prices ("$49 a month, or $480 annual") to share keywords; the
+                # suffix-only window resolves the ambiguity.
+                if not reason and billing_period_map:
+                    suffix = text[end : min(len(text), end + 30)].lower()
+                    for keyword, r in billing_period_map:
+                        if keyword in suffix:
+                            reason = r
+                            break
 
                 if not reason:
                     continue  # skip bare uncontextualized amounts
@@ -1313,21 +1396,34 @@ class TranscriptAnalyzer:
     def _dedupe_promises(promises: list[PromiseCommitment]) -> list[PromiseCommitment]:
         """Remove duplicate promises of the same type.
 
-        For REFUND_PROMISE and CREDIT_PROMISE, only the first detected instance per
-        (type, amount) pair is kept. This prevents a secondary agent turn (e.g. one that
-        says 'later today' after already establishing a 3-5 business day timeline) from
-        emitting a conflicting commitment token.
+        For REFUND_PROMISE and CREDIT_PROMISE, only one instance per type is kept.
+        When multiple instances exist, the one with an amount is preferred (more
+        informative), since the same promise may be detected by both the primary
+        token loop (with amount extraction) and the extra patterns loop (without).
+        This prevents semantic duplicates like CREDIT_24H_20 and CREDIT_24H.
         """
         seen_keys: set = set()
         unique = []
+
+        # For single-instance types, pick the best (amount-bearing) representative first
+        single_best: dict = {}
         for p in promises:
             if p.type in TranscriptAnalyzer._SINGLE_INSTANCE_PROMISE_TYPES:
-                key = (p.type, p.amount)
+                existing = single_best.get(p.type)
+                if existing is None or (p.amount and not existing.amount):
+                    single_best[p.type] = p
+
+        emitted_single: set = set()
+        for p in promises:
+            if p.type in TranscriptAnalyzer._SINGLE_INSTANCE_PROMISE_TYPES:
+                if p.type not in emitted_single and p is single_best[p.type]:
+                    emitted_single.add(p.type)
+                    unique.append(p)
             else:
                 key = (p.type, p.amount, p.timeline)
-            if key not in seen_keys:
-                seen_keys.add(key)
-                unique.append(p)
+                if key not in seen_keys:
+                    seen_keys.add(key)
+                    unique.append(p)
         return unique
 
     @classmethod
@@ -1550,8 +1646,10 @@ class TranscriptAnalyzer:
     def _extract_trigger_cause(self, turns: list[Turn]) -> Optional[str]:
         """Extract the trigger cause — why the customer contacted support.
 
-        Scans customer turns for causal indicators (locked fields, missing delivery,
-        price increases, etc.) using TRIGGER_CAUSE_KEYWORDS sorted longest-first.
+        Scans only the first 3 customer turns for causal indicators (locked fields,
+        missing delivery, price increases, etc.) using TRIGGER_CAUSE_KEYWORDS sorted
+        longest-first. The trigger is the first actionable customer request and is
+        locked after extraction — it is not inferred from the outcome.
         """
         trigger_index = sorted(
             [
@@ -1563,9 +1661,12 @@ class TranscriptAnalyzer:
             reverse=True,
         )
 
-        customer_text = " ".join(
-            t.text.lower() for t in turns if t.speaker == "customer"
-        )
+        # Limit to the first 3 customer turns (workflow activation event)
+        early_customer_turns = [t for t in turns if t.speaker == "customer"][:3]
+        customer_text = " ".join(t.text.lower() for t in early_customer_turns)
+        # Normalize typographic apostrophes (U+2019 ' → ') so keywords with
+        # straight apostrophes ("hasn't", "aren't") match transcript text.
+        customer_text = customer_text.replace("\u2019", "'")
 
         for kw, cause in trigger_index:
             if kw in customer_text:

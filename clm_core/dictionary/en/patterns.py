@@ -61,6 +61,9 @@ EXPLICIT_ACTION_PHRASES = {
         "activating a trial",
         "activate that for you",
         "i'll activate a",
+        "activate that trial",
+        "activated the trial",
+        "trial is now active for you",
     },
     "APPOINTMENT_SCHEDULED": {
         "i've scheduled an appointment",
@@ -260,6 +263,9 @@ EXPLICIT_AGENT_ACTION_PHRASES = {
         "upgraded your plan",
         "plan has been upgraded",
         "upgrade is complete",
+        "account is now on the",
+        "your account has been upgraded to",
+        "successfully upgraded your account to",
     ],
     "SUBSCRIPTION_PAUSED": [
         "paused your subscription",
@@ -302,6 +308,53 @@ EXPLICIT_AGENT_ACTION_PHRASES = {
         "duplicate payment confirmed",
         "can see the duplicate",
         "i can confirm the duplicate",
+    ],
+    "ACCOUNT_LOCKED": [
+        "locked the account temporarily",
+        "i've locked the account",
+        "locked your account temporarily",
+        "temporarily locked the account",
+        "i've temporarily locked",
+    ],
+    "TWO_FACTOR_ENABLED": [
+        "enabled two-factor authentication",
+        "enable two-factor",
+        "two-factor authentication",
+        "enabled 2fa",
+        "two factor authentication",
+    ],
+    "SESSION_REVOKED": [
+        "revoke access to that device",
+        "revoked access",
+        "reported the suspicious session",
+        "revoke the session",
+        "revoked the session",
+        "terminated the session",
+    ],
+    "ADDON_OFFERED": [
+        "only add-on you might consider",
+        "add-on you might consider",
+        "it's an additional",
+        "there's an add-on",
+        "the add-on",
+        "additional module",
+        "predictive insights module",
+    ],
+    "DISCOUNT_OFFERED": [
+        "you'd qualify for a",
+        "qualify for a discount",
+        "i can offer you a discount",
+        "discount for the first",
+        "20% discount",
+        "special discount",
+        "promotional discount",
+    ],
+    "BILLING_EXTENSION_APPLIED": [
+        "extend your current billing cycle",
+        "extend your billing cycle",
+        "billing cycle extension",
+        "i'll extend your billing",
+        "extending your billing",
     ],
     "FEATURES_EXPLAINED": [
         "let me explain the features",
@@ -1702,6 +1755,11 @@ TRIGGER_CAUSE_KEYWORDS = {
         "has failed",
         "malfunction",
         "stopped functioning",
+        "aren't updating",
+        "not syncing",
+        "aren't syncing",
+        "files aren't",
+        "not working on",
     ],
     "UNAUTHORIZED_ACTIVITY": [
         "didn't authorize",
@@ -1723,6 +1781,10 @@ TRIGGER_CAUSE_KEYWORDS = {
         "because of the outage",
         "outage caused",
         "service disruption",
+        "been offline",
+        "still offline",
+        "offline since",
+        "has been offline",
     ],
     "DUPLICATE_CHARGE": [
         "charged twice",
@@ -1753,6 +1815,9 @@ TRIGGER_CAUSE_KEYWORDS = {
         "my refund hasn't come",
         "never got my refund",
         "refund hasn't arrived",
+        "refund still hasn't",
+        "hasn't come through",
+        "still hasn't come",
     ],
     "TRACKING_NOT_ASSIGNED": [
         "no tracking number",
@@ -1762,6 +1827,9 @@ TRIGGER_CAUSE_KEYWORDS = {
         "replacement hasn't shipped",
         "hasn't been shipped yet",
         "no shipment update",
+        "haven't received any update",
+        "no update yet",
+        "no update on my replacement",
     ],
     "UNAUTHORIZED_LOGIN_ALERT": [
         "got an email saying someone signed",
@@ -1782,6 +1850,25 @@ TRIGGER_CAUSE_KEYWORDS = {
         "i'd like to cancel",
         "thinking of cancelling",
         "cancelling my subscription",
+    ],
+    "UNEXPECTED_CHARGE": [
+        "wasn't expecting",
+        "unexpected fee",
+        "unexpected service fee",
+        "unexpected charge",
+        "fee i wasn't expecting",
+        "charge i wasn't expecting",
+        "didn't expect this charge",
+        "unexpected charge on my bill",
+    ],
+    "REQUEST_PLAN_UPGRADE": [
+        "considering upgrading",
+        "thinking of upgrading",
+        "thinking about upgrading",
+        "interested in upgrading",
+        "looking to upgrade",
+        "want to upgrade",
+        "i'm thinking of upgrading",
     ],
 }
 
@@ -1817,14 +1904,38 @@ TIMELINE_PATTERNS = [
     (r"in\s+(?:a\s+)?(\d+)\s*hours?", "{0}h"),
     (r"in\s+(?:a\s+)?(\d+)\s*(?:business\s+)?days?", "{0}d"),
     (r"in\s+the\s+next\s+(\d+[-\s]?\d*)\s*(?:business\s+)?days?", "{0}d"),
+    # Word-number day patterns — must appear before temporal_extractor runs
+    # so that "by five days" → "5d" instead of being mis-classified as "3H"
+    # by duration inference on other text in the same agent turn.
+    (r"by\s+five\s+days?", "5d"),
+    (r"by\s+seven\s+days?", "7d"),
+    (r"by\s+three\s+days?", "3d"),
+    (r"by\s+ten\s+days?", "10d"),
+    (r"by\s+fourteen\s+days?", "14d"),
+    (r"by\s+(\d+)\s+days?", "{0}d"),
 ]
 
 # ── Amount reason context ──
+
+# Checked against a 30-char suffix-only window after each amount to distinguish
+# billing period (monthly/annual) from other context keywords.  A narrow window
+# is required because adjacent prices in the same sentence (e.g. "$49 a month,
+# or $480 if you choose annual billing") would otherwise share context and match
+# the wrong keyword.
+BILLING_PERIOD_CONTEXT = [
+    ("a month", "MONTH"),
+    ("per month", "MONTH"),
+    ("monthly", "MONTH"),
+    ("annual", "YEAR"),
+    ("per year", "YEAR"),
+    ("yearly", "YEAR"),
+]
 
 AMOUNT_REASON_CONTEXT = [
     ("duplicate", "DUPLICATE_CHARGE"),
     ("refund", "REFUND"),
     ("extra", "EXTRA_CHARGE"),
+    ("additional", "EXTRA_CHARGE"),
     ("discount", "DISCOUNT"),
     ("credit", "CREDIT"),
     ("fee", "FEE"),

@@ -70,6 +70,10 @@ class TranscriptPatterns:
     # Amount reason context mapping: list of (keyword, reason_code) tuples
     amount_reason_context: list[tuple] = field(default_factory=list)
 
+    # Billing period context: checked against a narrow (30-char) suffix window
+    # after each monetary amount to capture MONTH/YEAR pricing reason codes.
+    billing_period_context: list[tuple] = field(default_factory=list)
+
     # Redacted field context mapping: list of (keyword, field_token) tuples
     redacted_field_context: list[tuple] = field(default_factory=list)
 

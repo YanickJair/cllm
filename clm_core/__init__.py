@@ -14,6 +14,15 @@ from clm_core.components.thread_encoder import (
     TranscriptAnalysis,
 )
 from clm_core.encoder import CLMEncoder
+from clm_core.quality_gate import (
+    KolmogorovModel,
+    PerplexityResult,
+    ConditionalEntropyResult,
+    KolmogorovAnalyzer,
+    PerplexityAnalyzer,
+    CompressionQualityReport,
+    CompressionQualityGate,
+)
 
 from .__version__ import __description__, __title__, __version__
 
@@ -35,6 +44,13 @@ __all__ = [
     "SDEncoder",
     "ThreadEncoder",
     "SysPromptEncoder",
+    "KolmogorovModel",
+    "PerplexityResult",
+    "ConditionalEntropyResult",
+    "CompressionQualityReport",
+    "KolmogorovAnalyzer",
+    "PerplexityAnalyzer",
+    "CompressionQualityGate",
 ]
 
 __locals = locals()

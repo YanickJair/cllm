@@ -324,10 +324,16 @@ if __name__ == "__main__":
             )
             result.append(
                 {
-                    # **analysis,
+                    "n_tokens": new_result.n_tokens,
+                    "c_tokens": new_result.c_tokens,
+                    "ratio": new_result.compression_ratio,
                     "compressed": new_result.compressed,
                     "original": transcript.get("transcript"),
                 }
             )
+            print(new_result.to_dict())
             break
+
+    with open(".transcripts_v2.json", "w") as f:
+        json.dump(result, f, ensure_ascii=False, indent=2)
 

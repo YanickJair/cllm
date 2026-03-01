@@ -1,0 +1,2490 @@
+[
+  {
+    "original": "Customer: Hi Raj, I noticed an extra charge on my card for my plan this month. It looks like I was billed twice for the same subscription.\nAgent: I'm sorry to hear that, let\u2019s take a look together. Can I have your account email or billing ID to verify your record?\nCustomer: Sure, it\u2019s melissa.jordan@example.com.\nAgent: Thanks, Melissa. Give me just a moment... alright, I can see two transactions on your file \u2014 one processed on the 2nd and another on the 3rd. It seems the system retried payment even after the first one succeeded.\nCustomer: Oh wow, that explains it. So I\u2019m not crazy then.\nAgent: Not at all. It\u2019s a known issue we had earlier this week with duplicate processing. The good news is, you\u2019re eligible for a full refund on the second charge.\nCustomer: Great. How long will it take to show up?\nAgent: Once I file the refund, it usually reflects within 3\u20135 business days depending on your bank. I\u2019ll also send you a confirmation email with the reference number.\nCustomer: That works. Thank you for sorting it out so quickly.\nAgent: My pleasure. I\u2019ve just submitted the refund request now \u2014 your reference number is RFD-908712. You should see that update later today.\nCustomer: Perfect. I appreciate your help, Raj.\nAgent: Anytime! Is there anything else I can check for you today?\nCustomer: No, that\u2019s all. Thanks again!\nAgent: Thank you for calling us, Melissa. Have a great day ahead!",
+    "compressed": "[INTERACTION:SUPPORT:CHANNEL=VOICE] [DURATION=7m] [LANG=EN] [DOMAIN:BILLING] [SERVICE:PAYMENT] [CUSTOMER_INTENT:REPORT_BILLING_ISSUE] [INTERACTION_TRIGGER:DUPLICATE_CHARGE] [CONTEXT:EMAIL_PROVIDED] [AGENT_ACTIONS:ACCOUNT_LOOKUP\u2192TROUBLESHOOT\u2192DIAGNOSTIC_PERFORMED\u2192DUPLICATE_PAYMENT_CONFIRMED\u2192CUSTOMER_NOTIFIED] [SYSTEM_ACTIONS:PAYMENT_RETRY_DETECTED] [RESOLUTION:REFUND_INITIATED] [STATE:PENDING_REFUND] [COMMITMENT:CONFIRMATION_EMAIL_3-5_BUSINESS_DAYS] [COMMITMENT:REFUND_3-5_BUSINESS_DAYS] [ARTIFACT:REFUND_REF=RFD-908712] [SENTIMENT:NEUTRAL\u2192SATISFIED\u2192GRATEFUL]",
+    "kolmogorov": {
+      "original_bytes": 1422,
+      "compressed_bytes": 327,
+      "clm_bytes": 327,
+      "original_zlib_bytes": 792,
+      "clm_zlib_bytes": 327,
+      "complexity_ratio": 0.4129,
+      "information_efficiency": 1.0246,
+      "passed": true
+    },
+    "conditional": {
+      "field_results": [
+        {
+          "field": "channel",
+          "token_key": "CHANNEL",
+          "expected_value": "VOICE",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "lang",
+          "token_key": "LANG",
+          "expected_value": "EN",
+          "found_in_compressed": true,
+          "weight": 0.4,
+          "null_in_source": false
+        },
+        {
+          "field": "domain",
+          "token_key": "DOMAIN",
+          "expected_value": "BILLING",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "service",
+          "token_key": "SERVICE",
+          "expected_value": "PAYMENT",
+          "found_in_compressed": true,
+          "weight": 0.7,
+          "null_in_source": false
+        },
+        {
+          "field": "customerIntent",
+          "token_key": "CUSTOMER_INTENT",
+          "expected_value": "REPORT_BILLING_ISSUE",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "secondaryIntent",
+          "token_key": "SECONDARY_INTENT",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "state",
+          "token_key": "STATE",
+          "expected_value": "PENDING_REFUND",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "resolution",
+          "token_key": "RESOLUTION",
+          "expected_value": "REFUND_INITIATED",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "sentiment",
+          "token_key": "SENTIMENT",
+          "expected_value": ["NEUTRAL", "SATISFIED", "GRATEFUL"],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "agentActions",
+          "token_key": "AGENT_ACTIONS",
+          "expected_value": [
+            "ACCOUNT_LOOKUP",
+            "TROUBLESHOOT",
+            "DIAGNOSTIC_PERFORMED",
+            "DUPLICATE_PAYMENT_CONFIRMED",
+            "CUSTOMER_NOTIFIED"
+          ],
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "systemActions",
+          "token_key": "SYSTEM_ACTIONS",
+          "expected_value": ["PAYMENT_RETRY_DETECTED"],
+          "found_in_compressed": true,
+          "weight": 0.6,
+          "null_in_source": false
+        },
+        {
+          "field": "commitments",
+          "token_key": "COMMITMENT",
+          "expected_value": [
+            { "type": "CONFIRMATION_EMAIL", "etaDays": 4 },
+            { "type": "REFUND", "etaDays": 4 }
+          ],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "artifacts",
+          "token_key": "ARTIFACTS",
+          "expected_value": [{ "key": "REFUND_REF", "value": "RFD-908712" }],
+          "found_in_compressed": true,
+          "weight": 0.7,
+          "null_in_source": false
+        },
+        {
+          "field": "supportTrigger",
+          "token_key": "SUPPORT_TRIGGER",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "interactionTrigger",
+          "token_key": "INTERACTION_TRIGGER",
+          "expected_value": "GER:DUPLICATE_CHARGE",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "context",
+          "token_key": "CONTEXT",
+          "expected_value": ["EMAIL_PROVIDED"],
+          "found_in_compressed": true,
+          "weight": 0.5,
+          "null_in_source": false
+        },
+        {
+          "field": "durationSeconds",
+          "token_key": "DURATION",
+          "expected_value": 420,
+          "found_in_compressed": true,
+          "weight": 0.3,
+          "null_in_source": false
+        },
+        {
+          "field": "id",
+          "token_key": "ID",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.5,
+          "null_in_source": true
+        }
+      ],
+      "slots_total": 15,
+      "slots_matched": 15,
+      "slots_lost": [],
+      "slots_null_in_source": ["secondaryIntent", "supportTrigger", "id"],
+      "weighted_coverage": 1.0,
+      "raw_coverage": 1.0,
+      "residual_entropy": 0.0,
+      "bits_per_lost_field": {},
+      "passed": true
+    },
+    "perplexity": {
+      "original_response_tokens": 165,
+      "compressed_response_tokens": 155,
+      "original_latency_ms": 2074.0,
+      "compressed_latency_ms": 2007.8,
+      "latency_improvement": 3.2,
+      "response_similarity": 0.2588,
+      "structure_preserved": true,
+      "key_facts_preserved": [
+        "customer was billed twice on the 2nd and 3rd of the month",
+        "refund confirmation email will be sent with reference number rfd-908712",
+        "issue was caused by a known system retry problem earlier in the week"
+      ],
+      "facts_lost": [
+        "customer expressed satisfaction with the quick resolution"
+      ],
+      "comprehension_score": 0.6035,
+      "passed": false
+    },
+    "verdict": "acceptable",
+    "retention_score": 90.1
+  },
+  {
+    "original": "Customer: Hi Michael, my internet keeps dropping every few minutes. It\u2019s been happening since yesterday afternoon.\nAgent: I\u2019m sorry about that. Let\u2019s get it fixed for you. Can I get your service ID or the phone number associated with the account?\nCustomer: Sure, it\u2019s under 416-982-9980.\nAgent: Got it. Let me pull that up... Okay, I can see your router went offline multiple times in the last 24 hours. Can you tell me if you see any blinking red lights on it right now?\nCustomer: Yeah, the broadband light keeps flashing red.\nAgent: Thanks \u2014 that usually indicates a signal interruption. I\u2019ll run a quick line test from my end... alright, I\u2019m getting some packet loss on your connection, likely from a degraded line in your area.\nCustomer: So it\u2019s not just me?\nAgent: Exactly. There\u2019s a small outage affecting a few customers nearby. The technicians have already been dispatched and it\u2019s expected to be resolved by this evening.\nCustomer: Okay, that\u2019s good to know. Is there anything I can do in the meantime?\nAgent: You can try power cycling your router once every couple of hours. That helps it reconnect when the service stabilizes. I can also schedule a callback for you once it\u2019s fully restored.\nCustomer: That would be helpful.\nAgent: Alright, I\u2019ll mark your account for follow-up tomorrow morning. You\u2019ll receive a message once the network team closes the ticket.\nCustomer: Appreciate it, Michael. You\u2019ve been very helpful.\nAgent: You\u2019re welcome! Sorry again for the trouble. We\u2019ll make sure your connection is back up soon.",
+    "compressed": "[INTERACTION:SUPPORT:CHANNEL=VOICE] [DURATION=7m] [LANG=EN] [DOMAIN:TECHNICAL] [CUSTOMER_INTENT:REPORT_SERVICE_OUTAGE] [INTERACTION_TRIGGER:CONNECTIVITY_DROPS] [AGENT_ACTIONS:DIAGNOSTIC_PERFORMED\u2192TROUBLESHOOT\u2192FOLLOWUP_SCHEDULED] [RESOLUTION:PENDING] [STATE:PENDING_ENGINEERING] [COMMITMENT:FOLLOWUP_2H] [COMMITMENT:FOLLOWUP_TOMORROW] [SENTIMENT:NEUTRAL\u2192GRATEFUL]",
+    "kolmogorov": {
+      "original_bytes": 1567,
+      "compressed_bytes": 231,
+      "clm_bytes": 231,
+      "original_zlib_bytes": 832,
+      "clm_zlib_bytes": 231,
+      "complexity_ratio": 0.2776,
+      "information_efficiency": 1.1823,
+      "passed": true
+    },
+    "conditional": {
+      "field_results": [
+        {
+          "field": "channel",
+          "token_key": "CHANNEL",
+          "expected_value": "VOICE",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "lang",
+          "token_key": "LANG",
+          "expected_value": "EN",
+          "found_in_compressed": true,
+          "weight": 0.4,
+          "null_in_source": false
+        },
+        {
+          "field": "domain",
+          "token_key": "DOMAIN",
+          "expected_value": "TECHNICAL",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "service",
+          "token_key": "SERVICE",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "customerIntent",
+          "token_key": "CUSTOMER_INTENT",
+          "expected_value": "REPORT_SERVICE_OUTAGE",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "secondaryIntent",
+          "token_key": "SECONDARY_INTENT",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "state",
+          "token_key": "STATE",
+          "expected_value": "PENDING_ENGINEERING",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "resolution",
+          "token_key": "RESOLUTION",
+          "expected_value": "PENDING",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "sentiment",
+          "token_key": "SENTIMENT",
+          "expected_value": ["NEUTRAL", "GRATEFUL"],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "agentActions",
+          "token_key": "AGENT_ACTIONS",
+          "expected_value": [
+            "DIAGNOSTIC_PERFORMED",
+            "TROUBLESHOOT",
+            "FOLLOWUP_SCHEDULED"
+          ],
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "systemActions",
+          "token_key": "SYSTEM_ACTIONS",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "commitments",
+          "token_key": "COMMITMENT",
+          "expected_value": [
+            { "type": "FOLLOWUP", "etaDays": null },
+            { "type": "FOLLOWUP", "etaDays": 1 }
+          ],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "artifacts",
+          "token_key": "ARTIFACTS",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "supportTrigger",
+          "token_key": "SUPPORT_TRIGGER",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "interactionTrigger",
+          "token_key": "INTERACTION_TRIGGER",
+          "expected_value": "GER:CONNECTIVITY_DROPS",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "context",
+          "token_key": "CONTEXT",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.5,
+          "null_in_source": true
+        },
+        {
+          "field": "durationSeconds",
+          "token_key": "DURATION",
+          "expected_value": 420,
+          "found_in_compressed": true,
+          "weight": 0.3,
+          "null_in_source": false
+        },
+        {
+          "field": "id",
+          "token_key": "ID",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.5,
+          "null_in_source": true
+        }
+      ],
+      "slots_total": 11,
+      "slots_matched": 11,
+      "slots_lost": [],
+      "slots_null_in_source": [
+        "service",
+        "secondaryIntent",
+        "systemActions",
+        "artifacts",
+        "supportTrigger",
+        "context",
+        "id"
+      ],
+      "weighted_coverage": 1.0,
+      "raw_coverage": 1.0,
+      "residual_entropy": 0.0,
+      "bits_per_lost_field": {},
+      "passed": true
+    },
+    "perplexity": {
+      "original_response_tokens": 202,
+      "compressed_response_tokens": 138,
+      "original_latency_ms": 1852.9,
+      "compressed_latency_ms": 1436.5,
+      "latency_improvement": 22.5,
+      "response_similarity": 0.0,
+      "structure_preserved": true,
+      "key_facts_preserved": [
+        "customer marked for follow-up callback tomorrow morning"
+      ],
+      "facts_lost": [
+        "packet loss confirmed on line test from agent's end",
+        "multiple outages detected in last 24 hours affecting multiple customers in the area",
+        "router broadband light flashing red indicating signal interruption",
+        "service id/phone: 416-982-9980",
+        "technicians already dispatched with expected resolution by evening"
+      ],
+      "comprehension_score": 0.2667,
+      "passed": false
+    },
+    "verdict": "acceptable",
+    "retention_score": 81.7
+  },
+  {
+    "original": "Customer: Hi Laura, I\u2019m considering upgrading to your Business Pro plan, but I wanted to know if it includes advanced analytics features.\nAgent: Great question! The Business Pro plan does include analytics, but there are a few levels to it. Can I ask how you plan to use the data \u2014 mostly for tracking sales, or customer engagement?\nCustomer: Mostly engagement. We want to track activity per user, response times, and conversion metrics.\nAgent: Perfect, that\u2019s exactly what the advanced analytics module covers. You\u2019d get access to dashboards that show detailed engagement stats by user segment, plus export options for CSV and API access.\nCustomer: Sounds good. Does that come standard or as an add-on?\nAgent: It\u2019s included in the Business Pro plan. The only add-on you might consider is the predictive insights module, which uses machine learning to forecast trends.\nCustomer: Interesting \u2014 what\u2019s the cost for that?\nAgent: It\u2019s an additional $30 a month per account. But if you\u2019re upgrading before the end of the quarter, you\u2019d qualify for a 20% discount for the first six months.\nCustomer: That\u2019s tempting. Can I try it before committing?\nAgent: Yes, we offer a 14-day trial for the predictive module. I can activate that trial for you right after the call.\nCustomer: Please do. This helps a lot.\nAgent: Done! You\u2019ll receive a confirmation email shortly with setup instructions.\nCustomer: Awesome, thank you Laura.\nAgent: My pleasure! Feel free to reach out anytime if you need help exploring the analytics dashboard.",
+    "compressed": "[INTERACTION:SALES:CHANNEL=VOICE] [DURATION=7m] [LANG=EN] [DOMAIN:PRODUCT] [SERVICE:SUBSCRIPTION] [CUSTOMER_INTENTS:PRIMARY=EVALUATE_PLAN_UPGRADE;SECONDARY=REQUEST_PLAN_UPGRADE] [INTERACTION_TRIGGER:REQUEST_PLAN_UPGRADE] [AGENT_ACTIONS:ADDON_OFFERED\u2192DISCOUNT_OFFERED\u2192DISCOUNT_APPLIED\u2192TRIAL_ACTIVATED] [RESOLUTION:TRIAL_ACTIVATED] [STATE:TRIAL_ACTIVE] [COMMITMENT:CONFIRMATION_EMAIL] [ARTIFACT:AMT=$30/EXTRA_CHARGE] [SENTIMENT:NEUTRAL\u2192SATISFIED]",
+    "kolmogorov": {
+      "original_bytes": 1545,
+      "compressed_bytes": 258,
+      "clm_bytes": 258,
+      "original_zlib_bytes": 798,
+      "clm_zlib_bytes": 258,
+      "complexity_ratio": 0.3233,
+      "information_efficiency": 1.1051,
+      "passed": true
+    },
+    "conditional": {
+      "field_results": [
+        {
+          "field": "channel",
+          "token_key": "CHANNEL",
+          "expected_value": "VOICE",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "lang",
+          "token_key": "LANG",
+          "expected_value": "EN",
+          "found_in_compressed": true,
+          "weight": 0.4,
+          "null_in_source": false
+        },
+        {
+          "field": "domain",
+          "token_key": "DOMAIN",
+          "expected_value": "PRODUCT",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "service",
+          "token_key": "SERVICE",
+          "expected_value": "SUBSCRIPTION",
+          "found_in_compressed": true,
+          "weight": 0.7,
+          "null_in_source": false
+        },
+        {
+          "field": "customerIntent",
+          "token_key": "CUSTOMER_INTENT",
+          "expected_value": "EVALUATE_PLAN_UPGRADE",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "secondaryIntent",
+          "token_key": "SECONDARY_INTENT",
+          "expected_value": "REQUEST_PLAN_UPGRADE",
+          "found_in_compressed": true,
+          "weight": 0.6,
+          "null_in_source": false
+        },
+        {
+          "field": "state",
+          "token_key": "STATE",
+          "expected_value": "TRIAL_ACTIVE",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "resolution",
+          "token_key": "RESOLUTION",
+          "expected_value": "TRIAL_ACTIVATED",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "sentiment",
+          "token_key": "SENTIMENT",
+          "expected_value": ["NEUTRAL", "SATISFIED"],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "agentActions",
+          "token_key": "AGENT_ACTIONS",
+          "expected_value": [
+            "ADDON_OFFERED",
+            "DISCOUNT_OFFERED",
+            "DISCOUNT_APPLIED",
+            "TRIAL_ACTIVATED"
+          ],
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "systemActions",
+          "token_key": "SYSTEM_ACTIONS",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "commitments",
+          "token_key": "COMMITMENT",
+          "expected_value": [{ "type": "CONFIRMATION_EMAIL" }],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "artifacts",
+          "token_key": "ARTIFACTS",
+          "expected_value": [{ "key": "AMT", "value": "$30/EXTRA_CHARGE" }],
+          "found_in_compressed": true,
+          "weight": 0.7,
+          "null_in_source": false
+        },
+        {
+          "field": "supportTrigger",
+          "token_key": "SUPPORT_TRIGGER",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "interactionTrigger",
+          "token_key": "INTERACTION_TRIGGER",
+          "expected_value": "GER:REQUEST_PLAN_UPGRADE",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "context",
+          "token_key": "CONTEXT",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.5,
+          "null_in_source": true
+        },
+        {
+          "field": "durationSeconds",
+          "token_key": "DURATION",
+          "expected_value": 420,
+          "found_in_compressed": true,
+          "weight": 0.3,
+          "null_in_source": false
+        },
+        {
+          "field": "id",
+          "token_key": "ID",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.5,
+          "null_in_source": true
+        }
+      ],
+      "slots_total": 14,
+      "slots_matched": 14,
+      "slots_lost": [],
+      "slots_null_in_source": [
+        "systemActions",
+        "supportTrigger",
+        "context",
+        "id"
+      ],
+      "weighted_coverage": 1.0,
+      "raw_coverage": 1.0,
+      "residual_entropy": 0.0,
+      "bits_per_lost_field": {},
+      "passed": true
+    },
+    "perplexity": {
+      "original_response_tokens": 233,
+      "compressed_response_tokens": 146,
+      "original_latency_ms": 2529.4,
+      "compressed_latency_ms": 1973.9,
+      "latency_improvement": 22.0,
+      "response_similarity": 0.1085,
+      "structure_preserved": true,
+      "key_facts_preserved": [
+        "customer is satisfied with the information provided and pricing structure",
+        "14-day trial of predictive module was activated during the call"
+      ],
+      "facts_lost": [
+        "advanced analytics module is included standard in business pro plan",
+        "features include user engagement dashboards, segmentation, and csv/api export options",
+        "predictive insights module is an optional add-on at $30/month with 20% first-6-month discount"
+      ],
+      "comprehension_score": 0.4034,
+      "passed": false
+    },
+    "verdict": "acceptable",
+    "retention_score": 85.1
+  },
+  {
+    "original": "Customer: Hi Sophia, I recently changed my last name after getting married, and I\u2019d like to update it on my account. But when I tried to edit my profile, it said the field is locked.\nAgent: Congratulations on your marriage! And sure, I can help you with that. May I have your account email and the name as it currently appears?\nCustomer: It\u2019s emily.reed@example.com, and it still shows as Emily Reed. I\u2019d like to change it to Emily Carter.\nAgent: Got it. Thank you, Emily. For name changes, we just need to verify your identity before updating the record. I\u2019ll send a quick verification code to your registered email.\nCustomer: Okay, I see it \u2014 the code is 542819.\nAgent: Perfect, verified. I\u2019ve updated your account name to Emily Carter. It may take about 30 minutes for the change to show across all systems.\nCustomer: Great, that was fast. Do I need to update my billing details separately?\nAgent: Good question \u2014 the billing name will automatically sync, but if your payment method is under a different name, you might need to update that manually in your payment settings.\nCustomer: Got it. And just to confirm, my login credentials stay the same, right?\nAgent: Yes, nothing changes with your login. Only your display and billing name are updated.\nCustomer: Awesome. Thanks for walking me through this.\nAgent: My pleasure, Emily \u2014 or should I say Mrs. Carter now! Congratulations again, and is there anything else I can assist you with today?\nCustomer: Haha, that\u2019s all. Thanks, Sophia!\nAgent: You\u2019re very welcome. Have a wonderful day!",
+    "compressed": "[INTERACTION:SUPPORT:CHANNEL=VOICE] [DURATION=7m] [LANG=EN] [DOMAIN:ACCOUNT] [CUSTOMER_INTENT:REQUEST_PROFILE_UPDATE] [INTERACTION_TRIGGER:FIELD_LOCKED] [CONTEXT:EMAIL_PROVIDED] [CONTEXT:NAME_PROVIDED] [CONTEXT:OLD_NAME_PROVIDED] [CONTEXT:NEW_NAME_PROVIDED] [CONTEXT:VERIFICATION_CODE_PROVIDED] [AGENT_ACTIONS:ACCOUNT_LOOKUP\u2192TROUBLESHOOT\u2192ACCOUNT_VERIFIED\u2192PROFILE_UPDATED\u2192CUSTOMER_NOTIFIED] [RESOLUTION:PROFILE_UPDATED] [STATE:RESOLVED] [SENTIMENT:NEUTRAL\u2192GRATEFUL]",
+    "kolmogorov": {
+      "original_bytes": 1561,
+      "compressed_bytes": 242,
+      "clm_bytes": 242,
+      "original_zlib_bytes": 794,
+      "clm_zlib_bytes": 242,
+      "complexity_ratio": 0.3048,
+      "information_efficiency": 1.0037,
+      "passed": true
+    },
+    "conditional": {
+      "field_results": [
+        {
+          "field": "channel",
+          "token_key": "CHANNEL",
+          "expected_value": "VOICE",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "lang",
+          "token_key": "LANG",
+          "expected_value": "EN",
+          "found_in_compressed": true,
+          "weight": 0.4,
+          "null_in_source": false
+        },
+        {
+          "field": "domain",
+          "token_key": "DOMAIN",
+          "expected_value": "ACCOUNT",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "service",
+          "token_key": "SERVICE",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "customerIntent",
+          "token_key": "CUSTOMER_INTENT",
+          "expected_value": "REQUEST_PROFILE_UPDATE",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "secondaryIntent",
+          "token_key": "SECONDARY_INTENT",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "state",
+          "token_key": "STATE",
+          "expected_value": "RESOLVED",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "resolution",
+          "token_key": "RESOLUTION",
+          "expected_value": "PROFILE_UPDATED",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "sentiment",
+          "token_key": "SENTIMENT",
+          "expected_value": ["NEUTRAL", "GRATEFUL"],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "agentActions",
+          "token_key": "AGENT_ACTIONS",
+          "expected_value": [
+            "ACCOUNT_LOOKUP",
+            "TROUBLESHOOT",
+            "ACCOUNT_VERIFIED",
+            "PROFILE_UPDATED",
+            "CUSTOMER_NOTIFIED"
+          ],
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "systemActions",
+          "token_key": "SYSTEM_ACTIONS",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "commitments",
+          "token_key": "COMMITMENT",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.9,
+          "null_in_source": true
+        },
+        {
+          "field": "artifacts",
+          "token_key": "ARTIFACTS",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "supportTrigger",
+          "token_key": "SUPPORT_TRIGGER",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "interactionTrigger",
+          "token_key": "INTERACTION_TRIGGER",
+          "expected_value": "GER:FIELD_LOCKED",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "context",
+          "token_key": "CONTEXT",
+          "expected_value": [
+            "EMAIL_PROVIDED",
+            "NAME_PROVIDED",
+            "OLD_NAME_PROVIDED",
+            "NEW_NAME_PROVIDED",
+            "VERIFICATION_CODE_PROVIDED"
+          ],
+          "found_in_compressed": true,
+          "weight": 0.5,
+          "null_in_source": false
+        },
+        {
+          "field": "durationSeconds",
+          "token_key": "DURATION",
+          "expected_value": 420,
+          "found_in_compressed": true,
+          "weight": 0.3,
+          "null_in_source": false
+        },
+        {
+          "field": "id",
+          "token_key": "ID",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.5,
+          "null_in_source": true
+        }
+      ],
+      "slots_total": 11,
+      "slots_matched": 11,
+      "slots_lost": [],
+      "slots_null_in_source": [
+        "service",
+        "secondaryIntent",
+        "systemActions",
+        "commitments",
+        "artifacts",
+        "supportTrigger",
+        "id"
+      ],
+      "weighted_coverage": 1.0,
+      "raw_coverage": 1.0,
+      "residual_entropy": 0.0,
+      "bits_per_lost_field": {},
+      "passed": true
+    },
+    "perplexity": {
+      "original_response_tokens": 214,
+      "compressed_response_tokens": 161,
+      "original_latency_ms": 4267.6,
+      "compressed_latency_ms": 1808.7,
+      "latency_improvement": 57.6,
+      "response_similarity": 0.19,
+      "structure_preserved": true,
+      "key_facts_preserved": [
+        "identity verified via email verification code (542819)"
+      ],
+      "facts_lost": [
+        "billing name auto-syncs but payment method may need manual update if registered under different name",
+        "name changed from emily reed to emily carter",
+        "change takes approximately 30 minutes to sync across all systems",
+        "account email: emily.reed@example.com",
+        "login credentials remain unchanged"
+      ],
+      "comprehension_score": 0.3427,
+      "passed": false
+    },
+    "verdict": "acceptable",
+    "retention_score": 83.6
+  },
+  {
+    "original": "Customer: Hi, I\u2019m honestly pretty frustrated right now. This is the third time I\u2019ve called about the same issue \u2014 my refund still hasn\u2019t come through, even though it was approved last week.\nAgent: I\u2019m really sorry to hear that. Let\u2019s get this sorted once and for all. May I have your case number or the email linked to your account?\nCustomer: It\u2019s jason.miller@example.com and the case number is 22091.\nAgent: Thanks, Jason. Give me a moment... alright, I can see that your refund was approved on the 10th but hasn\u2019t been processed yet due to a pending review flag. That shouldn\u2019t have happened.\nCustomer: Yeah, that\u2019s exactly what the last agent said. I\u2019ve been waiting 12 days already.\nAgent: Completely understandable, and I apologize for the delay. What I\u2019m going to do right now is escalate this directly to our billing supervisor. They\u2019ll have the authority to override the pending status and release the refund immediately.\nCustomer: That\u2019s all I\u2019ve been asking for. Can you guarantee it\u2019ll be done today?\nAgent: Once I mark it as a high-priority escalation, it\u2019ll move to the top of the queue. Typically, these are processed within a few hours.\nCustomer: Alright, but I really need confirmation this time.\nAgent: Absolutely. I\u2019m creating the escalation now... okay, your escalation ticket number is ESC-45390. I\u2019ve also added my name to the notes so the supervisor knows this was personally verified.\nCustomer: That\u2019s good to hear. I just want closure on this.\nAgent: Totally understandable. You\u2019ll receive an email update by the end of the day confirming the refund transfer.\nCustomer: Alright, I appreciate your help, Daniel. You\u2019ve been much more responsive than the last person.\nAgent: Thank you for saying that, Jason. I\u2019ll keep an eye on your case and personally follow up to ensure it\u2019s resolved.\nCustomer: Appreciate that. Hopefully this is the last call I need to make.\nAgent: I hope so too. Thanks for your patience \u2014 you\u2019ll hear from us shortly with confirmation.",
+    "compressed": "[INTERACTION:SUPPORT:CHANNEL=VOICE] [DURATION=8m] [LANG=EN] [DOMAIN:BILLING] [SERVICE:PAYMENT] [CUSTOMER_INTENT:REPORT_BILLING_ISSUE] [INTERACTION_TRIGGER:REFUND_NOT_RECEIVED] [CONTEXT:EMAIL_PROVIDED] [CONTEXT:CASE_ID_PROVIDED] [CONTEXT:DELAY_12_DAYS] [AGENT_ACTIONS:DIAGNOSTIC_PERFORMED\u2192TROUBLESHOOT\u2192ESCALATION_CREATED\u2192CUSTOMER_NOTIFIED\u2192FOLLOWUP_SCHEDULED] [RESOLUTION:ESCALATED] [STATE:ESCALATED] [COMMITMENT:CONFIRMATION_EMAIL] [COMMITMENT:FOLLOWUP] [COMMITMENT:MONITORING] [ARTIFACT:CASE_ID=22091] [ARTIFACT:ESCALATION_ID=ESC-45390] [SENTIMENT:FRUSTRATED\u2192IMPATIENT\u2192REASSURED\u2192GRATEFUL]",
+    "kolmogorov": {
+      "original_bytes": 2034,
+      "compressed_bytes": 327,
+      "clm_bytes": 327,
+      "original_zlib_bytes": 1014,
+      "clm_zlib_bytes": 327,
+      "complexity_ratio": 0.3225,
+      "information_efficiency": 1.0896,
+      "passed": true
+    },
+    "conditional": {
+      "field_results": [
+        {
+          "field": "channel",
+          "token_key": "CHANNEL",
+          "expected_value": "VOICE",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "lang",
+          "token_key": "LANG",
+          "expected_value": "EN",
+          "found_in_compressed": true,
+          "weight": 0.4,
+          "null_in_source": false
+        },
+        {
+          "field": "domain",
+          "token_key": "DOMAIN",
+          "expected_value": "BILLING",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "service",
+          "token_key": "SERVICE",
+          "expected_value": "PAYMENT",
+          "found_in_compressed": true,
+          "weight": 0.7,
+          "null_in_source": false
+        },
+        {
+          "field": "customerIntent",
+          "token_key": "CUSTOMER_INTENT",
+          "expected_value": "REPORT_BILLING_ISSUE",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "secondaryIntent",
+          "token_key": "SECONDARY_INTENT",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "state",
+          "token_key": "STATE",
+          "expected_value": "ESCALATED",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "resolution",
+          "token_key": "RESOLUTION",
+          "expected_value": "ESCALATED",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "sentiment",
+          "token_key": "SENTIMENT",
+          "expected_value": [
+            "FRUSTRATED",
+            "IMPATIENT",
+            "REASSURED",
+            "GRATEFUL"
+          ],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "agentActions",
+          "token_key": "AGENT_ACTIONS",
+          "expected_value": [
+            "DIAGNOSTIC_PERFORMED",
+            "TROUBLESHOOT",
+            "ESCALATION_CREATED",
+            "CUSTOMER_NOTIFIED",
+            "FOLLOWUP_SCHEDULED"
+          ],
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "systemActions",
+          "token_key": "SYSTEM_ACTIONS",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "commitments",
+          "token_key": "COMMITMENT",
+          "expected_value": [
+            { "type": "CONFIRMATION_EMAIL" },
+            { "type": "FOLLOWUP" },
+            { "type": "MONITORING" }
+          ],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "artifacts",
+          "token_key": "ARTIFACTS",
+          "expected_value": [
+            { "key": "CASE_ID", "value": "22091" },
+            { "key": "ESCALATION_ID", "value": "ESC-45390" }
+          ],
+          "found_in_compressed": true,
+          "weight": 0.7,
+          "null_in_source": false
+        },
+        {
+          "field": "supportTrigger",
+          "token_key": "SUPPORT_TRIGGER",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "interactionTrigger",
+          "token_key": "INTERACTION_TRIGGER",
+          "expected_value": "GER:REFUND_NOT_RECEIVED",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "context",
+          "token_key": "CONTEXT",
+          "expected_value": [
+            "EMAIL_PROVIDED",
+            "CASE_ID_PROVIDED",
+            "DELAY_12_DAYS"
+          ],
+          "found_in_compressed": true,
+          "weight": 0.5,
+          "null_in_source": false
+        },
+        {
+          "field": "durationSeconds",
+          "token_key": "DURATION",
+          "expected_value": 480,
+          "found_in_compressed": true,
+          "weight": 0.3,
+          "null_in_source": false
+        },
+        {
+          "field": "id",
+          "token_key": "ID",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.5,
+          "null_in_source": true
+        }
+      ],
+      "slots_total": 14,
+      "slots_matched": 14,
+      "slots_lost": [],
+      "slots_null_in_source": [
+        "secondaryIntent",
+        "systemActions",
+        "supportTrigger",
+        "id"
+      ],
+      "weighted_coverage": 1.0,
+      "raw_coverage": 1.0,
+      "residual_entropy": 0.0,
+      "bits_per_lost_field": {},
+      "passed": true
+    },
+    "perplexity": {
+      "original_response_tokens": 184,
+      "compressed_response_tokens": 203,
+      "original_latency_ms": 1750.0,
+      "compressed_latency_ms": 2213.6,
+      "latency_improvement": -26.5,
+      "response_similarity": 0.1149,
+      "structure_preserved": true,
+      "key_facts_preserved": [
+        "customer waiting 12 days total",
+        "refund approved on the 10th but blocked by pending review flag",
+        "escalation ticket number: esc-45390",
+        "agent committed to personal follow-up and end-of-day confirmation email"
+      ],
+      "facts_lost": ["third call about the same issue"],
+      "comprehension_score": 0.566,
+      "passed": false
+    },
+    "verdict": "acceptable",
+    "retention_score": 89.2
+  },
+  {
+    "original": "Customer: Hi Nina, I called last week about a defective Bluetooth headset I ordered. I was told a replacement would be shipped, but I haven\u2019t received any update yet.\nAgent: Hi there, I\u2019m sorry for the delay. Let\u2019s check what\u2019s happening. Could you please share your order number?\nCustomer: Sure, it\u2019s 7730219.\nAgent: Thanks. One moment... okay, I see that the replacement order was created last Friday, but the warehouse hadn\u2019t assigned a tracking number yet. That\u2019s why you haven\u2019t received a shipping notification.\nCustomer: Ah, that makes sense. Is there any delay on your end?\nAgent: A slight one \u2014 the headset model you ordered just came back into stock yesterday, so the replacement should go out today. I can prioritize your order so it ships in the next batch.\nCustomer: I\u2019d really appreciate that. I\u2019ve been using a backup headset that keeps cutting out.\nAgent: Understood! I\u2019ve just flagged it for same-day dispatch. You\u2019ll get an email with the tracking ID within a few hours.\nCustomer: Great. Once I receive the new one, do I need to return the defective item?\nAgent: Yes, please. We\u2019ll send a prepaid return label in the box. Just pack the old headset and drop it at any postal point within 10 days.\nCustomer: Got it. Thanks for clearing that up.\nAgent: You\u2019re welcome! I\u2019ll follow up tomorrow to make sure the replacement is in transit.\nCustomer: Awesome, thanks Nina.\nAgent: Anytime! Hope you get to enjoy the new headset soon.",
+    "compressed": "[INTERACTION:SUPPORT:CHANNEL=VOICE] [DURATION=7m] [LANG=EN] [DOMAIN:PRODUCT] [CUSTOMER_INTENT:FOLLOWUP_REPLACEMENT_STATUS] [INTERACTION_TRIGGER:TRACKING_NOT_ASSIGNED] [AGENT_ACTIONS:TROUBLESHOOT\u2192DIAGNOSTIC_PERFORMED\u2192REPLACEMENT_ORDERED\u2192PRIORITY_DISPATCH_FLAGGED\u2192FOLLOWUP_SCHEDULED] [RESOLUTION:REPLACEMENT_CONFIRMED] [STATE:PENDING_SHIPMENT] [COMMITMENT:FOLLOWUP_TOMORROW] [SENTIMENT:NEUTRAL\u2192SATISFIED\u2192GRATEFUL]",
+    "kolmogorov": {
+      "original_bytes": 1475,
+      "compressed_bytes": 256,
+      "clm_bytes": 256,
+      "original_zlib_bytes": 764,
+      "clm_zlib_bytes": 256,
+      "complexity_ratio": 0.3351,
+      "information_efficiency": 1.1684,
+      "passed": true
+    },
+    "conditional": {
+      "field_results": [
+        {
+          "field": "channel",
+          "token_key": "CHANNEL",
+          "expected_value": "VOICE",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "lang",
+          "token_key": "LANG",
+          "expected_value": "EN",
+          "found_in_compressed": true,
+          "weight": 0.4,
+          "null_in_source": false
+        },
+        {
+          "field": "domain",
+          "token_key": "DOMAIN",
+          "expected_value": "PRODUCT",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "service",
+          "token_key": "SERVICE",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "customerIntent",
+          "token_key": "CUSTOMER_INTENT",
+          "expected_value": "FOLLOWUP_REPLACEMENT_STATUS",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "secondaryIntent",
+          "token_key": "SECONDARY_INTENT",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "state",
+          "token_key": "STATE",
+          "expected_value": "PENDING_SHIPMENT",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "resolution",
+          "token_key": "RESOLUTION",
+          "expected_value": "REPLACEMENT_CONFIRMED",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "sentiment",
+          "token_key": "SENTIMENT",
+          "expected_value": ["NEUTRAL", "SATISFIED", "GRATEFUL"],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "agentActions",
+          "token_key": "AGENT_ACTIONS",
+          "expected_value": [
+            "TROUBLESHOOT",
+            "DIAGNOSTIC_PERFORMED",
+            "REPLACEMENT_ORDERED",
+            "PRIORITY_DISPATCH_FLAGGED",
+            "FOLLOWUP_SCHEDULED"
+          ],
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "systemActions",
+          "token_key": "SYSTEM_ACTIONS",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "commitments",
+          "token_key": "COMMITMENT",
+          "expected_value": [{ "type": "FOLLOWUP", "etaDays": 1 }],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "artifacts",
+          "token_key": "ARTIFACTS",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "supportTrigger",
+          "token_key": "SUPPORT_TRIGGER",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "interactionTrigger",
+          "token_key": "INTERACTION_TRIGGER",
+          "expected_value": "GER:TRACKING_NOT_ASSIGNED",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "context",
+          "token_key": "CONTEXT",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.5,
+          "null_in_source": true
+        },
+        {
+          "field": "durationSeconds",
+          "token_key": "DURATION",
+          "expected_value": 420,
+          "found_in_compressed": true,
+          "weight": 0.3,
+          "null_in_source": false
+        },
+        {
+          "field": "id",
+          "token_key": "ID",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.5,
+          "null_in_source": true
+        }
+      ],
+      "slots_total": 11,
+      "slots_matched": 11,
+      "slots_lost": [],
+      "slots_null_in_source": [
+        "service",
+        "secondaryIntent",
+        "systemActions",
+        "artifacts",
+        "supportTrigger",
+        "context",
+        "id"
+      ],
+      "weighted_coverage": 1.0,
+      "raw_coverage": 1.0,
+      "residual_entropy": 0.0,
+      "bits_per_lost_field": {},
+      "passed": true
+    },
+    "perplexity": {
+      "original_response_tokens": 208,
+      "compressed_response_tokens": 156,
+      "original_latency_ms": 2274.9,
+      "compressed_latency_ms": 1761.9,
+      "latency_improvement": 22.6,
+      "response_similarity": 0.1083,
+      "structure_preserved": true,
+      "key_facts_preserved": [
+        "agent prioritized order for same-day dispatch",
+        "agent committed to follow up the next day to confirm shipment"
+      ],
+      "facts_lost": [
+        "prepaid return label will be included for defective unit (10-day return window)",
+        "order number: 7730219",
+        "replacement headset came back into stock yesterday",
+        "replacement order was created last friday but lacked tracking number"
+      ],
+      "comprehension_score": 0.3766,
+      "passed": false
+    },
+    "verdict": "acceptable",
+    "retention_score": 84.4
+  },
+  {
+    "original": "Agent: Hi, this is Aisha from technical support. I understand you\u2019re having trouble with your cloud storage syncing correctly?\nCustomer: Yes, exactly. Files aren\u2019t updating on my desktop even though they show up fine on the web app.\nAgent: Got it. Let\u2019s dig into that. Can you confirm which operating system you\u2019re using?\nCustomer: Windows 11.\nAgent: Thanks. Have you tried restarting the sync client recently?\nCustomer: I did, but it didn\u2019t help. I even reinstalled it, but nothing changed.\nAgent: Alright, I\u2019ll check your account logs. Could you please confirm your username or account email?\nCustomer: Sure, it\u2019s ryan.torres@example.com.\nAgent: Thank you. I can see that your desktop client hasn\u2019t synced in 48 hours. The logs show a \u2018token mismatch\u2019 error, which sometimes happens if the authentication key expires.\nCustomer: So how do we fix that?\nAgent: I\u2019ll need to escalate this to our Tier 2 engineering team since it requires a backend token refresh. It\u2019s a quick fix, usually handled within a few hours.\nCustomer: Will I need to do anything on my end?\nAgent: Once the engineers reset the token, you\u2019ll just need to sign out and sign back in to the desktop app. I\u2019ll send an email once that\u2019s ready.\nCustomer: Okay, appreciate it. I\u2019ve been stuck on this for days.\nAgent: Totally understand. I\u2019ve already opened the escalation case \u2014 ID is TEC-9087. You should hear from us later today.\nCustomer: Great. Thanks for being clear about it.\nAgent: You\u2019re very welcome. I\u2019ll make sure the team prioritizes your case.",
+    "compressed": "[INTERACTION:SUPPORT:CHANNEL=VOICE] [DURATION=8m] [LANG=EN] [DOMAIN:TECHNICAL] [CUSTOMER_INTENT:REPORT_SYNC_FAILURE] [INTERACTION_TRIGGER:PRODUCT_FAILURE] [CONTEXT:EMAIL_PROVIDED] [AGENT_ACTIONS:TROUBLESHOOT\u2192DIAGNOSTIC_PERFORMED\u2192ESCALATION_CREATED\u2192TROUBLESHOOTING_PERFORMED] [RESOLUTION:ESCALATED] [STATE:PENDING_ENGINEERING] [COMMITMENT:CONFIRMATION_EMAIL] [ARTIFACT:ESCALATION_ID=TEC-9087] [SENTIMENT:CALM\u2192GRATEFUL\u2192SATISFIED]",
+    "kolmogorov": {
+      "original_bytes": 1561,
+      "compressed_bytes": 263,
+      "clm_bytes": 263,
+      "original_zlib_bytes": 833,
+      "clm_zlib_bytes": 263,
+      "complexity_ratio": 0.3157,
+      "information_efficiency": 1.1278,
+      "passed": true
+    },
+    "conditional": {
+      "field_results": [
+        {
+          "field": "channel",
+          "token_key": "CHANNEL",
+          "expected_value": "VOICE",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "lang",
+          "token_key": "LANG",
+          "expected_value": "EN",
+          "found_in_compressed": true,
+          "weight": 0.4,
+          "null_in_source": false
+        },
+        {
+          "field": "domain",
+          "token_key": "DOMAIN",
+          "expected_value": "TECHNICAL",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "service",
+          "token_key": "SERVICE",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "customerIntent",
+          "token_key": "CUSTOMER_INTENT",
+          "expected_value": "REPORT_SYNC_FAILURE",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "secondaryIntent",
+          "token_key": "SECONDARY_INTENT",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "state",
+          "token_key": "STATE",
+          "expected_value": "PENDING_ENGINEERING",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "resolution",
+          "token_key": "RESOLUTION",
+          "expected_value": "ESCALATED",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "sentiment",
+          "token_key": "SENTIMENT",
+          "expected_value": ["CALM", "GRATEFUL", "SATISFIED"],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "agentActions",
+          "token_key": "AGENT_ACTIONS",
+          "expected_value": [
+            "TROUBLESHOOT",
+            "DIAGNOSTIC_PERFORMED",
+            "ESCALATION_CREATED",
+            "TROUBLESHOOTING_PERFORMED"
+          ],
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "systemActions",
+          "token_key": "SYSTEM_ACTIONS",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "commitments",
+          "token_key": "COMMITMENT",
+          "expected_value": [{ "type": "CONFIRMATION_EMAIL" }],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "artifacts",
+          "token_key": "ARTIFACTS",
+          "expected_value": [{ "key": "ESCALATION_ID", "value": "TEC-9087" }],
+          "found_in_compressed": true,
+          "weight": 0.7,
+          "null_in_source": false
+        },
+        {
+          "field": "supportTrigger",
+          "token_key": "SUPPORT_TRIGGER",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "interactionTrigger",
+          "token_key": "INTERACTION_TRIGGER",
+          "expected_value": "GER:PRODUCT_FAILURE",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "context",
+          "token_key": "CONTEXT",
+          "expected_value": ["EMAIL_PROVIDED"],
+          "found_in_compressed": true,
+          "weight": 0.5,
+          "null_in_source": false
+        },
+        {
+          "field": "durationSeconds",
+          "token_key": "DURATION",
+          "expected_value": 480,
+          "found_in_compressed": true,
+          "weight": 0.3,
+          "null_in_source": false
+        },
+        {
+          "field": "id",
+          "token_key": "ID",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.5,
+          "null_in_source": true
+        }
+      ],
+      "slots_total": 13,
+      "slots_matched": 13,
+      "slots_lost": [],
+      "slots_null_in_source": [
+        "service",
+        "secondaryIntent",
+        "systemActions",
+        "supportTrigger",
+        "id"
+      ],
+      "weighted_coverage": 1.0,
+      "raw_coverage": 1.0,
+      "residual_entropy": 0.0,
+      "bits_per_lost_field": {},
+      "passed": true
+    },
+    "perplexity": {
+      "original_response_tokens": 193,
+      "compressed_response_tokens": 155,
+      "original_latency_ms": 1765.1,
+      "compressed_latency_ms": 2027.5,
+      "latency_improvement": -14.9,
+      "response_similarity": 0.0659,
+      "structure_preserved": true,
+      "key_facts_preserved": [],
+      "facts_lost": [
+        "desktop client hasn't synced in 48 hours",
+        "expected resolution timeline: within a few hours",
+        "customer email: ryan.torres@example.com",
+        "escalation case id: tec-9087",
+        "operating system: windows 11",
+        "root cause: 'token mismatch' error from expired authentication key"
+      ],
+      "comprehension_score": 0.2263,
+      "passed": false
+    },
+    "verdict": "acceptable",
+    "retention_score": 80.7
+  },
+  {
+    "original": "Agent: Hello, this is Leo with billing support. How can I help you today?\nCustomer: Hi Leo, I just noticed a $20 service fee on my bill that I wasn\u2019t expecting. I\u2019ve been a customer for over three years and never had that before.\nAgent: Thanks for bringing that up. Let me take a look at your account details to find out what triggered that fee. May I have your account email?\nCustomer: Sure, it\u2019s andrea.peters@example.com.\nAgent: Alright, give me a moment... okay, I see the fee you mentioned. It\u2019s a reactivation charge from when your payment was processed three days late last month.\nCustomer: Oh, but I thought the grace period was five days.\nAgent: You\u2019re absolutely right \u2014 it used to be five days, but our policy changed in July. It\u2019s now a three-day grace period. However, I do see you\u2019ve had a perfect payment record before this, so I can waive it as a one-time courtesy.\nCustomer: That would be great, I really appreciate it.\nAgent: No problem. I\u2019ve just reversed the charge. You\u2019ll see a $20 credit applied within the next 24 hours, and your updated invoice will reflect that.\nCustomer: Perfect. Can you send me a confirmation email too?\nAgent: Of course. I\u2019ll include the refund reference number \u2014 BCR-55209 \u2014 in that email.\nCustomer: Thank you so much, Leo. That clears everything up.\nAgent: My pleasure, Andrea. Glad we could fix it quickly!",
+    "compressed": "[INTERACTION:SUPPORT:CHANNEL=VOICE] [DURATION=6m] [LANG=EN] [DOMAIN:BILLING] [CUSTOMER_INTENT:DISPUTE_SERVICE_FEE] [INTERACTION_TRIGGER:UNEXPECTED_CHARGE] [CONTEXT:PAYMENT_AMOUNT_PROVIDED] [CONTEXT:EMAIL_PROVIDED] [AGENT_ACTIONS:ACCOUNT_LOOKUP\u2192DIAGNOSTIC_PERFORMED\u2192FEE_WAIVED\u2192CUSTOMER_NOTIFIED] [RESOLUTION:FEE_REVERSED] [STATE:RESOLVED] [COMMITMENT:CREDIT_24H_20] [COMMITMENT:CONFIRMATION_EMAIL] [ARTIFACT:AMT=$20/FEE] [ARTIFACT:AMT=$20/CREDIT] [SENTIMENT:HOPEFUL\u2192SATISFIED\u2192GRATEFUL]",
+    "kolmogorov": {
+      "original_bytes": 1382,
+      "compressed_bytes": 289,
+      "clm_bytes": 289,
+      "original_zlib_bytes": 758,
+      "clm_zlib_bytes": 289,
+      "complexity_ratio": 0.3813,
+      "information_efficiency": 1.0666,
+      "passed": true
+    },
+    "conditional": {
+      "field_results": [
+        {
+          "field": "channel",
+          "token_key": "CHANNEL",
+          "expected_value": "VOICE",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "lang",
+          "token_key": "LANG",
+          "expected_value": "EN",
+          "found_in_compressed": true,
+          "weight": 0.4,
+          "null_in_source": false
+        },
+        {
+          "field": "domain",
+          "token_key": "DOMAIN",
+          "expected_value": "BILLING",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "service",
+          "token_key": "SERVICE",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "customerIntent",
+          "token_key": "CUSTOMER_INTENT",
+          "expected_value": "DISPUTE_SERVICE_FEE",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "secondaryIntent",
+          "token_key": "SECONDARY_INTENT",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "state",
+          "token_key": "STATE",
+          "expected_value": "RESOLVED",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "resolution",
+          "token_key": "RESOLUTION",
+          "expected_value": "FEE_REVERSED",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "sentiment",
+          "token_key": "SENTIMENT",
+          "expected_value": ["HOPEFUL", "SATISFIED", "GRATEFUL"],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "agentActions",
+          "token_key": "AGENT_ACTIONS",
+          "expected_value": [
+            "ACCOUNT_LOOKUP",
+            "DIAGNOSTIC_PERFORMED",
+            "FEE_WAIVED",
+            "CUSTOMER_NOTIFIED"
+          ],
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "systemActions",
+          "token_key": "SYSTEM_ACTIONS",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "commitments",
+          "token_key": "COMMITMENT",
+          "expected_value": [
+            { "type": "CREDIT", "etaDays": null },
+            { "type": "CONFIRMATION_EMAIL" }
+          ],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "artifacts",
+          "token_key": "ARTIFACTS",
+          "expected_value": [
+            { "key": "AMT", "value": "$20/FEE" },
+            { "key": "AMT", "value": "$20/CREDIT" }
+          ],
+          "found_in_compressed": true,
+          "weight": 0.7,
+          "null_in_source": false
+        },
+        {
+          "field": "supportTrigger",
+          "token_key": "SUPPORT_TRIGGER",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "interactionTrigger",
+          "token_key": "INTERACTION_TRIGGER",
+          "expected_value": "GER:UNEXPECTED_CHARGE",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "context",
+          "token_key": "CONTEXT",
+          "expected_value": ["PAYMENT_AMOUNT_PROVIDED", "EMAIL_PROVIDED"],
+          "found_in_compressed": true,
+          "weight": 0.5,
+          "null_in_source": false
+        },
+        {
+          "field": "durationSeconds",
+          "token_key": "DURATION",
+          "expected_value": 360,
+          "found_in_compressed": true,
+          "weight": 0.3,
+          "null_in_source": false
+        },
+        {
+          "field": "id",
+          "token_key": "ID",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.5,
+          "null_in_source": true
+        }
+      ],
+      "slots_total": 13,
+      "slots_matched": 13,
+      "slots_lost": [],
+      "slots_null_in_source": [
+        "service",
+        "secondaryIntent",
+        "systemActions",
+        "supportTrigger",
+        "id"
+      ],
+      "weighted_coverage": 1.0,
+      "raw_coverage": 1.0,
+      "residual_entropy": 0.0,
+      "bits_per_lost_field": {},
+      "passed": true
+    },
+    "perplexity": {
+      "original_response_tokens": 201,
+      "compressed_response_tokens": 169,
+      "original_latency_ms": 2090.9,
+      "compressed_latency_ms": 1792.8,
+      "latency_improvement": 14.3,
+      "response_similarity": 0.3838,
+      "structure_preserved": true,
+      "key_facts_preserved": [
+        "customer will receive $20 credit within 24 hours with confirmation email",
+        "customer has been with the company for over three years with a perfect payment record"
+      ],
+      "facts_lost": [
+        "fee was a reactivation charge due to a three-day late payment (policy changed from five-day grace period in july)",
+        "agent proactively explained the policy change and offered a discretionary waiver"
+      ],
+      "comprehension_score": 0.5535,
+      "passed": false
+    },
+    "verdict": "acceptable",
+    "retention_score": 88.8
+  },
+  {
+    "original": "Agent: Good afternoon, this is Chloe from customer care. How can I assist you today?\nCustomer: Hi Chloe, I\u2019m currently on the Starter plan, and I\u2019m thinking of upgrading to Premium. Can you tell me what\u2019s different?\nAgent: Absolutely. The Premium plan gives you access to unlimited projects, advanced analytics, and priority support. You also get integration options for CRMs like Salesforce and HubSpot.\nCustomer: That sounds useful. Does it include team collaboration tools too?\nAgent: Yes, it does. You\u2019ll get real-time editing, version history, and role-based permissions for team members.\nCustomer: Nice. How much is it per month?\nAgent: The Premium plan is $49 a month, or $480 if you choose annual billing \u2014 which saves you about $108 per year.\nCustomer: Hmm, not bad. If I upgrade mid-cycle, do I get billed immediately?\nAgent: You\u2019d only pay the prorated difference for the remaining days in your billing period. The upgrade takes effect right away.\nCustomer: Great, that\u2019s transparent. Can I switch back if it\u2019s not what I expected?\nAgent: Yes, you can downgrade anytime before your next renewal, and the system automatically adjusts your credits.\nCustomer: Perfect. Go ahead and upgrade me, then.\nAgent: Done! Your account is now on the Premium plan. You\u2019ll receive a confirmation email with all the new features highlighted.\nCustomer: That was quick. Thanks for the great service.\nAgent: Always happy to help! Enjoy your upgraded plan.",
+    "compressed": "[INTERACTION:SALES:CHANNEL=VOICE] [DURATION=7m] [LANG=EN] [DOMAIN:PRODUCT] [SERVICE:SUBSCRIPTION] [CUSTOMER_INTENT:EVALUATE_PLAN_UPGRADE] [INTERACTION_TRIGGER:REQUEST_PLAN_UPGRADE] [CONTEXT:NAME_PROVIDED] [AGENT_ACTIONS:PLAN_UPGRADED] [RESOLUTION:PLAN_UPGRADED] [STATE:UPGRADED] [COMMITMENT:CONFIRMATION_EMAIL] [ARTIFACT:AMT=$49/MONTH] [ARTIFACT:AMT=$480/YEAR] [ARTIFACT:AMT=$108/YEAR] [SENTIMENT:NEUTRAL\u2192SATISFIED]",
+    "kolmogorov": {
+      "original_bytes": 1465,
+      "compressed_bytes": 241,
+      "clm_bytes": 241,
+      "original_zlib_bytes": 798,
+      "clm_zlib_bytes": 241,
+      "complexity_ratio": 0.302,
+      "information_efficiency": 1.061,
+      "passed": true
+    },
+    "conditional": {
+      "field_results": [
+        {
+          "field": "channel",
+          "token_key": "CHANNEL",
+          "expected_value": "VOICE",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "lang",
+          "token_key": "LANG",
+          "expected_value": "EN",
+          "found_in_compressed": true,
+          "weight": 0.4,
+          "null_in_source": false
+        },
+        {
+          "field": "domain",
+          "token_key": "DOMAIN",
+          "expected_value": "PRODUCT",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "service",
+          "token_key": "SERVICE",
+          "expected_value": "SUBSCRIPTION",
+          "found_in_compressed": true,
+          "weight": 0.7,
+          "null_in_source": false
+        },
+        {
+          "field": "customerIntent",
+          "token_key": "CUSTOMER_INTENT",
+          "expected_value": "EVALUATE_PLAN_UPGRADE",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "secondaryIntent",
+          "token_key": "SECONDARY_INTENT",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "state",
+          "token_key": "STATE",
+          "expected_value": "UPGRADED",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "resolution",
+          "token_key": "RESOLUTION",
+          "expected_value": "PLAN_UPGRADED",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "sentiment",
+          "token_key": "SENTIMENT",
+          "expected_value": ["NEUTRAL", "SATISFIED"],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "agentActions",
+          "token_key": "AGENT_ACTIONS",
+          "expected_value": ["PLAN_UPGRADED"],
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "systemActions",
+          "token_key": "SYSTEM_ACTIONS",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "commitments",
+          "token_key": "COMMITMENT",
+          "expected_value": [{ "type": "CONFIRMATION_EMAIL" }],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "artifacts",
+          "token_key": "ARTIFACTS",
+          "expected_value": [
+            { "key": "AMT", "value": "$49/MONTH" },
+            { "key": "AMT", "value": "$480/YEAR" },
+            { "key": "AMT", "value": "$108/YEAR" }
+          ],
+          "found_in_compressed": true,
+          "weight": 0.7,
+          "null_in_source": false
+        },
+        {
+          "field": "supportTrigger",
+          "token_key": "SUPPORT_TRIGGER",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "interactionTrigger",
+          "token_key": "INTERACTION_TRIGGER",
+          "expected_value": "GER:REQUEST_PLAN_UPGRADE",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "context",
+          "token_key": "CONTEXT",
+          "expected_value": ["NAME_PROVIDED"],
+          "found_in_compressed": true,
+          "weight": 0.5,
+          "null_in_source": false
+        },
+        {
+          "field": "durationSeconds",
+          "token_key": "DURATION",
+          "expected_value": 420,
+          "found_in_compressed": true,
+          "weight": 0.3,
+          "null_in_source": false
+        },
+        {
+          "field": "id",
+          "token_key": "ID",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.5,
+          "null_in_source": true
+        }
+      ],
+      "slots_total": 14,
+      "slots_matched": 14,
+      "slots_lost": [],
+      "slots_null_in_source": [
+        "secondaryIntent",
+        "systemActions",
+        "supportTrigger",
+        "id"
+      ],
+      "weighted_coverage": 1.0,
+      "raw_coverage": 1.0,
+      "residual_entropy": 0.0,
+      "bits_per_lost_field": {},
+      "passed": true
+    },
+    "perplexity": {
+      "original_response_tokens": 196,
+      "compressed_response_tokens": 148,
+      "original_latency_ms": 1965.9,
+      "compressed_latency_ms": 1811.7,
+      "latency_improvement": 7.8,
+      "response_similarity": 0.1308,
+      "structure_preserved": true,
+      "key_facts_preserved": [
+        "confirmation email sent to customer",
+        "downgrade option available before next renewal with automatic credit adjustment",
+        "customer upgraded from starter to premium plan",
+        "premium plan costs $49/month or $480/year (saves $108 annually)"
+      ],
+      "facts_lost": [
+        "customer was charged prorated amount for remaining billing period",
+        "premium includes unlimited projects, advanced analytics, priority support, crm integrations, and team collaboration tools"
+      ],
+      "comprehension_score": 0.519,
+      "passed": false
+    },
+    "verdict": "acceptable",
+    "retention_score": 88.0
+  },
+  {
+    "original": "Agent: Hi, this is Hannah with account security support. I see you reached out about an unexpected login alert \u2014 is that correct?\nCustomer: Yes, I got an email saying someone signed into my account from a different location, but it wasn\u2019t me.\nAgent: Thanks for confirming. Let\u2019s secure your account right away. Can I verify your full name and the last four digits of your phone number?\nCustomer: Sure, it\u2019s David Grant, and 7821.\nAgent: Perfect, thank you. I\u2019ve locked the account temporarily while we review the activity. The login came from a device in New Jersey. Does that sound familiar?\nCustomer: No, I\u2019m in Chicago. I\u2019ve never been to New Jersey.\nAgent: Understood. That confirms it\u2019s unauthorized. I\u2019ll help you reset your password and revoke access to that device. Please check your email for a verification link.\nCustomer: Got it, I just received it. Clicking now... okay, done.\nAgent: Excellent. Now you can set a new password. Once that\u2019s updated, I\u2019ll enable two-factor authentication for extra security.\nCustomer: Alright, password updated. Please enable the 2FA.\nAgent: Done. You\u2019ll now get a code by text whenever there\u2019s a new login attempt. I\u2019ve also reported the suspicious session for investigation.\nCustomer: Thank you, Hannah. That was scary, but I feel much better now.\nAgent: You\u2019re very welcome, David. It\u2019s always better to catch these things early. You\u2019ll get a confirmation email shortly.",
+    "compressed": "[INTERACTION:SUPPORT:CHANNEL=VOICE] [DURATION=6m] [LANG=EN] [DOMAIN:SECURITY] [CUSTOMER_INTENT:REPORT_UNAUTHORIZED_LOGIN] [INTERACTION_TRIGGER:UNAUTHORIZED_LOGIN_ALERT] [CONTEXT:NAME_PROVIDED] [AGENT_ACTIONS:DIAGNOSTIC_PERFORMED\u2192CUSTOMER_NOTIFIED\u2192TROUBLESHOOT\u2192ACCOUNT_LOCKED\u2192SESSION_REVOKED\u2192PASSWORD_RESET\u2192TROUBLESHOOTING_PERFORMED\u2192TWO_FACTOR_ENABLED] [RESOLUTION:LOGIN_RESTORED] [STATE:RESOLVED] [COMMITMENT:CONFIRMATION_EMAIL] [SENTIMENT:NEUTRAL\u2192GRATEFUL]",
+    "kolmogorov": {
+      "original_bytes": 1450,
+      "compressed_bytes": 274,
+      "clm_bytes": 274,
+      "original_zlib_bytes": 764,
+      "clm_zlib_bytes": 274,
+      "complexity_ratio": 0.3586,
+      "information_efficiency": 1.0994,
+      "passed": true
+    },
+    "conditional": {
+      "field_results": [
+        {
+          "field": "channel",
+          "token_key": "CHANNEL",
+          "expected_value": "VOICE",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "lang",
+          "token_key": "LANG",
+          "expected_value": "EN",
+          "found_in_compressed": true,
+          "weight": 0.4,
+          "null_in_source": false
+        },
+        {
+          "field": "domain",
+          "token_key": "DOMAIN",
+          "expected_value": "SECURITY",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "service",
+          "token_key": "SERVICE",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "customerIntent",
+          "token_key": "CUSTOMER_INTENT",
+          "expected_value": "REPORT_UNAUTHORIZED_LOGIN",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "secondaryIntent",
+          "token_key": "SECONDARY_INTENT",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "state",
+          "token_key": "STATE",
+          "expected_value": "RESOLVED",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "resolution",
+          "token_key": "RESOLUTION",
+          "expected_value": "LOGIN_RESTORED",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "sentiment",
+          "token_key": "SENTIMENT",
+          "expected_value": ["NEUTRAL", "GRATEFUL"],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "agentActions",
+          "token_key": "AGENT_ACTIONS",
+          "expected_value": [
+            "DIAGNOSTIC_PERFORMED",
+            "CUSTOMER_NOTIFIED",
+            "TROUBLESHOOT",
+            "ACCOUNT_LOCKED",
+            "SESSION_REVOKED",
+            "PASSWORD_RESET",
+            "TROUBLESHOOTING_PERFORMED",
+            "TWO_FACTOR_ENABLED"
+          ],
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "systemActions",
+          "token_key": "SYSTEM_ACTIONS",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "commitments",
+          "token_key": "COMMITMENT",
+          "expected_value": [{ "type": "CONFIRMATION_EMAIL" }],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "artifacts",
+          "token_key": "ARTIFACTS",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "supportTrigger",
+          "token_key": "SUPPORT_TRIGGER",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "interactionTrigger",
+          "token_key": "INTERACTION_TRIGGER",
+          "expected_value": "GER:UNAUTHORIZED_LOGIN_ALERT",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "context",
+          "token_key": "CONTEXT",
+          "expected_value": ["NAME_PROVIDED"],
+          "found_in_compressed": true,
+          "weight": 0.5,
+          "null_in_source": false
+        },
+        {
+          "field": "durationSeconds",
+          "token_key": "DURATION",
+          "expected_value": 360,
+          "found_in_compressed": true,
+          "weight": 0.3,
+          "null_in_source": false
+        },
+        {
+          "field": "id",
+          "token_key": "ID",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.5,
+          "null_in_source": true
+        }
+      ],
+      "slots_total": 12,
+      "slots_matched": 12,
+      "slots_lost": [],
+      "slots_null_in_source": [
+        "service",
+        "secondaryIntent",
+        "systemActions",
+        "artifacts",
+        "supportTrigger",
+        "id"
+      ],
+      "weighted_coverage": 1.0,
+      "raw_coverage": 1.0,
+      "residual_entropy": 0.0,
+      "bits_per_lost_field": {},
+      "passed": true
+    },
+    "perplexity": {
+      "original_response_tokens": 154,
+      "compressed_response_tokens": 157,
+      "original_latency_ms": 1708.8,
+      "compressed_latency_ms": 1754.6,
+      "latency_improvement": -2.7,
+      "response_similarity": 0.2593,
+      "structure_preserved": true,
+      "key_facts_preserved": [
+        "password was successfully reset and two-factor authentication was activated",
+        "unauthorized login originated from new jersey while customer is located in chicago",
+        "customer verified identity using full name and last four digits of phone number (7821)"
+      ],
+      "facts_lost": ["suspicious session was reported for investigation"],
+      "comprehension_score": 0.6037,
+      "passed": false
+    },
+    "verdict": "acceptable",
+    "retention_score": 90.1
+  },
+  {
+    "original": "Agent: Hello, this is Owen from customer care. How can I help you today?\nCustomer: Hi Owen, I\u2019d like to cancel my subscription. I just haven\u2019t been using the service much lately.\nAgent: I understand. Can I ask what\u2019s prompting the cancellation \u2014 lack of use, or something we could improve?\nCustomer: Honestly, mostly lack of time. I\u2019m busy with work and barely log in anymore.\nAgent: Totally understandable. Before I process it, I want to mention we offer a pause option \u2014 you can freeze your subscription for up to three months instead of canceling. That way, you won\u2019t lose your saved settings or data.\nCustomer: Oh, I didn\u2019t know that. If I pause, I won\u2019t get charged, right?\nAgent: Correct. No charges during the pause period, and you can reactivate anytime.\nCustomer: That might actually work better for me.\nAgent: Great! Let\u2019s do that. I\u2019ll pause your subscription starting today and send you an email confirming the end date. You\u2019ll get a reminder before it resumes so you can decide whether to continue or cancel permanently.\nCustomer: Sounds good. Thanks for suggesting that \u2014 saves me the hassle.\nAgent: My pleasure. You\u2019re all set. Enjoy the flexibility, and we hope to see you back when things calm down!\nCustomer: Thanks, Owen.\nAgent: You\u2019re very welcome. Take care!",
+    "compressed": "[INTERACTION:SUPPORT:CHANNEL=VOICE] [DURATION=6m] [LANG=EN] [DOMAIN:SUBSCRIPTION] [CUSTOMER_INTENT:REQUEST_CANCELLATION] [INTERACTION_TRIGGER:CANCELLATION_DEFLECTED] [AGENT_ACTIONS:RETENTION_OFFER\u2192SUBSCRIPTION_PAUSED] [RESOLUTION:CANCELLATION_DEFLECTED] [STATE:PAUSED] [COMMITMENT:CONFIRMATION_EMAIL_TODAY] [COMMITMENT:PAUSE_EXPIRY_REMINDER] [SENTIMENT:NEUTRAL\u2192GRATEFUL]",
+    "kolmogorov": {
+      "original_bytes": 1309,
+      "compressed_bytes": 215,
+      "clm_bytes": 215,
+      "original_zlib_bytes": 695,
+      "clm_zlib_bytes": 215,
+      "complexity_ratio": 0.3094,
+      "information_efficiency": 1.0827,
+      "passed": true
+    },
+    "conditional": {
+      "field_results": [
+        {
+          "field": "channel",
+          "token_key": "CHANNEL",
+          "expected_value": "VOICE",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "lang",
+          "token_key": "LANG",
+          "expected_value": "EN",
+          "found_in_compressed": true,
+          "weight": 0.4,
+          "null_in_source": false
+        },
+        {
+          "field": "domain",
+          "token_key": "DOMAIN",
+          "expected_value": "SUBSCRIPTION",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "service",
+          "token_key": "SERVICE",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "customerIntent",
+          "token_key": "CUSTOMER_INTENT",
+          "expected_value": "REQUEST_CANCELLATION",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "secondaryIntent",
+          "token_key": "SECONDARY_INTENT",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "state",
+          "token_key": "STATE",
+          "expected_value": "PAUSED",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "resolution",
+          "token_key": "RESOLUTION",
+          "expected_value": "CANCELLATION_DEFLECTED",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "sentiment",
+          "token_key": "SENTIMENT",
+          "expected_value": ["NEUTRAL", "GRATEFUL"],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "agentActions",
+          "token_key": "AGENT_ACTIONS",
+          "expected_value": ["RETENTION_OFFER", "SUBSCRIPTION_PAUSED"],
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "systemActions",
+          "token_key": "SYSTEM_ACTIONS",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "commitments",
+          "token_key": "COMMITMENT",
+          "expected_value": [
+            { "type": "CONFIRMATION_EMAIL", "etaDays": 0 },
+            { "type": "PAUSE_EXPIRY_REMINDER" }
+          ],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "artifacts",
+          "token_key": "ARTIFACTS",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "supportTrigger",
+          "token_key": "SUPPORT_TRIGGER",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "interactionTrigger",
+          "token_key": "INTERACTION_TRIGGER",
+          "expected_value": "GER:CANCELLATION_DEFLECTED",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "context",
+          "token_key": "CONTEXT",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.5,
+          "null_in_source": true
+        },
+        {
+          "field": "durationSeconds",
+          "token_key": "DURATION",
+          "expected_value": 360,
+          "found_in_compressed": true,
+          "weight": 0.3,
+          "null_in_source": false
+        },
+        {
+          "field": "id",
+          "token_key": "ID",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.5,
+          "null_in_source": true
+        }
+      ],
+      "slots_total": 11,
+      "slots_matched": 11,
+      "slots_lost": [],
+      "slots_null_in_source": [
+        "service",
+        "secondaryIntent",
+        "systemActions",
+        "artifacts",
+        "supportTrigger",
+        "context",
+        "id"
+      ],
+      "weighted_coverage": 1.0,
+      "raw_coverage": 1.0,
+      "residual_entropy": 0.0,
+      "bits_per_lost_field": {},
+      "passed": true
+    },
+    "perplexity": {
+      "original_response_tokens": 183,
+      "compressed_response_tokens": 138,
+      "original_latency_ms": 1959.0,
+      "compressed_latency_ms": 1477.5,
+      "latency_improvement": 24.6,
+      "response_similarity": 0.0789,
+      "structure_preserved": true,
+      "key_facts_preserved": [
+        "customer receives reminder email before subscription automatically resumes",
+        "pause option prevents loss of saved settings and data",
+        "customer accepted the pause option as a preferable alternative to permanent cancellation"
+      ],
+      "facts_lost": [
+        "customer cited lack of time and minimal login activity as reason for cancellation",
+        "no charges apply during the three-month pause period"
+      ],
+      "comprehension_score": 0.4715,
+      "passed": false
+    },
+    "verdict": "acceptable",
+    "retention_score": 86.8
+  },
+  {
+    "original": "Agent: Hi, this is Isabella, senior support specialist. I\u2019m picking up your case that was escalated earlier today about a service outage. I understand you\u2019ve been trying to get this resolved for over a week?\nCustomer: Yes, finally! I\u2019ve called three times. Our business relies on your platform, and it\u2019s been offline since last Thursday.\nAgent: I can imagine how frustrating that must be. I have your account pulled up now. I see multiple tickets tied to your service ID, and one marked as high-priority from this morning.\nCustomer: Yeah, but nothing\u2019s changed. Every agent keeps saying it\u2019s being worked on.\nAgent: You\u2019re right, and I apologize for the delays. I just checked with the infrastructure team before joining this call \u2014 they identified a corrupted configuration file that\u2019s been preventing your system from restarting.\nCustomer: So what does that mean for me? How long until it\u2019s fixed?\nAgent: The good news is that the engineering team has already replaced the corrupted instance, and your service is in the process of rebooting right now. I can see logs showing recovery steps happening in real time.\nCustomer: Okay, that\u2019s promising. I just want to be sure it actually works this time.\nAgent: Absolutely. Let\u2019s stay on the line for a few minutes while I confirm the reboot status... alright, I\u2019m now seeing the connection restored on our side. Can you refresh your dashboard?\nCustomer: Yep... and it\u2019s back! Finally! I can see everything online again.\nAgent: Wonderful. I\u2019ll monitor your account for the next few hours to ensure it remains stable. I\u2019ll also extend your current billing cycle by five days to compensate for the downtime.\nCustomer: Wow, thank you, Isabella. That\u2019s really appreciated. You\u2019ve been the first person to actually fix this.\nAgent: I\u2019m glad we could turn it around. I know it\u2019s been a long week \u2014 thank you for your patience.\nCustomer: You\u2019ve been great. Thanks again.\nAgent: You\u2019re very welcome. Have a better rest of your week!",
+    "compressed": "[INTERACTION:SUPPORT:CHANNEL=VOICE] [DURATION=7m] [LANG=EN] [DOMAIN:TECHNICAL] [CUSTOMER_INTENT:REPORT_SERVICE_OUTAGE] [INTERACTION_TRIGGER:SERVICE_DISRUPTION] [AGENT_ACTIONS:ACCOUNT_LOOKUP\u2192DIAGNOSTIC_PERFORMED\u2192TROUBLESHOOT\u2192SERVICE_RESTORED\u2192BILLING_EXTENSION_APPLIED] [RESOLUTION:SERVICE_RESTORED] [STATE:RESOLVED] [COMMITMENT:MONITORING] [COMMITMENT:BILLING_EXTENSION_5_DAYS] [ARTIFACT:BILLING_EXTENSION=5_DAYS] [SENTIMENT:FRUSTRATED\u2192RELIEVED\u2192GRATEFUL\u2192SATISFIED]",
+    "kolmogorov": {
+      "original_bytes": 2017,
+      "compressed_bytes": 266,
+      "clm_bytes": 266,
+      "original_zlib_bytes": 1023,
+      "clm_zlib_bytes": 266,
+      "complexity_ratio": 0.26,
+      "information_efficiency": 1.0995,
+      "passed": true
+    },
+    "conditional": {
+      "field_results": [
+        {
+          "field": "channel",
+          "token_key": "CHANNEL",
+          "expected_value": "VOICE",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "lang",
+          "token_key": "LANG",
+          "expected_value": "EN",
+          "found_in_compressed": true,
+          "weight": 0.4,
+          "null_in_source": false
+        },
+        {
+          "field": "domain",
+          "token_key": "DOMAIN",
+          "expected_value": "TECHNICAL",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "service",
+          "token_key": "SERVICE",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "customerIntent",
+          "token_key": "CUSTOMER_INTENT",
+          "expected_value": "REPORT_SERVICE_OUTAGE",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "secondaryIntent",
+          "token_key": "SECONDARY_INTENT",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "state",
+          "token_key": "STATE",
+          "expected_value": "RESOLVED",
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "resolution",
+          "token_key": "RESOLUTION",
+          "expected_value": "SERVICE_RESTORED",
+          "found_in_compressed": true,
+          "weight": 1.0,
+          "null_in_source": false
+        },
+        {
+          "field": "sentiment",
+          "token_key": "SENTIMENT",
+          "expected_value": ["FRUSTRATED", "RELIEVED", "GRATEFUL", "SATISFIED"],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "agentActions",
+          "token_key": "AGENT_ACTIONS",
+          "expected_value": [
+            "ACCOUNT_LOOKUP",
+            "DIAGNOSTIC_PERFORMED",
+            "TROUBLESHOOT",
+            "SERVICE_RESTORED",
+            "BILLING_EXTENSION_APPLIED"
+          ],
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "systemActions",
+          "token_key": "SYSTEM_ACTIONS",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.6,
+          "null_in_source": true
+        },
+        {
+          "field": "commitments",
+          "token_key": "COMMITMENT",
+          "expected_value": [
+            { "type": "MONITORING" },
+            { "type": "BILLING_EXTENSION_5_DAYS" }
+          ],
+          "found_in_compressed": true,
+          "weight": 0.9,
+          "null_in_source": false
+        },
+        {
+          "field": "artifacts",
+          "token_key": "ARTIFACTS",
+          "expected_value": [{ "key": "BILLING_EXTENSION", "value": "5_DAYS" }],
+          "found_in_compressed": true,
+          "weight": 0.7,
+          "null_in_source": false
+        },
+        {
+          "field": "supportTrigger",
+          "token_key": "SUPPORT_TRIGGER",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.7,
+          "null_in_source": true
+        },
+        {
+          "field": "interactionTrigger",
+          "token_key": "INTERACTION_TRIGGER",
+          "expected_value": "GER:SERVICE_DISRUPTION",
+          "found_in_compressed": true,
+          "weight": 0.8,
+          "null_in_source": false
+        },
+        {
+          "field": "context",
+          "token_key": "CONTEXT",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.5,
+          "null_in_source": true
+        },
+        {
+          "field": "durationSeconds",
+          "token_key": "DURATION",
+          "expected_value": 420,
+          "found_in_compressed": true,
+          "weight": 0.3,
+          "null_in_source": false
+        },
+        {
+          "field": "id",
+          "token_key": "ID",
+          "expected_value": null,
+          "found_in_compressed": false,
+          "weight": 0.5,
+          "null_in_source": true
+        }
+      ],
+      "slots_total": 12,
+      "slots_matched": 12,
+      "slots_lost": [],
+      "slots_null_in_source": [
+        "service",
+        "secondaryIntent",
+        "systemActions",
+        "supportTrigger",
+        "context",
+        "id"
+      ],
+      "weighted_coverage": 1.0,
+      "raw_coverage": 1.0,
+      "residual_entropy": 0.0,
+      "bits_per_lost_field": {},
+      "passed": true
+    },
+    "perplexity": {
+      "original_response_tokens": 203,
+      "compressed_response_tokens": 141,
+      "original_latency_ms": 2422.5,
+      "compressed_latency_ms": 1632.7,
+      "latency_improvement": 32.6,
+      "response_similarity": 0.2645,
+      "structure_preserved": true,
+      "key_facts_preserved": [
+        "agent proactively monitored account for several hours post-resolution and offered service credit",
+        "issue was resolved during the call with real-time monitoring confirmation"
+      ],
+      "facts_lost": [
+        "service was offline since last thursday (approximately 7 days)",
+        "customer had submitted 3 previous support tickets with no resolution before escalation",
+        "root cause was a corrupted configuration file preventing system restart"
+      ],
+      "comprehension_score": 0.4658,
+      "passed": false
+    },
+    "verdict": "acceptable",
+    "retention_score": 86.6
+  }
+]

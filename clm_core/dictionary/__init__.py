@@ -84,6 +84,7 @@ def _build_patterns_map():
             delay_context_words=getattr(mod, "DELAY_CONTEXT_WORDS", []),
             extra_commitment_patterns=getattr(mod, "EXTRA_COMMITMENT_PATTERNS", {}),
             promise_timeline_patterns=getattr(mod, "PROMISE_TIMELINE_PATTERNS", []),
+            billing_period_context=getattr(mod, "BILLING_PERIOD_CONTEXT", []),
         )
 
     return {

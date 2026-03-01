@@ -290,6 +290,8 @@ class ThreadEncoder(metaclass=SingletonMeta):
         "PROFILE_UPDATED": "PROFILE_UPDATED",
         "ESCALATION_CREATED": "ESCALATED",
         "PLAN_UPGRADED": "PLAN_UPGRADED",
+        "ADDON_ACTIVATED": "ADDON_ACTIVATED",
+        "DISCOUNT_APPLIED": "DISCOUNT_APPLIED",
         "SERVICE_RESTORED": "SERVICE_RESTORED",
         "SUBSCRIPTION_PAUSED": "SUBSCRIPTION_PAUSED",
         "TRIAL_ACTIVATED": "TRIAL_ACTIVATED",
@@ -317,23 +319,38 @@ class ThreadEncoder(metaclass=SingletonMeta):
         Derives resolution from agent actions when possible (the last significant action
         IS the resolution). Falls back to resolution type mapping.
 
+        State consistency guarantees:
+        - ESCALATED + RESOLVED cannot coexist: when ESCALATION_CREATED is present, the
+          resolution reflects the escalation outcome, not earlier agent actions.
+        - Exception: if SERVICE_RESTORED follows escalation, the service was fixed.
+
         Format: [RESOLUTION:REFUND_INITIATED]
         """
+        actions = actions or []
+        action_types_set = {a.type for a in actions}
+        has_escalation = "ESCALATION_CREATED" in action_types_set
+
         # Cancellation deflection: agent made a retention offer and customer did not cancel
-        if actions:
-            action_types_set = {a.type for a in actions}
-            if (
-                "RETENTION_OFFER" in action_types_set
-                and "SERVICE_CANCELLED" not in action_types_set
-            ):
-                return "[RESOLUTION:CANCELLATION_DEFLECTED]"
+        if (
+            "RETENTION_OFFER" in action_types_set
+            and "SERVICE_CANCELLED" not in action_types_set
+        ):
+            return "[RESOLUTION:CANCELLATION_DEFLECTED]"
+
+        # When escalated but service was subsequently restored, the escalation resolved
+        if has_escalation and "SERVICE_RESTORED" in action_types_set:
+            return "[RESOLUTION:SERVICE_RESTORED]"
+
+        # Escalation takes precedence — do not emit a resolved outcome while escalated.
+        # RESOLVED + ESCALATED simultaneously is a contradiction.
+        if has_escalation:
+            return "[RESOLUTION:ESCALATED]"
 
         # Try to derive resolution from the last significant agent action
-        if actions:
-            for action in reversed(actions):
-                action_res = cls._ACTION_TO_RESOLUTION.get(action.type)
-                if action_res is not None:
-                    return f"[RESOLUTION:{action_res}]"
+        for action in reversed(actions):
+            action_res = cls._ACTION_TO_RESOLUTION.get(action.type)
+            if action_res is not None:
+                return f"[RESOLUTION:{action_res}]"
 
         res_type = cls._RESOLUTION_MAP.get(resolution.type)
         if res_type:
@@ -405,7 +422,12 @@ class ThreadEncoder(metaclass=SingletonMeta):
             for a in ("REPLACEMENT_ORDERED", "PRIORITY_DISPATCH_FLAGGED")
         )
         has_refund = any(
-            a in action_types for a in ("REFUND_INITIATED", "CREDIT_APPLIED")
+            a in action_types
+            for a in (
+                "REFUND_INITIATED",
+                "CREDIT_APPLIED",
+                "DUPLICATE_PAYMENT_CONFIRMED",
+            )
         )
         has_escalation = "ESCALATION_CREATED" in action_types
         has_paused = (
@@ -416,6 +438,16 @@ class ThreadEncoder(metaclass=SingletonMeta):
         # Paused subscription — account is in a frozen state, not pending customer action
         if has_paused:
             return "[STATE:PAUSED]"
+
+        # Trial activation — account is in a trial state, not RESOLVED
+        if "TRIAL_ACTIVATED" in action_types and not has_escalation:
+            return "[STATE:TRIAL_ACTIVE]"
+
+        # Plan/addon upgrade — account is in UPGRADED state, not RESOLVED
+        if (
+            "PLAN_UPGRADED" in action_types or "ADDON_ACTIVATED" in action_types
+        ) and not has_escalation:
+            return "[STATE:UPGRADED]"
 
         # Physical shipment pending → PENDING_SHIPMENT (not RESOLVED)
         if has_physical_shipment and base_state == "RESOLVED":
@@ -459,7 +491,11 @@ class ThreadEncoder(metaclass=SingletonMeta):
             # — the engineering team is pending, not the customer.
             if domain == "TECHNICAL":
                 return "[STATE:PENDING_ENGINEERING]"
-            # Refund/payment processing waits on customer's financial institution
+            # Refund processing waits on the bank — PENDING_REFUND is more
+            # precise than PENDING_CUSTOMER and satisfies state-machine semantics:
+            # REFUND_INITIATED ≠ RESOLVED.
+            if has_refund:
+                return "[STATE:PENDING_REFUND]"
             return "[STATE:PENDING_CUSTOMER]"
 
         # Outage/restoration context
@@ -502,7 +538,8 @@ class ThreadEncoder(metaclass=SingletonMeta):
         }
 
         # Commitment types where timeline is omitted (the timing is inherently future/contextual)
-        _NO_TIMELINE_TYPES = {"PAUSE_EXPIRY_REMINDER"}
+        # MONITORING is operational and open-ended; PAUSE_EXPIRY_REMINDER has no fixed date.
+        _NO_TIMELINE_TYPES = {"PAUSE_EXPIRY_REMINDER", "MONITORING"}
 
         # Map timeline shorthand to gold-style
         _TIMELINE_MAP = {
@@ -521,6 +558,11 @@ class ThreadEncoder(metaclass=SingletonMeta):
             parts = [label]
             if p.timeline and p.type not in _NO_TIMELINE_TYPES:
                 timeline_str = _TIMELINE_MAP.get(p.timeline, p.timeline)
+                # Expand compact shorthands: "5d" → "5_DAYS", "3h" → "3_HOURS"
+                if re.match(r"^\d+d$", timeline_str):
+                    timeline_str = f"{timeline_str[:-1]}_DAYS"
+                elif re.match(r"^\d+h$", timeline_str):
+                    timeline_str = f"{timeline_str[:-1]}_HOURS"
                 parts.append(timeline_str)
             if p.amount:
                 parts.append(p.amount)
@@ -540,6 +582,7 @@ class ThreadEncoder(metaclass=SingletonMeta):
 
         Format: [ARTIFACT:REFUND_REF=RFD-908712]
         Format: [ARTIFACT:AMT=$2.99/EXTRA_CHARGE]
+        Format: [ARTIFACT:BILLING_EXTENSION=5_DAYS]
         """
         artifacts = []
 
@@ -547,6 +590,18 @@ class ThreadEncoder(metaclass=SingletonMeta):
         for amt in analysis.amounts:
             if amt.reason:
                 artifacts.append(f"[ARTIFACT:AMT={amt.amount}/{amt.reason}]")
+
+        # Billing extension duration artifact
+        for promise in analysis.promises:
+            if promise.type == "BILLING_EXTENSION" and promise.timeline:
+                tl = promise.timeline
+                if re.match(r"^\d+d$", tl):
+                    artifact_val = f"{tl[:-1]}_DAYS"
+                elif re.match(r"^\d+h$", tl):
+                    artifact_val = f"{tl[:-1]}_HOURS"
+                else:
+                    artifact_val = tl.upper()
+                artifacts.append(f"[ARTIFACT:BILLING_EXTENSION={artifact_val}]")
 
         # Refund reference
         if analysis.refund_reference:
