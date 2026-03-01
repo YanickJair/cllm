@@ -325,6 +325,7 @@ Based on production testing with 5,000+ samples:
   - [Transcript Encoding](thread_encoder/transcript_encoder.md) - Customer service transcript compression
 - **[Advanced: CLM Dictionary](advanced/clm_dictionary.md)** - Understanding the vocabulary
 - **[Advanced: Tokenization](advanced/clm_tokenization.md)** - Token hierarchy and structure
+- **[Advanced: Quality Gate](advanced/quality_gate/index.md)** - Validating that compression preserves meaning
 
 ---
 

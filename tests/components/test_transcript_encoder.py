@@ -831,3 +831,253 @@ Customer: Okay, thank you."""
         assert "[DOMAIN:TECHNICAL]" in compressed
         # Should not be UNCLASSIFIED since agent stated the issue
         assert "[DOMAIN:UNCLASSIFIED]" not in compressed
+
+
+class TestThreadFixes:
+    """Tests for fixes described in Thread-Fixes.md."""
+
+    def test_business_pro_upgrade_interaction_trigger(self, encoder):
+        """Transcript 1: SALES call with plan upgrade consideration."""
+        transcript = """Customer: Hi Laura, I'm considering upgrading to your Business Pro plan, but I wanted to know if it includes advanced analytics features.
+Agent: Great question! The Business Pro plan does include analytics, but there are a few levels to it. Can I ask how you plan to use the data — mostly for tracking sales, or customer engagement?
+Customer: Mostly engagement. We want to track activity per user, response times, and conversion metrics.
+Agent: Perfect, that's exactly what the advanced analytics module covers. You'd get access to dashboards that show detailed engagement stats by user segment, plus export options for CSV and API access.
+Customer: Sounds good. Does that come standard or as an add-on?
+Agent: It's included in the Business Pro plan. The only add-on you might consider is the predictive insights module, which uses machine learning to forecast trends.
+Customer: Interesting — what's the cost for that?
+Agent: It's an additional $30 a month per account. But if you're upgrading before the end of the quarter, you'd qualify for a 20% discount for the first six months.
+Customer: That's tempting. Can I try it before committing?
+Agent: Yes, we offer a 14-day trial for the predictive module. I can activate that trial for you right after the call.
+Customer: Please do. This helps a lot.
+Agent: Done! You'll receive a confirmation email shortly with setup instructions.
+Customer: Awesome, thank you Laura.
+Agent: My pleasure! Feel free to reach out anytime if you need help exploring the analytics dashboard."""
+
+        metadata = {"call_id": "T1", "channel": "voice"}
+        result = encoder.encode(transcript=transcript, metadata=metadata)
+        compressed = result.compressed
+
+        assert "[INTERACTION_TRIGGER:REQUEST_PLAN_UPGRADE]" in compressed
+        assert "TRIAL_ACTIVATED" in compressed
+        # $30 add-on should be flagged as EXTRA_CHARGE
+        assert "AMT=$30/EXTRA_CHARGE" in compressed
+
+    def test_refund_escalation_trigger(self, encoder):
+        """Transcript 2: Refund still hasn't come through should trigger REFUND_NOT_RECEIVED."""
+        transcript = """Customer: Hi, I'm honestly pretty frustrated right now. This is the third time I've called about the same issue — my refund still hasn't come through, even though it was approved last week.
+Agent: I'm really sorry to hear that. Let's get this sorted once and for all. May I have your case number or the email linked to your account?
+Customer: It's jason.miller@example.com and the case number is 22091.
+Agent: Thanks, Jason. Give me a moment... alright, I can see that your refund was approved on the 10th but hasn't been processed yet due to a pending review flag. That shouldn't have happened.
+Customer: Yeah, that's exactly what the last agent said. I've been waiting 12 days already.
+Agent: Completely understandable, and I apologize for the delay. What I'm going to do right now is escalate this directly to our billing supervisor. They'll have the authority to override the pending status and release the refund immediately.
+Customer: That's all I've been asking for. Can you guarantee it'll be done today?
+Agent: Once I mark it as a high-priority escalation, it'll move to the top of the queue. Typically, these are processed within a few hours.
+Customer: Alright, but I really need confirmation this time.
+Agent: Absolutely. I'm creating the escalation now... okay, your escalation ticket number is ESC-45390. I've also added my name to the notes so the supervisor knows this was personally verified.
+Customer: That's good to hear. I just want closure on this.
+Agent: Totally understandable. You'll receive an email update by the end of the day confirming the refund transfer.
+Customer: Alright, I appreciate your help, Daniel. You've been much more responsive than the last person.
+Agent: Thank you for saying that, Jason. I'll keep an eye on your case and personally follow up to ensure it's resolved.
+Customer: Appreciate that. Hopefully this is the last call I need to make.
+Agent: I hope so too. Thanks for your patience — you'll hear from us shortly with confirmation."""
+
+        metadata = {"call_id": "T2", "channel": "voice"}
+        result = encoder.encode(transcript=transcript, metadata=metadata)
+        compressed = result.compressed
+
+        assert "[INTERACTION_TRIGGER:REFUND_NOT_RECEIVED]" in compressed
+        # Escalation must not produce a RESOLVED state
+        assert "[STATE:RESOLVED]" not in compressed
+        assert "[STATE:ESCALATED]" in compressed
+        # Resolution should reflect escalation, not a settled outcome
+        assert "[RESOLUTION:ESCALATED]" in compressed
+
+    def test_replacement_tracking_trigger(self, encoder):
+        """Transcript 3: Haven't received any update should trigger TRACKING_NOT_ASSIGNED."""
+        transcript = """Customer: Hi Nina, I called last week about a defective Bluetooth headset I ordered. I was told a replacement would be shipped, but I haven't received any update yet.
+Agent: Hi there, I'm sorry for the delay. Let's check what's happening. Could you please share your order number?
+Customer: Sure, it's 7730219.
+Agent: Thanks. One moment... okay, I see that the replacement order was created last Friday, but the warehouse hadn't assigned a tracking number yet. That's why you haven't received a shipping notification.
+Customer: Ah, that makes sense. Is there any delay on your end?
+Agent: A slight one — the headset model you ordered just came back into stock yesterday, so the replacement should go out today. I can prioritize your order so it ships in the next batch.
+Customer: I'd really appreciate that. I've been using a backup headset that keeps cutting out.
+Agent: Understood! I've just flagged it for same-day dispatch. You'll get an email with the tracking ID within a few hours.
+Customer: Great. Once I receive the new one, do I need to return the defective item?
+Agent: Yes, please. We'll send a prepaid return label in the box. Just pack the old headset and drop it at any postal point within 10 days.
+Customer: Got it. Thanks for clearing that up.
+Agent: You're welcome! I'll follow up tomorrow to make sure the replacement is in transit.
+Customer: Awesome, thanks Nina.
+Agent: Anytime! Hope you get to enjoy the new headset soon."""
+
+        metadata = {"call_id": "T3", "channel": "voice"}
+        result = encoder.encode(transcript=transcript, metadata=metadata)
+        compressed = result.compressed
+
+        assert "[INTERACTION_TRIGGER:TRACKING_NOT_ASSIGNED]" in compressed
+
+    def test_unexpected_fee_trigger(self, encoder):
+        """Transcript 5: Unexpected service fee should trigger UNEXPECTED_CHARGE."""
+        transcript = """Agent: Hello, this is Leo with billing support. How can I help you today?
+Customer: Hi Leo, I just noticed a $20 service fee on my bill that I wasn't expecting. I've been a customer for over three years and never had that before.
+Agent: Thanks for bringing that up. Let me take a look at your account details to find out what triggered that fee. May I have your account email?
+Customer: Sure, it's andrea.peters@example.com.
+Agent: Alright, give me a moment... okay, I see the fee you mentioned. It's a reactivation charge from when your payment was processed three days late last month.
+Customer: Oh, but I thought the grace period was five days.
+Agent: You're absolutely right — it used to be five days, but our policy changed in July. It's now a three-day grace period. However, I do see you've had a perfect payment record before this, so I can waive it as a one-time courtesy.
+Customer: That would be great, I really appreciate it.
+Agent: No problem. I've just reversed the charge. You'll see a $20 credit applied within the next 24 hours, and your updated invoice will reflect that.
+Customer: Perfect. Can you send me a confirmation email too?
+Agent: Of course. I'll include the refund reference number — BCR-55209 — in that email.
+Customer: Thank you so much, Leo. That clears everything up.
+Agent: My pleasure, Andrea. Glad we could fix it quickly!"""
+
+        metadata = {"call_id": "T5", "channel": "voice"}
+        result = encoder.encode(transcript=transcript, metadata=metadata)
+        compressed = result.compressed
+
+        assert "[INTERACTION_TRIGGER:UNEXPECTED_CHARGE]" in compressed
+        assert "[STATE:RESOLVED]" in compressed
+        # $20 fee and $20 credit should be captured
+        assert "AMT=$20/FEE" in compressed or "AMT=$20/CREDIT" in compressed
+
+    def test_plan_upgrade_trigger_and_action(self, encoder):
+        """Transcript 6: Upgrade to Premium should trigger REQUEST_PLAN_UPGRADE and PLAN_UPGRADED."""
+        transcript = """Agent: Good afternoon, this is Chloe from customer care. How can I assist you today?
+Customer: Hi Chloe, I'm currently on the Starter plan, and I'm thinking of upgrading to Premium. Can you tell me what's different?
+Agent: Absolutely. The Premium plan gives you access to unlimited projects, advanced analytics, and priority support. You also get integration options for CRMs like Salesforce and HubSpot.
+Customer: That sounds useful. Does it include team collaboration tools too?
+Agent: Yes, it does. You'll get real-time editing, version history, and role-based permissions for team members.
+Customer: Nice. How much is it per month?
+Agent: The Premium plan is $49 a month, or $480 if you choose annual billing — which saves you about $108 per year.
+Customer: Hmm, not bad. If I upgrade mid-cycle, do I get billed immediately?
+Agent: You'd only pay the prorated difference for the remaining days in your billing period. The upgrade takes effect right away.
+Customer: Great, that's transparent. Can I switch back if it's not what I expected?
+Agent: Yes, you can downgrade anytime before your next renewal, and the system automatically adjusts your credits.
+Customer: Perfect. Go ahead and upgrade me, then.
+Agent: Done! Your account is now on the Premium plan. You'll receive a confirmation email with all the new features highlighted.
+Customer: That was quick. Thanks for the great service.
+Agent: Always happy to help! Enjoy your upgraded plan."""
+
+        metadata = {"call_id": "T6", "channel": "voice"}
+        result = encoder.encode(transcript=transcript, metadata=metadata)
+        compressed = result.compressed
+
+        assert "[INTERACTION_TRIGGER:REQUEST_PLAN_UPGRADE]" in compressed
+        assert "PLAN_UPGRADED" in compressed
+
+    def test_service_disruption_trigger(self, encoder):
+        """Transcript 8: Service been offline should trigger SERVICE_DISRUPTION."""
+        transcript = """Agent: Hi, this is Isabella, senior support specialist. I'm picking up your case that was escalated earlier today about a service outage. I understand you've been trying to get this resolved for over a week?
+Customer: Yes, finally! I've called three times. Our business relies on your platform, and it's been offline since last Thursday.
+Agent: I can imagine how frustrating that must be. I have your account pulled up now. I see multiple tickets tied to your service ID, and one marked as high-priority from this morning.
+Customer: Yeah, but nothing's changed. Every agent keeps saying it's being worked on.
+Agent: You're right, and I apologize for the delays. I just checked with the infrastructure team before joining this call — they identified a corrupted configuration file that's been preventing your system from restarting.
+Customer: So what does that mean for me? How long until it's fixed?
+Agent: The good news is that the engineering team has already replaced the corrupted instance, and your service is in the process of rebooting right now. I can see logs showing recovery steps happening in real time.
+Customer: Okay, that's promising. I just want to be sure it actually works this time.
+Agent: Absolutely. Let's stay on the line for a few minutes while I confirm the reboot status... alright, I'm now seeing the connection restored on our side. Can you refresh your dashboard?
+Customer: Yep... and it's back! Finally! I can see everything online again.
+Agent: Wonderful. I'll monitor your account for the next few hours to ensure it remains stable. I'll also extend your current billing cycle by five days to compensate for the downtime.
+Customer: Wow, thank you, Isabella. That's really appreciated. You've been the first person to actually fix this.
+Agent: I'm glad we could turn it around. I know it's been a long week — thank you for your patience.
+Customer: You've been great. Thanks again.
+Agent: You're very welcome. Have a better rest of your week!"""
+
+        metadata = {"call_id": "T8", "channel": "voice"}
+        result = encoder.encode(transcript=transcript, metadata=metadata)
+        compressed = result.compressed
+
+        assert "[INTERACTION_TRIGGER:SERVICE_DISRUPTION]" in compressed
+
+    def test_escalated_resolution_no_resolved_contradiction(self):
+        """ESCALATED + RESOLVED simultaneously is not allowed."""
+        resolution = Resolution(type="RESOLVED")
+        actions = [
+            Action(type="FEE_REVIEWED"),
+            Action(type="ESCALATION_CREATED"),
+            Action(type="FEE_WAIVED"),
+        ]
+        result = ThreadEncoder._encode_resolution(resolution, actions)
+        # Even though FEE_WAIVED is a definitive action, escalation takes precedence
+        assert result == "[RESOLUTION:ESCALATED]"
+
+    def test_escalated_with_service_restored_resolves(self):
+        """Escalation followed by SERVICE_RESTORED should produce SERVICE_RESTORED resolution."""
+        resolution = Resolution(type="RESOLVED")
+        actions = [
+            Action(type="ESCALATION_CREATED"),
+            Action(type="LOGS_REVIEWED"),
+            Action(type="SERVICE_RESTORED"),
+        ]
+        result = ThreadEncoder._encode_resolution(resolution, actions)
+        assert result == "[RESOLUTION:SERVICE_RESTORED]"
+
+    def test_extraction_confidence_fields_present(self, encoder):
+        """TranscriptAnalysis must include extraction_confidence and requires_review."""
+        transcript = """Customer: I need help with my account.
+Agent: Sure, I can help you. What seems to be the issue?
+Customer: My login isn't working.
+Agent: Let me look into that for you."""
+
+        metadata = {"call_id": "CONF-001", "channel": "voice"}
+        result = encoder.encode(transcript=transcript, metadata=metadata)
+        analysis_dict = result.metadata["analysis"]
+        assert "extraction_confidence" in analysis_dict
+        assert "requires_review" in analysis_dict
+        confidence = float(analysis_dict["extraction_confidence"])
+        assert 0.0 <= confidence <= 1.0
+        assert analysis_dict["requires_review"] in ("True", "False")
+
+    def test_trial_activated_state_is_trial_active(self):
+        """TRIAL_ACTIVATED action must produce STATE:TRIAL_ACTIVE, not STATE:RESOLVED."""
+        resolution = Resolution(type="RESOLVED")
+        actions = [
+            Action(type="PLAN_FEATURES_EXPLAINED"),
+            Action(type="TRIAL_ACTIVATED"),
+        ]
+        result = ThreadEncoder._encode_state(
+            resolution, None, actions=actions
+        )
+        assert result == "[STATE:TRIAL_ACTIVE]"
+
+    def test_plan_upgraded_state_is_upgraded(self):
+        """PLAN_UPGRADED action must produce STATE:UPGRADED, not STATE:RESOLVED."""
+        resolution = Resolution(type="RESOLVED")
+        actions = [
+            Action(type="PLAN_FEATURES_EXPLAINED"),
+            Action(type="PLAN_UPGRADED"),
+        ]
+        result = ThreadEncoder._encode_state(
+            resolution, None, actions=actions
+        )
+        assert result == "[STATE:UPGRADED]"
+
+    def test_sales_upgrade_no_billing_dispute(self, encoder):
+        """Premium upgrade SALES call must not produce [ISSUE:BILLING_DISPUTE] from pricing info."""
+        transcript = """Agent: Good afternoon, this is Chloe from customer care. How can I assist you today?
+Customer: Hi Chloe, I'm currently on the Starter plan, and I'm thinking of upgrading to Premium. Can you tell me what's different?
+Agent: Absolutely. The Premium plan gives you access to unlimited projects, advanced analytics, and priority support.
+Customer: How much is it per month?
+Agent: The Premium plan is $49 a month, or $480 if you choose annual billing.
+Customer: Perfect. Go ahead and upgrade me, then.
+Agent: Done! Your account is now on the Premium plan. You'll receive a confirmation email with all the new features highlighted."""
+
+        metadata = {"call_id": "SALES-01", "channel": "voice"}
+        result = encoder.encode(transcript=transcript, metadata=metadata)
+        compressed = result.compressed
+
+        assert "BILLING_DISPUTE" not in compressed
+        assert "PLAN_UPGRADED" in compressed
+        assert "[STATE:UPGRADED]" in compressed
+
+    def test_requires_review_sales_without_monetization(self, encoder):
+        """SALES call where agent only explains but takes no monetization action must require review."""
+        transcript = """Customer: I'm interested in upgrading my account to the premium tier.
+Agent: Sure, I can tell you about our premium features. The premium plan includes advanced analytics and priority support.
+Customer: Thanks for the information.
+Agent: Let me know if you have any other questions."""
+
+        metadata = {"call_id": "SALES-02", "channel": "voice"}
+        result = encoder.encode(transcript=transcript, metadata=metadata)
+        analysis_dict = result.metadata["analysis"]
+        assert analysis_dict["requires_review"] == "True"

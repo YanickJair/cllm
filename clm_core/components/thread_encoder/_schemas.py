@@ -307,6 +307,15 @@ class TranscriptAnalysis(BaseModel):
         description="Automated system-level events: PAYMENT_RETRY_DETECTED, etc.",
     )
 
+    extraction_confidence: float = Field(
+        default=0.8,
+        description="Confidence in extraction completeness, 0.0-1.0",
+    )
+    requires_review: bool = Field(
+        default=False,
+        description="True when analysis may need human verification",
+    )
+
     def to_dict(self):
         return {k: str(v) for k, v in self.model_dump().items()}
 
