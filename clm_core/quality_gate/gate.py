@@ -24,10 +24,10 @@ class CompressionQualityGate:
         print(report.summary())        # full breakdown
     """
 
-    def __init__(self, llm_model: Literal["anthropic", "openai"]):
+    def __init__(self, llm_client: Literal["anthropic", "openai"]):
         self.kolmogorov = KolmogorovAnalyzer()
         self.conditional = ConditionalEntropyAnalyzer()
-        self.perplexity = PerplexityAnalyzer(model=llm_model)
+        self.perplexity = PerplexityAnalyzer(llm_client=llm_client)
 
     def analyze(
         self,
