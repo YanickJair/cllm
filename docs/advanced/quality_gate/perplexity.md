@@ -6,9 +6,9 @@
 
 **Core question:** Does the compressed token string give an LLM the same information as the original?
 
-**Method:** Send both the original and compressed input to Claude Haiku with a fixed structured extraction task, then compare the responses across three dimensions.
+**Method:** Send both the original and compressed input to an LLM (Claude Haiku by default, or any OpenAI-compatible model) with a fixed structured extraction task, then compare the responses across three dimensions.
 
-This check carries a 25% weight in the final retention score. It requires an Anthropic API key and falls back to heuristic scoring when the API is unavailable.
+This check carries a 25% weight in the final retention score. It supports Anthropic and OpenAI backends, and falls back to heuristic scoring when no API client can be initialized.
 
 ---
 
@@ -16,8 +16,8 @@ This check carries a 25% weight in the final retention score. It requires an Ant
 
 ### API Mode
 
-1. Send `original + EVALUATION_TASK` to Claude Haiku
-2. Send `compressed + EVALUATION_TASK` to Claude Haiku
+1. Send `original + EVALUATION_TASK` to the configured LLM (Anthropic or OpenAI)
+2. Send `compressed + EVALUATION_TASK` to the same LLM
 3. Parse both responses as JSON
 4. Compare across three dimensions
 
@@ -55,7 +55,7 @@ comprehension_score = fact_score × 0.4
 
 ## Heuristic Fallback (Offline Mode)
 
-When no API key is available, the analyzer falls back to token overlap scoring:
+When the LLM client cannot be initialized (missing or invalid API key, missing package), the analyzer falls back to token overlap scoring:
 
 ```
 orig_tokens = set of uppercase tokens (3+ chars) in original
@@ -78,12 +78,12 @@ report = gate.analyze(
 )
 ```
 
-Or use `PerplexityAnalyzer` directly without an API key:
+Or use `PerplexityAnalyzer` directly without a valid API key — the constructor will catch the failure and switch to heuristic mode automatically:
 
 ```python
 from clm_core import PerplexityAnalyzer
 
-analyzer = PerplexityAnalyzer()  # no api_key → heuristic mode
+analyzer = PerplexityAnalyzer()  # ANTHROPIC_API_KEY not set → heuristic mode
 result = analyzer.analyze(original, compressed)
 ```
 
@@ -110,10 +110,14 @@ class PerplexityResult(BaseModel):
 
 ## Standalone Usage
 
+### With Anthropic (default)
+
+Set `ANTHROPIC_API_KEY` in your environment, then:
+
 ```python
 from clm_core import PerplexityAnalyzer
 
-analyzer = PerplexityAnalyzer(api_key="sk-ant-...")
+analyzer = PerplexityAnalyzer()  # llm_client="anthropic" by default
 
 result = analyzer.analyze(
     original=transcript_text,
@@ -128,6 +132,21 @@ print(f"Latency improvement:  {result.latency_improvement:.1f}%")
 print(f"Facts preserved:      {result.key_facts_preserved}")
 print(f"Facts lost:           {result.facts_lost}")
 print(f"Passed:               {result.passed}")
+```
+
+### With OpenAI
+
+Set `OPENAI_CLIENT_KEY` in your environment, then:
+
+```python
+from clm_core import PerplexityAnalyzer
+
+analyzer = PerplexityAnalyzer(llm_client="openai")
+
+result = analyzer.analyze(
+    original=transcript_text,
+    compressed=clm_token_string,
+)
 ```
 
 ---
@@ -171,15 +190,36 @@ If perplexity consistently fails for a given compression pattern, investigate wh
 
 ## Configuration
 
+### Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ANTHROPIC_API_KEY` | — | Anthropic API key (required when `llm_client="anthropic"`) |
+| `OPENAI_CLIENT_KEY` | — | OpenAI API key (required when `llm_client="openai"`) |
+| `ANTHROPIC_MODEL` | `claude-haiku-4-5-20251001` | Anthropic model used for evaluation |
+| `OPENAI_MODEL` | `gpt-5-nano-2025-08-07` | OpenAI model used for evaluation |
+| `LLM_CLIENT_BASE_URL` | `None` | Custom base URL for either client (useful for proxies or OpenAI-compatible endpoints) |
+
 ### Changing the evaluation model
 
-The default model is `claude-haiku-4-5-20251001` — fast and cheap, suitable for batch quality testing. To use a different model, subclass `PerplexityAnalyzer` and override `MODEL`:
+#### Via environment variable (recommended)
+
+```bash
+# Use a stronger Anthropic model
+export ANTHROPIC_MODEL="claude-sonnet-4-6"
+
+# Use a different OpenAI model
+export OPENAI_MODEL="gpt-4o-mini"
+```
+
+#### Via subclass
 
 ```python
 from clm_core import PerplexityAnalyzer
 
 class StrictPerplexityAnalyzer(PerplexityAnalyzer):
-    MODEL = "claude-sonnet-4-6"
+    ANTHROPIC_MODEL = "claude-sonnet-4-6"
+    OPENAI_MODEL = "gpt-4o"
     COMPREHENSION_THRESHOLD = 0.90
 ```
 
@@ -211,7 +251,7 @@ For pipelines without API access, use heuristic mode:
 ```python
 from clm_core import CompressionQualityGate
 
-gate = CompressionQualityGate()  # no api_key
+gate = CompressionQualityGate()  # no API key set → heuristic fallback
 
 report = gate.analyze(
     original=transcript,
@@ -231,7 +271,7 @@ else:
 Or allow the heuristic to run:
 
 ```python
-# No api_key → heuristic token overlap scoring
+# No API key set → heuristic token overlap scoring
 gate = CompressionQualityGate()
 report = gate.analyze(
     original=transcript,

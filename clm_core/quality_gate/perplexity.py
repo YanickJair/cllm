@@ -1,8 +1,7 @@
+import os
 import re
 import time
-from typing import Optional
-
-from anthropic import Anthropic
+from typing import Literal
 
 from . import PerplexityResult
 
@@ -20,8 +19,9 @@ class PerplexityAnalyzer:
     This directly validates CLM's core claim: LLMs understand compressed
     tokens natively without fine-tuning.
 
-    Note: Uses Anthropic API. Set ANTHROPIC_API_KEY in environment.
-    Falls back to heuristic scoring if API is unavailable.
+    Set ANTHROPIC_API_KEY or OPENAI_CLIENT_KEY in environment depending on
+    the chosen client. Falls back to heuristic scoring if the client cannot
+    be initialized.
     """
 
     EVALUATION_TASK = """
@@ -37,13 +37,34 @@ class PerplexityAnalyzer:
     """
 
     COMPREHENSION_THRESHOLD = 0.82
-    MODEL = "claude-haiku-4-5-20251001"  # fast model for quality testing
+    ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001")
+    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5-nano-2025-08-07")
+    BASE_URL = os.getenv("LLM_CLIENT_BASE_URL", None)
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(
+        self, llm_client: Literal["anthropic", "openai"] = "anthropic"
+    ) -> None:
+        if llm_client not in ("anthropic", "openai"):
+            raise NotImplementedError(f"Unrecognized LLM client {llm_client}")
+        self.llm_client = llm_client
         try:
-            self.client = Anthropic(api_key=api_key)
+            if llm_client == "anthropic":
+                from anthropic import Anthropic
+
+                self.client = Anthropic(
+                    api_key=os.getenv("ANTHROPIC_API_KEY"), base_url=self.BASE_URL
+                )
+            else:
+                from openai import OpenAI
+
+                self.client = OpenAI(
+                    api_key=os.getenv("OPENAI_CLIENT_KEY"), base_url=self.BASE_URL
+                )
             self._api_available = True
         except Exception:
+            print(
+                f"{llm_client} model not available or key not provided. Make sure you have installed {llm_client} and set the key."
+            )
             self._api_available = False
 
     def analyze(
@@ -60,14 +81,23 @@ class PerplexityAnalyzer:
     def _call_llm(self, prompt: str) -> tuple[str, float, int]:
         """Returns (response_text, latency_ms, token_count)."""
         start = time.time()
-        response = self.client.messages.create(
-            model=self.MODEL,
-            max_tokens=512,
-            messages=[{"role": "user", "content": prompt}],
-        )
+        if self.llm_client == "anthropic":
+            response = self.client.messages.create(
+                model=self.ANTHROPIC_MODEL,
+                max_tokens=512,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            text = response.content[0].text
+            token_count = response.usage.output_tokens
+        else:
+            response = self.client.chat.completions.create(
+                model=self.OPENAI_MODEL,
+                max_tokens=512,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            text = response.choices[0].message.content
+            token_count = response.usage.completion_tokens
         latency_ms = (time.time() - start) * 1000
-        text = response.content[0].text
-        token_count = response.usage.output_tokens
         return text, latency_ms, token_count
 
     def _analyze_via_api(
@@ -77,7 +107,7 @@ class PerplexityAnalyzer:
         verbose: bool,
     ) -> PerplexityResult:
         orig_prompt = f"{original}\n\n{self.EVALUATION_TASK}"
-        CLM_prompt = f"{compressed}\n\n{self.EVALUATION_TASK}"
+        clm_prompt = f"{compressed}\n\n{self.EVALUATION_TASK}"
 
         if verbose:
             print("Calling LLM with original prompt...")
@@ -85,19 +115,19 @@ class PerplexityAnalyzer:
 
         if verbose:
             print("Calling LLM with compressed prompt...")
-        CLM_response, CLM_latency, CLM_tokens = self._call_llm(CLM_prompt)
+        clm_response, clm_latency, clm_tokens = self._call_llm(clm_prompt)
 
         orig_data = self._safe_parse_json(orig_response)
-        CLM_data = self._safe_parse_json(CLM_response)
+        clm_data = self._safe_parse_json(clm_response)
 
-        orig_facts = set(f.lower() for f in orig_data.get("key_facts", []))
-        CLM_facts = set(f.lower() for f in CLM_data.get("key_facts", []))
+        orig_facts = {f.lower() for f in orig_data.get("key_facts", [])}
+        clm_facts = {f.lower() for f in clm_data.get("key_facts", [])}
 
         facts_preserved = []
         facts_lost = []
         for of in orig_facts:
             of_words = set(of.split())
-            matched = any(len(of_words & set(cf.split())) >= 2 for cf in CLM_facts)
+            matched = any(len(of_words & set(cf.split())) >= 2 for cf in clm_facts)
             if matched:
                 facts_preserved.append(of)
             else:
@@ -110,12 +140,12 @@ class PerplexityAnalyzer:
             "follow_up_needed",
             "key_facts",
         }
-        structure_preserved = expected_keys.issubset(set(CLM_data.keys()))
+        structure_preserved = expected_keys.issubset(set(clm_data.keys()))
 
         field_similarities = []
         for key in ["primary_issue", "resolution", "sentiment"]:
             ov = orig_data.get(key, "").lower()
-            cv = CLM_data.get(key, "").lower()
+            cv = clm_data.get(key, "").lower()
             if ov and cv:
                 ov_words = set(ov.split())
                 cv_words = set(cv.split())
@@ -131,7 +161,7 @@ class PerplexityAnalyzer:
             else 0.0
         )
 
-        latency_improvement = ((orig_latency - CLM_latency) / orig_latency) * 100
+        latency_improvement = ((orig_latency - clm_latency) / orig_latency) * 100
 
         fact_score = len(facts_preserved) / len(orig_facts) if orig_facts else 1.0
         comprehension_score = (
@@ -142,9 +172,9 @@ class PerplexityAnalyzer:
 
         return PerplexityResult(
             original_response_tokens=orig_tokens,
-            compressed_response_tokens=CLM_tokens,
+            compressed_response_tokens=clm_tokens,
             original_latency_ms=round(orig_latency, 1),
-            compressed_latency_ms=round(CLM_latency, 1),
+            compressed_latency_ms=round(clm_latency, 1),
             latency_improvement=round(latency_improvement, 1),
             response_similarity=round(response_similarity, 4),
             structure_preserved=structure_preserved,
@@ -162,9 +192,9 @@ class PerplexityAnalyzer:
         """
         # Normalize both to comparable token sets
         orig_tokens = set(re.findall(r"[A-Z_]{3,}", original.upper()))
-        CLM_tokens = set(re.findall(r"[A-Z_]{3,}", compressed.upper()))
+        clm_tokens = set(re.findall(r"[A-Z_]{3,}", compressed.upper()))
 
-        overlap = orig_tokens & CLM_tokens
+        overlap = orig_tokens & clm_tokens
         coverage = len(overlap) / len(orig_tokens) if orig_tokens else 1.0
 
         return PerplexityResult(
@@ -176,14 +206,14 @@ class PerplexityAnalyzer:
             response_similarity=round(coverage, 4),
             structure_preserved=True,
             key_facts_preserved=list(overlap),
-            facts_lost=list(orig_tokens - CLM_tokens),
+            facts_lost=list(orig_tokens - clm_tokens),
             comprehension_score=round(coverage, 4),
             passed=coverage >= self.COMPREHENSION_THRESHOLD,
         )
 
     @staticmethod
     def _safe_parse_json(text: str) -> dict:
-        """Parse JSON response, tolerating markdown code fences."""
+        """Parse JSON response, tolerating Markdown code fences."""
         import json
 
         clean = re.sub(r"```(?:json)?|```", "", text).strip()
