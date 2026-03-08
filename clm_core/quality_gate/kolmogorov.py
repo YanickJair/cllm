@@ -1,5 +1,7 @@
 import zlib
-from typing import Any
+from typing import Any, Annotated
+
+from annotated_doc import Doc
 
 from . import KolmogorovModel
 
@@ -18,7 +20,16 @@ class KolmogorovAnalyzer:
 
     COMPLEXITY_THRESHOLD = 0.85
 
-    def analyze(self, original: Any, compressed: str) -> KolmogorovModel:
+    def analyze(
+        self,
+        original: Annotated[
+            Any, Doc("The original input string (before CLM compression).")
+        ],
+        compressed: Annotated[
+            str,
+            Doc("The CLM compressed output string to compare against the original."),
+        ],
+    ) -> KolmogorovModel:
         orig_bytes = original.encode("utf-8")
         clm_bytes = compressed.encode("utf-8")
 

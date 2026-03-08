@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Optional, Self, Literal, Annotated, TypeAlias, Union
 
 import spacy
+from annotated_doc import Doc
 from pydantic import (
     BaseModel,
     Field,
@@ -11,7 +12,6 @@ from pydantic import (
     computed_field,
     ConfigDict,
     field_validator,
-    field_serializer,
     model_validator,
 )
 
@@ -52,12 +52,24 @@ class CLMOutput(BaseModel):
 
     @field_validator("compressed", mode="before")
     @classmethod
-    def validate_compressed(cls, c: str) -> str:
+    def validate_compressed(
+        cls,
+        c: Annotated[
+            str, Doc("Raw compressed string value to normalize before assignment.")
+        ],
+    ) -> str:
         """Normalize whitespace: collapse all whitespace (tabs, newlines, spaces) to single spaces."""
         return re.sub(r"\s+", " ", c).strip()
 
     @staticmethod
-    def _estimate_tokens(data: str | dict | list) -> int:
+    def _estimate_tokens(
+        data: Annotated[
+            str | dict | list,
+            Doc(
+                "Input data (string, dict, or list) whose token count is to be estimated at ~4 chars per token."
+            ),
+        ],
+    ) -> int:
         """Estimate token count (~4 chars per token)."""
         if isinstance(data, str):
             text = data
@@ -88,6 +100,9 @@ class CLMOutput(BaseModel):
     def to_dict(self) -> dict:
         raise NotImplementedError
 
+    def summary(self) -> str:
+        raise NotImplementedError("This method should be implemented in Thread Encoder")
+
 
 class FieldImportance(Enum):
     """Field importance levels
@@ -111,7 +126,8 @@ class SDCompressionConfig(BaseModel):
         default=None, description="Always include these"
     )
     auto_detect: Optional[bool] = Field(
-        default=True, description="Approach 2: Auto-detect rule"
+        default=True,
+        description="Auto-detect field importance based on name patterns and value heuristics",
     )
     drop_non_required_fields: Optional[bool] = Field(
         default=True, description="Whether or not to drop no required fields"
@@ -132,14 +148,16 @@ class SDCompressionConfig(BaseModel):
     )
     max_truncation_mapping: Optional[dict[str, int]] = Field(
         default=None,
-        description="Truncation mapping. This overrides max_truncation_mapping and truncate each field individually",
+        description="Per-field truncation lengths. Overrides max_truncation_length for each specified field.",
     )
     preserve_structure: Optional[bool] = Field(
         default=True, description="Keep nested dicts/lists"
     )
-    default_fields_importance: dict[str, FieldImportance] = Field(
-        frozen=True,
-        default_factory=lambda: {
+
+    @computed_field
+    @property
+    def default_fields_importance(self) -> dict[str, FieldImportance]:
+        return {
             "id": FieldImportance.CRITICAL,
             "uuid": FieldImportance.CRITICAL,
             "external_id": FieldImportance.CRITICAL,
@@ -166,9 +184,7 @@ class SDCompressionConfig(BaseModel):
             "created_at": FieldImportance.LOW,
             "updated_at": FieldImportance.LOW,
             "version": FieldImportance.LOW,
-        },
-        description="Importance scores for default fields. Overrides default thresholds.",
-    )
+        }
 
     @computed_field
     @property
@@ -204,33 +220,6 @@ class SDCompressionConfig(BaseModel):
             "type",
         )
 
-    @field_validator("default_fields_importance", mode="before")
-    @classmethod
-    def convert_float_to_field_importance(cls, v: dict) -> dict[str, FieldImportance]:
-        if not isinstance(v, dict):
-            return v
-        result = {}
-        for key, value in v.items():
-            if isinstance(value, (int, float)):
-                for member in FieldImportance:
-                    if member.value == value:
-                        result[key] = member
-                        break
-                else:
-                    raise ValueError(f"No FieldImportance enum matches value {value}")
-            else:
-                result[key] = value
-        return result
-
-    @field_serializer("default_fields_importance")
-    @classmethod
-    def serialize_field_importance(
-        cls, v: dict[str, FieldImportance]
-    ) -> dict[str, float]:
-        return {key: importance.value for key, importance in v.items()}
-
-    model_config = ConfigDict(use_enum_values=False)
-
 
 class SysPromptConfig(BaseModel):
     lang: str = Field(default="en", description="Language of the prompt")
@@ -252,6 +241,110 @@ class SysPromptConfig(BaseModel):
     )
 
 
+class ThreadConfig(BaseModel):
+    detect_lang: Annotated[
+        bool,
+        Doc("""
+        This flag tells CLM if Thread language should be detected or not. If so, it will include it in the
+        compressed output.
+        """),
+    ] = Field(default=True, description="Detects CLM language")
+    include_ctx_values: Annotated[
+        Optional[bool],
+        Doc("""
+        Contexts can be NER extract from original. By default CLM only flags
+        the entities recognized but does not returns them.
+        By enabling this flag, this information will also be included in the
+        compressed output.
+
+        **Examples**
+        [CONTEXT:EMAIL_PROVIDED:doe@mail.com]
+        """),
+    ] = Field(default=False)
+    estimate_thread_duration: Annotated[
+        bool,
+        Doc("""
+        Duration can be included in the metadata or CLM can estimate.
+        If this flag is set to True, it will override the duration of metadata.
+        """),
+    ] = Field(default=False)
+    include_summary: Annotated[
+        bool,
+        Doc("""
+        CLM can create a summary of the original Thread based on the compressed version.
+
+        This feature can remove the dependency of LLMs for basic tasks such as this.
+        A template can also be configured and CLM will update the placeholders with the extracted
+        information.
+        """),
+    ] = Field(default=False)
+    custom_summary_template: Annotated[
+        str | None,
+        Doc("""
+        Custom summary template for CLM.
+        """),
+    ] = Field(default=None)
+    redaction_pattern: str = Field(
+        default=r"\[\*+REDACTED\*+\]|\*{3,}|\[REDACTED\]|<redacted>|XXX+|\[PII\]",
+        description="Regex pattern to detect redacted fields in thread input",
+    )
+
+    @computed_field
+    def default_summary_template(self) -> str:
+        return """
+        Customer contacted {{ domain | lower }} support via {{ channel | lower }}
+        regarding {{ customerIntent | replace("_", " ") | lower }}
+        affecting their {{ service | lower }}.
+
+        {% if agentActions %}
+        Actions performed:
+        {% for action in agentActions %}
+        • {{ action | replace("_", " ") | lower }}
+        {% endfor %}
+        {% endif %}
+
+        {% if systemActions %}
+        System detections:
+        {% for action in systemActions %}
+        • {{ action | replace("_", " ") | lower }}
+        {% endfor %}
+        {% endif %}
+
+        Outcome: {{ resolution | replace("_", " ") | lower }} ({{ state | replace("_", " ") | lower }})
+
+        {% if commitments %}
+        Commitments:
+        {% for c in commitments %}
+        • {{ c.type | lower }}{% if c.etaDays %} within {{ c.etaDays }} days{% endif %}
+        {% endfor %}
+        {% endif %}
+
+        {% if artifacts %}
+        References:
+        {% for a in artifacts %}
+        • {{ a.key }}: {{ a.value }}
+        {% endfor %}
+        {% endif %}
+
+        {% if context %}
+        Context provided:
+        {% for item in context %}
+        {% if item is string %}
+        • {{ item | replace("_", " ") | lower }}
+        {% else %}
+        {% for k, v in item.items() %}
+        • {{ k | replace("_", " ") | lower }}: {{ v }}
+        {% endfor %}
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+
+        {% if sentiment and sentiment|length > 0 %}
+        Sentiment: {{ sentiment | join(" → ") | lower }}
+        {% endif %}
+        """
+
+
 class CLMConfig(BaseModel):
     lang: Annotated[LANG, Field(default="en", description="Language of the model")]
     ds_config: SDCompressionConfig = Field(
@@ -262,10 +355,7 @@ class CLMConfig(BaseModel):
         default_factory=lambda: SysPromptConfig(),
         description="Configuration for system prompt",
     )
-    redaction_pattern: str = Field(
-        default=r"\[\*+REDACTED\*+\]|\*{3,}|\[REDACTED\]|<redacted>|XXX+|\[PII\]",
-        description="Regex pattern to detect redacted fields in transcripts",
-    )
+    thread_config: ThreadConfig = Field(default_factory=lambda: ThreadConfig(), description="Configuration for CLM Thread Encoder")
     _nlp_cache: Optional[spacy.Language] = PrivateAttr(default=None)
 
     @computed_field

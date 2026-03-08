@@ -1,4 +1,7 @@
 import re
+from typing import Annotated
+
+from annotated_doc import Doc
 from spacy.language import Language
 
 from clm_core.utils.parser_rules import BaseRules
@@ -19,17 +22,21 @@ class TaskPromptEncoder(BasePromptEncoder):
     def __init__(
         self,
         *,
-        nlp: Language,
-        config: SysPromptConfig = SysPromptConfig(),
-        vocab: BaseVocabulary,
-        rules: BaseRules,
+        nlp: Annotated[
+            Language,
+            Doc(
+                "spaCy language model to use (e.g. en_core_web_sm, en_core_web_md, en_core_web_lg)."
+            ),
+        ],
+        config: Annotated[
+            SysPromptConfig, Doc("Configuration for the task prompt encoder.")
+        ] = SysPromptConfig(),
+        vocab: Annotated[
+            BaseVocabulary, Doc("Vocabulary instance for the target language.")
+        ],
+        rules: Annotated[BaseRules, Doc("Language-specific parsing rules.")],
     ):
-        """
-        Initialize encode
-
-        Args:
-            nlp: spaCy model to use (en_core_web_sm, en_core_web_md, en_core_web_lg)
-        """
+        """Initialize the task prompt encoder."""
 
         self.nlp: Language = nlp
         self._config = config
@@ -45,17 +52,14 @@ class TaskPromptEncoder(BasePromptEncoder):
         )
         self.tokenizer = CLLMTokenizer()
 
-    def compress(self, prompt: str, verbose: bool = False) -> CLMOutput:
-        """
-        Compress a natural language prompt into CLLM format
-
-        Args:
-            prompt: Natural language prompt to compress
-            verbose: Print detailed compression steps
-
-        Returns:
-            CompressionResult with compressed format and metadata
-        """
+    def compress(
+        self,
+        prompt: Annotated[str, Doc("Natural language prompt to compress.")],
+        verbose: Annotated[
+            bool, Doc("When True, print detailed compression steps.")
+        ] = False,
+    ) -> CLMOutput:
+        """Compress a natural language prompt into CLLM format."""
         if verbose:
             print(f"\n{'=' * 60}")
             print(f"Compressing: {prompt}")
@@ -129,9 +133,15 @@ class TaskPromptEncoder(BasePromptEncoder):
         )
 
     def compress_batch(
-        self, prompts: list[str], verbose: bool = False
+        self,
+        prompts: Annotated[
+            list[str], Doc("List of natural language prompts to compress.")
+        ],
+        verbose: Annotated[
+            bool, Doc("When True, print detailed compression steps for each prompt.")
+        ] = False,
     ) -> list[CLMOutput]:
-        """Compress multiple prompts"""
+        """Compress multiple prompts."""
         results = []
         for i, prompt in enumerate(prompts, 1):
             if verbose:

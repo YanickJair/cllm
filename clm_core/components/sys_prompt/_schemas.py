@@ -1,6 +1,7 @@
 import logging
 from enum import Enum
 from typing import Optional, Annotated, Any
+from annotated_doc import Doc
 from pydantic import BaseModel, Field
 
 from clm_core.components.sys_prompt.errors import TemplateBindingError
@@ -36,7 +37,15 @@ class PromptTemplate(BaseModel):
         default=None, description="Output defined in prompt after compressing"
     )
 
-    def bind(self, **values: Any) -> str:
+    def bind(
+        self,
+        **values: Annotated[
+            Any,
+            Doc(
+                "Runtime values keyed by placeholder name to substitute into the template."
+            ),
+        ],
+    ) -> str:
         """
         Bind runtime values into the template.
         Returns a concrete system prompt string.

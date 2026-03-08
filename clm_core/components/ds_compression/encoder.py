@@ -1,5 +1,6 @@
-from typing import Any
+from typing import Any, Annotated
 
+from annotated_doc import Doc
 from clm_core.types import SDCompressionConfig, FieldImportance, CLMOutput
 
 
@@ -13,9 +14,18 @@ class SDEncoder:
     def __init__(
         self,
         *,
-        config: SDCompressionConfig,
-        catalog_name: str = "CATALOG",
-        delimiter: str = ",",
+        config: Annotated[
+            SDCompressionConfig,
+            Doc(
+                "Configuration controlling field selection, truncation, and compression strategy."
+            ),
+        ],
+        catalog_name: Annotated[
+            str, Doc("Logical name for the catalog; currently informational only.")
+        ] = "CATALOG",
+        delimiter: Annotated[
+            str, Doc("Character used to separate field values inside bracket tokens.")
+        ] = ",",
     ):
         self._config = config
         self._catalog_name = catalog_name
@@ -30,7 +40,13 @@ class SDEncoder:
     def delimiter(self, val: str) -> None:
         self._delimiter = val
 
-    def encode(self, catalog: list[dict[str, Any]] | dict[str, Any]) -> CLMOutput:
+    def encode(
+        self,
+        catalog: Annotated[
+            list[dict[str, Any]] | dict[str, Any],
+            Doc("A single item dict or a list of item dicts to compress."),
+        ],
+    ) -> CLMOutput:
         """
         Main entry point: compress entire catalog
 
@@ -86,12 +102,11 @@ class SDEncoder:
             },
         )
 
-    def encode_item(self, item: dict[str, Any]) -> dict[str, Any]:
-        """
-        Compress a single catalog item
-
-        This is where your diagram's logic happens
-        """
+    def encode_item(
+        self,
+        item: Annotated[dict[str, Any], Doc("A single catalog item dict to compress.")],
+    ) -> dict[str, Any]:
+        """Compress a single catalog item."""
         compressed: dict[str, Any] = {}
 
         if "id" in item:
@@ -111,7 +126,11 @@ class SDEncoder:
         return compressed
 
     def _get_ordered_fields(
-        self, compressed_item: dict[str, Any]
+        self,
+        compressed_item: Annotated[
+            dict[str, Any],
+            Doc("A compressed item dict whose fields should be ordered for output."),
+        ],
     ) -> list[tuple[str, Any]]:
         """
         Get fields ordered consistently: simple fields (sorted by default_fields_order) first,
@@ -138,7 +157,12 @@ class SDEncoder:
 
         return simple_fields + complex_fields
 
-    def _format_item_token(self, compressed_item: dict[str, Any]) -> str:
+    def _format_item_token(
+        self,
+        compressed_item: Annotated[
+            dict[str, Any], Doc("Dict returned by encode_item().")
+        ],
+    ) -> str:
         """
         Format single item as a bracketed token with delimiter-separated values.
 
@@ -152,7 +176,6 @@ class SDEncoder:
         parts = []
 
         for key, value in ordered_fields:
-            # Apply max length for non-simple fields (complex/description fields)
             max_len = None
             if key.lower() not in self._config.simple_fields:
                 max_len = self._config.max_truncation_length
@@ -163,26 +186,31 @@ class SDEncoder:
 
         return f"[{f'{self.delimiter}'.join(parts)}]"
 
-    def _format_header_keys(self, compressed_item: dict[str, Any]) -> str:
-        """
-        Format header keys in the same order as values are formatted.
-        """
+    def _format_header_keys(
+        self,
+        compressed_item: Annotated[
+            dict[str, Any],
+            Doc("The first compressed item whose keys define the header schema."),
+        ],
+    ) -> str:
+        """Format header keys in the same order as values are formatted."""
         ordered_fields = self._get_ordered_fields(compressed_item)
         return self.delimiter.join(key for key, _ in ordered_fields)
 
-    def _format_value(self, value: Any, max_length: int | None = None) -> str:
-        """
-        Format a value for token output - minimal transformation for max compression.
-
-        Args:
-            value: Any value from compressed item
-            max_length: Optional maximum length for the formatted value
-
-        Returns:
-             Formatted string
-        """
+    def _format_value(
+        self,
+        value: Annotated[
+            Any, Doc("Any value from a compressed item (str, int, list, dict, etc.).")
+        ],
+        max_length: Annotated[
+            int | None,
+            Doc(
+                "Optional maximum character length; the value is truncated with '...' if exceeded."
+            ),
+        ] = None,
+    ) -> str:
+        """Format a value for token output — minimal transformation for max compression."""
         if isinstance(value, list):
-            # list of dicts → multiple rows
             if value and isinstance(value[0], dict):
                 rows = [self._format_inline_object(v) for v in value]
                 return self.ROW_SEPARATOR.join(rows)
@@ -200,7 +228,12 @@ class SDEncoder:
             result = result[:max_length] + "..."
         return result
 
-    def _format_inline_object(self, obj: dict[str, Any]) -> str:
+    def _format_inline_object(
+        self,
+        obj: Annotated[
+            dict[str, Any], Doc("A nested dict to encode inline as {schema}[values].")
+        ],
+    ) -> str:
         ordered = self._get_ordered_fields(obj)
 
         schema = self.delimiter.join(k for k, _ in ordered)
@@ -211,12 +244,17 @@ class SDEncoder:
             f"{self.NESTED_OPEN}{values}{self.NESTED_CLOSE}"
         )
 
-    def _should_include_field(self, key: str, value: Any) -> bool:
-        """
-        Decide if a field should be included (your diagram's decision logic)
-
-        This implements both Blue and Orange approaches
-        """
+    def _should_include_field(
+        self,
+        key: Annotated[str, Doc("The field name to evaluate for inclusion.")],
+        value: Annotated[
+            Any,
+            Doc(
+                "The field value; used for heuristic importance detection when auto_detect is enabled."
+            ),
+        ],
+    ) -> bool:
+        """Decide if a field should be included based on config rules and auto-detection heuristics."""
         if self._config.excluded_fields and key in self._config.excluded_fields:
             return False
 
@@ -233,12 +271,17 @@ class SDEncoder:
             return importance.value >= self._config.importance_threshold
         return True
 
-    def _detect_field_importance(self, key: str, value: Any) -> FieldImportance:
-        """
-        Automatically detect how important a field is (Orange approach)
-
-        This is the "intelligent" system that learns what's important
-        """
+    def _detect_field_importance(
+        self,
+        key: Annotated[
+            str, Doc("The field name; matched against default importance patterns.")
+        ],
+        value: Annotated[
+            Any,
+            Doc("The field value; empty/None values are assigned NEVER importance."),
+        ],
+    ) -> FieldImportance:
+        """Automatically detect how important a field is based on its name and value heuristics."""
         key_lower = key.lower()
 
         for pattern, importance in self._config.default_fields_importance.items():

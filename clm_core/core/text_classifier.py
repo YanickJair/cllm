@@ -1,6 +1,8 @@
 from enum import Enum
-from typing import Any
+from typing import Any, Annotated
 import langdetect
+
+from annotated_doc import Doc
 
 
 class DataTypes(Enum):
@@ -9,6 +11,7 @@ class DataTypes(Enum):
     SYSTEM_PROMPT = 0
     TRANSCRIPT = 1
     STRUCTURED_DATA = 2
+    FREE_FORM = 3
     UNK = -1
 
 
@@ -71,7 +74,13 @@ class DataClassifier:
             ),
         }
 
-    def classifier(self, *, input_: Any) -> DataTypes:
+    def classifier(
+        self,
+        *,
+        input_: Annotated[
+            Any, Doc("Any input value to classify into a DataTypes category.")
+        ],
+    ) -> DataTypes:
         """
         Classify input data type.
 
@@ -111,7 +120,14 @@ class DataClassifier:
         return DataTypes.UNK
 
     @staticmethod
-    def _is_structured_data(input_: Any) -> bool:
+    def _is_structured_data(
+        input_: Annotated[
+            Any,
+            Doc(
+                "Input value to test for structured data characteristics (list of dicts or dict)."
+            ),
+        ],
+    ) -> bool:
         """
         Check if input is structured data (catalog).
 
@@ -137,7 +153,15 @@ class DataClassifier:
 
         return False
 
-    def _is_transcript(self, normalized_text: str) -> bool:
+    def _is_transcript(
+        self,
+        normalized_text: Annotated[
+            str,
+            Doc(
+                "Lowercased and stripped text to check for multi-speaker transcript patterns."
+            ),
+        ],
+    ) -> bool:
         """
         Check if text is a thread_encoder (conversation).
 
@@ -153,7 +177,15 @@ class DataClassifier:
 
         return speaker_count >= 2
 
-    def _is_system_prompt(self, normalized_text: str) -> bool:
+    def _is_system_prompt(
+        self,
+        normalized_text: Annotated[
+            str,
+            Doc(
+                "Lowercased and stripped text to check for system prompt instruction patterns."
+            ),
+        ],
+    ) -> bool:
         """
         Check if text is a system prompt (instructions).
 
@@ -162,7 +194,6 @@ class DataClassifier:
         - Are longer than a single sentence
         - Contain imperative language
         """
-        # Check for system prompt patterns
         has_prompt_pattern = any(
             pattern in normalized_text for pattern in self._system_prompt_patterns
         )

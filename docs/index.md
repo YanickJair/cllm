@@ -34,7 +34,7 @@ CLM is a patent-pending compression technology that reduces LLM token consumptio
 
 ### Three Core Compression Targets
 
-1. **Thread Encoder** - Transcripts of conversation (usually two sides: user/system; customer/agent), support calls, chat interactions
+1. **Thread Encoder** - Conversation threads in any format: labeled transcripts (customer/agent turns), emails, Slack threads, SMS, and raw notes
 2. **Structured Data Encoder (SDE)** - Product catalogs, knowledge bases, business rules, configurations
 3. **System Prompts Encoder** - Task instructions, role definitions, operational guidelines
 
@@ -208,9 +208,9 @@ Learn more about [Structured Data Compression](sd_encoder.md).
 
 ---
 
-### 3. Transcript Compression
+### 3. Thread Compression
 
-Compress customer service conversations while preserving context and sentiment using CLM Transcript Schema v2:
+Compress customer service conversations and unstructured threads while preserving context and sentiment using CLM Transcript Schema v2. Thread Encoder handles both labeled transcripts (`Agent:` / `Customer:` turns) and free-form text such as emails, Slack threads, or raw case notes — the format is detected automatically:
 
 ```python
 # Billing Issue - Customer Support Transcript
@@ -277,7 +277,21 @@ print(result.compressed)
 
 **Typical Compression: 85-92% for customer service transcripts**
 
-Learn more about the [Thread Encoder](thread_encoder/index.md), [Transcript Compression](thread_encoder/transcript_encoder.md), and [token hierarchy](advanced/clm_tokenization.md).
+Thread Encoder behaviour is configurable via `ThreadConfig` — enable `include_ctx_values` to surface extracted entity values, `include_summary` to generate a human-readable summary from the compressed output, `estimate_thread_duration` to infer duration from content, and `redaction_pattern` to control PII placeholder detection:
+
+```python
+from clm_core.types import ThreadConfig
+
+cfg = CLMConfig(
+    lang="en",
+    thread_config=ThreadConfig(
+        include_ctx_values=True,
+        include_summary=True,
+    )
+)
+```
+
+Learn more about the [Thread Encoder](thread_encoder/index.md), [Transcript Compression](thread_encoder/transcript_encoder.md), [Free-Form Compression](thread_encoder/free_form_encoder.md), and [token hierarchy](advanced/clm_tokenization.md).
 
 ---
 
@@ -321,8 +335,9 @@ Based on production testing with 5,000+ samples:
   - [Task Prompts](sys_prompt/task_prompt.md) - Action-oriented instruction compression
   - [Configuration Prompts](sys_prompt/configuration_prompt.md) - Template-based agent configuration
 - **[Structured Data Encoding](sd_encoder.md)** - Configuration options and best practices
-- **[Thread Encoder](thread_encoder/index.md)** - Conversation-based compression (calls, chats, emails)
+- **[Thread Encoder](thread_encoder/index.md)** - Conversation-based compression (calls, chats, emails, free-form threads)
   - [Transcript Encoding](thread_encoder/transcript_encoder.md) - Customer service transcript compression
+  - [Free-Form Encoding](thread_encoder/free_form_encoder.md) - Emails, Slack threads, and unstructured prose
 - **[Advanced: CLM Dictionary](advanced/clm_dictionary.md)** - Understanding the vocabulary
 - **[Advanced: Tokenization](advanced/clm_tokenization.md)** - Token hierarchy and structure
 - **[Advanced: Quality Gate](advanced/quality_gate/index.md)** - Validating that compression preserves meaning

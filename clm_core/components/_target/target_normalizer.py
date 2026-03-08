@@ -1,4 +1,6 @@
-from typing import Dict, Set, List
+from typing import Dict, Set, List, Annotated
+
+from annotated_doc import Doc
 from clm_core.components.sys_prompt import Target
 
 
@@ -51,7 +53,15 @@ class TargetNormalizer:
         "TICKET": "SUPPORT",
     }
 
-    def normalize_many(self, targets: List[Target]) -> Target:
+    def normalize_many(
+        self,
+        targets: Annotated[
+            List[Target],
+            Doc(
+                "List of extracted Target objects to merge and normalize into a single authoritative Target."
+            ),
+        ],
+    ) -> Target:
         """Entry point: accepts many Targets and returns exactly one or None."""
         if not targets:
             return None
@@ -76,7 +86,15 @@ class TargetNormalizer:
         primary.attributes = merged_attrs
         return self.normalize(primary)
 
-    def normalize(self, t: Target) -> Target:
+    def normalize(
+        self,
+        t: Annotated[
+            Target,
+            Doc(
+                "A single Target object to normalize: uppercases token and domain, strips banned attributes, and enforces ALLOWED attribute whitelist."
+            ),
+        ],
+    ) -> Target:
         """
         Backwards-compatible: normalize a SINGLE Target.
         Called internally after merging.
@@ -116,10 +134,16 @@ class TargetNormalizer:
         t.attributes = cleaned
         return t
 
-    def _pick_primary(self, targets: List[Target]) -> Target:
-        """
-        Select the best target according to PRIORITY list.
-        """
+    def _pick_primary(
+        self,
+        targets: Annotated[
+            List[Target],
+            Doc(
+                "List of Target objects from which the highest-priority one (by PRIORITY index) is selected."
+            ),
+        ],
+    ) -> Target:
+        """Select the best target according to PRIORITY list."""
 
         def score(target: Target):
             try:

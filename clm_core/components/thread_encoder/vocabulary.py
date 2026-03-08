@@ -1,5 +1,6 @@
-from typing import Optional
+from typing import Optional, Annotated
 
+from annotated_doc import Doc
 from clm_core.utils.vocabulary import BaseVocabulary
 
 
@@ -1551,24 +1552,39 @@ class TranscriptVocabulary(BaseVocabulary):
             ],
         }
 
-    def get_issue_token(self, text: str) -> Optional[str]:
-        """Find issue type from text"""
+    def get_issue_token(
+        self,
+        text: Annotated[
+            str, Doc("The conversation turn text to search for issue-type keywords.")
+        ],
+    ) -> Optional[str]:
+        """Find issue type from text."""
         text_lower = text.lower()
         for issue_type, keywords in self.ISSUE_TOKENS.items():
             if any(keyword in text_lower for keyword in keywords):
                 return issue_type
         return None
 
-    def get_action_token(self, text: str) -> Optional[str]:
-        """Find action type from text"""
+    def get_action_token(
+        self,
+        text: Annotated[
+            str, Doc("The conversation turn text to search for action-type keywords.")
+        ],
+    ) -> Optional[str]:
+        """Find action type from text."""
         text_lower = text.lower()
         for action_type, keywords in self.ACTION_TOKENS.items():
             if any(keyword in text_lower for keyword in keywords):
                 return action_type
         return None
 
-    def get_sentiment_token(self, text: str) -> Optional[str]:
-        """Find sentiment from text"""
+    def get_sentiment_token(
+        self,
+        text: Annotated[
+            str, Doc("The conversation turn text to search for sentiment keywords.")
+        ],
+    ) -> Optional[str]:
+        """Find sentiment from text."""
         text_lower = text.lower()
         for sentiment, keywords in self.SENTIMENT_TOKENS.items():
             if any(keyword in text_lower for keyword in keywords):

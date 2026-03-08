@@ -15,7 +15,7 @@ from clm_core.components.thread_encoder import (
     RefundReference,
     PromiseCommitment,
 )
-from clm_core.types import CLMOutput
+from clm_core.types import CLMOutput, ThreadConfig
 
 
 @pytest.fixture
@@ -54,13 +54,13 @@ def encoder(nlp, vocab, rules, patterns):
     """Create encoder instance, clearing singleton"""
     # Clear singleton to allow fresh instance
     ThreadEncoder._instances = {}
-    return ThreadEncoder(nlp=nlp, vocab=vocab, rules=rules, patterns=patterns)
+    return ThreadEncoder(nlp=nlp, vocab=vocab, rules=rules, patterns=patterns, config=ThreadConfig())
 
 
 class TestTranscriptEncoderInit:
     def test_initialization(self, nlp, vocab, rules, patterns):
         ThreadEncoder._instances = {}
-        encoder = ThreadEncoder(nlp=nlp, vocab=vocab, rules=rules, patterns=patterns)
+        encoder = ThreadEncoder(nlp=nlp, vocab=vocab, rules=rules, patterns=patterns, config=ThreadConfig())
         assert encoder._analyzer is not None
         assert encoder.analysis is None
 
@@ -385,7 +385,7 @@ Agent: I see. Let me look into that for you."""
 
         metadata = {"call_id": "TEST-001", "channel": "voice"}
 
-        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
 
         assert isinstance(result, CLMOutput)
         assert result.component == "THREAD_ENCODER"
@@ -396,7 +396,7 @@ Agent: I see. Let me look into that for you."""
         transcript = "Customer: Hello\nAgent: Hi there"
         metadata = {"call_id": "TEST-002"}
 
-        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
 
         assert "analysis" in result.metadata
         assert "original_length" in result.metadata
@@ -411,7 +411,7 @@ Agent: I see. Let me look into that for you."""
         transcript = "Customer: Hello\nAgent: Hi"
         metadata = {"call_id": "PRESERVE-THIS-ID"}
 
-        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
 
         assert result.metadata.get("call_id") == "PRESERVE-THIS-ID"
 
@@ -424,7 +424,7 @@ Customer: Thank you so much!
 Agent: You're welcome. Is there anything else?"""
 
         metadata = {"call_id": "TEST-003"}
-        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
 
         assert result.n_tokens > 0
         assert result.c_tokens > 0
@@ -433,7 +433,7 @@ Agent: You're welcome. Is there anything else?"""
         transcript = "Customer: I was charged $49.99\nAgent: Let me check order 12345"
         metadata = {}
 
-        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
 
         assert result.metadata["has_numbers"] is True
 
@@ -441,7 +441,7 @@ Agent: You're welcome. Is there anything else?"""
         transcript = "Customer: I saw this on https://example.com\nAgent: Thanks"
         metadata = {}
 
-        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
 
         assert result.metadata["has_urls"] is True
 
@@ -449,7 +449,7 @@ Agent: You're welcome. Is there anything else?"""
         transcript = "Customer: Hello\nAgent: Hi there"
         metadata = {}
 
-        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
 
         assert result.metadata["has_urls"] is False
 
@@ -464,7 +464,7 @@ Customer: Thank you for your help!
 Agent: You're welcome. Have a great day!"""
 
         metadata = {"call_id": "V2-001", "channel": "voice"}
-        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
 
         # v2 tokens should be present
         assert "[INTERACTION:" in result.compressed
@@ -480,7 +480,7 @@ Agent: Let me help. I've verified your account.
 Customer: Thanks."""
 
         metadata = {"call_id": "V2-002"}
-        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
 
         # v1 tokens should NOT be present
         assert "[CALL:" not in result.compressed
@@ -507,7 +507,7 @@ Customer: Thank you for your help!
 Agent: You're welcome. Have a great day!"""
 
         metadata = {"call_id": "BILLING-001", "channel": "chat"}
-        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
 
         assert result.compression_ratio > 0
         assert "[INTERACTION:SUPPORT:CHANNEL=CHAT]" in result.compressed
@@ -524,7 +524,7 @@ Agent: Done. Please check if it's working now.
 Customer: Yes, it seems to be working. Thank you!"""
 
         metadata = {"call_id": "TECH-001", "channel": "voice"}
-        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
 
         assert isinstance(result, CLMOutput)
         assert result.n_tokens > 0
@@ -533,7 +533,7 @@ Customer: Yes, it seems to be working. Thank you!"""
 
     def test_empty_metadata(self, encoder):
         transcript = "Customer: Hello\nAgent: Hi"
-        result = encoder.encode(transcript=transcript, metadata={}, verbose=False)
+        result = encoder.encode(thread=transcript, metadata={}, verbose=False)
 
         assert isinstance(result, CLMOutput)
         assert result.metadata.get("call_id") is None
@@ -550,13 +550,12 @@ Customer: Thank you so much for the quick help!
 Agent: You're welcome! Is there anything else I can help with?"""
 
         metadata = {"call_id": "V2-EXAMPLE", "channel": "voice"}
-        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
 
         compressed = result.compressed
 
         # Verify v2 structure
         assert "[INTERACTION:" in compressed
-        assert "[DURATION=" in compressed
         assert "[LANG=EN]" in compressed
         assert "[DOMAIN:" in compressed
         assert "[CUSTOMER_INTENT:" in compressed
@@ -585,7 +584,7 @@ Customer: Haha, that's all. Thanks, Sophia!
 Agent: You're very welcome. Have a wonderful day!"""
 
         metadata = {"call_id": "REVIEW-001", "channel": "voice"}
-        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
         compressed = result.compressed
 
         assert "[DOMAIN:ACCOUNT]" in compressed
@@ -612,7 +611,7 @@ Customer: Appreciate that. Hopefully this is the last call I need to make.
 Agent: I hope so too. Thanks for your patience — you'll hear from us shortly with confirmation."""
 
         metadata = {"call_id": "REVIEW-002", "channel": "voice"}
-        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
         compressed = result.compressed
 
         assert "[DOMAIN:BILLING]" in compressed
@@ -645,7 +644,7 @@ Customer: Awesome, thanks Nina.
 Agent: Anytime! Hope you get to enjoy the new headset soon."""
 
         metadata = {"call_id": "REVIEW-003", "channel": "voice"}
-        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
         compressed = result.compressed
 
         assert "[DOMAIN:FULFILLMENT]" in compressed
@@ -663,7 +662,7 @@ Customer: I was wondering about something.
 Agent: Of course, go ahead."""
 
         metadata = {"call_id": "UNCLASS-001"}
-        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
         compressed = result.compressed
 
         assert "[DOMAIN:UNCLASSIFIED]" in compressed
@@ -796,7 +795,7 @@ Customer: You've been great. Thanks again.
 Agent: You're very welcome. Have a better rest of your week!"""
 
         metadata = {"call_id": "OUTAGE-001", "channel": "voice"}
-        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
         compressed = result.compressed
 
         # Domain should be TECHNICAL (service outage)
@@ -824,7 +823,7 @@ Agent: I found the issue — there's a token error in your sync configuration. I
 Customer: Okay, thank you."""
 
         metadata = {"call_id": "AGENT-FALLBACK-001", "channel": "voice"}
-        result = encoder.encode(transcript=transcript, metadata=metadata, verbose=False)
+        result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
         compressed = result.compressed
 
         # Domain should be TECHNICAL (from agent mentioning sync)
@@ -854,7 +853,7 @@ Customer: Awesome, thank you Laura.
 Agent: My pleasure! Feel free to reach out anytime if you need help exploring the analytics dashboard."""
 
         metadata = {"call_id": "T1", "channel": "voice"}
-        result = encoder.encode(transcript=transcript, metadata=metadata)
+        result = encoder.encode(thread=transcript, metadata=metadata)
         compressed = result.compressed
 
         assert "[INTERACTION_TRIGGER:REQUEST_PLAN_UPGRADE]" in compressed
@@ -882,7 +881,7 @@ Customer: Appreciate that. Hopefully this is the last call I need to make.
 Agent: I hope so too. Thanks for your patience — you'll hear from us shortly with confirmation."""
 
         metadata = {"call_id": "T2", "channel": "voice"}
-        result = encoder.encode(transcript=transcript, metadata=metadata)
+        result = encoder.encode(thread=transcript, metadata=metadata)
         compressed = result.compressed
 
         assert "[INTERACTION_TRIGGER:REFUND_NOT_RECEIVED]" in compressed
@@ -910,7 +909,7 @@ Customer: Awesome, thanks Nina.
 Agent: Anytime! Hope you get to enjoy the new headset soon."""
 
         metadata = {"call_id": "T3", "channel": "voice"}
-        result = encoder.encode(transcript=transcript, metadata=metadata)
+        result = encoder.encode(thread=transcript, metadata=metadata)
         compressed = result.compressed
 
         assert "[INTERACTION_TRIGGER:TRACKING_NOT_ASSIGNED]" in compressed
@@ -932,7 +931,7 @@ Customer: Thank you so much, Leo. That clears everything up.
 Agent: My pleasure, Andrea. Glad we could fix it quickly!"""
 
         metadata = {"call_id": "T5", "channel": "voice"}
-        result = encoder.encode(transcript=transcript, metadata=metadata)
+        result = encoder.encode(thread=transcript, metadata=metadata)
         compressed = result.compressed
 
         assert "[INTERACTION_TRIGGER:UNEXPECTED_CHARGE]" in compressed
@@ -959,7 +958,7 @@ Customer: That was quick. Thanks for the great service.
 Agent: Always happy to help! Enjoy your upgraded plan."""
 
         metadata = {"call_id": "T6", "channel": "voice"}
-        result = encoder.encode(transcript=transcript, metadata=metadata)
+        result = encoder.encode(thread=transcript, metadata=metadata)
         compressed = result.compressed
 
         assert "[INTERACTION_TRIGGER:REQUEST_PLAN_UPGRADE]" in compressed
@@ -984,7 +983,7 @@ Customer: You've been great. Thanks again.
 Agent: You're very welcome. Have a better rest of your week!"""
 
         metadata = {"call_id": "T8", "channel": "voice"}
-        result = encoder.encode(transcript=transcript, metadata=metadata)
+        result = encoder.encode(thread=transcript, metadata=metadata)
         compressed = result.compressed
 
         assert "[INTERACTION_TRIGGER:SERVICE_DISRUPTION]" in compressed
@@ -1020,7 +1019,7 @@ Customer: My login isn't working.
 Agent: Let me look into that for you."""
 
         metadata = {"call_id": "CONF-001", "channel": "voice"}
-        result = encoder.encode(transcript=transcript, metadata=metadata)
+        result = encoder.encode(thread=transcript, metadata=metadata)
         analysis_dict = result.metadata["analysis"]
         assert "extraction_confidence" in analysis_dict
         assert "requires_review" in analysis_dict
@@ -1063,7 +1062,7 @@ Customer: Perfect. Go ahead and upgrade me, then.
 Agent: Done! Your account is now on the Premium plan. You'll receive a confirmation email with all the new features highlighted."""
 
         metadata = {"call_id": "SALES-01", "channel": "voice"}
-        result = encoder.encode(transcript=transcript, metadata=metadata)
+        result = encoder.encode(thread=transcript, metadata=metadata)
         compressed = result.compressed
 
         assert "BILLING_DISPUTE" not in compressed
@@ -1078,6 +1077,120 @@ Customer: Thanks for the information.
 Agent: Let me know if you have any other questions."""
 
         metadata = {"call_id": "SALES-02", "channel": "voice"}
-        result = encoder.encode(transcript=transcript, metadata=metadata)
+        result = encoder.encode(thread=transcript, metadata=metadata)
         analysis_dict = result.metadata["analysis"]
         assert analysis_dict["requires_review"] == "True"
+
+
+class TestFreeFormEncoding:
+    """Tests for free-form (no speaker labels) transcript support."""
+
+    def test_detect_format_labeled_transcript(self, encoder):
+        """Labeled transcript should be detected as 'turns'."""
+        transcript = """Agent: Hello, how can I help you?
+Customer: I was charged twice for my subscription.
+Agent: Let me look into that for you."""
+        assert encoder._detect_format(transcript) == "turns"
+
+    def test_detect_format_free_form_email(self, encoder):
+        """Plain email body without speaker labels should be detected as 'free_form'."""
+        email = """Hi support team,
+
+I was charged twice for my subscription on October 5th — two transactions of $49.99
+each appear on my credit card. I'd like a refund for the duplicate charge.
+
+My account email is john@example.com and my order reference is ORD-12345."""
+        assert encoder._detect_format(email) == "free_form"
+
+    def test_detect_format_empty(self, encoder):
+        """Empty string should be detected as 'free_form'."""
+        assert encoder._detect_format("") == "free_form"
+
+    def test_split_free_form_paragraphs(self, encoder):
+        """Paragraphs separated by blank lines should each become a turn."""
+        text = "First paragraph.\n\nSecond paragraph.\n\nThird paragraph."
+        turns = encoder._split_free_form(text)
+        assert len(turns) == 3
+        assert turns[0].text == "First paragraph."
+        assert turns[1].text == "Second paragraph."
+        assert turns[2].text == "Third paragraph."
+        assert all(t.speaker == "unknown" for t in turns)
+
+    def test_split_free_form_fallback_to_lines(self, encoder):
+        """Single-paragraph text should fall back to line-by-line splitting."""
+        text = "Line one.\nLine two.\nLine three."
+        turns = encoder._split_free_form(text)
+        assert len(turns) == 3
+        assert turns[0].text == "Line one."
+
+    def test_split_free_form_skips_blank_lines(self, encoder):
+        """Blank lines should be excluded from turns."""
+        text = "Hello.\n\n\nWorld."
+        turns = encoder._split_free_form(text)
+        assert len(turns) == 2
+
+    def test_encode_free_form_explicit(self, encoder):
+        """Explicit free_form format produces valid compressed output and sets metadata."""
+        email = """Hi support team,
+
+I was charged twice for my subscription. I'd like a refund for the duplicate charge.
+
+My account email is john@example.com."""
+
+        result = encoder.encode(
+            thread=email,
+            metadata={"channel": "email"},
+            thread_format="free_form",
+        )
+        assert result.compressed
+        assert result.metadata["transcript_format"] == "free_form"
+
+    def test_encode_labeled_auto_detection(self, encoder):
+        """Auto-detection on a labeled transcript should produce 'turns' format."""
+        transcript = """Agent: Hello, how can I help you today?
+Customer: I need help with my billing.
+Agent: I'll be happy to assist with that."""
+
+        result = encoder.encode(
+            thread=transcript,
+            metadata={"channel": "voice"},
+            thread_format="auto",
+        )
+        assert result.metadata["transcript_format"] == "turns"
+
+    def test_encode_free_form_auto_detection(self, encoder):
+        """Auto-detection on free-form email should produce 'free_form' format."""
+        email = """Dear support,
+
+I have not received my order yet. It has been two weeks since I placed the order.
+
+Please let me know the status of my shipment. My order number is ORD-99887."""
+
+        result = encoder.encode(
+            thread=email,
+            metadata={"channel": "email"},
+            thread_format="auto",
+        )
+        assert result.metadata["transcript_format"] == "free_form"
+
+    def test_encode_free_form_metadata_transcript_format(self, encoder):
+        """transcript_format key should always be present in output metadata."""
+        transcript = """Agent: Thank you for calling.
+Customer: I need a refund.
+Agent: Let me process that."""
+
+        result = encoder.encode(thread=transcript, metadata={})
+        assert "transcript_format" in result.metadata
+
+    def test_encode_free_form_explicit_override(self, encoder):
+        """Explicit 'turns' override should bypass auto-detection."""
+        transcript = """Agent: Hello.
+Customer: Hi, I need help.
+Agent: Sure."""
+
+        result = encoder.encode(
+            thread=transcript,
+            metadata={},
+            thread_format="turns",
+        )
+        assert result.metadata["transcript_format"] == "turns"

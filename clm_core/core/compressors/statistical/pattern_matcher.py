@@ -1,17 +1,39 @@
 import re
-from typing import Any
+from typing import Any, Annotated
+
+from annotated_doc import Doc
 
 from clm_core.core.compressors.statistical.pattern_db import PatternDatabase
 from clm_core.core.compressors.statistical.schemas import Pattern
 
 
 class StatisticalCompressor:
-    def __init__(self, pattern_db: PatternDatabase, min_pattern_length: int = 2):
+    def __init__(
+        self,
+        pattern_db: Annotated[
+            PatternDatabase,
+            Doc("Pattern database providing ranked patterns for compression."),
+        ],
+        min_pattern_length: Annotated[
+            int,
+            Doc("Minimum token length for a pattern to be considered during matching."),
+        ] = 2,
+    ):
         self.pattern_db = pattern_db
         self.min_pattern_length = min_pattern_length
 
     def compress(
-        self, semantic_tokens: str, domain: str | None = None
+        self,
+        semantic_tokens: Annotated[
+            str,
+            Doc("Semantic token string output from the semantic encoder to compress."),
+        ],
+        domain: Annotated[
+            str | None,
+            Doc(
+                "Optional domain hint used to select relevant patterns from the database."
+            ),
+        ] = None,
     ) -> tuple[str, dict]:
         """
         Apply statistical compression by replacing patterns with REF tokens
@@ -55,7 +77,6 @@ class StatisticalCompressor:
         if not matches:
             return semantic_tokens, metadata
 
-        # Sort by start position and resolve overlaps (greedy: prefer longer/higher value patterns)
         matches.sort(key=lambda m: (m["start"], -m["pattern"].value_score))
         selected_matches = []
         last_end = 0
@@ -94,7 +115,16 @@ class StatisticalCompressor:
         return compressed, metadata
 
     def batch_compress(
-        self, semantic_corpus: list[str], domains: list[str | None] | None = None
+        self,
+        semantic_corpus: Annotated[
+            list[str], Doc("List of semantic token strings to compress in batch.")
+        ],
+        domains: Annotated[
+            list[str | None] | None,
+            Doc(
+                "Optional per-item domain hints aligned with semantic_corpus; defaults to all None."
+            ),
+        ] = None,
     ) -> list[tuple[str, dict]]:
         """Batch compress multiple prompts"""
         if domains is None:

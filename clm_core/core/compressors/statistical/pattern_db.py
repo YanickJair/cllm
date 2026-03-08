@@ -1,12 +1,20 @@
 import json
 from datetime import datetime
 from pathlib import Path
+from typing import Annotated
+
+from annotated_doc import Doc
 
 from clm_core.core.compressors.statistical.schemas import Pattern, PatternStats
 
 
 class PatternDatabase:
-    def __init__(self, db_path: str) -> None:
+    def __init__(
+        self,
+        db_path: Annotated[
+            str, Doc("Filesystem path to the JSON file used for persisting patterns.")
+        ],
+    ) -> None:
         self.db_path = Path(db_path)
         self.patterns: dict[str, Pattern] = {}
         self.load()
@@ -70,7 +78,15 @@ class PatternDatabase:
         with open(self.db_path, "w") as f:
             json.dump(data, f, indent=2)
 
-    def add_pattern(self, pattern: Pattern) -> None:
+    def add_pattern(
+        self,
+        pattern: Annotated[
+            Pattern,
+            Doc(
+                "Pattern object to add to the database or merge into an existing entry."
+            ),
+        ],
+    ) -> None:
         """Add or update a pattern"""
         if pattern.id in self.patterns:
             # Update existing pattern
@@ -80,17 +96,37 @@ class PatternDatabase:
         else:
             self.patterns[pattern.id] = pattern
 
-    def add_patterns(self, patterns: list[Pattern]) -> None:
+    def add_patterns(
+        self,
+        patterns: Annotated[
+            list[Pattern],
+            Doc("List of Pattern objects to add or merge, then persist to disk."),
+        ],
+    ) -> None:
         """Bulk add patterns"""
         for pattern in patterns:
             self.add_pattern(pattern)
         self.save()
 
-    def get_pattern(self, pattern_id: str) -> Pattern:
+    def get_pattern(
+        self,
+        pattern_id: Annotated[
+            str, Doc("Unique pattern identifier to look up in the database.")
+        ],
+    ) -> Pattern:
         return self.patterns[pattern_id]
 
     def get_top_patterns(
-        self, n: int = 100, domain: str | None = None
+        self,
+        n: Annotated[
+            int, Doc("Maximum number of top-scoring patterns to return.")
+        ] = 100,
+        domain: Annotated[
+            str | None,
+            Doc(
+                "Optional domain name to filter patterns; returns all domains if None."
+            ),
+        ] = None,
     ) -> list[Pattern]:
         """Get top N patterns by value score"""
         patterns = list(self.patterns.values())
@@ -104,7 +140,13 @@ class PatternDatabase:
 
         return patterns[:n]
 
-    def search_patterns(self, token_sequence: str) -> list[tuple[Pattern, int]]:
+    def search_patterns(
+        self,
+        token_sequence: Annotated[
+            str,
+            Doc("Compressed token string to scan for matching pattern occurrences."),
+        ],
+    ) -> list[tuple[Pattern, int]]:
         """
         Find patterns that match the token sequence
         Returns list of (pattern, start_position) tuples

@@ -1,0 +1,386 @@
+[
+  {
+    "thread_id": "T001",
+    "title": "Duplicate Billing Inquiry",
+    "channel": "email",
+    "messages": [
+      {
+        "author": "Melissa Jordan",
+        "time": "2026-03-01 09:12",
+        "text": "I noticed two charges for my subscription this month (2nd and 3rd). Could someone check if this was a mistake?"
+      },
+      {
+        "author": "Raj (Billing Support)",
+        "time": "2026-03-01 09:18",
+        "text": "Thanks for reaching out. Could you confirm the email associated with the subscription?"
+      },
+      {
+        "author": "Melissa Jordan",
+        "time": "2026-03-01 09:19",
+        "text": "melissa.jordan@example.com"
+      },
+      {
+        "author": "Raj (Billing Support)",
+        "time": "2026-03-01 09:25",
+        "text": "Confirmed duplicate transaction. Our payment system retried after the first payment succeeded."
+      },
+      {
+        "author": "Raj (Billing Support)",
+        "time": "2026-03-01 09:30",
+        "text": "Refund initiated. Reference: RFD-908712. Expect it in 3\u20135 business days."
+      }
+    ]
+  },
+  {
+    "thread_id": "T002",
+    "title": "API Connectivity Issue",
+    "channel": "slack",
+    "messages": [
+      {
+        "author": "Customer",
+        "time": "2026-03-01 10:02",
+        "text": "Anyone seeing API timeouts right now?"
+      },
+      {
+        "author": "Daniel (Support)",
+        "time": "2026-03-01 10:05",
+        "text": "Which region are you calling from?"
+      },
+      {
+        "author": "Customer",
+        "time": "2026-03-01 10:06",
+        "text": "EU West."
+      },
+      {
+        "author": "Daniel (Support)",
+        "time": "2026-03-01 10:09",
+        "text": "We're seeing packet loss on a network segment affecting EU nodes."
+      },
+      {
+        "author": "Infra Team",
+        "time": "2026-03-01 11:05",
+        "text": "Root cause identified: degraded routing path from upstream provider. Traffic rerouted."
+      },
+      {
+        "author": "Customer",
+        "time": "2026-03-01 11:11",
+        "text": "Confirmed working again."
+      }
+    ]
+  },
+  {
+    "thread_id": "T003",
+    "title": "Plan Upgrade Question",
+    "channel": "email",
+    "messages": [
+      {
+        "author": "Ryan Torres",
+        "time": "2026-03-02 13:05",
+        "text": "Does Business Pro include advanced analytics like engagement tracking?"
+      },
+      {
+        "author": "Laura (Sales)",
+        "time": "2026-03-02 13:18",
+        "text": "Yes. It includes engagement dashboards, response time metrics, and CSV/API export."
+      },
+      {
+        "author": "Ryan Torres",
+        "time": "2026-03-02 13:24",
+        "text": "Is predictive analytics included?"
+      },
+      {
+        "author": "Laura (Sales)",
+        "time": "2026-03-02 13:26",
+        "text": "Predictive Insights is a $30/month add-on but we offer a 14\u2011day trial."
+      },
+      {
+        "author": "Ryan Torres",
+        "time": "2026-03-02 13:27",
+        "text": "Please activate the trial."
+      },
+      {
+        "author": "Laura (Sales)",
+        "time": "2026-03-02 13:30",
+        "text": "Trial activated. Confirmation email sent."
+      }
+    ]
+  },
+  {
+    "thread_id": "T004",
+    "title": "Delayed Refund Escalation",
+    "channel": "email",
+    "messages": [
+      {
+        "author": "Jason Miller",
+        "time": "2026-03-03 08:45",
+        "text": "My refund was approved last week but hasn't arrived. Case number 22091."
+      },
+      {
+        "author": "Daniel (Support)",
+        "time": "2026-03-03 09:10",
+        "text": "It appears stuck behind a review flag in billing."
+      },
+      {
+        "author": "Jason Miller",
+        "time": "2026-03-03 09:13",
+        "text": "This is my third call about this."
+      },
+      {
+        "author": "Daniel (Support)",
+        "time": "2026-03-03 09:15",
+        "text": "Escalating to billing supervisor. Ticket ESC-45390."
+      }
+    ]
+  },
+  {
+    "thread_id": "T005",
+    "title": "Replacement Shipment Status",
+    "channel": "email",
+    "messages": [
+      {
+        "author": "Customer",
+        "time": "2026-03-04 11:14",
+        "text": "Replacement headset order 7730219 hasn't shipped yet."
+      },
+      {
+        "author": "Nina (Support)",
+        "time": "2026-03-04 11:24",
+        "text": "Replacement order was created Friday but inventory was temporarily out of stock."
+      },
+      {
+        "author": "Nina (Support)",
+        "time": "2026-03-04 11:25",
+        "text": "Inventory restored yesterday. Priority dispatch flagged."
+      },
+      {
+        "author": "Customer",
+        "time": "2026-03-04 11:26",
+        "text": "Do I return the defective one?"
+      },
+      {
+        "author": "Nina (Support)",
+        "time": "2026-03-04 11:28",
+        "text": "Yes, prepaid return label included."
+      }
+    ]
+  },
+  {
+    "thread_id": "T006",
+    "title": "Sync Failure Investigation",
+    "channel": "slack",
+    "messages": [
+      {
+        "author": "Ryan",
+        "time": "2026-03-05 14:03",
+        "text": "Desktop client stopped syncing but web version works."
+      },
+      {
+        "author": "Aisha (Tech Support)",
+        "time": "2026-03-05 14:04",
+        "text": "Which OS?"
+      },
+      {
+        "author": "Ryan",
+        "time": "2026-03-05 14:05",
+        "text": "Windows 11."
+      },
+      {
+        "author": "Aisha (Tech Support)",
+        "time": "2026-03-05 14:10",
+        "text": "Detected token mismatch error. Auth key expired."
+      },
+      {
+        "author": "Aisha (Tech Support)",
+        "time": "2026-03-05 14:13",
+        "text": "Escalating to Tier 2. Case TEC-9087."
+      }
+    ]
+  },
+  {
+    "thread_id": "T007",
+    "title": "Unexpected Service Fee",
+    "channel": "email",
+    "messages": [
+      {
+        "author": "Andrea Peters",
+        "time": "2026-03-06 09:02",
+        "text": "Why is there a $20 service fee on my bill?"
+      },
+      {
+        "author": "Leo (Billing)",
+        "time": "2026-03-06 09:08",
+        "text": "It was a reactivation fee after a late payment."
+      },
+      {
+        "author": "Leo (Billing)",
+        "time": "2026-03-06 09:09",
+        "text": "Grace period changed from 5 days to 3 days in July."
+      },
+      {
+        "author": "Leo (Billing)",
+        "time": "2026-03-06 09:11",
+        "text": "Since you have a perfect payment history, I waived the fee. Credit arriving within 24 hours."
+      }
+    ]
+  },
+  {
+    "thread_id": "T008",
+    "title": "Unauthorized Login Alert",
+    "channel": "email",
+    "messages": [
+      {
+        "author": "David Grant",
+        "time": "2026-03-06 10:01",
+        "text": "I got an alert for a login from New Jersey but I'm in Chicago."
+      },
+      {
+        "author": "Hannah (Security)",
+        "time": "2026-03-06 10:05",
+        "text": "Account temporarily locked while we investigate."
+      },
+      {
+        "author": "David Grant",
+        "time": "2026-03-06 10:07",
+        "text": "Verified identity with phone digits 7821."
+      },
+      {
+        "author": "Hannah (Security)",
+        "time": "2026-03-06 10:10",
+        "text": "Unauthorized session revoked. Password reset and 2FA enabled."
+      }
+    ]
+  },
+  {
+    "thread_id": "T009",
+    "title": "Subscription Cancellation Request",
+    "channel": "slack",
+    "messages": [
+      {
+        "author": "Customer",
+        "time": "2026-03-06 15:14",
+        "text": "I want to cancel my subscription."
+      },
+      {
+        "author": "Owen (Support)",
+        "time": "2026-03-06 15:16",
+        "text": "We offer a pause option for up to 3 months with no charges."
+      },
+      {
+        "author": "Customer",
+        "time": "2026-03-06 15:17",
+        "text": "That might work better."
+      },
+      {
+        "author": "Owen (Support)",
+        "time": "2026-03-06 15:18",
+        "text": "Subscription paused starting today. Reminder will be sent before it resumes."
+      }
+    ]
+  },
+  {
+    "thread_id": "T010",
+    "title": "Platform Outage Resolution",
+    "channel": "email",
+    "messages": [
+      {
+        "author": "Customer",
+        "time": "2026-03-07 09:10",
+        "text": "Our platform has been offline since Thursday."
+      },
+      {
+        "author": "Isabella (Senior Support)",
+        "time": "2026-03-07 09:14",
+        "text": "Root cause: corrupted configuration file prevented instance restart."
+      },
+      {
+        "author": "Isabella (Senior Support)",
+        "time": "2026-03-07 09:18",
+        "text": "Instance replaced and system rebooting."
+      },
+      {
+        "author": "Customer",
+        "time": "2026-03-07 09:21",
+        "text": "Confirmed service restored."
+      },
+      {
+        "author": "Isabella (Senior Support)",
+        "time": "2026-03-07 09:23",
+        "text": "Billing cycle extended by 5 days to compensate."
+      }
+    ]
+  },
+  {
+    "thread_id": "T011",
+    "title": "Internal Analytics Performance Discussion",
+    "channel": "slack",
+    "messages": [
+      {
+        "author": "Alex (Product)",
+        "time": "2026-03-07 10:02",
+        "text": "Users report analytics dashboard is slow."
+      },
+      {
+        "author": "Maya (Engineering)",
+        "time": "2026-03-07 10:07",
+        "text": "Queries hitting legacy reporting DB not designed for real-time analytics."
+      },
+      {
+        "author": "Alex (Product)",
+        "time": "2026-03-07 10:08",
+        "text": "Infrastructure limitation?"
+      },
+      {
+        "author": "Maya (Engineering)",
+        "time": "2026-03-07 10:09",
+        "text": "Partly. Query builder also generates inefficient joins."
+      },
+      {
+        "author": "Maya (Engineering)",
+        "time": "2026-03-07 10:12",
+        "text": "Plan is migrating analytics to the new data warehouse next sprint."
+      }
+    ]
+  },
+  {
+    "thread_id": "T012",
+    "title": "Sales Follow-Up After Demo",
+    "channel": "email",
+    "messages": [
+      {
+        "author": "Sales Rep",
+        "time": "2026-03-07 11:02",
+        "text": "Following up after last week's demo. Any feedback?"
+      },
+      {
+        "author": "Emily",
+        "time": "2026-03-07 11:15",
+        "text": "We're interested in the collaboration features."
+      },
+      {
+        "author": "Sales Rep",
+        "time": "2026-03-07 11:18",
+        "text": "Included in Premium plan: real-time editing, version history, role permissions."
+      },
+      {
+        "author": "Emily",
+        "time": "2026-03-07 11:20",
+        "text": "If we upgrade mid-cycle do we pay immediately?"
+      },
+      {
+        "author": "Sales Rep",
+        "time": "2026-03-07 11:22",
+        "text": "Only the prorated difference for the remaining billing period."
+      },
+      {
+        "author": "Emily",
+        "time": "2026-03-07 11:25",
+        "text": "Please proceed with the upgrade."
+      },
+      {
+        "author": "Sales Rep",
+        "time": "2026-03-07 11:27",
+        "text": "Upgrade completed. Confirmation email sent."
+      }
+    ]
+  }
+]

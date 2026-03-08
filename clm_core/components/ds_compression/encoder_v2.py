@@ -1,5 +1,6 @@
-from typing import Any, Iterable
+from typing import Any, Iterable, Annotated
 
+from annotated_doc import Doc
 from clm_core.types import SDCompressionConfig, FieldImportance, CLMOutput
 
 
@@ -21,14 +22,27 @@ class SDEncoderV2:
     def __init__(
         self,
         *,
-        config: SDCompressionConfig,
-        delimiter: str = ",",
+        config: Annotated[
+            SDCompressionConfig,
+            Doc(
+                "Configuration controlling field selection, truncation, structure preservation, and required-field projection."
+            ),
+        ],
+        delimiter: Annotated[
+            str, Doc("Character used to separate field values inside bracket tokens.")
+        ] = ",",
     ):
         self._config = config
         self._delimiter = delimiter
         self._required_paths = set(config.required_fields or [])
 
-    def encode(self, data: Any) -> CLMOutput:
+    def encode(
+        self,
+        data: Annotated[
+            Any,
+            Doc("The input to compress. May be a dict, list of dicts, or a scalar."),
+        ],
+    ) -> CLMOutput:
         if isinstance(data, dict):
             compressed = self._encode_object(data)
         elif isinstance(data, list):
@@ -43,10 +57,17 @@ class SDEncoderV2:
             metadata={},
         )
 
-    def _encode_object(self, obj: dict[str, Any]) -> str:
+    def _encode_object(
+        self,
+        obj: Annotated[
+            dict[str, Any],
+            Doc(
+                "A dict to encode, potentially containing nested objects or table-valued keys."
+            ),
+        ],
+    ) -> str:
         normalized = self._normalize_object(obj)
 
-        # semantic wrapper: dict that is purely a wrapper around a single list[dict]
         table_fields = self._find_table_fields(normalized)
         if (
             self._config.preserve_structure
@@ -65,7 +86,15 @@ class SDEncoderV2:
         body = self._format_row(row)
         return f"{{{header}}}{body}"
 
-    def _encode_list(self, items: list[Any]) -> str:
+    def _encode_list(
+        self,
+        items: Annotated[
+            list[Any],
+            Doc(
+                "A list of items to encode. Homogeneous list-of-dicts are encoded as a table; mixed lists are encoded item-by-item."
+            ),
+        ],
+    ) -> str:
         dict_items = [x for x in items if isinstance(x, dict)]
 
         if (
@@ -85,7 +114,13 @@ class SDEncoderV2:
                 parts.append(str(item))
         return "".join(parts)
 
-    def _encode_table(self, rows: list[dict[str, Any]]) -> str:
+    def _encode_table(
+        self,
+        rows: Annotated[
+            list[dict[str, Any]],
+            Doc("A list of same-schema dicts to encode as a header+rows table."),
+        ],
+    ) -> str:
         filtered_rows = [
             self._filter_fields(self._normalize_object(r), path="") for r in rows
         ]
@@ -98,7 +133,13 @@ class SDEncoderV2:
         body = "".join(self._format_row(r) for r in filtered_rows)
         return f"{{{header}}}{body}"
 
-    def _format_header(self, row: dict[str, Any]) -> str:
+    def _format_header(
+        self,
+        row: Annotated[
+            dict[str, Any],
+            Doc("A representative row dict whose keys define the header schema."),
+        ],
+    ) -> str:
         parts = []
         for key, value in self._ordered_items(row):
             if isinstance(value, dict):
@@ -111,11 +152,25 @@ class SDEncoderV2:
                 parts.append(key)
         return self._delimiter.join(parts)
 
-    def _format_row(self, row: dict[str, Any]) -> str:
+    def _format_row(
+        self,
+        row: Annotated[
+            dict[str, Any],
+            Doc("A single normalized row dict to format as a bracketed token."),
+        ],
+    ) -> str:
         values = [self._format_value(v) for _, v in self._ordered_items(row)]
         return f"{self.ROW_OPEN}{self._delimiter.join(values)}{self.ROW_CLOSE}"
 
-    def _format_value(self, value: Any) -> str:
+    def _format_value(
+        self,
+        value: Annotated[
+            Any,
+            Doc(
+                "A value from a normalized row (may be str, int, bool, list, or nested dict)."
+            ),
+        ],
+    ) -> str:
         if isinstance(value, dict):
             if len(value) == 1:
                 return self._format_value(next(iter(value.values())))
@@ -130,7 +185,15 @@ class SDEncoderV2:
             return value.replace(self._delimiter, ";")
         return str(value)
 
-    def _normalize_object(self, obj: dict[str, Any]) -> dict[str, Any]:
+    def _normalize_object(
+        self,
+        obj: Annotated[
+            dict[str, Any],
+            Doc(
+                "A raw dict to normalize: recursively normalize values and drop empty non-required list fields."
+            ),
+        ],
+    ) -> dict[str, Any]:
         out = {}
         for key, value in obj.items():
             value = self._normalize_value(value, key)
@@ -139,7 +202,18 @@ class SDEncoderV2:
             out[key] = value
         return out
 
-    def _normalize_value(self, value: Any, key: str) -> Any:
+    def _normalize_value(
+        self,
+        value: Annotated[
+            Any,
+            Doc(
+                "The raw value to normalize; strings may be truncated according to config."
+            ),
+        ],
+        key: Annotated[
+            str, Doc("The field name; used for per-field truncation mapping lookups.")
+        ],
+    ) -> Any:
         if isinstance(value, dict):
             return self._normalize_object(value)
         if (
@@ -165,9 +239,19 @@ class SDEncoderV2:
 
     def _filter_fields(
         self,
-        obj: dict[str, Any],
+        obj: Annotated[
+            dict[str, Any],
+            Doc(
+                "A normalized dict to filter according to path-based projection rules."
+            ),
+        ],
         *,
-        path: str,
+        path: Annotated[
+            str,
+            Doc(
+                "Dot-separated path prefix for the current recursion level, e.g. 'users' or 'users.address'."
+            ),
+        ],
     ) -> dict[str, Any]:
         out = {}
 

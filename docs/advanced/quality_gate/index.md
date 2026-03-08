@@ -18,6 +18,8 @@ The CLM Quality Gate validates that compressed token strings produced by the Thr
 
 ## Quick Start
 
+### Offline / CI mode (no API calls)
+
 ```python
 from clm_core import CompressionQualityGate
 
@@ -27,6 +29,7 @@ report = gate.analyze(
     original=transcript_text,
     compressed=clm_token_string,
     structured=thread_encoder_output_dict,  # optional but recommended
+    run_perplexity=False,                   # skip LLM call — perplexity gets synthetic perfect score
 )
 
 print(report.verdict)          # "lossless", "acceptable", or "high_risk"
@@ -34,15 +37,29 @@ print(report.retention_score)  # 0–100
 print(report.summary())        # full human-readable breakdown
 ```
 
-**Offline / CI mode** (no API calls):
+### With LLM perplexity analysis
 
 ```python
+from clm_core import CompressionQualityGate, PerplexityConfig
+
+cfg = PerplexityConfig(
+    llm_model="claude-haiku-4-5-20251001",
+    api_key="sk-ant-...",
+    host_url="https://api.anthropic.com",
+)
+
+gate = CompressionQualityGate(llm_client="anthropic", perplexity_cfg=cfg)
+
 report = gate.analyze(
     original=transcript_text,
     compressed=clm_token_string,
-    structured=structured_dict,
-    run_perplexity=False,  # skips Anthropic API call
+    structured=thread_encoder_output_dict,
+    run_perplexity=True,
 )
+
+print(report.verdict)
+print(report.retention_score)
+print(report.summary())
 ```
 
 ---
@@ -52,16 +69,58 @@ report = gate.analyze(
 Single entry point that orchestrates all three analyzers.
 
 ```python
-from clm_core import CompressionQualityGate
+from clm_core import CompressionQualityGate, PerplexityConfig
 
-gate = CompressionQualityGate(anthropic_api_key="sk-ant-...")
+# Offline (Kolmogorov + Conditional Entropy only)
+gate = CompressionQualityGate()
+
+# With Anthropic perplexity
+gate = CompressionQualityGate(
+    llm_client="anthropic",
+    perplexity_cfg=PerplexityConfig(
+        llm_model="claude-haiku-4-5-20251001",
+        api_key="sk-ant-...",
+        host_url="https://api.anthropic.com",
+    ),
+)
+
+# With OpenAI perplexity
+gate = CompressionQualityGate(
+    llm_client="openai",
+    perplexity_cfg=PerplexityConfig(
+        llm_model="gpt-4o-mini",
+        api_key="sk-...",
+        host_url="https://api.openai.com/v1",
+    ),
+)
 ```
 
 **Constructor parameters:**
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `anthropic_api_key` | `str \| None` | `None` | API key for perplexity analysis. Falls back to `ANTHROPIC_API_KEY` env var. If unavailable, perplexity uses heuristic scoring. |
+| `llm_client` | `"anthropic" \| "openai" \| None` | `None` | LLM backend for perplexity analysis. If `None`, perplexity falls back to heuristic scoring. |
+| `perplexity_cfg` | `PerplexityConfig \| None` | `None` | LLM connection config (model, API key, host URL). Required when `llm_client` is set. |
+
+### PerplexityConfig
+
+```python
+from clm_core import PerplexityConfig
+
+cfg = PerplexityConfig(
+    llm_model="claude-haiku-4-5-20251001",  # Model to use for evaluation
+    api_key="sk-ant-...",                    # API key for the chosen provider
+    host_url="https://api.anthropic.com",   # Base URL for the API
+    temperature=0.0,                        # Sampling temperature (default: 0.0)
+)
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `llm_model` | `str` | — | Model identifier for the LLM call |
+| `api_key` | `str` | — | API key for the chosen provider |
+| `host_url` | `str` | — | Base URL for the API endpoint |
+| `temperature` | `float` | `0.0` | Sampling temperature |
 
 ### `analyze()`
 
@@ -70,20 +129,22 @@ report = gate.analyze(
     original: str,
     compressed: str,
     structured: dict | None = None,
-    run_perplexity: bool = True,
+    run_perplexity: bool = False,
     verbose: bool = False,
+    perplexity_task: str | None = None,
 ) -> CompressionQualityReport
 ```
 
 **Parameters:**
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `original` | `str` | Raw transcript or source text |
-| `compressed` | `str` | CLM encoder output token string |
-| `structured` | `dict \| None` | Thread Encoder structured extraction dict. If `None`, conditional entropy is skipped (assumed perfect). |
-| `run_perplexity` | `bool` | Set `False` to skip API calls — useful for batch validation or CI/CD pipelines. |
-| `verbose` | `bool` | Print progress to stdout as each stage runs. |
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `original` | `str` | — | Raw transcript or source text |
+| `compressed` | `str` | — | CLM encoder output token string |
+| `structured` | `dict \| None` | `None` | Thread Encoder structured extraction dict. If `None`, conditional entropy is skipped (assumed perfect). |
+| `run_perplexity` | `bool` | `False` | Set `True` to run LLM perplexity analysis. Set `False` to skip API calls — useful for batch validation or CI/CD pipelines. |
+| `verbose` | `bool` | `False` | Print progress to stdout as each stage runs. |
+| `perplexity_task` | `str \| None` | `None` | Custom task prompt sent to the LLM for both original and compressed inputs. If `None`, uses the built-in structured JSON extraction task. |
 
 ---
 
@@ -164,7 +225,7 @@ Retention Score:      96.8%
 ## Complete Example
 
 ```python
-from clm_core import CompressionQualityGate
+from clm_core import CompressionQualityGate, PerplexityConfig
 
 ORIGINAL = """
 Customer called in to report a duplicate charge on their account.
@@ -199,6 +260,7 @@ COMPRESSED = (
     "[SENTIMENT:NEUTRAL→SATISFIED→GRATEFUL]"
 )
 
+# Offline validation (Kolmogorov + Conditional Entropy)
 gate = CompressionQualityGate()
 report = gate.analyze(
     original=ORIGINAL,
@@ -214,6 +276,25 @@ print("\n[Field-by-field Conditional Entropy]")
 for fr in report.conditional.field_results:
     status = "NULL" if fr.null_in_source else ("✓" if fr.found_in_compressed else "✗ LOST")
     print(f"{fr.field:<22} {fr.token_key:<22} {status:<8} weight={fr.weight}")
+```
+
+**With LLM perplexity enabled:**
+
+```python
+cfg = PerplexityConfig(
+    llm_model="claude-haiku-4-5-20251001",
+    api_key="sk-ant-...",
+    host_url="https://api.anthropic.com",
+)
+gate = CompressionQualityGate(llm_client="anthropic", perplexity_cfg=cfg)
+report = gate.analyze(
+    original=ORIGINAL,
+    compressed=COMPRESSED,
+    structured=STRUCTURED,
+    run_perplexity=True,
+    verbose=True,
+)
+print(report.summary())
 ```
 
 ---
@@ -234,7 +315,7 @@ gate.analyze(original, compressed, structured)
     └─ PerplexityAnalyzer.analyze(original, compressed)
             └─ PerplexityResult
                     │
-                    ├─ via API (claude-haiku-4-5) if available
+                    ├─ via API (anthropic or openai) if llm_client set + run_perplexity=True
                     └─ via heuristic token overlap if not
 ```
 

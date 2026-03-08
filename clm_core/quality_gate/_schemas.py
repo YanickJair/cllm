@@ -78,6 +78,13 @@ class ConditionalEntropyResult(BaseModel):
     passed: bool = Field(..., description="True if coverage >= threshold")
 
 
+class PerplexityConfig(BaseModel):
+    llm_model: str = Field(..., description="LLM model")
+    api_key: str = Field(..., description="LLM API key")
+    host_url: str = Field(..., description="LLM host url")
+    temperature: float = Field(default=0.0, description="LLM temperature")
+
+
 class PerplexityResult(BaseModel):
     """
     LLM-native comprehension: does the model understand compressed tokens fluently?

@@ -173,134 +173,42 @@ class TestSDCompressionConfig:
         assert config.max_truncation_length == 500
 
 
-class TestSDCompressionConfigFieldImportanceValidator:
-    def test_accepts_field_importance_enum_values(self):
-        config = SDCompressionConfig(
-            default_fields_importance={
-                "id": FieldImportance.CRITICAL,
-                "name": FieldImportance.HIGH,
-            }
-        )
-        assert config.default_fields_importance["id"] == FieldImportance.CRITICAL
-        assert config.default_fields_importance["name"] == FieldImportance.HIGH
+class TestSDCompressionConfigFieldImportanceComputedField:
+    """default_fields_importance is a computed property returning the canonical mapping."""
 
-    def test_converts_float_to_field_importance(self):
-        config = SDCompressionConfig(
-            default_fields_importance={
-                "id": 1.0,
-                "name": 0.8,
-                "tags": 0.5,
-                "notes": 0.2,
-                "secret": 0.0,
-            }
-        )
+    def test_computed_field_returns_enum_values(self):
+        config = SDCompressionConfig()
         assert config.default_fields_importance["id"] == FieldImportance.CRITICAL
         assert config.default_fields_importance["name"] == FieldImportance.HIGH
-        assert config.default_fields_importance["tags"] == FieldImportance.MEDIUM
+        assert config.default_fields_importance["tags"] == FieldImportance.HIGH
         assert config.default_fields_importance["notes"] == FieldImportance.LOW
-        assert config.default_fields_importance["secret"] == FieldImportance.NEVER
-
-    def test_converts_int_to_field_importance(self):
-        config = SDCompressionConfig(
-            default_fields_importance={
-                "id": 1,  # int instead of float
-                "secret": 0,
-            }
-        )
-        assert config.default_fields_importance["id"] == FieldImportance.CRITICAL
-        assert config.default_fields_importance["secret"] == FieldImportance.NEVER
-
-    def test_mixed_enum_and_float_values(self):
-        config = SDCompressionConfig(
-            default_fields_importance={
-                "id": FieldImportance.CRITICAL,
-                "name": 0.8,
-                "tags": FieldImportance.MEDIUM,
-                "notes": 0.2,
-            }
-        )
-        assert config.default_fields_importance["id"] == FieldImportance.CRITICAL
-        assert config.default_fields_importance["name"] == FieldImportance.HIGH
-        assert config.default_fields_importance["tags"] == FieldImportance.MEDIUM
-        assert config.default_fields_importance["notes"] == FieldImportance.LOW
-
-    def test_invalid_float_value_raises_error(self):
-        with pytest.raises(ValueError, match="No FieldImportance enum matches value"):
-            SDCompressionConfig(
-                default_fields_importance={
-                    "id": 0.99,  # Not a valid FieldImportance value
-                }
-            )
-
-    def test_invalid_float_value_negative_raises_error(self):
-        with pytest.raises(ValueError, match="No FieldImportance enum matches value"):
-            SDCompressionConfig(
-                default_fields_importance={
-                    "id": -0.5,
-                }
-            )
-
-    def test_all_valid_float_values(self):
-        valid_values = [1.0, 0.8, 0.5, 0.2, 0.0]
-        expected_enums = [
-            FieldImportance.CRITICAL,
-            FieldImportance.HIGH,
-            FieldImportance.MEDIUM,
-            FieldImportance.LOW,
-            FieldImportance.NEVER,
-        ]
-        fields = {f"field_{i}": v for i, v in enumerate(valid_values)}
-        config = SDCompressionConfig(default_fields_importance=fields)
-        for i, expected in enumerate(expected_enums):
-            assert config.default_fields_importance[f"field_{i}"] == expected
-
-    def test_empty_dict_accepted(self):
-        config = SDCompressionConfig(default_fields_importance={})
-        assert config.default_fields_importance == {}
 
     def test_enum_value_attribute_accessible(self):
         """Ensure .value can be accessed on stored enum values"""
-        config = SDCompressionConfig(
-            default_fields_importance={"id": 1.0, "name": 0.8}
-        )
+        config = SDCompressionConfig()
         assert config.default_fields_importance["id"].value == 1.0
         assert config.default_fields_importance["name"].value == 0.8
 
+    def test_all_importance_levels_present(self):
+        config = SDCompressionConfig()
+        values = set(config.default_fields_importance.values())
+        assert FieldImportance.CRITICAL in values
+        assert FieldImportance.HIGH in values
+        assert FieldImportance.MEDIUM in values
+        assert FieldImportance.LOW in values
+
 
 class TestSDCompressionConfigFieldImportanceSerializer:
-    def test_model_dump_serializes_enums_to_floats(self):
-        config = SDCompressionConfig(
-            default_fields_importance={
-                "id": FieldImportance.CRITICAL,
-                "name": FieldImportance.HIGH,
-            }
-        )
-        dump = config.model_dump()
-        assert dump["default_fields_importance"]["id"] == 1.0
-        assert dump["default_fields_importance"]["name"] == 0.8
-
-    def test_model_dump_serializes_converted_floats(self):
-        config = SDCompressionConfig(
-            default_fields_importance={
-                "id": 1.0,
-                "tags": 0.5,
-                "secret": 0.0,
-            }
-        )
-        dump = config.model_dump()
-        assert dump["default_fields_importance"]["id"] == 1.0
-        assert dump["default_fields_importance"]["tags"] == 0.5
-        assert dump["default_fields_importance"]["secret"] == 0.0
-
     def test_model_dump_default_fields_importance(self):
         config = SDCompressionConfig()
         dump = config.model_dump()
-        # Check a few default values are serialized as floats
+        assert dump["default_fields_importance"]["id"] == FieldImportance.CRITICAL
+        assert dump["default_fields_importance"]["name"] == FieldImportance.HIGH
+        assert dump["default_fields_importance"]["notes"] == FieldImportance.LOW
+
+    def test_model_dump_json_serializes_to_floats(self):
+        config = SDCompressionConfig()
+        dump = config.model_dump(mode="json")
         assert dump["default_fields_importance"]["id"] == 1.0
         assert dump["default_fields_importance"]["name"] == 0.8
         assert dump["default_fields_importance"]["notes"] == 0.2
-
-    def test_model_dump_empty_dict(self):
-        config = SDCompressionConfig(default_fields_importance={})
-        dump = config.model_dump()
-        assert dump["default_fields_importance"] == {}

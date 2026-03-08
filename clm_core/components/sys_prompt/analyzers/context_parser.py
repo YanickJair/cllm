@@ -1,11 +1,23 @@
 import re
+from typing import Annotated
+
+from annotated_doc import Doc
 from spacy import Language
 from clm_core.components.sys_prompt._schemas import Context
 from clm_core.utils.parser_rules import BaseRules
 
 
 class CTXEngine:
-    def __init__(self, nlp: Language, rules: BaseRules):
+    def __init__(
+        self,
+        nlp: Annotated[
+            Language, Doc("spaCy language model used for tokenization and parsing.")
+        ],
+        rules: Annotated[
+            BaseRules,
+            Doc("Language-specific parsing rules including compiled context patterns."),
+        ],
+    ):
         self.nlp = nlp
         self._rules = rules
         self.compiled = rules.COMPILED
@@ -15,7 +27,9 @@ class CTXEngine:
             for ctx, pairs in self._rules.ctx_patterns.items()
         }
 
-    def parse_contexts(self, text: str) -> list[Context]:
+    def parse_contexts(
+        self, text: Annotated[str, Doc("The input text to parse context aspects from.")]
+    ) -> list[Context]:
         clean = text.strip()
         text_lower = clean.lower()
         if not self._has_ctx_intent(text_lower):
@@ -69,7 +83,12 @@ class CTXEngine:
 
         return unique
 
-    def _has_ctx_intent(self, text: str) -> bool:
+    def _has_ctx_intent(
+        self,
+        text: Annotated[
+            str, Doc("Lowercased input text to check for context-intent keywords.")
+        ],
+    ) -> bool:
         has_ctx_intent = any(
             kw in text
             # TODO: move to vocabulary
@@ -109,7 +128,18 @@ class CTXEngine:
             has_ctx_intent = False
         return has_ctx_intent
 
-    def _match_single(self, category: str, text_lower: str):
+    def _match_single(
+        self,
+        category: Annotated[
+            str,
+            Doc(
+                "The context category key to match (e.g. 'audience', 'length', 'style', 'tone')."
+            ),
+        ],
+        text_lower: Annotated[
+            str, Doc("Lowercased input text to search for category patterns.")
+        ],
+    ):
         matches = [
             (m, span, val)
             for (pat, val) in self.compiled[category]
@@ -122,7 +152,14 @@ class CTXEngine:
         matches.sort(key=lambda x: x[1][1] - x[1][0], reverse=True)
         return matches[0][2]
 
-    def _match_any(self, text_lower, pat, value):
+    def _match_any(
+        self,
+        text_lower: Annotated[str, Doc("Lowercased input text to search.")],
+        pat: Annotated[re.Pattern, Doc("Compiled regex pattern to search for.")],
+        value: Annotated[
+            str, Doc("The mapped value to return if the pattern matches.")
+        ],
+    ):
         m = pat.search(text_lower)
         if m:
             return m.group(0), m.span(), value
@@ -136,8 +173,14 @@ class ContextParser:
     2. Compresses CTX into final token (ContextCompressor)
     """
 
-    def __init__(self, nlp: Language, rules: BaseRules):
+    def __init__(
+        self,
+        nlp: Annotated[Language, Doc("spaCy language model for NLP processing.")],
+        rules: Annotated[BaseRules, Doc("Language-specific parsing rules.")],
+    ):
         self._engine = CTXEngine(nlp, rules=rules)
 
-    def parse(self, text: str) -> list[Context]:
+    def parse(
+        self, text: Annotated[str, Doc("The input text to parse context aspects from.")]
+    ) -> list[Context]:
         return self._engine.parse_contexts(text)

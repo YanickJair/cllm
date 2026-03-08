@@ -2,31 +2,45 @@ import hashlib
 import re
 from datetime import datetime
 from collections import Counter
+from typing import Annotated
+
+from annotated_doc import Doc
 
 from core.compressors.statistical.schemas import Pattern
 
 
 class PatternMiner:
-    def __init__(self, min_frequency: int = 10, min_tokens: int = 2) -> None:
-        """
-        Args:
-            min_frequency: Minimum occurrences to qualify as pattern
-            min_tokens: Minimum tokens in a pattern
-        """
+    def __init__(
+        self,
+        min_frequency: Annotated[
+            int,
+            Doc(
+                "Minimum number of occurrences required for a token n-gram to qualify as a pattern."
+            ),
+        ] = 10,
+        min_tokens: Annotated[
+            int,
+            Doc("Minimum number of tokens a pattern must contain to be considered."),
+        ] = 2,
+    ) -> None:
         self.min_frequency = min_frequency
         self.min_tokens = min_tokens
         self.patterns: dict = {}  # pattern_hash -> Pattern object
 
     def mine_patterns(
-        self, compressed_corpus: list[str], original_corpus: list[str] | None = None
+        self,
+        compressed_corpus: Annotated[
+            list[str],
+            Doc(
+                "List of compressed token sequences to mine for frequent n-gram patterns."
+            ),
+        ],
+        original_corpus: Annotated[
+            list[str] | None,
+            Doc("Optional list of original prompts used to collect pattern examples."),
+        ] = None,
     ) -> list[Pattern]:
-        """
-        Mine patterns from a corpus of compressed prompts
-
-        Args:
-            compressed_corpus: List of compressed token sequences
-            original_corpus: Optional list of original prompts (for examples)
-        """
+        """Mine patterns from a corpus of compressed prompts."""
         ngram_counts = self._extract_ngrams(compressed_corpus)
 
         frequent_patterns = {
@@ -51,7 +65,15 @@ class PatternMiner:
         patterns.sort(key=lambda p: p.value_score, reverse=True)
         return patterns
 
-    def _extract_ngrams(self, compressed_corpus: list[str]) -> Counter:
+    def _extract_ngrams(
+        self,
+        compressed_corpus: Annotated[
+            list[str],
+            Doc(
+                "List of compressed token strings from which to extract token n-grams."
+            ),
+        ],
+    ) -> Counter:
         """Extract all token n-grams from corpus"""
         ngrams: Counter = Counter()
 
@@ -64,7 +86,15 @@ class PatternMiner:
 
         return ngrams
 
-    def _filter_subsumed(self, patterns: dict[tuple, int]) -> dict[tuple, int]:
+    def _filter_subsumed(
+        self,
+        patterns: Annotated[
+            dict[tuple, int],
+            Doc(
+                "Dict mapping token n-gram tuples to their occurrence counts, to be pruned of subsumed entries."
+            ),
+        ],
+    ) -> dict[tuple, int]:
         """Remove patterns that are substrings of more frequent longer patterns"""
         filtered: dict[tuple, int] = {}
         sorted_patterns = sorted(
@@ -72,11 +102,9 @@ class PatternMiner:
         )
 
         for pattern, count in sorted_patterns:
-            # Check if this pattern is subsumed by a longer pattern
             is_subsumed = False
             for longer_pattern in filtered.keys():
                 if self._is_subsequence(pattern, longer_pattern):
-                    # Only subsume if longer pattern is at least as frequent
                     if filtered[longer_pattern] >= count * 0.8:
                         is_subsumed = True
                         break
@@ -86,7 +114,12 @@ class PatternMiner:
         return filtered
 
     @staticmethod
-    def _is_subsequence(short: tuple, long: tuple) -> bool:
+    def _is_subsequence(
+        short: Annotated[
+            tuple, Doc("The shorter n-gram tuple to check for containment.")
+        ],
+        long: Annotated[tuple, Doc("The longer n-gram tuple to search within.")],
+    ) -> bool:
         """Check if short is a contiguous subsequence of long"""
         for i in range(len(long) - len(short) + 1):
             if long[i : i + len(short)] == long:
@@ -95,19 +128,31 @@ class PatternMiner:
 
     def _create_pattern(
         self,
-        pattern_tuple: tuple[str],
-        frequency: int,
-        compressed_corpus: list[str],
-        original_corpus: list[str] | None = None,
+        pattern_tuple: Annotated[
+            tuple[str], Doc("N-gram token tuple representing the pattern string.")
+        ],
+        frequency: Annotated[
+            int, Doc("Number of times this n-gram was observed in the corpus.")
+        ],
+        compressed_corpus: Annotated[
+            list[str],
+            Doc(
+                "Full corpus of compressed token strings used to collect pattern examples."
+            ),
+        ],
+        original_corpus: Annotated[
+            list[str] | None,
+            Doc(
+                "Optional list of original prompts aligned with compressed_corpus for examples."
+            ),
+        ] = None,
     ) -> Pattern:
-        """Create Pattern object from n-gram"""
+        """Create Pattern object from n-gram."""
         pattern_str = " ".join(pattern_tuple)
 
-        # Generate pattern
         pattern_hash = hashlib.md5(pattern_str.encode()).hexdigest()[:8].upper()
         pattern_id = f"PTTN_{pattern_hash}"
 
-        # Calculate compression gain (tokens saved if we replace with REF)
         original_tokens = len(pattern_tuple)
         ref_tokens = 1
         compression_gain = original_tokens - ref_tokens
@@ -134,7 +179,14 @@ class PatternMiner:
         )
 
     @staticmethod
-    def _detect_domains(examples: list[str]) -> list[str]:
+    def _detect_domains(
+        examples: Annotated[
+            list[str],
+            Doc(
+                "Sample original prompts used to infer which domains this pattern belongs to."
+            ),
+        ],
+    ) -> list[str]:
         """Detect which domains this pattern belongs to"""
         domains = set()
         domain_keywords = {

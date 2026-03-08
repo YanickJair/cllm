@@ -1,4 +1,7 @@
 import re
+from typing import Annotated
+
+from annotated_doc import Doc
 from clm_core.components.sys_prompt._schemas import (
     ValidationIssue,
     ValidationLevel,
@@ -11,20 +14,22 @@ _PLACEHOLDER_PATTERN = re.compile(r"\{\{([^}]+)\}\}")
 
 class PromptTemplateValidator:
     @staticmethod
-    def validate(template: PromptTemplate) -> list[ValidationIssue]:
+    def validate(
+        template: Annotated[
+            PromptTemplate,
+            Doc(
+                "The PromptTemplate to validate against rules: non-empty placeholder names, no duplicates, priority requires rules, role is present."
+            ),
+        ],
+    ) -> list[ValidationIssue]:
         """
-        Rule 1: Placeholder names must be non-empty and valid identifiers
-        Rule 2: Duplicate placeholders (should not happen, but defensive)
-        Rule 3: Priority sanity
-        Rule 4: Role presence (soft rule)
+        Validates a PromptTemplate and returns any issues found.
 
-        Parameters
-        ----------
-        template
-
-        Returns
-        -------
-
+        Rules applied:
+          1. Placeholder names must be non-empty and valid identifiers.
+          2. No duplicate placeholders.
+          3. Priority requires at least one rule to be defined.
+          4. Role presence is expected (soft warning if absent).
         """
         issues: list[ValidationIssue] = []
 
@@ -44,7 +49,6 @@ class PromptTemplateValidator:
                     )
                 )
 
-        #
         if len(template.placeholders) != len(set(template.placeholders)):
             issues.append(
                 ValidationIssue(
@@ -74,10 +78,23 @@ class PromptTemplateValidator:
 
 class BoundPromptValidator:
     @staticmethod
-    def validate(bound_prompt: str) -> list[ValidationIssue]:
+    def validate(
+        bound_prompt: Annotated[
+            str,
+            Doc(
+                "The fully-bound prompt string (all placeholders replaced). Validated for unresolved placeholders and emptiness."
+            ),
+        ],
+    ) -> list[ValidationIssue]:
+        """
+        Validates a bound prompt string.
+
+        Rules applied:
+          1. No unresolved placeholders ({{...}}) may remain.
+          2. The prompt must not be empty after binding.
+        """
         issues: list[ValidationIssue] = []
 
-        # Rule 1: No unresolved placeholders
         unresolved = _PLACEHOLDER_PATTERN.findall(bound_prompt)
         if unresolved:
             issues.append(
@@ -87,7 +104,6 @@ class BoundPromptValidator:
                 )
             )
 
-        # Rule 2: Empty prompt (paranoia rule)
         if not bound_prompt.strip():
             issues.append(
                 ValidationIssue(

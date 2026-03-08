@@ -1,5 +1,7 @@
 import re
-from typing import Any
+from typing import Any, Annotated
+
+from annotated_doc import Doc
 
 from . import (
     ConditionalEntropyResult,
@@ -41,10 +43,21 @@ class ConditionalEntropyAnalyzer:
     RAW_COVERAGE_THRESHOLD = 0.85
     MAX_RESIDUAL_BITS = 3.0
 
-    def analyze(self, structured: Any, compressed: str) -> ConditionalEntropyResult:
-        # Flatten the compressed string into a set of uppercase token keys
-        # present in the output. We do a broad search so token format variations
-        # like [CUSTOMER_INTENT=X], [CUSTOMER_INTENT:X], etc. all match.
+    def analyze(
+        self,
+        structured: Annotated[
+            Any,
+            Doc(
+                "The CLLM structured extraction dict (e.g. {channel, customerIntent, sentiment, ...}) used as the authoritative source of truth."
+            ),
+        ],
+        compressed: Annotated[
+            str,
+            Doc(
+                "The CLLM compressed token string to verify coverage against the structured dict."
+            ),
+        ],
+    ) -> ConditionalEntropyResult:
         compressed_upper = compressed.upper()
         compressed_tokens = set(re.findall(r"\b([A-Z][A-Z_]{2,})\b", compressed_upper))
 
@@ -65,7 +78,6 @@ class ConditionalEntropyAnalyzer:
 
             raw_value = structured.get(dict_key)
 
-            # Null / empty in source — not a loss, don't count it
             is_null = (
                 raw_value is None
                 or raw_value == []
@@ -89,12 +101,9 @@ class ConditionalEntropyAnalyzer:
             slots_total += 1
             total_weight += weight
 
-            # Check if the token key appears anywhere in the compressed string.
-            # We also check for common abbreviations and aliases.
             token_aliases = self._aliases(token_key)
             found = any(alias in compressed_tokens for alias in token_aliases)
 
-            # For list/dict values, also check if any value strings appear
             if not found:
                 value_strings = self._extract_value_strings(raw_value)
                 found = any(
@@ -122,14 +131,12 @@ class ConditionalEntropyAnalyzer:
         raw_coverage = slots_matched / slots_total if slots_total else 1.0
         weighted_coverage = matched_weight / total_weight if total_weight else 1.0
 
-        # Residual entropy: sum of domain_bits for each lost non-optional field
         residual_entropy = sum(
             bits
             for field, bits in bits_per_lost.items()
             if field not in OPTIONAL_FIELDS
         )
 
-        # A lost critical field forces high_risk regardless of other scores
         critical_lost = [f for f in slots_lost if f in CRITICAL_FIELDS]
 
         passed = (
