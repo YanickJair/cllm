@@ -277,6 +277,20 @@ print(result.compressed)
 
 **Typical Compression: 85-92% for customer service transcripts**
 
+Thread Encoder behaviour is configurable via `ThreadConfig` — enable `include_ctx_values` to surface extracted entity values, `include_summary` to generate a human-readable summary from the compressed output, `estimate_thread_duration` to infer duration from content, and `redaction_pattern` to control PII placeholder detection:
+
+```python
+from clm_core.types import ThreadConfig
+
+cfg = CLMConfig(
+    lang="en",
+    thread_config=ThreadConfig(
+        include_ctx_values=True,
+        include_summary=True,
+    )
+)
+```
+
 Learn more about the [Thread Encoder](thread_encoder/index.md), [Transcript Compression](thread_encoder/transcript_encoder.md), [Free-Form Compression](thread_encoder/free_form_encoder.md), and [token hierarchy](advanced/clm_tokenization.md).
 
 ---

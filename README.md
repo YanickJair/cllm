@@ -108,13 +108,18 @@ Based on a dataset test across 5,000+ samples:
 
 ### Thread Encoder
 
-| Metric | Value                         |
-|--------|-------------------------------|
-| Token reduction | 72–80%                        |
-| Latency improvement | Up to 56%                     |
+| Metric | Value |
+|--------|-------|
+| Token reduction | 72–80% |
+| Latency improvement | Up to 56% |
 | Semantic preservation | Validated via Shannon Entropy |
-| Languages | EN, PT, ES, FR                |
-| Schema version | v2.0                          |
+| Languages | EN, PT, ES, FR |
+| Schema version | v2.0 |
+| Language detection | `detect_lang` (default: on) |
+| Context values | `include_ctx_values` — emit raw NER values alongside context tokens |
+| Duration estimation | `estimate_thread_duration` — infer duration from content |
+| Built-in summary | `include_summary` + optional `summary_template` (Jinja2) |
+| Custom redaction | `redaction_pattern` — regex for PII placeholder detection |
 
 ### Structured Data Encoder
 

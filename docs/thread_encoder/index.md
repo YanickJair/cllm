@@ -202,27 +202,41 @@ result_dict = result.to_dict()
 
 ## Configuration
 
+Thread Encoder behaviour is controlled via `ThreadConfig`, passed as `thread_config` inside `CLMConfig`.
+
 ```python
 from clm_core import CLMConfig
+from clm_core.types import ThreadConfig
 
 # Minimal — uses all defaults
 cfg = CLMConfig(lang="en")
 
-# With custom redaction pattern
+# With custom ThreadConfig
 cfg = CLMConfig(
     lang="en",
-    redaction_pattern=r"\[(.*?)\]"   # Matches [bracketed] placeholders
+    thread_config=ThreadConfig(
+        detect_lang=True,
+        include_ctx_values=True,
+        estimate_thread_duration=True,
+        include_summary=True,
+        summary_template=None,              # Uses built-in template when None
+        redaction_pattern=r"\[.*?REDACTED.*?\]",
+    )
 )
 ```
 
-### `CLMConfig` parameters relevant to Thread Encoder
+### `ThreadConfig` parameters
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `lang` | `"en" \| "pt" \| "es" \| "fr"` | `"en"` | Language — controls spaCy model + dictionary |
-| `redaction_pattern` | `str` | Built-in pattern | Regex to detect redacted PII fields in text |
+| `detect_lang` | `bool` | `True` | Detect the thread language and include it in the compressed output as `[LANG=...]` |
+| `include_ctx_values` | `bool` | `False` | Include the actual NER-extracted values in context tokens. When `False`, only the fact of detection is emitted (e.g. `[CONTEXT:EMAIL_PROVIDED]`); when `True`, the value is appended (e.g. `[CONTEXT:EMAIL_PROVIDED:doe@mail.com]`) |
+| `estimate_thread_duration` | `bool` | `False` | Estimate thread duration from the conversation content. When `True`, overrides any `duration` value supplied in the metadata |
+| `include_summary` | `bool` | `False` | Generate a natural-language summary of the thread from the compressed output. Reduces the need for a separate LLM call for basic summarisation tasks |
+| `summary_template` | `str \| None` | `None` | Jinja2 template used for summary generation. When `None`, the built-in template is used (see [Summary Templates](#summary-templates)) |
+| `redaction_pattern` | `str` | Built-in pattern | Regex used to detect redacted PII fields in the input text. Defaults to matching `[*REDACTED*]`, `[REDACTED]`, `***`, `<redacted>`, `XXX`, `[PII]` |
 
-Thread Encoder has no separate compression-level setting. All analysis decisions (what to extract, what to drop) are governed by the language dictionary and the internal NLP pipeline.
+`CLMConfig.lang` controls the spaCy model and language dictionary used by the encoder. All other analysis decisions (what to extract, what to drop) are governed by the language dictionary and the internal NLP pipeline.
 
 ---
 
@@ -231,18 +245,66 @@ Thread Encoder has no separate compression-level setting. All analysis decisions
 When a transcript contains redacted PII (e.g. `[*REDACTED*]`, `***`, `[PHONE_NUMBER]`), Thread Encoder detects the surrounding context and emits `CONTEXT:FIELD_REDACTED` tokens instead of silently dropping the information.
 
 ```python
+from clm_core.types import ThreadConfig
+
 # Default pattern covers common redaction styles
 cfg = CLMConfig(lang="en")
 # Matches: [*REDACTED*], [REDACTED], ***, <redacted>, XXX, [PII]
 
 # Custom pattern for your own redaction format
-cfg = CLMConfig(lang="en", redaction_pattern=r"\[.*?REDACTED.*?\]")
+cfg = CLMConfig(
+    lang="en",
+    thread_config=ThreadConfig(redaction_pattern=r"\[.*?REDACTED.*?\]")
+)
 ```
 
 **Output example:**
 ```text
 [CONTEXT:PHONE_REDACTED]
 [CONTEXT:EMAIL_REDACTED]
+```
+
+---
+
+## Summary Templates
+
+When `include_summary=True`, CLM generates a natural-language summary from the compressed token output without an additional LLM call. A custom Jinja2 template can be provided via `summary_template`; when omitted, the built-in template is used.
+
+**Available template variables:**
+
+| Variable | Description |
+|----------|-------------|
+| `DOMAIN` | Classified domain (e.g. `BILLING`, `TECHNICAL`) |
+| `CHANNEL` | Interaction channel (e.g. `VOICE`, `CHAT`) |
+| `CUSTOMER_INTENT` | Primary customer intent |
+| `SERVICE` | Service classification |
+| `AGENT_ACTIONS` | List of agent action strings |
+| `SYSTEM_ACTIONS` | List of system-detected action strings |
+| `RESOLUTION` | Resolution outcome token |
+| `STATE` | Resolution state token |
+| `COMMITMENT` | Commitment type token (if present) |
+| `ARTIFACT` | Artifact key=value string (if present) |
+| `SENTIMENT_START` | Opening sentiment label |
+| `SENTIMENT_END` | Closing sentiment label |
+
+**Example with a custom template:**
+
+```python
+from clm_core.types import ThreadConfig
+
+template = """
+Support {{ CHANNEL | lower }} – {{ DOMAIN | lower }}: {{ CUSTOMER_INTENT | lower }}.
+Outcome: {{ RESOLUTION | lower }}.
+{% if COMMITMENT %}Next step: {{ COMMITMENT | lower }}.{% endif %}
+""".strip()
+
+cfg = CLMConfig(
+    lang="en",
+    thread_config=ThreadConfig(
+        include_summary=True,
+        summary_template=template,
+    )
+)
 ```
 
 ---

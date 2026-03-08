@@ -19,11 +19,13 @@ The `CLMConfig` object is the central configuration system for CLM compression. 
 
 ```python
 from clm_core import CLMConfig, SDCompressionConfig, SysPromptConfig
+from clm_core.types import ThreadConfig
 
 config = CLMConfig(
     lang="en",                              # Language selection
-    ds_config=SDCompressionConfig(...),    # Structured data config
-    sys_prompt_config=SysPromptConfig(...) # System prompt config
+    ds_config=SDCompressionConfig(...),     # Structured data config
+    sys_prompt_config=SysPromptConfig(...), # System prompt config
+    thread_config=ThreadConfig(...),        # Thread Encoder config
 )
 ```
 
@@ -79,6 +81,45 @@ config = CLMConfig(
     )
 )
 ```
+
+#### `thread_config` (ThreadConfig)
+
+Configuration for Thread Encoder behaviour. See [Thread Encoder](../thread_encoder/index.md) for complete documentation.
+
+**Default behaviour:**
+```python
+# Auto-created with defaults if not provided
+config = CLMConfig(lang="en")  # Uses default ThreadConfig
+```
+
+**Custom configuration:**
+```python
+from clm_core import CLMConfig
+from clm_core.types import ThreadConfig
+
+config = CLMConfig(
+    lang="en",
+    thread_config=ThreadConfig(
+        detect_lang=True,
+        include_ctx_values=True,
+        estimate_thread_duration=True,
+        include_summary=True,
+    )
+)
+```
+
+### ThreadConfig Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `detect_lang` | `bool` | `True` | Detect thread language and include `[LANG=...]` in compressed output |
+| `include_ctx_values` | `bool` | `False` | Append NER-extracted values to context tokens (e.g. `[CONTEXT:EMAIL_PROVIDED:doe@mail.com]`). When `False`, only the fact of detection is emitted |
+| `estimate_thread_duration` | `bool` | `False` | Estimate duration from conversation content, overriding any `duration` value in metadata |
+| `include_summary` | `bool` | `False` | Generate a natural-language summary from the compressed output without an LLM call |
+| `summary_template` | `str \| None` | `None` | Jinja2 template for summary generation; uses built-in template when `None` |
+| `redaction_pattern` | `str` | Built-in pattern | Regex to detect redacted PII fields. Defaults to matching `[*REDACTED*]`, `[REDACTED]`, `***`, `<redacted>`, `XXX`, `[PII]` |
+
+---
 
 #### `sys_prompt_config` (SysPromptConfig)
 
@@ -514,6 +555,7 @@ for lang in languages:
 
 ```python
 from clm_core import CLMConfig, SDCompressionConfig, SysPromptConfig
+from clm_core.types import ThreadConfig
 
 # Complete configuration with all options
 config = CLMConfig(
@@ -528,6 +570,13 @@ config = CLMConfig(
     sys_prompt_config=SysPromptConfig(
         infer_types=True,
         add_attrs=True
+    ),
+    thread_config=ThreadConfig(
+        detect_lang=True,
+        include_ctx_values=True,
+        estimate_thread_duration=False,
+        include_summary=True,
+        redaction_pattern=r"\[.*?REDACTED.*?\]",
     )
 )
 
@@ -591,10 +640,15 @@ config = CLMConfig(lang="de")  # Beta
 ### 2. Configure Based on Use Case
 
 ```python
-# Transcript compression
+from clm_core.types import ThreadConfig
+
+# Thread (transcript / free-form) compression
 config = CLMConfig(
-    lang="en"
-    # Use default configs - optimized for transcripts
+    lang="en",
+    thread_config=ThreadConfig(
+        include_ctx_values=True,   # Surface extracted entity values
+        include_summary=True,      # Generate a human-readable summary
+    )
 )
 
 # Structured data
