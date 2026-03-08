@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from clm_core import CLMEncoder, CLMConfig
+from clm_core import CLMEncoder, CLMConfig, ThreadConfig
 
 CX_TRANSCRIPTS = [
     {
@@ -265,7 +265,7 @@ def dump_to_json():
         json.dump(CX_TRANSCRIPTS, file, ensure_ascii=False)
 
 
-def show_comparison(transcript: str, metadata: dict):
+def show_comparison(encoder: CLMEncoder, transcript: str, metadata: dict):
     """Show before/after comparison"""
 
     print("\n📄 ORIGINAL TRANSCRIPT:")
@@ -273,8 +273,7 @@ def show_comparison(transcript: str, metadata: dict):
     print(f"\nLength: {len(transcript)} characters")
 
     st = time.perf_counter()
-    cfg = CLMConfig(lang="en", redaction_pattern="\[(.*?)\]")
-    encoder = CLMEncoder(cfg=cfg)
+
     new_result = encoder.encode(input_=transcript, metadata={})
     print("Elapsed time:", time.perf_counter() - st)
     print(new_result.to_dict())
@@ -314,13 +313,19 @@ if __name__ == "__main__":
     with open("./data/raw/transcripts_dataset.json", "r") as f:
         transcripts = json.load(f)
 
+    t_cfg = ThreadConfig(
+        include_summary=True,
+        include_ctx_values=True
+    )
+    cfg = CLMConfig(lang="en", thread_config=t_cfg)
+    encoder = CLMEncoder(cfg=cfg)
     result = []
     # test = "\nAgent: Hi, thank you for contacting Streamly Billing. This is Raj. How can I assist?\n\nCustomer: Hi Raj, I was just checking my card statement and saw two charges for my monthly subscription — one for $14.99 and another for $16.99. What’s going on?\n\nAgent: That’s definitely unusual. Let me check. Can you give me the email linked to your account?\n\nCustomer: Sure, it’s emily.thomas@icloud.com.\n\nAgent: Thanks. I see you recently upgraded from Standard to Premium. The $14.99 was for your old plan, and the $16.99 is for the new one. The overlap happened because the upgrade occurred mid-billing cycle.\n\nCustomer: So I was charged twice for the same month?\n\nAgent: In a sense, yes — a partial overlap. But don’t worry, I can refund the difference. I’ll also adjust your billing cycle so this won’t happen again.\n\nCustomer: That would be great. I’ve been a customer for years, so I was surprised.\n\nAgent: I completely understand. I’ve processed a $12 credit back to your card and emailed a breakdown of your new billing schedule.\n\nCustomer: You’ve been really clear — thank you.\n\nAgent: My pleasure. Anything else I can help with today?\n\nCustomer: Nope, that’s all!\n"
     # analysis, new_result = show_comparison(test)
     for transcript in transcripts:
         if transcript["metadata"]["channel"] == "voice":
             analysis, new_result = show_comparison(
-                transcript.get("transcript"), metadata=transcript.get("metadata")
+                encoder, transcript.get("transcript"), metadata=transcript.get("metadata")
             )
             result.append(
                 {
@@ -329,11 +334,10 @@ if __name__ == "__main__":
                     "ratio": new_result.compression_ratio,
                     "compressed": new_result.compressed,
                     "original": transcript.get("transcript"),
+                    "summary": new_result.summary(cfg.thread_config.default_summary_template)
                 }
             )
             print(new_result.to_dict())
-            break
 
     with open(".transcripts_v2.json", "w") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
-

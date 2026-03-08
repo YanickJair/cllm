@@ -100,6 +100,9 @@ class CLMOutput(BaseModel):
     def to_dict(self) -> dict:
         raise NotImplementedError
 
+    def summary(self) -> str:
+        raise NotImplementedError("This method should be implemented in Thread Encoder")
+
 
 class FieldImportance(Enum):
     """Field importance levels
@@ -253,7 +256,7 @@ class ThreadConfig(BaseModel):
         the entities recognized but does not returns them.
         By enabling this flag, this information will also be included in the
         compressed output.
-        
+
         **Examples**
         [CONTEXT:EMAIL_PROVIDED:doe@mail.com]
         """),
@@ -269,13 +272,13 @@ class ThreadConfig(BaseModel):
         bool,
         Doc("""
         CLM can create a summary of the original Thread based on the compressed version.
-        
+
         This feature can remove the dependency of LLMs for basic tasks such as this.
         A template can also be configured and CLM will update the placeholders with the extracted
         information.
         """),
     ] = Field(default=False)
-    summary_template: Annotated[
+    custom_summary_template: Annotated[
         str | None,
         Doc("""
         Custom summary template for CLM.
@@ -289,33 +292,55 @@ class ThreadConfig(BaseModel):
     @computed_field
     def default_summary_template(self) -> str:
         return """
-        Customer contacted {{ DOMAIN | lower }} support via {{ CHANNEL | lower }} regarding {{ CUSTOMER_INTENT | lower }} affecting their {{ SERVICE | lower }}.
+        Customer contacted {{ domain | lower }} support via {{ channel | lower }}
+        regarding {{ customerIntent | replace("_", " ") | lower }}
+        affecting their {{ service | lower }}.
 
-        {% if AGENT_ACTIONS %}
+        {% if agentActions %}
         Actions performed:
-        {% for action in AGENT_ACTIONS %}
-        • {{ action }}
+        {% for action in agentActions %}
+        • {{ action | replace("_", " ") | lower }}
         {% endfor %}
         {% endif %}
-        
-        {% if SYSTEM_ACTIONS %}
+
+        {% if systemActions %}
         System detections:
-        {% for action in SYSTEM_ACTIONS %}
-        • {{ action }}
+        {% for action in systemActions %}
+        • {{ action | replace("_", " ") | lower }}
         {% endfor %}
+        {% endif %}
+
+        Outcome: {{ resolution | replace("_", " ") | lower }} ({{ state | replace("_", " ") | lower }})
+
+        {% if commitments %}
+        Commitments:
+        {% for c in commitments %}
+        • {{ c.type | lower }}{% if c.etaDays %} within {{ c.etaDays }} days{% endif %}
         {% endfor %}
         {% endif %}
-        
-        Outcome: {{ RESOLUTION | replace("_", " ") | lower }} ({{ STATE | replace("_", " ") | lower }})
-        {% if COMMITMENT %}
-        Commitment: {{ COMMITMENT | replace("_", " ") | lower }}
+
+        {% if artifacts %}
+        References:
+        {% for a in artifacts %}
+        • {{ a.key }}: {{ a.value }}
+        {% endfor %}
         {% endif %}
-        {% if ARTIFACT %}
-        Reference: {{ ARTIFACT }}
+
+        {% if context %}
+        Context provided:
+        {% for item in context %}
+        {% if item is string %}
+        • {{ item | replace("_", " ") | lower }}
+        {% else %}
+        {% for k, v in item.items() %}
+        • {{ k | replace("_", " ") | lower }}: {{ v }}
+        {% endfor %}
         {% endif %}
-        
-        {% if SENTIMENT_START and SENTIMENT_END %}
-        Sentiment: {{ SENTIMENT_START | lower }} → {{ SENTIMENT_END | lower }}
+        {% endfor %}
+        {% endif %}
+
+        {% if sentiment and sentiment|length > 0 %}
+        Sentiment: {{ sentiment | join(" → ") | lower }}
         {% endif %}
         """
 

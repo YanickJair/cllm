@@ -1,6 +1,5 @@
-from typing import Optional, Literal, Any
+from typing import Optional, Literal, Any, Annotated
 from annotated_doc import Doc
-from sqlalchemy.sql.annotation import Annotated
 
 from . import (
     KolmogorovAnalyzer,
@@ -43,12 +42,12 @@ class CompressionQualityGate:
             PerplexityConfig | None,
             Doc("""
                 PerplexityConfig refers to LLM configuration.
-                
+
                 **Example**
 
                 ```python
                 from clm_core import PerplexityConfig. We recommend using small models for the task.
-    
+
                 pp_cfg = PerplexityConfig(
                     llm_model=...,
                     api_key=...,
@@ -72,7 +71,7 @@ class CompressionQualityGate:
             str,
             Doc("""
             The original transcript (transcript, prompt, etc.) used in the CLM.
-            
+
             This input is going to be used against compressed to perform the perplexity analysis.
             """),
         ],
@@ -80,7 +79,7 @@ class CompressionQualityGate:
             str,
             Doc("""
             The compressed transcript (transcript, prompt, etc.) used in the CLM.
-            
+
             This input is going to be used against original to perform the conditional entropy analysis.
             """),
         ],
@@ -89,7 +88,7 @@ class CompressionQualityGate:
             Doc("""
             The dumped compression from encoded.to_dict()
             This is useful for Quality Gate to make sure that all required fields were extracted.
-            
+
             **Example**
 
             ```python
@@ -105,7 +104,7 @@ class CompressionQualityGate:
             bool,
             Doc("""
             A flag that triggers the Perplexity analysis.
-            
+
             Defaults to False.
             """),
         ] = False,
@@ -113,7 +112,7 @@ class CompressionQualityGate:
             bool,
             Doc("""
             A flag that enables verbose output.
-            
+
             Defaults to False.
             """),
         ] = False,
@@ -122,7 +121,7 @@ class CompressionQualityGate:
             Doc("""
             The task to perform the perplexity analysis. You can define the task according to your
             dataset and your need. The task will be performed on both original and compressed data.
-            
+
             If no task is defined, and perplexity was set to run, the default task will be performed:
                 Given the above context, respond with a JSON object containing:
                 {

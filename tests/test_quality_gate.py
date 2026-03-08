@@ -671,21 +671,21 @@ class TestCompressionQualityGateAnalyze:
 
     def test_analyze_skips_perplexity_when_flag_false(self, gate):
         result = gate.analyze(
-            LONG_TRANSCRIPT, GOOD_COMPRESSED, run_perplexity=False
+            original=LONG_TRANSCRIPT, compressed=GOOD_COMPRESSED, structured=None, run_perplexity=False
         )
         gate.perplexity.analyze.assert_not_called()
         assert result.perplexity.passed is True  # skipped → perfect
 
     def test_analyze_skips_conditional_when_no_structured(self, gate):
         result = gate.analyze(
-            LONG_TRANSCRIPT, GOOD_COMPRESSED, structured=None, run_perplexity=False
+            original=LONG_TRANSCRIPT, compressed=GOOD_COMPRESSED, structured=None, run_perplexity=False
         )
         assert result.conditional.slots_total == 0  # skipped result
 
     def test_analyze_uses_conditional_when_structured_provided(self, gate):
         result = gate.analyze(
-            LONG_TRANSCRIPT,
-            GOOD_COMPRESSED,
+            original=LONG_TRANSCRIPT,
+            compressed=GOOD_COMPRESSED,
             structured=STRUCTURED_DICT,
             run_perplexity=False,
         )
@@ -693,21 +693,21 @@ class TestCompressionQualityGateAnalyze:
         assert result.conditional.slots_total > 0
 
     def test_analyze_returns_report_with_correct_original_and_compressed(self, gate):
-        result = gate.analyze(LONG_TRANSCRIPT, GOOD_COMPRESSED, run_perplexity=False)
+        result = gate.analyze(original=LONG_TRANSCRIPT, compressed=GOOD_COMPRESSED, structured=None, run_perplexity=False)
         assert result.original == LONG_TRANSCRIPT
         assert result.compressed == GOOD_COMPRESSED
 
     def test_analyze_calls_perplexity_when_flag_true(self, gate):
         gate.perplexity.analyze.return_value = _make_perplexity()
-        gate.analyze(LONG_TRANSCRIPT, GOOD_COMPRESSED, run_perplexity=True)
+        gate.analyze(original=LONG_TRANSCRIPT, compressed=GOOD_COMPRESSED, structured=None, run_perplexity=True)
         gate.perplexity.analyze.assert_called_once()
 
     def test_analyze_verdict_is_valid_literal(self, gate):
-        result = gate.analyze(LONG_TRANSCRIPT, GOOD_COMPRESSED, run_perplexity=False)
+        result = gate.analyze(original=LONG_TRANSCRIPT, compressed=GOOD_COMPRESSED, structured=None, run_perplexity=False)
         assert result.verdict in ("lossless", "acceptable", "high_risk")
 
     def test_analyze_retention_score_in_range(self, gate):
-        result = gate.analyze(LONG_TRANSCRIPT, GOOD_COMPRESSED, run_perplexity=False)
+        result = gate.analyze(original=LONG_TRANSCRIPT, compressed=GOOD_COMPRESSED, structured=None, run_perplexity=False)
         assert 0.0 <= result.retention_score <= 100.0
 
 

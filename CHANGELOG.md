@@ -4,6 +4,55 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [1.0.8] - 2026-03-08
+
+### Added
+
+- **Quality Gate System** (`clm_core/quality_gate/`) - New validation framework to verify compression quality
+  - `CompressionQualityGate` orchestrator with unified verdict: `"lossless"`, `"acceptable"`, or `"high_risk"`
+  - `KolmogorovAnalyzer` - Structural validation via zlib compression ratios
+  - `ConditionalEntropyAnalyzer` - Slot-level semantic field coverage and loss detection
+  - `PerplexityAnalyzer` - LLM-based comprehension testing with Anthropic and OpenAI support
+  - Retention score calculation (0-100 scale)
+  - Configurable via `PerplexityConfig` with LLM model, API key, and host URL
+- **Free-Form Thread Encoder** (`clm_core/components/thread_encoder/free_form/`) for unstructured text
+  - Handles text without speaker labels (emails, Slack threads, SMS, raw notes)
+  - `detect_format()` auto-detection: classifies as "turns" if >= 50% of lines have speaker prefixes
+  - `split_free_form()` paragraph-based splitting with fallback to line-by-line
+  - New `DataTypes.FREE_FORM` enum value in text classifier
+- **`ThreadConfig` configuration class** (`clm_core/types.py`)
+  - `detect_lang`, `include_ctx_values`, `estimate_thread_duration`, `include_summary` flags
+  - `custom_summary_template` for Jinja2-based summary generation
+  - `redaction_pattern` for PII detection
+  - Added as `thread_config` field on `CLMConfig`
+- **Context values extraction** in `TranscriptAnalysis`
+  - `context_values: dict[str, str]` stores actual NER-extracted values (e.g., `{'EMAIL_PROVIDED': 'user@example.com'}`)
+  - Controlled via `ThreadConfig.include_ctx_values`
+- **Summary generation** via `ThreadOutput.summary(template)` method
+  - Template-based natural-language summaries from compressed tokens (no LLM required)
+  - Controlled via `ThreadConfig.include_summary`
+- Tests for Quality Gate (`tests/test_quality_gate.py`)
+
+### Changed
+
+- `ThreadEncoder` constructor now accepts `config: ThreadConfig` parameter
+  - Uses `config.redaction_pattern` instead of hardcoded regex
+  - Language detection, duration estimation, and context values controlled via config
+- `ThreadEncoder.encode()` accepts `thread_format` parameter (`"auto"`, `"turns"`, `"free_form"`)
+- `CLMEncoder` updated to pass `thread_config` to `ThreadEncoder` and support `DataTypes.FREE_FORM`
+
+### Fixed
+
+- Action event detection improved with more robust pattern matching
+- Documentation index navigation corrected
+
+### Documentation
+
+- Added Thread Encoder guide (`docs/thread_encoder/index.md`) with architecture, modes, and examples
+- Added Free-Form Encoder guide (`docs/thread_encoder/free_form_encoder.md`)
+- Added Quality Gate documentation (`docs/advanced/quality_gate/`) with guides for each analyzer
+- Updated `docs/advanced/clm_configuration.md` with `ThreadConfig` parameter reference
+
 ### [1.0.2] - 2026-02-14
 ### Changed
 - Multilingual support for transcript integrated

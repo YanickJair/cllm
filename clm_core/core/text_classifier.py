@@ -11,6 +11,7 @@ class DataTypes(Enum):
     SYSTEM_PROMPT = 0
     TRANSCRIPT = 1
     STRUCTURED_DATA = 2
+    FREE_FORM = 3
     UNK = -1
 
 

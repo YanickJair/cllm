@@ -219,7 +219,7 @@ cfg = CLMConfig(
         include_ctx_values=True,
         estimate_thread_duration=True,
         include_summary=True,
-        summary_template=None,              # Uses built-in template when None
+        custom_summary_template=None,              # Uses built-in template when None
         redaction_pattern=r"\[.*?REDACTED.*?\]",
     )
 )
@@ -233,7 +233,7 @@ cfg = CLMConfig(
 | `include_ctx_values` | `bool` | `False` | Include the actual NER-extracted values in context tokens. When `False`, only the fact of detection is emitted (e.g. `[CONTEXT:EMAIL_PROVIDED]`); when `True`, the value is appended (e.g. `[CONTEXT:EMAIL_PROVIDED:doe@mail.com]`) |
 | `estimate_thread_duration` | `bool` | `False` | Estimate thread duration from the conversation content. When `True`, overrides any `duration` value supplied in the metadata |
 | `include_summary` | `bool` | `False` | Generate a natural-language summary of the thread from the compressed output. Reduces the need for a separate LLM call for basic summarisation tasks |
-| `summary_template` | `str \| None` | `None` | Jinja2 template used for summary generation. When `None`, the built-in template is used (see [Summary Templates](#summary-templates)) |
+| `custom_summary_template` | `str \| None` | `None` | Jinja2 template used for summary generation. When `None`, the built-in template is used (see [Summary Templates](#summary-templates)) |
 | `redaction_pattern` | `str` | Built-in pattern | Regex used to detect redacted PII fields in the input text. Defaults to matching `[*REDACTED*]`, `[REDACTED]`, `***`, `<redacted>`, `XXX`, `[PII]` |
 
 `CLMConfig.lang` controls the spaCy model and language dictionary used by the encoder. All other analysis decisions (what to extract, what to drop) are governed by the language dictionary and the internal NLP pipeline.
@@ -268,7 +268,7 @@ cfg = CLMConfig(
 
 ## Summary Templates
 
-When `include_summary=True`, CLM generates a natural-language summary from the compressed token output without an additional LLM call. A custom Jinja2 template can be provided via `summary_template`; when omitted, the built-in template is used.
+When `include_summary=True`, CLM generates a natural-language summary from the compressed token output without an additional LLM call. A custom Jinja2 template can be provided via `custom_summary_template`; when omitted, the built-in template is used.
 
 **Available template variables:**
 
@@ -302,7 +302,7 @@ cfg = CLMConfig(
     lang="en",
     thread_config=ThreadConfig(
         include_summary=True,
-        summary_template=template,
+        custom_summary_template=template,
     )
 )
 ```

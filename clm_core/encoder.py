@@ -73,6 +73,10 @@ class CLMEncoder:
             bool,
             Doc("When True, prints classification and compression details to stdout."),
         ] = False,
+        data_type: Annotated[
+            Optional[DataTypes],
+            Doc("The data type of the input. If None, the type will be inferred."),
+        ] = None,
         metadata: Annotated[
             Optional[dict],
             Doc(
@@ -80,19 +84,20 @@ class CLMEncoder:
             ),
         ] = None,
     ) -> CLMOutput:
-        class_ = self._classifier.classifier(input_=input_)
+        if data_type is None:
+            data_type = self._classifier.classifier(input_=input_)
 
         if verbose:
-            print(f"Data Type Classified as - {class_}")
+            print(f"Data Type Classified as - {data_type}")
 
-        if class_ == DataTypes.UNK:
+        if data_type == DataTypes.UNK:
             print("Unknown Data Type. Can't compress")
             return None
 
-        if class_ == DataTypes.STRUCTURED_DATA:
+        if data_type == DataTypes.STRUCTURED_DATA:
             return self._ds_encoder.encode(input_)
 
-        if class_ == DataTypes.TRANSCRIPT:
+        if data_type == DataTypes.TRANSCRIPT or data_type == DataTypes.FREE_FORM:
             return self._ts_encoder.encode(
                 thread=input_, verbose=verbose, metadata=metadata
             )

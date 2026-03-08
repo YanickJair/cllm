@@ -116,7 +116,7 @@ config = CLMConfig(
 | `include_ctx_values` | `bool` | `False` | Append NER-extracted values to context tokens (e.g. `[CONTEXT:EMAIL_PROVIDED:doe@mail.com]`). When `False`, only the fact of detection is emitted |
 | `estimate_thread_duration` | `bool` | `False` | Estimate duration from conversation content, overriding any `duration` value in metadata |
 | `include_summary` | `bool` | `False` | Generate a natural-language summary from the compressed output without an LLM call |
-| `summary_template` | `str \| None` | `None` | Jinja2 template for summary generation; uses built-in template when `None` |
+| `custom_summary_template` | `str \| None` | `None` | Jinja2 template for summary generation; uses built-in template when `None` |
 | `redaction_pattern` | `str` | Built-in pattern | Regex to detect redacted PII fields. Defaults to matching `[*REDACTED*]`, `[REDACTED]`, `***`, `<redacted>`, `XXX`, `[PII]` |
 
 ---

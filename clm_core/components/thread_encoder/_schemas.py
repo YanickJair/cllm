@@ -4,6 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict
 from spacy.tokens import Doc
 from annotated_doc import Doc as ParamDoc
+from jinja2 import Environment, FileSystemLoader
 
 from clm_core import CLMOutput
 from clm_core.components.sys_prompt import Intent, Target
@@ -423,7 +424,8 @@ class ThreadOutput(CLMOutput):
         artifacts_list: list[dict] = []
         commitments_list: list[dict] = []
 
-        for token in re.findall(r"\[([^\]]+)\]", self.compressed):
+        source = self.metadata.get("compressed_tokens", self.compressed)
+        for token in re.findall(r"\[([^\]]+)\]", source):
             if token.startswith("INTERACTION:"):
                 parts = token.split(":")
                 if len(parts) >= 3 and "=" in parts[2]:
@@ -450,9 +452,15 @@ class ThreadOutput(CLMOutput):
             elif token.startswith("CUSTOMER_INTENT:"):
                 result["customerIntent"] = token[16:]
             elif token.startswith("INTERACTION_TRIGGER:"):
-                result["interactionTrigger"] = token[16:]
+                result["supportTrigger"] = token[20:]
             elif token.startswith("CONTEXT:"):
-                context_list.append(token[8:])
+                ctx = token.split(":")
+                if len(ctx) >= 3:
+                    context_list.append({
+                        ctx[1]: ctx[2]
+                    })
+                else:
+                    context_list.append(ctx[1])
             elif token.startswith("AGENT_ACTIONS:"):
                 result["agentActions"] = token[14:].split("\u2192")
             elif token.startswith("SYSTEM_ACTIONS:"):
@@ -479,3 +487,8 @@ class ThreadOutput(CLMOutput):
             result["commitments"] = commitments_list
 
         return result
+
+    def summary(self, template: str) -> str:
+        env = Environment()
+        t = env.from_string(template)
+        return t.render(self.to_dict())

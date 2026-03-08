@@ -4,7 +4,9 @@ from clm_core.types import (
     SysPromptConfig,
     CLMConfig,
     FieldImportance,
+    ThreadConfig
 )
+from clm_core.core import DataTypes
 from clm_core.components.sys_prompt import PromptMode, PromptTemplate
 from clm_core.components.ds_compression import SDEncoderV2, SDEncoder
 from clm_core.components.sys_prompt.encoder import SysPromptEncoder
@@ -34,6 +36,8 @@ __all__ = [
     "CLMConfig",
     "CLMOutput",
     "SysPromptConfig",
+    "ThreadConfig",
+    "DataTypes",
     "SDCompressionConfig",
     "FieldImportance",
     "PromptMode",

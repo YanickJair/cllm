@@ -69,7 +69,7 @@ def test_encode_transcript_routes_with_metadata_and_verbose(mocker: MockerFixtur
     metadata = {"call_id": "ABC"}
     result = encoder.encode(transcript_text, verbose=True, metadata=metadata)
 
-    mocked_ts_encode.assert_called_once_with(transcript=transcript_text, verbose=True, metadata=metadata)
+    mocked_ts_encode.assert_called_once_with(thread=transcript_text, verbose=True, metadata=metadata)
     assert isinstance(result, CLMOutput)
     assert result is mocked_output
 
@@ -145,7 +145,7 @@ def test_encode_transcript_handles_none_metadata(mocker: MockerFixture, cfg: CLM
     transcript_text = "Agent: Hi\nCustomer: Hello"
     result = encoder.encode(transcript_text, metadata=None)
 
-    mocked_ts_encode.assert_called_once_with(transcript=transcript_text, verbose=False, metadata=None)
+    mocked_ts_encode.assert_called_once_with(thread=transcript_text, verbose=False, metadata=None)
     assert isinstance(result, CLMOutput)
 
 

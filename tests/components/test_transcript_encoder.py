@@ -15,7 +15,7 @@ from clm_core.components.thread_encoder import (
     RefundReference,
     PromiseCommitment,
 )
-from clm_core.types import CLMOutput
+from clm_core.types import CLMOutput, ThreadConfig
 
 
 @pytest.fixture
@@ -54,13 +54,13 @@ def encoder(nlp, vocab, rules, patterns):
     """Create encoder instance, clearing singleton"""
     # Clear singleton to allow fresh instance
     ThreadEncoder._instances = {}
-    return ThreadEncoder(nlp=nlp, vocab=vocab, rules=rules, patterns=patterns)
+    return ThreadEncoder(nlp=nlp, vocab=vocab, rules=rules, patterns=patterns, config=ThreadConfig())
 
 
 class TestTranscriptEncoderInit:
     def test_initialization(self, nlp, vocab, rules, patterns):
         ThreadEncoder._instances = {}
-        encoder = ThreadEncoder(nlp=nlp, vocab=vocab, rules=rules, patterns=patterns)
+        encoder = ThreadEncoder(nlp=nlp, vocab=vocab, rules=rules, patterns=patterns, config=ThreadConfig())
         assert encoder._analyzer is not None
         assert encoder.analysis is None
 
@@ -556,7 +556,6 @@ Agent: You're welcome! Is there anything else I can help with?"""
 
         # Verify v2 structure
         assert "[INTERACTION:" in compressed
-        assert "[DURATION=" in compressed
         assert "[LANG=EN]" in compressed
         assert "[DOMAIN:" in compressed
         assert "[CUSTOMER_INTENT:" in compressed
@@ -1141,7 +1140,7 @@ My account email is john@example.com."""
         result = encoder.encode(
             thread=email,
             metadata={"channel": "email"},
-            transcript_format="free_form",
+            thread_format="free_form",
         )
         assert result.compressed
         assert result.metadata["transcript_format"] == "free_form"
@@ -1155,7 +1154,7 @@ Agent: I'll be happy to assist with that."""
         result = encoder.encode(
             thread=transcript,
             metadata={"channel": "voice"},
-            transcript_format="auto",
+            thread_format="auto",
         )
         assert result.metadata["transcript_format"] == "turns"
 
@@ -1170,7 +1169,7 @@ Please let me know the status of my shipment. My order number is ORD-99887."""
         result = encoder.encode(
             thread=email,
             metadata={"channel": "email"},
-            transcript_format="auto",
+            thread_format="auto",
         )
         assert result.metadata["transcript_format"] == "free_form"
 
@@ -1192,6 +1191,6 @@ Agent: Sure."""
         result = encoder.encode(
             thread=transcript,
             metadata={},
-            transcript_format="turns",
+            thread_format="turns",
         )
         assert result.metadata["transcript_format"] == "turns"

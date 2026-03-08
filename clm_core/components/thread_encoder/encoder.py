@@ -94,11 +94,11 @@ class ThreadEncoder(metaclass=SingletonMeta):
             bool,
             Doc("""
             A flag that enables verbose output.
-            
+
             Defaults to False.
             """),
         ] = False,
-        transcript_format: Annotated[
+        thread_format: Annotated[
             Literal["auto", "turns", "free_form"],
             Doc("""
             Controls how the transcript is parsed before analysis.
@@ -117,7 +117,7 @@ class ThreadEncoder(metaclass=SingletonMeta):
         ] = "auto",
     ) -> ThreadOutput:
         """
-        Encode thread_encoder analysis to CLM Transcript Schema v2 format.
+        Encode thread_encoder analysis to CLM Thread Schema v2 format.
 
         The encoder works as a pipeline with multiple layers for each Token:
         - The analyzer function is the first in the pipeline.
@@ -125,9 +125,10 @@ class ThreadEncoder(metaclass=SingletonMeta):
         - Tries to estimate the duration of the thread interaction
         - The encode_lang function tries to predict the language of the thread interaction
         """
-        resolved_format = transcript_format
-        if transcript_format == "auto":
+        resolved_format = thread_format
+        if thread_format == "auto":
             resolved_format = self._detect_format(thread)
+            print(f"Resolved format: {resolved_format}")
 
         pre_built_turns = None
         if resolved_format == "free_form":
@@ -267,6 +268,7 @@ class ThreadEncoder(metaclass=SingletonMeta):
             metadata={
                 **metadata,
                 "analysis": self.analysis.to_dict(),
+                "compressed_tokens": compressed,
                 "original_length": len(thread),
                 "compressed_length": len(compressed),
                 "verbs": verbs,
