@@ -281,6 +281,10 @@ class ThreadConfig(BaseModel):
         Custom summary template for CLM.
         """),
     ] = Field(default=None)
+    redaction_pattern: str = Field(
+        default=r"\[\*+REDACTED\*+\]|\*{3,}|\[REDACTED\]|<redacted>|XXX+|\[PII\]",
+        description="Regex pattern to detect redacted fields in thread input",
+    )
 
     @computed_field
     def default_summary_template(self) -> str:
@@ -326,10 +330,7 @@ class CLMConfig(BaseModel):
         default_factory=lambda: SysPromptConfig(),
         description="Configuration for system prompt",
     )
-    redaction_pattern: str = Field(
-        default=r"\[\*+REDACTED\*+\]|\*{3,}|\[REDACTED\]|<redacted>|XXX+|\[PII\]",
-        description="Regex pattern to detect redacted fields in transcripts",
-    )
+
     _nlp_cache: Optional[spacy.Language] = PrivateAttr(default=None)
 
     @computed_field
