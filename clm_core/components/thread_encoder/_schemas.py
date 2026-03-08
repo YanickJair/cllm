@@ -303,6 +303,10 @@ class TranscriptAnalysis(BaseModel):
         default_factory=list,
         description="Context provided by customer without PII: EMAIL_PROVIDED, BOOKING_ID_PROVIDED, etc.",
     )
+    context_values: dict[str, str] = Field(
+        default_factory=dict,
+        description="Actual values for context tokens, e.g. {'EMAIL_PROVIDED': 'user@example.com'}",
+    )
     system_actions: list[str] = Field(
         default_factory=list,
         description="Automated system-level events: PAYMENT_RETRY_DETECTED, etc.",

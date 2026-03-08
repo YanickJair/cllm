@@ -9,7 +9,7 @@ from clm_core.components.thread_encoder.free_form.splitter import (
     split_free_form,
 )
 from clm_core.components.thread_encoder.patterns import TranscriptPatterns
-from types import ThreadConfig
+from clm_core.types import ThreadConfig
 
 from . import (
     Action,
@@ -71,6 +71,7 @@ class ThreadEncoder(metaclass=SingletonMeta):
             patterns=patterns,
             redaction_pattern=config.redaction_pattern,
         )
+        self._config = config
         self.analysis: TranscriptAnalysis | None = None
 
     def encode(
@@ -141,16 +142,18 @@ class ThreadEncoder(metaclass=SingletonMeta):
         if verbose:
             print(f"Interaction: {interaction_token}")
 
-        duration_token = self._encode_duration(self.analysis.call_info)
-        if duration_token:
-            tokens.append(duration_token)
-            if verbose:
-                print(f"Duration: {duration_token}")
+        if self._config.estimate_thread_duration:
+            duration_token = self._encode_duration(self.analysis.call_info)
+            if duration_token:
+                tokens.append(duration_token)
+                if verbose:
+                    print(f"Duration: {duration_token}")
 
-        lang_token = self._encode_lang(self._lang)
-        tokens.append(lang_token)
-        if verbose:
-            print(f"Lang: {lang_token}")
+        if self._config.detect_lang:
+            lang_token = self._encode_lang(self._lang)
+            tokens.append(lang_token)
+            if verbose:
+                print(f"Lang: {lang_token}")
 
         if self.analysis.domain:
             domain_token = f"[DOMAIN:{self.analysis.domain}]"
@@ -185,7 +188,11 @@ class ThreadEncoder(metaclass=SingletonMeta):
                 print(f"Trigger: {trigger_token}")
 
         for ctx in self.analysis.context_provided:
-            ctx_token = f"[CONTEXT:{ctx}]"
+            if self._config.include_ctx_values:
+                value = self.analysis.context_values.get(ctx)
+                ctx_token = f"[CONTEXT:{ctx}:{value}]" if value else f"[CONTEXT:{ctx}]"
+            else:
+                ctx_token = f"[CONTEXT:{ctx}]"
             tokens.append(ctx_token)
             if verbose:
                 print(f"Context: {ctx_token}")

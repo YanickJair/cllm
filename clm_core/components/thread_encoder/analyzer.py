@@ -243,7 +243,7 @@ class TranscriptAnalyzer:
             ):
                 trigger_cause = "CANCELLATION_DEFLECTED"
 
-        context_provided = self._extract_context_provided(turns, call_info)
+        context_provided, context_values = self._extract_context_provided(turns, call_info)
         system_actions = self._extract_system_actions(turns)
         amounts = self._extract_all_amounts(turns)
         redacted_fields = self._extract_redacted_fields(turns)
@@ -273,6 +273,7 @@ class TranscriptAnalyzer:
             secondary_intent=secondary_intent,
             trigger_cause=trigger_cause,
             context_provided=context_provided,
+            context_values=context_values,
             system_actions=system_actions,
             amounts=amounts,
             redacted_fields=redacted_fields,
@@ -1970,8 +1971,12 @@ class TranscriptAnalyzer:
                 "Call metadata; the agent name is extracted to prevent it from triggering NAME_PROVIDED."
             ),
         ] = None,
-    ) -> list[str]:
+    ) -> tuple[list[str], dict[str, str]]:
         """Extract v2 CONTEXT tokens indicating what information the customer provided.
+
+        Returns a tuple of (tokens, values) where tokens is the list of context flag
+        strings and values is a dict mapping each token to its extracted value (when
+        available), e.g. {"EMAIL_PROVIDED": "user@example.com"}.
 
         Returns fact-of-information tokens without leaking PII. Agent names are
         collected first so that NAME_PROVIDED is not emitted when a customer thanks
@@ -1990,16 +1995,19 @@ class TranscriptAnalyzer:
         straight apostrophes so patterns like "hasn't" and "aren't" match correctly.
         """
         context = []
+        values: dict[str, str] = {}
         seen = set()
 
         agent_names = set()
         if call_info and call_info.agent:
             agent_names.add(call_info.agent.lower())
 
-        def _add(token: str):
+        def _add(token: str, value: str | None = None):
             if token not in seen:
                 context.append(token)
                 seen.add(token)
+            if value and token not in values:
+                values[token] = value
 
         for turn in turns:
             if turn.speaker != "customer":
@@ -2008,37 +2016,38 @@ class TranscriptAnalyzer:
             text_lower = turn.text.lower()
 
             if ents.get("emails"):
-                _add("EMAIL_PROVIDED")
+                _add("EMAIL_PROVIDED", ents["emails"][0])
 
             if ents.get("phone_numbers"):
-                _add("PHONE_NUMBER_PROVIDED")
+                _add("PHONE_NUMBER_PROVIDED", ents["phone_numbers"][0])
 
             if ents.get("account_numbers") or ents.get("accounts"):
-                _add("ACCOUNT_ID_PROVIDED")
+                val = (ents.get("account_numbers") or ents.get("accounts") or [])[0]
+                _add("ACCOUNT_ID_PROVIDED", val)
 
             if ents.get("order_numbers"):
-                _add("ORDER_ID_PROVIDED")
+                _add("ORDER_ID_PROVIDED", ents["order_numbers"][0])
 
             if ents.get("tracking_numbers"):
-                _add("TRACKING_ID_PROVIDED")
+                _add("TRACKING_ID_PROVIDED", ents["tracking_numbers"][0])
 
             if ents.get("money"):
-                _add("PAYMENT_AMOUNT_PROVIDED")
+                _add("PAYMENT_AMOUNT_PROVIDED", ents["money"][0])
 
             if ents.get("ticket_numbers"):
-                _add("TICKET_ID_PROVIDED")
+                _add("TICKET_ID_PROVIDED", ents["ticket_numbers"][0])
 
             if ents.get("case_numbers"):
-                _add("CASE_ID_PROVIDED")
+                _add("CASE_ID_PROVIDED", ents["case_numbers"][0])
 
             if ents.get("product_models"):
-                _add("PRODUCT_ID_PROVIDED")
+                _add("PRODUCT_ID_PROVIDED", ents["product_models"][0])
 
             if ents.get("escalation_ids"):
-                _add("ESCALATION_ID_PROVIDED")
+                _add("ESCALATION_ID_PROVIDED", ents["escalation_ids"][0])
 
             if ents.get("verification_codes"):
-                _add("VERIFICATION_CODE_PROVIDED")
+                _add("VERIFICATION_CODE_PROVIDED", ents["verification_codes"][0])
 
             doc = getattr(turn, "doc", None)
             if doc:
@@ -2046,21 +2055,27 @@ class TranscriptAnalyzer:
                     if ent.label_ == "PERSON":
                         name = ent.text.lower()
                         if name not in agent_names:
-                            _add("NAME_PROVIDED")
+                            _add("NAME_PROVIDED", ent.text)
                             break
 
             intro_patterns = self.patterns.name_intro_patterns or [
                 r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)"
             ]
-            if any(re.search(pat, text_lower) for pat in intro_patterns):
-                _add("NAME_PROVIDED")
+            for pat in intro_patterns:
+                m = re.search(pat, text_lower)
+                if m:
+                    _add("NAME_PROVIDED", m.group(1) if m.lastindex else None)
+                    break
 
             name_change_patterns = self.patterns.name_change_patterns or [
-                r"\b(?:change|update)\s+(?:my\s+)?(?:name\s+)?(?:from\s+)?\w+\s+to\s+\w+"
+                r"\b(?:change|update)\s+(?:my\s+)?(?:name\s+)?(?:from\s+)?(\w+)\s+to\s+(\w+)"
             ]
-            if any(re.search(pat, text_lower) for pat in name_change_patterns):
-                _add("OLD_NAME_PROVIDED")
-                _add("NEW_NAME_PROVIDED")
+            for pat in name_change_patterns:
+                m = re.search(pat, text_lower)
+                if m:
+                    _add("OLD_NAME_PROVIDED", m.group(1) if m.lastindex and m.lastindex >= 1 else None)
+                    _add("NEW_NAME_PROVIDED", m.group(2) if m.lastindex and m.lastindex >= 2 else None)
+                    break
 
             delay_match = re.search(r"\b(\d+)\s*days?\b", text_lower)
             delay_context = self.patterns.delay_context_words or [
@@ -2073,7 +2088,7 @@ class TranscriptAnalyzer:
                 days = delay_match.group(1)
                 _add(f"DELAY_{days}_DAYS")
 
-        return context
+        return context, values
 
     def _extract_trigger_cause(
         self,
