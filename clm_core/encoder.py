@@ -3,7 +3,7 @@ from typing import Any, Optional, Annotated
 import spacy
 
 from annotated_doc import Doc
-from clm_core.components.ds_compression import SDEncoder, SDEncoderV2
+from clm_core.components.ds_compression import SDEncoderV2
 from clm_core.components.sys_prompt.encoder import SysPromptEncoder
 from clm_core.components.thread_encoder.encoder import ThreadEncoder
 from clm_core.core.text_classifier import DataClassifier, DataTypes
@@ -46,7 +46,7 @@ class CLMEncoder:
                 rules=self._cfg.rules,
                 patterns=self._cfg.patterns,
                 lang=self._cfg.lang,
-                redaction_pattern=self._cfg.redaction_pattern,
+                config=self._cfg.thread_config,
             )
         return self._lazy_ts_encoder
 

@@ -9,6 +9,7 @@ from clm_core.components.thread_encoder.free_form.splitter import (
     split_free_form,
 )
 from clm_core.components.thread_encoder.patterns import TranscriptPatterns
+from types import ThreadConfig
 
 from . import (
     Action,
@@ -58,8 +59,8 @@ class ThreadEncoder(metaclass=SingletonMeta):
         vocab: BaseVocabulary,
         rules: BaseRules,
         patterns: TranscriptPatterns,
+        config: ThreadConfig,
         lang: str = "en",
-        redaction_pattern: Optional[str] = None,
     ):
         self._patterns = patterns
         self._lang = lang
@@ -68,7 +69,7 @@ class ThreadEncoder(metaclass=SingletonMeta):
             vocab=vocab,
             rules=rules,
             patterns=patterns,
-            redaction_pattern=redaction_pattern,
+            redaction_pattern=config.redaction_pattern,
         )
         self.analysis: TranscriptAnalysis | None = None
 

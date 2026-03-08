@@ -330,7 +330,7 @@ class CLMConfig(BaseModel):
         default_factory=lambda: SysPromptConfig(),
         description="Configuration for system prompt",
     )
-
+    thread_config: ThreadConfig = Field(default_factory=lambda: ThreadConfig(), description="Configuration for CLM Thread Encoder")
     _nlp_cache: Optional[spacy.Language] = PrivateAttr(default=None)
 
     @computed_field
