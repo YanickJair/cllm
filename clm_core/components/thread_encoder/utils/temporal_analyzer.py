@@ -1,9 +1,10 @@
 import re
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Annotated
 import spacy
 from spacy.matcher import Matcher
 from spacy.tokens import Doc
+from annotated_doc import Doc as ParamDoc
 
 try:
     import dateparser
@@ -24,10 +25,30 @@ class TemporalAnalyzer:
 
     def __init__(
         self,
-        nlp: spacy.Language,
-        day_names: dict[str, str] | None = None,
-        word_to_num: dict[str, int] | None = None,
-        lang: str = "en",
+        nlp: Annotated[
+            spacy.Language,
+            ParamDoc(
+                "A loaded spaCy Language instance. A sentencizer pipe is added automatically if not present."
+            ),
+        ],
+        day_names: Annotated[
+            dict[str, str] | None,
+            ParamDoc(
+                "Mapping of lowercase day name (e.g. 'monday') to abbreviation code (e.g. 'MON'). Used for day extraction."
+            ),
+        ] = None,
+        word_to_num: Annotated[
+            dict[str, int] | None,
+            ParamDoc(
+                "Mapping of number words (e.g. 'two') to their integer values. Used for duration extraction."
+            ),
+        ] = None,
+        lang: Annotated[
+            str,
+            ParamDoc(
+                "BCP-47 language code hint passed to dateparser, e.g. 'en', 'es'. Limits locale search for performance."
+            ),
+        ] = "en",
     ):
         self._nlp = nlp
         self._lang = lang
@@ -120,7 +141,16 @@ class TemporalAnalyzer:
             ],
         )
 
-    def extract(self, text: str, doc: Optional[Doc] = None) -> TemporalPattern:
+    def extract(
+        self,
+        text: Annotated[
+            str, ParamDoc("The raw text from which to extract temporal information.")
+        ],
+        doc: Annotated[
+            Optional[Doc],
+            ParamDoc("Optional pre-computed spaCy Doc to avoid reprocessing."),
+        ] = None,
+    ) -> TemporalPattern:
         """Extract temporal information from a given text.
 
         Args:
@@ -319,7 +349,6 @@ class TemporalAnalyzer:
             return {}
 
         now = datetime.now()
-        # Use language hint to avoid checking all 615 locales
         parsed = dateparser.parse(
             text,
             languages=[self._lang],

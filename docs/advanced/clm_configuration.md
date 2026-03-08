@@ -74,9 +74,8 @@ from clm_core import SDCompressionConfig, CLMConfig
 config = CLMConfig(
     lang="en",
     ds_config=SDCompressionConfig(
-        dataset_name="PRODUCT",
         importance_threshold=0.7,
-        max_field_length=150
+        max_truncation_length=150
     )
 )
 ```
@@ -467,7 +466,6 @@ from clm_core import CLMConfig, SDCompressionConfig
 config = CLMConfig(
     lang="pt",
     ds_config=SDCompressionConfig(
-        dataset_name="PRODUTO",
         required_fields=["id", "nome"],
         importance_threshold=0.7
     )
@@ -521,11 +519,10 @@ from clm_core import CLMConfig, SDCompressionConfig, SysPromptConfig
 config = CLMConfig(
     lang="en",
     ds_config=SDCompressionConfig(
-        dataset_name="CATALOG",
         auto_detect=True,
         required_fields=["id", "name"],
         importance_threshold=0.6,
-        max_field_length=150,
+        max_truncation_length=150,
         preserve_structure=True
     ),
     sys_prompt_config=SysPromptConfig(
@@ -604,7 +601,6 @@ config = CLMConfig(
 config = CLMConfig(
     lang="en",
     ds_config=SDCompressionConfig(
-        dataset_name="YOUR_DATA",
         importance_threshold=0.7
     )
 )

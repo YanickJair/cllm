@@ -1,6 +1,7 @@
 import re
-from typing import List, Optional
+from typing import List, Optional, Annotated
 
+from annotated_doc import Doc as _Doc
 from spacy import Language
 from spacy.tokens import Doc
 from clm_core.utils.vocabulary import BaseVocabulary
@@ -19,7 +20,21 @@ class IntentDetector:
         - Supports multi-word synonyms
     """
 
-    def __init__(self, nlp: Language, vocab: BaseVocabulary):
+    def __init__(
+        self,
+        nlp: Annotated[
+            Language,
+            _Doc(
+                "spaCy language model used for tokenization, lemmatization, and POS tagging."
+            ),
+        ],
+        vocab: Annotated[
+            BaseVocabulary,
+            _Doc(
+                "Vocabulary instance providing REQ_TOKENS and related detection helpers."
+            ),
+        ],
+    ):
         self.nlp = nlp
         self.vocab = vocab
         self.syn_index = self._build_reverse_index()
@@ -32,7 +47,19 @@ class IntentDetector:
                 index[syn] = action
         return index
 
-    def detect(self, text: str, context: str = "", doc: Doc = None) -> list[Intent]:
+    def detect(
+        self,
+        text: Annotated[
+            str, _Doc("Input text to classify into one or more REQ intents.")
+        ],
+        context: Annotated[
+            str, _Doc("Optional surrounding context used to resolve ambiguous tokens.")
+        ] = "",
+        doc: Annotated[
+            Doc,
+            _Doc("Optional pre-computed spaCy Doc to avoid re-processing the text."),
+        ] = None,
+    ) -> list[Intent]:
         text_lower = text.lower().strip()
         if doc is None:
             doc = self.nlp(text_lower)
@@ -76,7 +103,6 @@ class IntentDetector:
         seen_tokens = set()
         unique_intents = []
 
-        # Batch process all parts with nlp.pipe() for efficiency
         part_docs = list(self.nlp.pipe(parts))
 
         for part, part_doc in zip(parts, part_docs):
@@ -164,7 +190,14 @@ class IntentDetector:
         return any(trg in text_lower for trg in self.vocab.rank_triggers)
 
     @staticmethod
-    def get_primary_intent(intents: List[Intent]) -> Optional[Intent]:
+    def get_primary_intent(
+        intents: Annotated[
+            List[Intent],
+            _Doc(
+                "List of detected intents from which the first (highest-priority) one is returned."
+            ),
+        ],
+    ) -> Optional[Intent]:
         return intents[0] if intents else None
 
     @staticmethod

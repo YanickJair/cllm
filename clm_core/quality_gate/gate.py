@@ -1,4 +1,6 @@
 from typing import Optional, Literal, Any
+from annotated_doc import Doc
+from sqlalchemy.sql.annotation import Annotated
 
 from . import (
     KolmogorovAnalyzer,
@@ -8,6 +10,7 @@ from . import (
     ConditionalEntropyResult,
     PerplexityResult,
     ConditionalEntropyAnalyzer,
+    PerplexityConfig,
 )
 
 
@@ -24,18 +27,114 @@ class CompressionQualityGate:
         print(report.summary())        # full breakdown
     """
 
-    def __init__(self, llm_client: Literal["anthropic", "openai"]):
+    def __init__(
+        self,
+        llm_client: Annotated[
+            Literal["anthropic", "openai"] | None,
+            Doc("""
+                Which LLM client to use? Right now there are only two options:
+                    - Anthropic
+                    - OpenAI
+                If no client is set, the perplexity analysis will fallback to Heuristics analysis.
+                If a client is set, the PerplexityConfig must be set as well in order to create the connection.
+                """),
+        ] = None,
+        perplexity_cfg: Annotated[
+            PerplexityConfig | None,
+            Doc("""
+                PerplexityConfig refers to LLM configuration.
+                
+                **Example**
+
+                ```python
+                from clm_core import PerplexityConfig. We recommend using small models for the task.
+    
+                pp_cfg = PerplexityConfig(
+                    llm_model=...,
+                    api_key=...,
+                    host_url=...,
+                    temperature=...,
+                )
+                encoded = encoder.encode(original)
+                structured = encoder.to_dict(encoded)
+                ```
+                """),
+        ] = None,
+    ) -> None:
         self.kolmogorov = KolmogorovAnalyzer()
         self.conditional = ConditionalEntropyAnalyzer()
-        self.perplexity = PerplexityAnalyzer(llm_client=llm_client)
+        self.perplexity = PerplexityAnalyzer(llm_client=llm_client, cfg=perplexity_cfg)
 
     def analyze(
         self,
-        original: str,
-        compressed: str,
-        structured: Optional[dict[str, Any]] = None,
-        run_perplexity: bool = True,
-        verbose: bool = False,
+        *,
+        original: Annotated[
+            str,
+            Doc("""
+            The original transcript (transcript, prompt, etc.) used in the CLM.
+            
+            This input is going to be used against compressed to perform the perplexity analysis.
+            """),
+        ],
+        compressed: Annotated[
+            str,
+            Doc("""
+            The compressed transcript (transcript, prompt, etc.) used in the CLM.
+            
+            This input is going to be used against original to perform the conditional entropy analysis.
+            """),
+        ],
+        structured: Annotated[
+            Optional[dict[str, Any]] | None,
+            Doc("""
+            The dumped compression from encoded.to_dict()
+            This is useful for Quality Gate to make sure that all required fields were extracted.
+            
+            **Example**
+
+            ```python
+            from clm_core import CLMEncoder, CLMConfig
+
+            encoder = CLMEncoder(cfg=CLMConfig(...))
+            encoded = encoder.encode(original)
+            structured = encoder.to_dict(encoded)
+            ```
+            """),
+        ],
+        run_perplexity: Annotated[
+            bool,
+            Doc("""
+            A flag that triggers the Perplexity analysis.
+            
+            Defaults to False.
+            """),
+        ] = False,
+        verbose: Annotated[
+            bool,
+            Doc("""
+            A flag that enables verbose output.
+            
+            Defaults to False.
+            """),
+        ] = False,
+        perplexity_task: Annotated[
+            str | None,
+            Doc("""
+            The task to perform the perplexity analysis. You can define the task according to your
+            dataset and your need. The task will be performed on both original and compressed data.
+            
+            If no task is defined, and perplexity was set to run, the default task will be performed:
+                Given the above context, respond with a JSON object containing:
+                {
+                  "primary_issue": "<what the customer needed>",
+                  "resolution": "<how it was resolved>",
+                  "sentiment": "<customer sentiment>",
+                  "follow_up_needed": <true|false>,
+                  "key_facts": ["<fact1>", "<fact2>", "<fact3>"]
+                }
+                Respond ONLY with the JSON object.
+            """),
+        ] = None,
     ) -> CompressionQualityReport:
         """
         Run all three analyses and return a unified report.
@@ -48,6 +147,7 @@ class CompressionQualityGate:
                              If None, conditional entropy is skipped (returns perfect score).
             run_perplexity:  Set False to skip API calls (fast / CI mode)
             verbose:         Print progress
+            perplexity_task: LLM Task
         """
         if verbose:
             print("[ 1/3 ] Kolmogorov complexity analysis...")
@@ -64,7 +164,9 @@ class CompressionQualityGate:
         if verbose:
             print("[ 3/3 ] Perplexity / LLM comprehension test...")
         p_result = (
-            self.perplexity.analyze(original, compressed, verbose=verbose)
+            self.perplexity.analyze(
+                original, compressed, task=perplexity_task, verbose=verbose
+            )
             if run_perplexity
             else self._perplexity_skipped()
         )

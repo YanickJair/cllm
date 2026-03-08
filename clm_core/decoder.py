@@ -1,5 +1,7 @@
 import re
-from typing import Dict, List
+from typing import Dict, List, Annotated
+
+from annotated_doc import Doc
 
 
 class CLLMDecoder:
@@ -90,7 +92,15 @@ class CLLMDecoder:
             "CSV": "as CSV",
         }
 
-    def parse_token(self, token_str: str) -> Dict:
+    def parse_token(
+        self,
+        token_str: Annotated[
+            str,
+            Doc(
+                "A raw token string extracted from inside square brackets, e.g. 'REQ:GENERATE' or 'TARGET:ANSWER:DOMAIN=SUPPORT'."
+            ),
+        ],
+    ) -> Dict:
         """Parse CLLM token: [TYPE:VALUE:ATTR1=VAL1:ATTR2]"""
         parts = token_str.split(":")
 
@@ -100,7 +110,6 @@ class CLLMDecoder:
             "attributes": {},
         }
 
-        # Parse attributes (KEY=VALUE or standalone)
         for part in parts[2:]:
             if "=" in part:
                 key, val = part.split("=", 1)
@@ -110,24 +119,25 @@ class CLLMDecoder:
 
         return result
 
-    def humanize_topic(self, topic: str) -> str:
-        """
-        Convert TOPIC to natural language
+    def humanize_topic(
+        self,
+        topic: Annotated[
+            str,
+            Doc(
+                "An ALL_CAPS_UNDERSCORED topic string extracted from a TARGET token attribute, e.g. 'THREE_PRIMARY_COLORS'."
+            ),
+        ],
+    ) -> str:
+        """Convert TOPIC to natural language.
+
         THREE_PRIMARY_COLORS -> the three primary colors
         CAPITAL_OF_FRANCE -> the capital of France
         """
-        # Replace underscores
         text = topic.replace("_", " ")
-
-        # Lowercase
         text = text.lower()
-
-        # Handle possessives
         text = text.replace("'s", "'s")
 
-        # Add article if needed
         if not text.startswith(("the ", "a ", "an ")):
-            # Add 'the' for most cases
             if not any(
                 text.startswith(w)
                 for w in ["what", "who", "where", "when", "why", "how"]
@@ -136,13 +146,26 @@ class CLLMDecoder:
 
         return text
 
-    def format_question(self, topic: str, topic_type: str = None) -> str:
-        """
-        Format as a question
+    def format_question(
+        self,
+        topic: Annotated[
+            str,
+            Doc(
+                "A humanized topic string (already lowercased, spaces instead of underscores)."
+            ),
+        ],
+        topic_type: Annotated[
+            str,
+            Doc(
+                "Optional topic type hint; currently unused but reserved for future plural/singular disambiguation."
+            ),
+        ] = None,
+    ) -> str:
+        """Format as a question.
+
         topic='three primary colors' -> 'What are the three primary colors'
         topic='capital of france' -> 'What is the capital of France'
         """
-        # Detect plural vs singular
         words = topic.split()
         is_plural = words and (
             words[0] in ["many", "few", "several", "some"]
@@ -153,17 +176,23 @@ class CLLMDecoder:
             )
         )
 
-        # Choose "is" or "are"
         verb = "are" if is_plural else "is"
 
-        # Format with proper article
         if topic.startswith(("the ", "a ", "an ")):
             return f"What {verb} {topic}"
         else:
             return f"What {verb} the {topic}"
 
-    def combine_req_tokens(self, req_tokens: List[Dict]) -> str:
-        """Intelligently combine multiple REQ tokens"""
+    def combine_req_tokens(
+        self,
+        req_tokens: Annotated[
+            List[Dict],
+            Doc(
+                "List of parsed REQ token dicts, each containing at minimum a 'value' key with the REQ type string."
+            ),
+        ],
+    ) -> str:
+        """Intelligently combine multiple REQ tokens."""
         if not req_tokens:
             return ""
 
@@ -195,16 +224,16 @@ class CLLMDecoder:
 
         return self.req_to_action.get(reqs[0], reqs[0].lower())
 
-    def decode(self, compressed: str) -> str:
-        """
-        Main decode function - converts CLLM tokens to natural language
-
-        Args:
-            compressed: Token string like "[REQ:GENERATE] [TARGET:ANSWER]"
-
-        Returns:
-            Natural language string
-        """
+    def decode(
+        self,
+        compressed: Annotated[
+            str,
+            Doc(
+                "A CLLM-encoded token string, e.g. '[REQ:GENERATE] [TARGET:ANSWER]'. Returns the original compressed string if no tokens are found."
+            ),
+        ],
+    ) -> str:
+        """Main decode function — converts CLLM tokens to natural language."""
         if not compressed or not compressed.strip():
             return ""
 
@@ -307,6 +336,11 @@ class CLLMDecoder:
 
         return sentence
 
-    def batch_decode(self, compressed_list: List[str]) -> List[str]:
-        """Decode multiple prompts"""
+    def batch_decode(
+        self,
+        compressed_list: Annotated[
+            List[str], Doc("A list of CLLM-encoded token strings to decode.")
+        ],
+    ) -> List[str]:
+        """Decode multiple prompts."""
         return [self.decode(c) for c in compressed_list]

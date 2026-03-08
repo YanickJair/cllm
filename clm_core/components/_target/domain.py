@@ -1,5 +1,7 @@
 import re
-from typing import Optional
+from typing import Optional, Annotated
+
+from annotated_doc import Doc as _Doc
 from spacy import Language
 from spacy.tokens import Doc
 
@@ -20,27 +22,44 @@ class DomainDetector:
         (domain: str, confidence: float)
     """
 
-    def __init__(self, *, nlp: Language, vocab: BaseVocabulary, rules: BaseRules):
+    def __init__(
+        self,
+        *,
+        nlp: Annotated[
+            Language,
+            _Doc(
+                "spaCy language model for semantic scoring via noun chunks and verb lemmas."
+            ),
+        ],
+        vocab: Annotated[
+            BaseVocabulary,
+            _Doc(
+                "Vocabulary providing domain_candidates, domain priority order, and semantic lemma sets."
+            ),
+        ],
+        rules: Annotated[
+            BaseRules, _Doc("Language-specific rules providing DOMAIN_REGEX patterns.")
+        ],
+    ):
         self.nlp = nlp
         self._vocab = vocab
         self._rules = rules
-        # Precompile domain regex patterns
         self._compiled_domain_regex = {
             domain: re.compile(pattern)
             for domain, pattern in self._rules.DOMAIN_REGEX.items()
         }
 
-    def detect(self, text: str, doc: Optional[Doc] = None) -> tuple[str, float]:
-        """
-        Returns (domain, confidence).
-
-        Args:
-            text: The text to analyze
-            doc: Optional pre-computed spaCy Doc to avoid reprocessing
-        """
+    def detect(
+        self,
+        text: Annotated[str, _Doc("Input text to classify into a domain.")],
+        doc: Annotated[
+            Optional[Doc],
+            _Doc("Optional pre-computed spaCy Doc to avoid redundant NLP processing."),
+        ] = None,
+    ) -> tuple[str, float]:
+        """Returns (domain, confidence)."""
         clean = text.strip().lower()
 
-        # Reuse provided doc or create new one only if needed
         if doc is None:
             doc = self.nlp(clean)
 

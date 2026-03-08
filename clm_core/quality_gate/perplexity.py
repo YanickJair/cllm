@@ -1,9 +1,11 @@
 import os
 import re
 import time
-from typing import Literal
+from typing import Literal, Annotated
 
-from . import PerplexityResult
+from annotated_doc import Doc
+
+from . import PerplexityResult, PerplexityConfig
 
 
 class PerplexityAnalyzer:
@@ -37,14 +39,44 @@ class PerplexityAnalyzer:
     """
 
     COMPREHENSION_THRESHOLD = 0.82
-    ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001")
-    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5-nano-2025-08-07")
-    BASE_URL = os.getenv("LLM_CLIENT_BASE_URL", None)
+    ANTHROPIC_DEFAULT_MODEL = "claude-haiku-4-5-20251001"
+    OPENAI_DEFAULT_MODEL = "gpt-5-nano-2025-08-07"
 
     def __init__(
-        self, llm_client: Literal["anthropic", "openai"] = "anthropic"
+        self,
+        llm_client: Annotated[
+            Literal["anthropic", "openai"] | None,
+            Doc("""
+            Which LLM client to use? Right now there are only two options:
+                - Anthropic
+                - OpenAI
+            If no client is set, the perplexity analysis will fallback to Heuristics analysis.
+            If a client is set, the PerplexityConfig must be set as well in order to create the connection.
+            """),
+        ] = None,
+        cfg: Annotated[
+            PerplexityConfig | None,
+            Doc("""
+            PerplexityConfig refers to LLM configuration.
+            
+            **Example**
+
+            ```python
+            from clm_core import PerplexityConfig. We recommend using small models for the task.
+
+            pp_cfg = PerplexityConfig(
+                llm_model=...,
+                api_key=...,
+                host_url=...,
+                temperature=...,
+            )
+            encoded = encoder.encode(original)
+            structured = encoder.to_dict(encoded)
+            ```
+            """),
+        ] = None,
     ) -> None:
-        if llm_client not in ("anthropic", "openai"):
+        if not llm_client or llm_client not in ("anthropic", "openai"):
             raise NotImplementedError(f"Unrecognized LLM client {llm_client}")
         self.llm_client = llm_client
         try:
@@ -69,16 +101,60 @@ class PerplexityAnalyzer:
 
     def analyze(
         self,
-        original: str,
-        compressed: str,
-        verbose: bool = False,
+        original: Annotated[
+            str,
+            Doc("""
+            The original transcript (transcript, prompt, etc.) used in the CLM.
+
+            This input is going to be used against compressed to perform the perplexity analysis.
+            """),
+        ],
+        compressed: Annotated[
+            str,
+            Doc("""
+            The compressed transcript (transcript, prompt, etc.) used in the CLM.
+
+            This input is going to be used against original to perform the conditional entropy analysis.
+            """),
+        ],
+        task: Annotated[
+            str | None,
+            Doc("""
+            The task to perform the perplexity analysis. You can define the task according to your
+            dataset and your need. The task will be performed on both original and compressed data.
+            
+            If no task is defined, and perplexity was set to run, the default task will be performed:
+                Given the above context, respond with a JSON object containing:
+                {
+                  "primary_issue": "<what the customer needed>",
+                  "resolution": "<how it was resolved>",
+                  "sentiment": "<customer sentiment>",
+                  "follow_up_needed": <true|false>,
+                  "key_facts": ["<fact1>", "<fact2>", "<fact3>"]
+                }
+                Respond ONLY with the JSON object.
+            """),
+        ] = None,
+        verbose: Annotated[
+            bool,
+            Doc("""
+            A flag that enables verbose output.
+            
+            Defaults to False.
+            """),
+        ] = False,
     ) -> PerplexityResult:
         if self._api_available:
-            return self._analyze_via_api(original, compressed, verbose)
+            return self._analyze_via_api(original, compressed, verbose, task)
         else:
             return self._analyze_heuristic(original, compressed)
 
-    def _call_llm(self, prompt: str) -> tuple[str, float, int]:
+    def _call_llm(
+        self,
+        prompt: Annotated[
+            str, Doc("Full prompt string to send to the configured LLM.")
+        ],
+    ) -> tuple[str, float, int]:
         """Returns (response_text, latency_ms, token_count)."""
         start = time.time()
         if self.llm_client == "anthropic":
@@ -105,9 +181,10 @@ class PerplexityAnalyzer:
         original: str,
         compressed: str,
         verbose: bool,
+        task: str = None,
     ) -> PerplexityResult:
-        orig_prompt = f"{original}\n\n{self.EVALUATION_TASK}"
-        clm_prompt = f"{compressed}\n\n{self.EVALUATION_TASK}"
+        orig_prompt = f"{original}\n\n{self.EVALUATION_TASK if not task else task}"
+        clm_prompt = f"{compressed}\n\n{self.EVALUATION_TASK if not task else task}"
 
         if verbose:
             print("Calling LLM with original prompt...")

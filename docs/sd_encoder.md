@@ -113,16 +113,15 @@ print(result.compressed)
 from clm_core import SDCompressionConfig
 
 config = SDCompressionConfig(
-    auto_detect=True,                    # Auto-detect important fields
+    auto_detect=True,                    # Auto-detect field importance based on name patterns and value heuristics
     drop_non_required_fields=True,       # Only keep required_fields (aggressive compression)
     required_fields=["id", "name"],      # Always include these
     excluded_fields=["metadata"],        # Never include these
     field_importance={"desc": 0.9},      # Custom importance scores (0.0-1.0)
     importance_threshold=0.5,            # Include fields above this
-    max_truncation_length=200,          # Default truncation for long text (chars)
-    max_truncation_mapping={"title": 50, "desc": 100},  # Per-field truncation (overrides max_truncation_length)
+    max_truncation_length=200,           # Default truncation for long text (chars)
+    max_truncation_mapping={"title": 50, "desc": 100},  # Per-field truncation lengths
     preserve_structure=True,             # Keep nested dicts/lists
-    default_fields_importance={"id": 1.0, "name": 0.8}  # Override default importance
 )
 ```
 
@@ -182,12 +181,6 @@ config = SDCompressionConfig(
 - **When `True`:** Nested data preserved as-is
 - **When `False`:** Flattens nested structures
 - **Use case:** Keep `True` for complex hierarchical data
-
-#### `default_fields_importance` (dict[str, float], optional)
-- **Purpose:** Override the built-in importance scores for common field names
-- **Example:** `{"id": 1.0, "name": 0.8, "description": 0.5}`
-- **Values:** Use FieldImportance enum values: `1.0` (CRITICAL), `0.8` (HIGH), `0.5` (MEDIUM), `0.2` (LOW), `0.0` (NEVER)
-- **Use case:** Customize which fields are prioritized during auto-detection
 
 ---
 
@@ -461,7 +454,6 @@ config = CLMConfig(
         auto_detect=True,
         required_fields=["product_id", "name", "price"],
         excluded_fields=["warehouse_location", "created_date"],
-        default_fields_importance={"id": 1.0, "name": 0.8}
     )
 )
 

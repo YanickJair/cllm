@@ -1,6 +1,8 @@
 import re
 import spacy
+from typing import Annotated
 from spacy.tokens import Doc
+from annotated_doc import Doc as ParamDoc
 
 
 class EntityExtractor:
@@ -14,11 +16,25 @@ class EntityExtractor:
 
     def __init__(
         self,
-        nlp: spacy.Language = None,
-        model: str = "en_core_web_sm",
-        ner_domain_patterns: dict[str, list] | None = None,
+        nlp: Annotated[
+            spacy.Language,
+            ParamDoc(
+                "An existing spaCy Language instance to reuse. If None, a new model is loaded using the model argument."
+            ),
+        ] = None,
+        model: Annotated[
+            str,
+            ParamDoc(
+                "Name of the spaCy model to load when nlp is not provided, e.g. 'en_core_web_sm'."
+            ),
+        ] = "en_core_web_sm",
+        ner_domain_patterns: Annotated[
+            dict[str, list] | None,
+            ParamDoc(
+                "Optional mapping of entity label to list of regex patterns for the entity ruler. If None, no custom patterns are added."
+            ),
+        ] = None,
     ):
-        # Reuse provided nlp instance or load a new one
         if nlp is not None:
             self._nlp = nlp
         else:
@@ -63,13 +79,19 @@ class EntityExtractor:
             ],
         }
 
-    def extract(self, text: str, doc: Doc = None) -> dict:
-        """
-        Extract named entities from the given text.
-
-        Args:
-            text (str): The text to extract entities from.
-            doc (spacy.tokens.Doc): Optional pre-processed spaCy doc to reuse.
+    def extract(
+        self,
+        text: Annotated[
+            str, ParamDoc("The raw text from which to extract named entities.")
+        ],
+        doc: Annotated[
+            Doc,
+            ParamDoc(
+                "Optional pre-processed spaCy Doc to reuse, avoiding redundant NLP processing."
+            ),
+        ] = None,
+    ) -> dict:
+        """Extract named entities from the given text.
 
         Returns:
             dict: A dictionary containing extracted entities.
@@ -149,13 +171,18 @@ class EntityExtractor:
         return entities
 
     def _map_regex_fallback(
-        self, entities: dict[str, list], text: str
+        self,
+        entities: Annotated[
+            dict[str, list],
+            ParamDoc(
+                "The partially populated entities dict to augment with regex matches."
+            ),
+        ],
+        text: Annotated[
+            str, ParamDoc("The original text to search with regex fallback patterns.")
+        ],
     ) -> dict[str, list]:
         """Map regex patterns to entities.
-
-        Args:
-            entities: Dictionary of entities.
-            text: Text to map regex patterns to.
 
         Returns:
             Dictionary of entities with regex patterns mapped.
@@ -185,14 +212,15 @@ class EntityExtractor:
         return entities
 
     @staticmethod
-    def _normalize(values: list[str]) -> list[str]:
+    def _normalize(
+        values: Annotated[
+            list[str], ParamDoc("List of raw entity strings to standardize.")
+        ],
+    ) -> list[str]:
         """Standardize spacing and casing.
 
-        Args:
-            values: List of strings to normalize.
-
         Returns:
-            List of normalized strings.
+            List of normalized strings. URLs are kept as-is; all other values are uppercased.
 
         Examples:
             >>> NamedEntity._normalize(["  hello ", "world"])
@@ -208,6 +236,12 @@ class EntityExtractor:
                     clean.append(v.upper())
         return clean
 
-    def extract_batch(self, texts: list[str]) -> list[dict]:
-        """Fast batch extraction"""
+    def extract_batch(
+        self,
+        texts: Annotated[
+            list[str],
+            ParamDoc("List of raw text strings to extract entities from in bulk."),
+        ],
+    ) -> list[dict]:
+        """Fast batch extraction."""
         return [self.extract(doc.text) for doc in self._nlp.pipe(texts, batch_size=10)]

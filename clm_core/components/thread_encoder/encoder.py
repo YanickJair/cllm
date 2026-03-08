@@ -1,8 +1,13 @@
 import re
-from typing import Optional
+from typing import Annotated, Literal, Optional
+from annotated_doc import Doc
 
 from spacy import Language
 from clm_core.components.thread_encoder.analyzer import TranscriptAnalyzer
+from clm_core.components.thread_encoder.free_form.splitter import (
+    detect_format,
+    split_free_form,
+)
 from clm_core.components.thread_encoder.patterns import TranscriptPatterns
 
 from . import (
@@ -14,6 +19,7 @@ from . import (
     TranscriptAnalysis,
     ResolutionState,
     PromiseCommitment,
+    Turn,
 )
 from clm_core.utils.singleton import SingletonMeta
 from ...utils.parser_rules import BaseRules
@@ -67,7 +73,46 @@ class ThreadEncoder(metaclass=SingletonMeta):
         self.analysis: TranscriptAnalysis | None = None
 
     def encode(
-        self, *, transcript: str, metadata: dict, verbose: bool = False
+        self,
+        *,
+        thread: Annotated[
+            str,
+            Doc("""
+            Original Thread input to compress. It can be a Transcript or a Free-Form text like
+            Email, Slack Threads, etc.
+            """),
+        ],
+        metadata: Annotated[
+            dict,
+            Doc("""
+            Thread's metadata. It can include channel, Id, etc.
+            """),
+        ],
+        verbose: Annotated[
+            bool,
+            Doc("""
+            A flag that enables verbose output.
+            
+            Defaults to False.
+            """),
+        ] = False,
+        transcript_format: Annotated[
+            Literal["auto", "turns", "free_form"],
+            Doc("""
+            Controls how the transcript is parsed before analysis.
+
+            - `"auto"` — heuristic detection: if ≥50% of non-empty lines carry a
+              recognized speaker prefix the input is treated as `"turns"`, otherwise
+              as `"free_form"`.
+            - `"turns"` — expects the canonical `"Speaker: text"` line format.
+            - `"free_form"` — unstructured text (emails, SMS, raw notes). The encoder
+              splits on blank lines (paragraph mode) or falls back to line-by-line,
+              then runs the full analysis pipeline with all turns attributed to the
+              customer role.
+
+            The resolved value is stored in `result.metadata["transcript_format"]`.
+            """),
+        ] = "auto",
     ) -> ThreadOutput:
         """
         Encode thread_encoder analysis to CLM Transcript Schema v2 format.
@@ -78,7 +123,15 @@ class ThreadEncoder(metaclass=SingletonMeta):
         - Tries to estimate the duration of the thread interaction
         - The encode_lang function tries to predict the language of the thread interaction
         """
-        self.analysis = self._analyzer.analyze(transcript, metadata)
+        resolved_format = transcript_format
+        if transcript_format == "auto":
+            resolved_format = self._detect_format(thread)
+
+        pre_built_turns = None
+        if resolved_format == "free_form":
+            pre_built_turns = self._split_free_form(thread)
+
+        self.analysis = self._analyzer.analyze(thread, metadata, turns=pre_built_turns)
 
         tokens = []
 
@@ -201,21 +254,30 @@ class ThreadEncoder(metaclass=SingletonMeta):
 
         return ThreadOutput(
             compressed=compressed,
-            original=transcript,
+            original=thread,
             component=COMPONENT,
             metadata={
                 **metadata,
                 "analysis": self.analysis.to_dict(),
-                "original_length": len(transcript),
+                "original_length": len(thread),
                 "compressed_length": len(compressed),
                 "verbs": verbs,
                 "noun_chunks": noun_chunks,
                 "language": self._lang,
                 "schema_version": CLM_SCHEMA_VERSION,
-                "has_numbers": bool(re.search(r"\d", transcript)),
-                "has_urls": bool(re.search(r"https?://", transcript)),
+                "has_numbers": bool(re.search(r"\d", thread)),
+                "has_urls": bool(re.search(r"https?://", thread)),
+                "transcript_format": resolved_format,
             },
         )
+
+    def _detect_format(self, transcript: str) -> str:
+        """Return 'turns' if >=50% of non-empty lines have a recognized speaker prefix."""
+        return detect_format(transcript, self._analyzer.patterns)
+
+    def _split_free_form(self, text: str) -> list[Turn]:
+        """Split unstructured text into turns with speaker='unknown'."""
+        return split_free_form(text)
 
     @classmethod
     def to_recoder(cls):

@@ -1,6 +1,7 @@
 import re
-from typing import Optional, Literal
+from typing import Optional, Literal, Annotated
 
+from annotated_doc import Doc
 from spacy import Language
 
 from clm_core import SysPromptConfig
@@ -15,7 +16,6 @@ class ConfigurationPromptMinimizer:
     Uses spaCy for linguistic analysis when available, falls back to regex.
     """
 
-    # Keywords that indicate a meta-instruction (about following rules)
     META_KEYWORDS = {
         "paramount",
         "custom instructions",
@@ -85,18 +85,31 @@ class ConfigurationPromptMinimizer:
     def __init__(
         self,
         *,
-        nlp: Language,
-        config: SysPromptConfig,
+        nlp: Annotated[
+            Language,
+            Doc(
+                "spaCy language model; a sentencizer pipe is added if not already present."
+            ),
+        ],
+        config: Annotated[SysPromptConfig, Doc("Configuration for the minimizer.")],
     ):
         self._nlp = nlp
         self._cfg = config
         if "sentencizer" not in self._nlp.pipe_names:
             self._nlp.add_pipe("sentencizer")
 
-    def suppress_with_cl(self, out: str, cl_metadata: dict) -> str:
+    def suppress_with_cl(
+        self,
+        out: Annotated[str, Doc("The prompt text to suppress redundant content from.")],
+        cl_metadata: Annotated[
+            dict,
+            Doc(
+                "CL metadata dict containing detected role, priority, rules, and output_format keys."
+            ),
+        ],
+    ) -> str:
         if cl_metadata.get("role"):
             out = self.suppress_role(text=out, patterns=self.ROLE_BLOCK_PATTERN)
-            # Also remove "You are a..." sentences for non-XML prompts
             out = self.ROLE_SENTENCE_PATTERN.sub("", out)
 
         if cl_metadata.get("priority"):
@@ -112,13 +125,33 @@ class ConfigurationPromptMinimizer:
         return out.strip()
 
     @staticmethod
-    def suppress_role(text: str, patterns: list[str]) -> str:
+    def suppress_role(
+        text: Annotated[
+            str, Doc("Prompt text from which role blocks should be removed.")
+        ],
+        patterns: Annotated[
+            list[str],
+            Doc(
+                "List of regex patterns that match role-defining blocks (e.g. <role>...</role>)."
+            ),
+        ],
+    ) -> str:
         for pattern in patterns:
             text = re.sub(pattern, "", text, flags=re.IGNORECASE | re.DOTALL)
         return text
 
     @staticmethod
-    def suppress_sentences(text: str, patterns: list[str]) -> str:
+    def suppress_sentences(
+        text: Annotated[
+            str, Doc("Prompt text whose matching sentences will be dropped.")
+        ],
+        patterns: Annotated[
+            list[str],
+            Doc(
+                "List of regex patterns; any sentence matching at least one pattern is removed. Lists, XML blocks, and template placeholders are never dropped."
+            ),
+        ],
+    ) -> str:
         """
         Remove sentences matching any of the given regex patterns.
         Operates ONLY on free text, never on blocks, lists, or schemas.
@@ -198,17 +231,19 @@ class ConfigurationPromptMinimizer:
 
         return "\n".join(output_lines).strip()
 
-    def minimize(self, nl_prompt: str, cl_metadata: Optional[dict] = None) -> str:
-        """
-        Minimize the natural language prompt by removing redundant content.
-
-        Args:
-            nl_prompt: The original natural language prompt
-            cl_metadata: CL metadata for Prompt compression
-
-        Returns:
-            Minimized prompt with redundant content removed
-        """
+    def minimize(
+        self,
+        nl_prompt: Annotated[
+            str, Doc("The original natural language prompt to minimize.")
+        ],
+        cl_metadata: Annotated[
+            Optional[dict],
+            Doc(
+                "CL metadata dict; when provided, suppresses sections already captured by CL tokens (role, priority, rules, output_format)."
+            ),
+        ] = None,
+    ) -> str:
+        """Minimize the natural language prompt by removing redundant content."""
         out = self._minimize_with_spacy(nl_prompt)
 
         if "<basic_rules>" in out.lower():
@@ -230,7 +265,6 @@ class ConfigurationPromptMinimizer:
         Returns:
             Filtered text with droppable sentences removed
         """
-        # Parse the text, but skip XML-like blocks for sentence analysis
         blocks = self._extract_blocks(text)
 
         result_parts = []
@@ -355,15 +389,12 @@ class ConfigurationPromptMinimizer:
         Returns:
             True if this is a standalone meta-fragment
         """
-        # Strip sentence and check length (fragments are typically very short)
         text = text.strip().rstrip(".")
 
-        # If it contains connecting words, it's likely a full sentence, not a fragment
         connecting_words = ["when", "if", "while", "to", "for", "with", "by", "the"]
         if any(word in text.split() for word in connecting_words):
             return False
 
-        # Check for meta-instruction patterns (simple imperative forms)
         fragment_patterns = [
             r"^adapt culturally$",
             r"^preserve language$",

@@ -1,3 +1,6 @@
+from typing import Annotated
+
+from annotated_doc import Doc as _Doc
 from spacy.tokens import Doc
 from clm_core.components.sys_prompt import Target
 
@@ -22,7 +25,19 @@ class TargetExtractor:
     Coordinates multiple extraction strategies in priority order
     """
 
-    def __init__(self, nlp, vocab: BaseVocabulary, rules: BaseRules):
+    def __init__(
+        self,
+        nlp: Annotated[
+            object,
+            _Doc(
+                "spaCy language model used for NLP processing across all sub-extractors."
+            ),
+        ],
+        vocab: Annotated[
+            BaseVocabulary, _Doc("Vocabulary instance for the target language.")
+        ],
+        rules: Annotated[BaseRules, _Doc("Language-specific parsing rules.")],
+    ):
         self.nlp = nlp
         self.vocab = vocab
         self.rules = rules
@@ -55,7 +70,20 @@ class TargetExtractor:
         self.normalizer = TargetNormalizer()
 
     def extract(
-        self, text: str, detected_req_tokens: list[str] | None = None, doc: Doc = None
+        self,
+        text: Annotated[str, _Doc("Input text to extract the primary target from.")],
+        detected_req_tokens: Annotated[
+            list[str] | None,
+            _Doc(
+                "Optional list of already-detected REQ token strings used by the fallback extractor."
+            ),
+        ] = None,
+        doc: Annotated[
+            Doc,
+            _Doc(
+                "Optional pre-computed spaCy Doc to reuse, avoiding redundant NLP processing."
+            ),
+        ] = None,
     ) -> Target:
         """Main extraction pipeline
 

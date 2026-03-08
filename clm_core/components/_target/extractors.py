@@ -1,5 +1,7 @@
 import re
-from typing import Optional, List
+from typing import Optional, List, Annotated
+
+from annotated_doc import Doc as _Doc
 from spacy.tokens import Doc
 from spacy.language import Language
 
@@ -17,7 +19,15 @@ from clm_core.components.sys_prompt import Target
 class BaseExtractor:
     """Base class for all extractors"""
 
-    def __init__(self, *, nlp: Language, vocab: BaseVocabulary, rules: BaseRules):
+    def __init__(
+        self,
+        *,
+        nlp: Annotated[Language, _Doc("spaCy language model for NLP processing.")],
+        vocab: Annotated[
+            BaseVocabulary, _Doc("Vocabulary instance for the target language.")
+        ],
+        rules: Annotated[BaseRules, _Doc("Language-specific parsing rules.")],
+    ):
         self.nlp = nlp
         self.vocab = vocab
         self.attribute_enhancer = AttributeEnhancer(nlp=nlp, vocab=vocab, rules=rules)
@@ -26,7 +36,7 @@ class BaseExtractor:
         self._build_pattern_helpers()
 
     def _build_pattern_helpers(self):
-        """Build regex patterns from vocabulary"""
+        """Build regex patterns from vocabulary."""
 
         def make_pattern(synonyms):
             escaped = [re.escape(s) for s in synonyms]
@@ -50,7 +60,6 @@ class BaseExtractor:
         )
         self.explain_pattern = make_pattern(self.vocab.REQ_TOKENS.get("EXPLAIN", []))
 
-        # Build target detection helpers
         self.code_synonyms = set(
             s.lower() for s in self.vocab.TARGET_TOKENS.get("CODE", [])
         )
@@ -78,7 +87,6 @@ class BaseExtractor:
         self.meeting_synonyms = set(s.lower() for s in self.vocab.MEETING_WORDS)
         self.proposal_synonyms = set(s.lower() for s in self.vocab.PROPOSAL_WORDS)
 
-        # Build quantifier/list indicators
         self.list_indicators = set(
             s.lower() for s in self.vocab.REQ_TOKENS.get("LIST", [])
         )
@@ -86,14 +94,21 @@ class BaseExtractor:
             self.list_indicators.update(
                 s.lower() for s in self.vocab.TARGET_TOKENS["ITEMS"]
             )
-        # Add quantifiers if vocabulary has them
         if hasattr(self.vocab, "QUANTIFIER_WORDS"):
             self.list_indicators.update(s.lower() for s in self.vocab.QUANTIFIER_WORDS)
 
     def _contains_any(
-        self, text_lower: str, word_set: set[str], window: Optional[int] = None
+        self,
+        text_lower: Annotated[str, _Doc("Lowercased input text to search.")],
+        word_set: Annotated[
+            set[str], _Doc("Set of lowercase words to look for in the text.")
+        ],
+        window: Annotated[
+            Optional[int],
+            _Doc("If provided, only the first N characters of text are searched."),
+        ] = None,
     ) -> bool:
-        """Check if text contains any word from set, optionally within first N chars"""
+        """Check if text contains any word from set, optionally within first N chars."""
         check_text = text_lower[:window] if window else text_lower
         return any(word in check_text for word in word_set)
 
@@ -104,11 +119,26 @@ class ImperativeExtractor(BaseExtractor):
     Language-agnostic using vocabulary
     """
 
-    def __init__(self, nlp: Language, vocab: BaseVocabulary, rules: BaseRules):
+    def __init__(
+        self,
+        nlp: Annotated[Language, _Doc("spaCy language model.")],
+        vocab: Annotated[
+            BaseVocabulary, _Doc("Vocabulary instance for the target language.")
+        ],
+        rules: Annotated[BaseRules, _Doc("Language-specific parsing rules.")],
+    ):
         super().__init__(nlp=nlp, vocab=vocab, rules=rules)
 
     def extract(
-        self, text: str, req_tokens: Optional[List[str]], doc: Doc
+        self,
+        text: Annotated[str, _Doc("Input text to extract an imperative target from.")],
+        req_tokens: Annotated[
+            Optional[List[str]],
+            _Doc(
+                "Optional list of detected REQ tokens used to refine target selection."
+            ),
+        ],
+        doc: Annotated[Doc, _Doc("Pre-computed spaCy Doc for the input text.")],
     ) -> Optional[Target]:
         """
         Extracts targets from imperative commands
@@ -170,8 +200,15 @@ class ImperativeExtractor(BaseExtractor):
 
         return None
 
-    def _create_target(self, token: str, text: str, doc: Doc) -> Target:
-        """Create target with full attributes"""
+    def _create_target(
+        self,
+        token: Annotated[
+            str, _Doc("Canonical target token string (e.g. 'CODE', 'DATA', 'CONTENT').")
+        ],
+        text: Annotated[str, _Doc("Original input text for attribute enhancement.")],
+        doc: Annotated[Doc, _Doc("Pre-computed spaCy Doc for attribute extraction.")],
+    ) -> Target:
+        """Create target with full attributes."""
         attributes = self.attribute_enhancer.enhance(token, text, doc)
         return Target(token=token, attributes=attributes)
 
@@ -209,13 +246,29 @@ class ImperativeExtractor(BaseExtractor):
 class QuestionExtractor(BaseExtractor):
     """Extracts targets from questions (language-agnostic)"""
 
-    def __init__(self, nlp: Language, vocab: BaseVocabulary, rules: BaseRules):
+    def __init__(
+        self,
+        nlp: Annotated[Language, _Doc("spaCy language model.")],
+        vocab: Annotated[
+            BaseVocabulary, _Doc("Vocabulary instance for the target language.")
+        ],
+        rules: Annotated[BaseRules, _Doc("Language-specific parsing rules.")],
+    ):
         super().__init__(nlp=nlp, vocab=vocab, rules=rules)
 
         self.question_words = [q.lower() for q in self.vocab.QUESTION_WORDS]
 
-    def extract(self, text: str, doc: Doc) -> Optional[Target]:
-        """Extract target from question pattern"""
+    def extract(
+        self,
+        text: Annotated[
+            str,
+            _Doc(
+                "Input text to extract a question-pattern target from; must end with '?'."
+            ),
+        ],
+        doc: Annotated[Doc, _Doc("Pre-computed spaCy Doc for domain detection.")],
+    ) -> Optional[Target]:
+        """Extract target from question pattern."""
         if not text.strip().endswith("?"):
             return None
 
@@ -232,11 +285,29 @@ class QuestionExtractor(BaseExtractor):
 class NounExtractor(BaseExtractor):
     """Extracts targets from direct noun matches (language-agnostic)"""
 
-    def __init__(self, nlp: Language, vocab: BaseVocabulary, rules: BaseRules):
+    def __init__(
+        self,
+        nlp: Annotated[Language, _Doc("spaCy language model.")],
+        vocab: Annotated[
+            BaseVocabulary, _Doc("Vocabulary instance for the target language.")
+        ],
+        rules: Annotated[BaseRules, _Doc("Language-specific parsing rules.")],
+    ):
         super().__init__(nlp=nlp, vocab=vocab, rules=rules)
 
-    def extract(self, text: str, doc: Doc) -> List[Target]:
-        """Extract targets from nouns"""
+    def extract(
+        self,
+        text: Annotated[
+            str,
+            _Doc(
+                "Input text from which nouns and noun chunks are matched against the vocabulary's TARGET_TOKENS."
+            ),
+        ],
+        doc: Annotated[
+            Doc, _Doc("Pre-computed spaCy Doc providing POS tags and noun chunks.")
+        ],
+    ) -> List[Target]:
+        """Extract targets from nouns."""
         targets = []
         domain, _ = self.domain_parser.detect(text, doc=doc)
 
@@ -269,13 +340,20 @@ class NounExtractor(BaseExtractor):
 class CompoundExtractor(BaseExtractor):
     """Extracts compound phrase targets (language-agnostic)"""
 
-    def __init__(self, nlp: Language, vocab: BaseVocabulary, rules: BaseRules):
+    def __init__(
+        self,
+        nlp: Annotated[Language, _Doc("spaCy language model.")],
+        vocab: Annotated[
+            BaseVocabulary, _Doc("Vocabulary instance for the target language.")
+        ],
+        rules: Annotated[BaseRules, _Doc("Language-specific parsing rules.")],
+    ):
         super().__init__(nlp=nlp, vocab=vocab, rules=rules)
 
         self._build_compound_phrases()
 
     def _build_compound_phrases(self):
-        """Build language-specific compound phrases"""
+        """Build language-specific compound phrases."""
         self.compound_phrases = {}
 
         for target_token, synonyms in self.vocab.TARGET_TOKENS.items():
@@ -288,8 +366,12 @@ class CompoundExtractor(BaseExtractor):
                 {k.lower(): v for k, v in self.vocab.COMPOUND_PHRASES.items()}
             )
 
-    def extract(self, text: str, doc: Doc) -> List[Target]:
-        """Extract compound phrase targets"""
+    def extract(
+        self,
+        text: Annotated[str, _Doc("Input text to search for compound phrase matches.")],
+        doc: Annotated[Doc, _Doc("Pre-computed spaCy Doc for domain detection.")],
+    ) -> List[Target]:
+        """Extract compound phrase targets."""
         targets = []
         text_lower = text.lower()
         domain, _ = self.domain_parser.detect(text, doc=doc)
@@ -307,13 +389,19 @@ class CompoundExtractor(BaseExtractor):
 class PatternExtractor(BaseExtractor):
     """Extracts targets from specific patterns (language-agnostic)"""
 
-    def __init__(self, nlp: Language, vocab: BaseVocabulary, rules: BaseRules):
+    def __init__(
+        self,
+        nlp: Annotated[Language, _Doc("spaCy language model.")],
+        vocab: Annotated[
+            BaseVocabulary, _Doc("Vocabulary instance for the target language.")
+        ],
+        rules: Annotated[BaseRules, _Doc("Language-specific parsing rules.")],
+    ):
         super().__init__(nlp=nlp, vocab=vocab, rules=rules)
 
         self.demonstratives = self.vocab.DEMONSTRATIVES
         self.demonstratives_lower = [d.lower() for d in self.demonstratives]
 
-        # Precompile "for X" patterns to avoid regex compilation in loops
         self._for_patterns: dict[str, re.Pattern] = {}
         for target_token, synonyms in self.vocab.TARGET_TOKENS.items():
             for syn in synonyms:
@@ -359,8 +447,17 @@ class PatternExtractor(BaseExtractor):
 
         return targets
 
-    def _detect_this_pattern(self, doc: Doc, text: str) -> Optional[Target]:
-        """Detect 'this X' patterns (language-agnostic)"""
+    def _detect_this_pattern(
+        self,
+        doc: Annotated[
+            Doc,
+            _Doc(
+                "spaCy Doc for the input text, used to iterate over tokens and their POS tags."
+            ),
+        ],
+        text: Annotated[str, _Doc("Original input text for attribute enhancement.")],
+    ) -> Optional[Target]:
+        """Detect 'this X' patterns (language-agnostic)."""
         for i, token in enumerate(doc):
             if token.text.lower() in self.demonstratives_lower and i + 1 < len(doc):
                 next_token = doc[i + 1]
@@ -393,7 +490,6 @@ class PatternExtractor(BaseExtractor):
         """
         text_lower = text.lower()
 
-        # Use precompiled patterns for O(1) regex matching
         for (target_token, syn), compiled_pattern in self._for_patterns.items():
             if compiled_pattern.search(text_lower):
                 attributes = self.attribute_enhancer.enhance(target_token, text, doc)
@@ -447,11 +543,31 @@ class PatternExtractor(BaseExtractor):
 
 
 class FallbackExtractor(BaseExtractor):
-    def __init__(self, nlp: Language, vocab: BaseVocabulary, rules: BaseRules):
+    def __init__(
+        self,
+        nlp: Annotated[Language, _Doc("spaCy language model.")],
+        vocab: Annotated[
+            BaseVocabulary, _Doc("Vocabulary instance for the target language.")
+        ],
+        rules: Annotated[BaseRules, _Doc("Language-specific parsing rules.")],
+    ):
         super().__init__(nlp=nlp, vocab=vocab, rules=rules)
 
     def extract(
-        self, text: str, req_tokens: Optional[List[str]], doc: Doc
+        self,
+        text: Annotated[str, _Doc("Input text to extract a fallback target from.")],
+        req_tokens: Annotated[
+            Optional[List[str]],
+            _Doc(
+                "Optional list of detected REQ tokens used to choose the most appropriate fallback target."
+            ),
+        ],
+        doc: Annotated[
+            Doc,
+            _Doc(
+                "Pre-computed spaCy Doc for attribute enhancement and domain detection."
+            ),
+        ],
     ) -> Optional[Target]:
         """
         Extract target from text
@@ -485,29 +601,18 @@ class FallbackExtractor(BaseExtractor):
 
         return self._create_target("ANSWER", text, doc)
 
-    def _create_target(self, token: str, text: str, doc: Doc) -> Target:
-        """
-        Create target with attributes
-
-        Args:
-            token (str): The token to create the target for.
-            text (str): The text to create the target from.
-            doc (Doc): The document to create the target from.
-
-        Returns:
-            Target: The created target.
-
-        Examples:
-            >>> extractor = FallbackExtractor(nlp, vocab)
-            >>> doc = nlp("What is the capital of France?")
-            >>> target = extractor._create_target("ANSWER", "Paris", doc)
-            >>> target.token
-            'ANSWER'
-            >>> target.attributes
-            {'type': 'ANSWER'}
-            >>> target.domain
-            'GEOGRAPHY'
-        """
+    def _create_target(
+        self,
+        token: Annotated[
+            str,
+            _Doc("Canonical target token string (e.g. 'ANSWER', 'CONTENT', 'ITEMS')."),
+        ],
+        text: Annotated[
+            str, _Doc("Original input text for attribute and domain detection.")
+        ],
+        doc: Annotated[Doc, _Doc("Pre-computed spaCy Doc for attribute extraction.")],
+    ) -> Target:
+        """Create target with attributes."""
         attributes = self.attribute_enhancer.enhance(token, text, doc)
         domain, _ = self.domain_parser.detect(text, doc=doc)
         return Target(token=token, attributes=attributes, domain=domain)

@@ -1,5 +1,8 @@
 import re
 from abc import ABC, abstractmethod
+from typing import Annotated
+
+from annotated_doc import Doc
 
 
 class BaseRules(ABC):
@@ -236,49 +239,79 @@ class BaseRules(ABC):
             ],
         }
 
-    def match_comparison(self, text: str) -> str | None:
+    def match_comparison(
+        self,
+        text: Annotated[str, Doc("Input text to search for a comparison-type match.")],
+    ) -> str | None:
         """Match comparison type in text"""
         for pattern, value in self.COMPILED["comparison"]:
             if pattern.search(text):
                 return value
         return None
 
-    def match_standard_field(self, text: str) -> str | None:
+    def match_standard_field(
+        self,
+        text: Annotated[
+            str, Doc("Input text to search for a standard extraction field match.")
+        ],
+    ) -> str | None:
         """Match standard extraction field in text"""
         for pattern, value in self.COMPILED["standard"]:
             if pattern.search(text):
                 return value
         return None
 
-    def match_audience(self, text: str) -> str | None:
+    def match_audience(
+        self,
+        text: Annotated[str, Doc("Input text to search for a target audience match.")],
+    ) -> str | None:
         """Match target audience in text"""
         for pattern, value in self.COMPILED["audience"]:
             if pattern.search(text):
                 return value
         return None
 
-    def match_length(self, text: str) -> str | None:
+    def match_length(
+        self,
+        text: Annotated[
+            str, Doc("Input text to search for a length preference match.")
+        ],
+    ) -> str | None:
         """Match length preference in text"""
         for pattern, value in self.COMPILED["length"]:
             if pattern.search(text):
                 return value
         return None
 
-    def match_style(self, text: str) -> str | None:
+    def match_style(
+        self,
+        text: Annotated[str, Doc("Input text to search for a style preference match.")],
+    ) -> str | None:
         """Match style preference in text"""
         for pattern, value in self.COMPILED["style"]:
             if pattern.search(text):
                 return value
         return None
 
-    def match_tone(self, text: str) -> str | None:
+    def match_tone(
+        self,
+        text: Annotated[str, Doc("Input text to search for a tone preference match.")],
+    ) -> str | None:
         """Match tone preference in text"""
         for pattern, value in self.COMPILED["tone"]:
             if pattern.search(text):
                 return value
         return None
 
-    def match_specs(self, text: str) -> list[tuple[str, int]]:
+    def match_specs(
+        self,
+        text: Annotated[
+            str,
+            Doc(
+                "Input text to search for specification patterns such as line or word counts."
+            ),
+        ],
+    ) -> list[tuple[str, int]]:
         """Match specification patterns (lines, words, items, etc.)"""
         results = []
         for pattern, name in self.COMPILED["specs"]:
@@ -287,20 +320,35 @@ class BaseRules(ABC):
                 results.append((name, int(match.group(1))))
         return results
 
-    def match_programming_language(self, text: str) -> str | None:
+    def match_programming_language(
+        self,
+        text: Annotated[
+            str, Doc("Input text to search for a programming language mention.")
+        ],
+    ) -> str | None:
         """Match programming language in text"""
         for pattern, lang in self.COMPILED["language_patterns"]:
             if pattern.search(text):
                 return lang
         return None
 
-    def has_extraction_indicator(self, text: str) -> bool:
+    def has_extraction_indicator(
+        self,
+        text: Annotated[
+            str, Doc("Input text to check for extraction indicator verbs.")
+        ],
+    ) -> bool:
         """Check if text has extraction indicators"""
         return any(
             pattern.search(text) for pattern in self.COMPILED["extraction_indicators"]
         )
 
-    def match_qa_criteria(self, text: str) -> list[str]:
+    def match_qa_criteria(
+        self,
+        text: Annotated[
+            str, Doc("Input text to search for QA/compliance criteria matches.")
+        ],
+    ) -> list[str]:
         """Match QA criteria in text"""
         results = []
         for pattern, value in self.COMPILED["qa_criteria"]:
@@ -308,11 +356,19 @@ class BaseRules(ABC):
                 results.append(value)
         return results
 
-    def has_qa_indicator(self, text: str) -> bool:
+    def has_qa_indicator(
+        self,
+        text: Annotated[str, Doc("Input text to check for QA indicator keywords.")],
+    ) -> bool:
         """Check if text has QA indicators"""
         return any(pattern.search(text) for pattern in self.COMPILED["qa_indicators"])
 
-    def extract_question_subject(self, text: str) -> str | None:
+    def extract_question_subject(
+        self,
+        text: Annotated[
+            str, Doc("Input text from which to extract the question subject.")
+        ],
+    ) -> str | None:
         """Extract subject from question patterns"""
         for pattern, group in self.COMPILED["questions"]:
             match = pattern.search(text)
@@ -320,7 +376,12 @@ class BaseRules(ABC):
                 return match.group(group).strip()
         return None
 
-    def extract_explain_subject(self, text: str) -> str | None:
+    def extract_explain_subject(
+        self,
+        text: Annotated[
+            str, Doc("Input text from which to extract the explanation subject.")
+        ],
+    ) -> str | None:
         """Extract subject from explain patterns"""
         for pattern, group in self.COMPILED["explain"]:
             match = pattern.search(text)
@@ -328,32 +389,54 @@ class BaseRules(ABC):
                 return match.group(group).strip()
         return None
 
-    def extract_concept(self, text: str) -> str | None:
+    def extract_concept(
+        self,
+        text: Annotated[str, Doc("Input text from which to extract a concept name.")],
+    ) -> str | None:
         """Extract concept from text"""
         match = self.COMPILED["concept"].search(text)
         if match:
             return match.group(self.CONCEPT_PATTERN[1]).strip()
         return None
 
-    def extract_procedure(self, text: str) -> str | None:
+    def extract_procedure(
+        self,
+        text: Annotated[str, Doc("Input text from which to extract a procedure name.")],
+    ) -> str | None:
         """Extract procedure from text"""
         match = self.COMPILED["procedure"].search(text)
         if match:
             return match.group(self.PROCEDURE_PATTERN[1]).strip()
         return None
 
-    def match_subject_pattern(self, text: str) -> str | None:
+    def match_subject_pattern(
+        self,
+        text: Annotated[str, Doc("Input text to match against subject type patterns.")],
+    ) -> str | None:
         """Match subject pattern label"""
         for pattern, label in self.COMPILED["subject_patterns"]:
             if pattern.search(text):
                 return label
         return None
 
-    def cleanup_tail(self, text: str) -> str:
+    def cleanup_tail(
+        self,
+        text: Annotated[
+            str,
+            Doc(
+                "Text from which to strip trailing prepositions and common filler words."
+            ),
+        ],
+    ) -> str:
         """Remove trailing prepositions and common words"""
         return re.sub(self.CLEANUP_TAIL, "", text, flags=re.I).strip()
 
-    def extract_issue_context(self, text: str) -> str | None:
+    def extract_issue_context(
+        self,
+        text: Annotated[
+            str, Doc("Input text from which to extract an issue context phrase.")
+        ],
+    ) -> str | None:
         """Extract issue context from patterns"""
         for pattern in self.COMPILED["issue_patterns"]:
             match = pattern.search(text)
@@ -361,6 +444,11 @@ class BaseRules(ABC):
                 return match.group(1).strip()
         return None
 
-    def parse_number_word(self, word: str) -> int | None:
+    def parse_number_word(
+        self,
+        word: Annotated[
+            str, Doc("A word (e.g. 'two', 'few') to convert to its integer equivalent.")
+        ],
+    ) -> int | None:
         """Parse number word to integer"""
         return self.NUMBER_WORDS.get(word.lower())

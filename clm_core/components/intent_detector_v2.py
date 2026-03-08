@@ -1,4 +1,7 @@
 import re
+from typing import Annotated
+
+from annotated_doc import Doc
 from spacy import Language
 from clm_core.utils.vocabulary import BaseVocabulary
 from clm_core.components.sys_prompt import (
@@ -86,9 +89,22 @@ class _SPECDetector:
 
     def extract_specs(
         self,
-        text: str,
-        artifacts: set[Artifact],
-        req: REQ,
+        text: Annotated[
+            str,
+            Doc(
+                "Input text to scan for domain artifact keywords and explicit output patterns."
+            ),
+        ],
+        artifacts: Annotated[
+            set[Artifact],
+            Doc("Set of detected Artifact types influencing spec selection."),
+        ],
+        req: Annotated[
+            REQ,
+            Doc(
+                "The resolved REQ token; used to exclude inappropriate specs (e.g. VALIDATION_RESULT for non-VALIDATE requests)."
+            ),
+        ],
     ) -> list[str]:
         scored: dict[str, int] = {}
 
@@ -101,7 +117,6 @@ class _SPECDetector:
         for s in self._extract_spec_from_keywords(text):
             scored[s] = scored.get(s, 0) + 1
 
-        # SPEC names the domain artifact, not its format or mathematical shape
         final = [
             s
             for s, _ in sorted(scored.items(), key=lambda x: -x[1])
@@ -114,13 +129,32 @@ class _SPECDetector:
 
 
 class IntentDetectorV2:
-    def __init__(self, nlp: Language, vocab: BaseVocabulary):
+    def __init__(
+        self,
+        nlp: Annotated[Language, Doc("spaCy language model used for NLP processing.")],
+        vocab: Annotated[
+            BaseVocabulary,
+            Doc(
+                "Vocabulary instance providing REQ_TOKENS and EPISTEMIC_KEYWORDS for signal detection."
+            ),
+        ],
+    ):
         self.nlp = nlp
         self.vocab = vocab
         self._specs_detector = _SPECDetector()
 
     @staticmethod
-    def _detect_signals(text: str, vocab: dict) -> set[Signal]:
+    def _detect_signals(
+        text: Annotated[
+            str,
+            Doc(
+                "Input text to scan for vocabulary phrase matches mapped to Signal values."
+            ),
+        ],
+        vocab: Annotated[
+            dict, Doc("REQ_TOKENS dict mapping REQ keys to lists of trigger phrases.")
+        ],
+    ) -> set[Signal]:
         text = text.lower()
         signals = set()
 
@@ -188,13 +222,24 @@ class IntentDetectorV2:
         return artifacts
 
     def _resolve_req(
-        self, text: str, signals: set[Signal], artifacts: set[Artifact]
+        self,
+        text: Annotated[
+            str,
+            Doc(
+                "Input text used for epistemic grounding checks when disambiguating PREDICT vs GENERATE."
+            ),
+        ],
+        signals: Annotated[
+            set[Signal], Doc("Detected signals from vocabulary phrase matching.")
+        ],
+        artifacts: Annotated[
+            set[Artifact], Doc("Detected artifact types from structural text analysis.")
+        ],
     ) -> REQ:
         if Artifact.VALIDATION in artifacts or Signal.VALIDATION in signals:
             return REQ.VALIDATE
 
         if Signal.EXTRACTION in signals and Artifact.PROBABILITY not in artifacts:
-            # Probability implies synthesis; never treat as EXTRACT
             return REQ.EXTRACT
 
         if Signal.PREDICTION in signals:
@@ -229,7 +274,9 @@ class IntentDetectorV2:
             return REQ.EXECUTE
         return REQ.ANALYZE
 
-    def detect(self, text: str) -> Intent:
+    def detect(
+        self, text: Annotated[str, Doc("Input text to detect intent from.")]
+    ) -> Intent:
         signals = self._detect_signals(text, self.vocab.REQ_TOKENS)
         artifacts = self._detect_artifacts(text)
         req = self._resolve_req(signals=signals, text=text, artifacts=artifacts)

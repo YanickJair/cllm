@@ -1,8 +1,9 @@
 import re
-from typing import Optional
+from typing import Optional, Annotated
 from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict
 from spacy.tokens import Doc
+from annotated_doc import Doc as ParamDoc
 
 from clm_core import CLMOutput
 from clm_core.components.sys_prompt import Intent, Target
@@ -346,7 +347,14 @@ class TemporalPattern(BaseModel):
 
 class ThreadOutput(CLMOutput):
     @staticmethod
-    def _parse_commitment(commitment_str: str) -> dict:
+    def _parse_commitment(
+        commitment_str: Annotated[
+            str,
+            ParamDoc(
+                "A compact commitment token value string, e.g. 'CALLBACK_WITHIN_24_HOURS' or 'REFUND_3-5_BUSINESS_DAYS'."
+            ),
+        ],
+    ) -> dict:
         _KNOWN_TYPES = [
             "CONFIRMATION_EMAIL",
             "TECHNICIAN_VISIT",

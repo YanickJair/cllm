@@ -1,4 +1,6 @@
-from typing import Optional
+from typing import Optional, Annotated
+
+from annotated_doc import Doc
 from spacy import Language
 from clm_core.utils.vocabulary import BaseVocabulary
 
@@ -14,11 +16,25 @@ class FieldExtractor:
     which are always allowed implicitly.
     """
 
-    def __init__(self, nlp: Language, rules: BaseRules):
+    def __init__(
+        self,
+        nlp: Annotated[
+            Language, Doc("spaCy language model for tokenization and lemma extraction.")
+        ],
+        rules: Annotated[
+            BaseRules,
+            Doc(
+                "Language-specific rules with compiled patterns for comparison, QA criteria, and extraction indicators."
+            ),
+        ],
+    ):
         self.nlp = nlp
         self.rules = rules
 
-    def extract(self, text: str) -> list[DetectedField]:
+    def extract(
+        self,
+        text: Annotated[str, Doc("The input text to detect extraction fields from.")],
+    ) -> list[DetectedField]:
         """
         Extracts fields from the given text.
 
@@ -126,7 +142,15 @@ class AttributeExtractor:
     Only returns attributes when they can be detected.
     """
 
-    def __init__(self, vocab: BaseVocabulary):
+    def __init__(
+        self,
+        vocab: Annotated[
+            BaseVocabulary,
+            Doc(
+                "Vocabulary instance used for list-indicator and domain-candidate lookups."
+            ),
+        ],
+    ):
         self._vocab = vocab
         self._list_indicators = set()
         if "LIST" in self._vocab.REQ_TOKENS:
@@ -139,7 +163,12 @@ class AttributeExtractor:
             )
 
     def extract(
-        self, text: str, detected_fields: list[DetectedField]
+        self,
+        text: Annotated[str, Doc("The input text to extract attributes from.")],
+        detected_fields: Annotated[
+            list[DetectedField],
+            Doc("Previously detected fields used to infer domain and type attributes."),
+        ],
     ) -> dict[str, str] | None:
         """
         Extract optional attributes (TYPE=list|single, DOMAIN=document|code|support, etc.)
@@ -173,12 +202,28 @@ class AttributeExtractor:
 
 
 class ExtractionFieldParser:
-    def __init__(self, nlp: Language, vocab: BaseVocabulary, rules: BaseRules):
+    def __init__(
+        self,
+        nlp: Annotated[
+            Language, Doc("spaCy language model for tokenization and lemma extraction.")
+        ],
+        vocab: Annotated[
+            BaseVocabulary,
+            Doc("Vocabulary instance for list-indicator and domain-candidate lookups."),
+        ],
+        rules: Annotated[
+            BaseRules,
+            Doc("Language-specific rules with compiled extraction and QA patterns."),
+        ],
+    ):
         self.field_extractor = FieldExtractor(nlp, rules)
         self.attr_extractor = AttributeExtractor(vocab=vocab)
         self._vocab = vocab
 
-    def parse_extraction_fields(self, text: str) -> Optional[ExtractionField]:
+    def parse_extraction_fields(
+        self,
+        text: Annotated[str, Doc("The input text to parse extraction fields from.")],
+    ) -> Optional[ExtractionField]:
         """Parse extraction fields from a given text.
 
         Args:

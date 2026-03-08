@@ -1,6 +1,7 @@
 import re
 
-from typing import Optional, Any
+from typing import Optional, Any, Annotated
+from annotated_doc import Doc as _Doc
 from spacy import Language
 from spacy.tokens import Doc
 
@@ -19,41 +20,74 @@ class AttributeParser:
     def __init__(
         self,
         *,
-        nlp: Language,
-        config: SysPromptConfig,
-        vocab: BaseVocabulary,
-        rules: BaseRules,
+        nlp: Annotated[Language, _Doc("spaCy language model used for NLP processing.")],
+        config: Annotated[
+            SysPromptConfig,
+            _Doc(
+                "Configuration controlling output format inference and attribute extraction."
+            ),
+        ],
+        vocab: Annotated[
+            BaseVocabulary, _Doc("Vocabulary instance for the target language.")
+        ],
+        rules: Annotated[BaseRules, _Doc("Language-specific parsing rules.")],
     ) -> None:
         self.nlp = nlp
         self.vocab = vocab
         self.rules = rules
         self._config = config
 
-    def _doc(self, text: str) -> Doc:
+    def _doc(
+        self,
+        text: Annotated[str, _Doc("Raw text to process through the spaCy pipeline.")],
+    ) -> Doc:
         return self.nlp(text)
 
     @staticmethod
-    def _normalize_whitespace(s: str) -> str:
+    def _normalize_whitespace(
+        s: Annotated[
+            str,
+            _Doc(
+                "Text whose consecutive whitespace runs should be collapsed to a single space."
+            ),
+        ],
+    ) -> str:
         return re.sub(r"\s+", " ", s).strip()
 
     @staticmethod
     def _matches_any(
-        text: str, compiled_list: list[tuple[re.Pattern, Any]]
+        text: Annotated[str, _Doc("Input text to search for pattern matches.")],
+        compiled_list: Annotated[
+            list[tuple[re.Pattern, Any]],
+            _Doc(
+                "List of (compiled_pattern, mapped_value) pairs to match against the text."
+            ),
+        ],
     ) -> list[tuple[str, tuple[int, int], Any]]:
-        """Return list of (matched_text, span, mapped_value)"""
+        """Return list of (matched_text, span, mapped_value)."""
         matches = []
         for pattern, mapped in compiled_list:
             for m in pattern.finditer(text):
                 matches.append((m.group(0), (m.start(), m.end()), mapped))
         return matches
 
-    def parse_extraction_fields(self, text: str) -> Optional[ExtractionField]:
+    def parse_extraction_fields(
+        self, text: Annotated[str, _Doc("Input text to parse extraction fields from.")]
+    ) -> Optional[ExtractionField]:
         extraction_field = ExtractionFieldParser(
             nlp=self.nlp, vocab=self.vocab, rules=self.rules
         )
         return extraction_field.parse_extraction_fields(text)
 
-    def parse_contexts(self, text: str) -> list[Context]:
+    def parse_contexts(
+        self,
+        text: Annotated[
+            str,
+            _Doc(
+                "Input text to parse context aspects (audience, length, style, tone) from."
+            ),
+        ],
+    ) -> list[Context]:
         """
         Independent pipelines for AUDIENCE, LENGTH, STYLE, TONE.
         Returns list[Context] (unchanged external schema).
@@ -61,7 +95,15 @@ class AttributeParser:
         parser = ContextParser(nlp=self.nlp, rules=self.rules)
         return parser.parse(text)
 
-    def extract_quantifier(self, text: str) -> Optional[tuple[str, int]]:
+    def extract_quantifier(
+        self,
+        text: Annotated[
+            str,
+            _Doc(
+                "Input text to detect a numeric or word-form quantity expression from (e.g. '5 tips', 'three items', 'few')."
+            ),
+        ],
+    ) -> Optional[tuple[str, int]]:
         """
         Returns (token, numeric_value) or None.
         Captures:
@@ -99,12 +141,28 @@ class AttributeParser:
 
         return None
 
-    def parse_output_format(self, text: str) -> Optional[OutputSchema]:
+    def parse_output_format(
+        self,
+        text: Annotated[
+            str,
+            _Doc(
+                "Input text or output specification string to infer the output format (JSON, LIST, STRUCTURED, TEXT) from."
+            ),
+        ],
+    ) -> Optional[OutputSchema]:
         """Use vocabulary helper to determine output format (keeps compatibility)."""
         parser = SysPromptOutputFormat(config=self._config)
         return parser.compress(text)
 
-    def extract_specifications(self, text: str) -> Optional[dict[str, int]]:
+    def extract_specifications(
+        self,
+        text: Annotated[
+            str,
+            _Doc(
+                "Input text to extract numeric specifications from (e.g. '10 lines' → {LINES: 10}, 'three tips' → {COUNT: 3})."
+            ),
+        ],
+    ) -> Optional[dict[str, int]]:
         """
         Extract numeric specifications such as:
          - '10 lines' -> {"LINES": 10}

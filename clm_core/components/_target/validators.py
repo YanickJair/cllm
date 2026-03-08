@@ -1,11 +1,22 @@
 import re
-from typing import Optional
+from typing import Optional, Annotated
 
+from annotated_doc import Doc
 from clm_core.components.sys_prompt import Target
 from .target_normalizer import TargetNormalizer
 
 
-def build_target_token(t: Target, omit_default_domain: bool = True) -> str:
+def build_target_token(
+    t: Annotated[
+        Target, Doc("The Target object to serialize into a compact token string.")
+    ],
+    omit_default_domain: Annotated[
+        bool,
+        Doc(
+            "When True, the DOMAIN attribute is omitted if it equals the default domain for the token type (e.g. SUPPORT for CALL)."
+        ),
+    ] = True,
+) -> str:
     """
     Build compact TARGET token string:
       [TARGET:<TOKEN>[:DOMAIN=...][:K=V...]]
@@ -76,7 +87,15 @@ class TargetValidator:
             "SYSTEM",
         }
 
-    def deduplicate(self, targets: list[Target]) -> list[Target]:
+    def deduplicate(
+        self,
+        targets: Annotated[
+            list[Target],
+            Doc(
+                "List of extracted Target objects to deduplicate, normalize, and prune to at most 2 results."
+            ),
+        ],
+    ) -> list[Target]:
         """
         Clean duplicates and normalize targets.
         Rules:
@@ -107,8 +126,6 @@ class TargetValidator:
                 t for t in unique_targets if not self._is_generic_token(t.token)
             ]
 
-        # If more than 2 remain, attempt to pick the most informative:
-        # criteria: more attributes > fewer attributes; presence of domain preferred.
         if len(unique_targets) > 2:
             sorted_targets = sorted(
                 unique_targets,
@@ -138,7 +155,15 @@ class TargetValidator:
         return final_targets
 
     @staticmethod
-    def serialize_targets(target: Target, omit_default_domain: bool = True) -> str:
+    def serialize_targets(
+        target: Annotated[Target, Doc("The normalized Target object to serialize.")],
+        omit_default_domain: Annotated[
+            bool,
+            Doc(
+                "When True, the DOMAIN attribute is omitted if it equals the default domain for the token type."
+            ),
+        ] = True,
+    ) -> str:
         """
         Convenience: convert normalized targets to compact strings.
         """
@@ -148,38 +173,46 @@ class TargetValidator:
 class TopicCleaner:
     """Cleans and validates TOPIC attributes"""
 
-    def clean(self, topic: str) -> Optional[str]:
-        """Clean topic string"""
+    def clean(
+        self,
+        topic: Annotated[
+            str,
+            Doc(
+                "Raw topic string to strip of demonstratives, articles, pronouns, and action verbs."
+            ),
+        ],
+    ) -> Optional[str]:
+        """Clean topic string."""
         if not topic:
             return None
 
-        # Remove demonstratives
         topic = re.sub(r"\b(this|that|these|those)\b", "", topic, flags=re.IGNORECASE)
-
-        # Remove articles
         topic = re.sub(r"^(the|a|an)\s+", "", topic, flags=re.IGNORECASE)
-
-        # Remove pronouns
         topic = re.sub(r"^(i|we|you|they)\s+", "", topic, flags=re.IGNORECASE)
 
-        # Remove verbs
         action_verbs = ["reduce", "increase", "improve", "explain", "describe"]
         for verb in action_verbs:
             topic = re.sub(rf"\b{verb}\b", "", topic, flags=re.IGNORECASE)
 
-        # Clean up spaces
         topic = re.sub(r"\s+", " ", topic).strip()
 
         return topic if topic and len(topic) > 1 else None
 
-    def trim(self, topic: str) -> str:
-        """Trim topic to prevent greediness (max 4 words)"""
+    def trim(
+        self,
+        topic: Annotated[
+            str,
+            Doc(
+                "Topic string to trim to a maximum of 4 words, stopping at prepositions."
+            ),
+        ],
+    ) -> str:
+        """Trim topic to prevent greediness (max 4 words)."""
         if not topic:
             return topic
 
         words = topic.split()
 
-        # Stop at prepositions
         stop_words = ["in", "with", "for", "and", "or"]
         trimmed_words = []
         for word in words:
@@ -187,30 +220,34 @@ class TopicCleaner:
                 break
             trimmed_words.append(word)
 
-        # Max 4 words
         if len(trimmed_words) > 4:
             trimmed_words = trimmed_words[:4]
 
         return " ".join(trimmed_words)
 
-    def validate(self, topic: str) -> Optional[str]:
-        """Validate topic quality"""
+    def validate(
+        self,
+        topic: Annotated[
+            str,
+            Doc(
+                "Topic string to validate; returns None if it is a bare demonstrative, starts with THIS_, or is shorter than 2 characters."
+            ),
+        ],
+    ) -> Optional[str]:
+        """Validate topic quality."""
         if not topic:
             return None
 
         topic_upper = topic.upper()
 
-        # Reject demonstratives
         if topic_upper in ["THIS", "THAT", "IT", "THE"]:
             return None
 
-        # Reject if starts with THIS_
         if topic_upper.startswith("THIS_"):
             topic = re.sub(r"^THIS_", "", topic, flags=re.IGNORECASE)
             if not topic or len(topic) < 2:
                 return None
 
-        # Reject if too short
         if len(topic) < 2:
             return None
 

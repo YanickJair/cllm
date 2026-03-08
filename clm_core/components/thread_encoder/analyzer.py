@@ -1,6 +1,7 @@
 import re
-from typing import Optional
+from typing import Annotated, Optional
 import spacy
+from annotated_doc import Doc
 
 from clm_core.dictionary.en.patterns import (
     SYSTEM_ACTION_KEYWORDS,
@@ -46,11 +47,24 @@ _DEFAULT_REDACTION_PATTERN = (
 class TranscriptAnalyzer:
     def __init__(
         self,
-        nlp: spacy.Language,
-        vocab: BaseVocabulary,
-        rules: BaseRules,
-        patterns: TranscriptPatterns,
-        redaction_pattern: Optional[str] = None,
+        nlp: Annotated[
+            spacy.Language, Doc("Loaded spaCy language model used for NLP processing.")
+        ],
+        vocab: Annotated[
+            BaseVocabulary,
+            Doc("Vocabulary providing default keyword sets and token maps."),
+        ],
+        rules: Annotated[BaseRules, Doc("Parser rules used by the target extractor.")],
+        patterns: Annotated[
+            TranscriptPatterns,
+            Doc("Language-specific patterns and keyword maps for extraction."),
+        ],
+        redaction_pattern: Annotated[
+            Optional[str],
+            Doc(
+                "Regex pattern for detecting redacted fields. Defaults to the built-in pattern when None."
+            ),
+        ] = None,
     ):
         self.nlp = nlp
         self.patterns = patterns
@@ -95,7 +109,11 @@ class TranscriptAnalyzer:
         )
 
     @staticmethod
-    def _build_keyword_index(keyword_dict: dict) -> list[tuple[str, str]]:
+    def _build_keyword_index(
+        keyword_dict: Annotated[
+            dict, Doc("Mapping from category name to iterable of keywords.")
+        ],
+    ) -> list[tuple[str, str]]:
         """Build a flat list of (keyword, category) tuples sorted by keyword length desc.
 
         Longer keywords are checked first to match phrases like 'processed twice'
@@ -109,7 +127,13 @@ class TranscriptAnalyzer:
         return pairs
 
     @staticmethod
-    def _lookup_category(text: str, index: list[tuple[str, str]]) -> Optional[str]:
+    def _lookup_category(
+        text: Annotated[str, Doc("Lowercased text to search within.")],
+        index: Annotated[
+            list[tuple[str, str]],
+            Doc("Pre-built (keyword, category) index sorted by keyword length desc."),
+        ],
+    ) -> Optional[str]:
         """Fast lookup using pre-built index. Returns first matching category."""
         for keyword, category in index:
             if keyword in text:
@@ -117,7 +141,13 @@ class TranscriptAnalyzer:
         return None
 
     @staticmethod
-    def _lookup_all_categories(text: str, index: list[tuple[str, str]]) -> list[str]:
+    def _lookup_all_categories(
+        text: Annotated[str, Doc("Lowercased text to search within.")],
+        index: Annotated[
+            list[tuple[str, str]],
+            Doc("Pre-built (keyword, category) index sorted by keyword length desc."),
+        ],
+    ) -> list[str]:
         """Fast lookup returning all matching categories (deduplicated, order preserved)."""
         seen = set()
         result = []
@@ -134,7 +164,6 @@ class TranscriptAnalyzer:
         Merges language-specific patterns.action_tokens with vocab defaults.
         """
         pairs = []
-        # Merge: start with vocab defaults, then layer pattern overrides
         merged: dict[str, list[str]] = {}
         for raw_action, keywords in self.vocab.ACTION_TOKENS.items():
             merged[raw_action] = list(keywords)
@@ -152,10 +181,30 @@ class TranscriptAnalyzer:
         return pairs
 
     def analyze(
-        self, transcript: str, metadata: Optional[dict] = None
+        self,
+        transcript: str,
+        metadata: Optional[dict] = None,
+        turns: Annotated[
+            Optional[list[Turn]],
+            Doc("""
+            Pre-built turns to analyze. When provided, `_parse_turns()` is skipped entirely
+            and these turns are used directly by the extraction pipeline.
+
+            Turns whose speaker is not a recognized role (`"agent"` or `"customer"`) are
+            normalized to `"customer"` so all role-gated extractors — intent, trigger,
+            amounts, sentiment — produce results rather than silently falling through.
+
+            Pass `None` (default) to parse roles from `transcript` as usual.
+            """),
+        ] = None,
     ) -> TranscriptAnalysis:
         metadata = metadata or {}
-        turns = self._parse_turns(transcript)
+        if turns is None:
+            turns = self._parse_turns(transcript)
+
+        has_roles = any(t.speaker in ("agent", "customer") for t in turns)
+        if not has_roles:
+            turns = [t.model_copy(update={"speaker": "customer"}) for t in turns]
 
         docs = list(self.nlp.pipe([t.text for t in turns])) if turns else []
         for turn, doc in zip(turns, docs):
@@ -186,7 +235,6 @@ class TranscriptAnalyzer:
         )
         trigger_cause = self._extract_trigger_cause(turns)
 
-        # Upgrade trigger when cancellation was deflected by a retention offer
         if trigger_cause == "REQUEST_CANCELLATION":
             action_types = {a.type for a in actions}
             if (
@@ -234,11 +282,19 @@ class TranscriptAnalyzer:
 
     @staticmethod
     def _compute_extraction_confidence(
-        domain: Optional[str],
-        customer_intent: Optional[str],
-        trigger_cause: Optional[str],
-        actions: list,
-        resolution,
+        domain: Annotated[
+            Optional[str], Doc("Extracted domain label, or None if unclassified.")
+        ],
+        customer_intent: Annotated[
+            Optional[str], Doc("Primary customer intent, or None if not detected.")
+        ],
+        trigger_cause: Annotated[
+            Optional[str], Doc("Trigger cause label, or None if not detected.")
+        ],
+        actions: Annotated[list, Doc("List of extracted agent actions.")],
+        resolution: Annotated[
+            object, Doc("Resolution object; its `type` field is inspected.")
+        ],
     ) -> float:
         score = 0.5
         if domain and domain != "UNCLASSIFIED":
@@ -255,20 +311,28 @@ class TranscriptAnalyzer:
 
     @staticmethod
     def _needs_review(
-        confidence: float,
-        actions: list,
-        issues: list,
-        call_type: str = "SUPPORT",
-        trigger_cause: Optional[str] = None,
+        confidence: Annotated[float, Doc("Extraction confidence score in [0, 1].")],
+        actions: Annotated[list, Doc("Extracted agent actions.")],
+        issues: Annotated[list, Doc("Extracted issues from the conversation.")],
+        call_type: Annotated[
+            str, Doc("Call type label, e.g. 'SUPPORT' or 'SALES'.")
+        ] = "SUPPORT",
+        trigger_cause: Annotated[
+            Optional[str], Doc("Trigger cause label, or None.")
+        ] = None,
     ) -> bool:
+        """Return True when the extraction result requires human review.
+
+        Flags the result when confidence is low, when no actions or issues were
+        found, when the trigger cause is absent (workflow activation event could
+        not be determined), or when a SALES call contains no monetization action.
+        """
         if confidence < 0.7:
             return True
         if not actions and not issues:
             return True
-        # Trigger missing — workflow activation event could not be determined
         if not trigger_cause:
             return True
-        # Sales interaction without at least one monetization action
         if call_type == "SALES":
             _MONETIZATION_ACTIONS = {
                 "PLAN_UPGRADED",
@@ -282,7 +346,12 @@ class TranscriptAnalyzer:
                 return True
         return False
 
-    def _parse_turns(self, transcript: str) -> list[Turn]:
+    def _parse_turns(
+        self,
+        transcript: Annotated[
+            str, Doc("Raw transcript string with one 'Speaker: text' line per turn.")
+        ],
+    ) -> list[Turn]:
         agent_labels = self.patterns.agent_speaker_labels or ["agent", "agente"]
         customer_labels = self.patterns.customer_speaker_labels or [
             "customer",
@@ -305,7 +374,12 @@ class TranscriptAnalyzer:
             turns.append(Turn(speaker=speaker, text=text.strip()))
         return turns
 
-    def _extract_actions(self, turns: list[Turn]) -> list[Action]:
+    def _extract_actions(
+        self,
+        turns: Annotated[
+            list[Turn], Doc("All conversation turns; only agent turns are processed.")
+        ],
+    ) -> list[Action]:
         """
         Extract canonical, atomic ACTION EVENTS from agent turns.
 
@@ -343,30 +417,36 @@ class TranscriptAnalyzer:
 
         return list(actions.values())
 
-    def _detect_action_events(self, text: str) -> list[str]:
+    def _detect_action_events(
+        self, text: Annotated[str, Doc("Agent turn text to scan for action events.")]
+    ) -> list[str]:
+        """Detect action events from agent turn text using a priority-ordered cascade.
+
+        Detection order:
+        1. Explicit agent action phrases (highest priority).
+        2. Issue confirmation patterns.
+        3. Troubleshooting patterns.
+        4. Action tokens (keyword-based).
+        """
         text_lower = text.lower()
         seen = set()
         events = []
 
-        # 1. Check explicit agent action phrases first (highest priority)
         for kw, category in self._explicit_agent_actions_index:
             if kw in text_lower and category not in seen:
                 seen.add(category)
                 events.append(category)
 
-        # 2. Issue confirmation patterns
         for kw, category in self._issue_confirmation_index:
             if kw in text_lower and category not in seen:
                 seen.add(category)
                 events.append(category)
 
-        # 3. Troubleshooting patterns
         for kw, category in self._troubleshooting_index:
             if kw in text_lower and category not in seen:
                 seen.add(category)
                 events.append(category)
 
-        # 4. Action tokens (keyword-based)
         for kw, action_event, is_explicit in self._action_tokens_index:
             if action_event in seen:
                 continue
@@ -381,10 +461,20 @@ class TranscriptAnalyzer:
 
         return events
 
-    def _detect_technical_issue_detail(self, text: str) -> Optional[str]:
+    def _detect_technical_issue_detail(
+        self, text: Annotated[str, Doc("Lowercased customer text to classify.")]
+    ) -> Optional[str]:
         return self._lookup_category(text.lower(), self._technical_issue_index)
 
-    def _extract_action_details(self, action_type: str, turn: Turn):
+    def _extract_action_details(
+        self,
+        action_type: Annotated[
+            str, Doc("The detected action event type (e.g. 'REFUND', 'CREDIT').")
+        ],
+        turn: Annotated[
+            Turn, Doc("The agent turn from which additional details are extracted.")
+        ],
+    ):
         amount, method = None, None
         attributes = {}
         if action_type in ["REFUND", "CREDIT", "CHARGE", "PAYMENT"]:
@@ -395,7 +485,13 @@ class TranscriptAnalyzer:
                 attributes["timeline"] = timeline
         return amount, method, attributes
 
-    def _extract_resolution(self, turns: list[Turn]) -> Resolution:
+    def _extract_resolution(
+        self,
+        turns: Annotated[
+            list[Turn],
+            Doc("All conversation turns; only the last 5 agent turns are examined."),
+        ],
+    ) -> Resolution:
         agent_turns = [t for t in turns if t.speaker == "agent"]
         recent = agent_turns[-5:] if agent_turns else []
 
@@ -417,19 +513,33 @@ class TranscriptAnalyzer:
         return Resolution(type="UNKNOWN", timeline=None, next_steps=None)
 
     @staticmethod
-    def _match_any(text: str, keywords: list[str]) -> bool:
+    def _match_any(
+        text: Annotated[str, Doc("Text to search within.")],
+        keywords: Annotated[list[str], Doc("Keywords to test against the text.")],
+    ) -> bool:
         return any(kw in text for kw in keywords)
 
-    def _extract_timeline(self, text: str) -> Optional[str]:
+    def _extract_timeline(
+        self,
+        text: Annotated[
+            str, Doc("Text to extract a timeline from (may be lowercased).")
+        ],
+    ) -> Optional[str]:
+        """Extract a timeline string from text using a priority-ordered cascade.
+
+        Tries, in order:
+        1. Language-specific timeline patterns (most specific, e.g. "3 a 5 días hábiles").
+        2. Temporal extractor for duration inference.
+        3. Language-specific timeline keywords ("today", "tomorrow", and equivalents).
+        4. "in X hours/days" patterns with word-number support (language-specific word_to_num).
+        """
         text_lower = text.lower()
 
-        # Language-specific timeline patterns first (more specific, e.g. "3 a 5 días hábiles")
         for regex, fmt in self.patterns.timeline_patterns:
             if match := re.search(regex, text_lower, re.I):
                 groups = match.groups()
                 return fmt.format(*groups)
 
-        # Temporal extractor (duration inference)
         pattern = self.temporal_extractor.extract(text)
         if pattern:
             if getattr(pattern, "resolved_date", None):
@@ -437,13 +547,11 @@ class TranscriptAnalyzer:
             if getattr(pattern, "duration", None):
                 return str(pattern.duration).upper()
 
-        # Language-specific timeline keywords (includes "today"/"tomorrow" equivalents)
         timeline_kw = self.patterns.timeline_keywords or {}
         for kw, value in timeline_kw.items():
             if kw in text_lower:
                 return value
 
-        # "in X hours/days" patterns with word number support (language-specific word_to_num)
         word_to_num = self.patterns.word_to_num or {}
         word_alts = "|".join(re.escape(w) for w in word_to_num) if word_to_num else None
         num_pat = rf"(?:{word_alts}|\d+)" if word_alts else r"\d+"
@@ -468,7 +576,15 @@ class TranscriptAnalyzer:
         return None
 
     def _determine_action_result(
-        self, turns: list[Turn], action_index: int, action_turn: Turn
+        self,
+        turns: Annotated[
+            list[Turn],
+            Doc(
+                "All conversation turns, used to inspect the 2 turns immediately after the action."
+            ),
+        ],
+        action_index: Annotated[int, Doc("Index of the action turn within `turns`.")],
+        action_turn: Annotated[Turn, Doc("The turn where the action was detected.")],
     ) -> str:
         text_lower = action_turn.text.lower()
 
@@ -496,7 +612,10 @@ class TranscriptAnalyzer:
         return "PENDING"
 
     def _extract_financial_details(
-        self, turn: Turn
+        self,
+        turn: Annotated[
+            Turn, Doc("The turn from which amount and payment method are extracted.")
+        ],
     ) -> tuple[Optional[str], Optional[str]]:
         """
         Prefer using named entities from turn.entities if present; otherwise fallback to regex heuristics.
@@ -516,7 +635,6 @@ class TranscriptAnalyzer:
         method = self._detect_refund_method(turn.text.lower())
         return amount, method
 
-    # Common words that should never be extracted as reference numbers
     _REF_BLACKLIST = {
         "number",
         "reference",
@@ -539,19 +657,23 @@ class TranscriptAnalyzer:
     }
 
     @classmethod
-    def _extract_reference_number(cls, turn: Turn) -> Optional[str]:
-        """
-        Extracts reference numbers like:
-         - RFD-908712
-         - ESC-45390
-         - "reference number is RFD-..." or "confirmation #12345"
+    def _extract_reference_number(
+        cls,
+        turn: Annotated[
+            Turn, Doc("The turn whose text is scanned for reference numbers.")
+        ],
+    ) -> Optional[str]:
+        """Extract reference numbers (e.g. RFD-908712, ESC-45390, "confirmation #12345").
+
+        Tries in order:
+        1. Structured PREFIX-DIGITS pattern (most reliable).
+        2. "reference/confirmation" followed by a code (requires at least one digit).
+        3. "id/ticket/case/order" followed by a code (requires at least one digit).
         """
         text = turn.text
-        # Structured PREFIX-DIGITS pattern (most reliable)
         if m := re.search(r"\b([A-Z]{2,5}-\d{3,})\b", text):
             return m.group(0)
 
-        # "reference/confirmation" followed by a code (require at least one digit)
         if m := re.search(
             r"(?:reference|confirmation|ref)[^\w]{0,6}#?\s*([A-Z0-9-]*\d[A-Z0-9-]{2,29})",
             text,
@@ -561,7 +683,6 @@ class TranscriptAnalyzer:
             if candidate.lower() not in cls._REF_BLACKLIST:
                 return candidate
 
-        # "id/ticket/case/order" followed by a code (require at least one digit)
         if m := re.search(
             r"(?:id|ticket|case|order)[^\w]{0,6}#?\s*([A-Z0-9-]*\d[A-Z0-9-]{2,29})",
             text,
@@ -573,7 +694,13 @@ class TranscriptAnalyzer:
 
         return None
 
-    def _extract_customer_profile(self, turns: list[Turn]) -> CustomerProfile:
+    def _extract_customer_profile(
+        self,
+        turns: Annotated[
+            list[Turn],
+            Doc("All conversation turns; entity fields are read from each turn."),
+        ],
+    ) -> CustomerProfile:
         """Extract the customer's profile from the conversation.
 
         Args:
@@ -607,7 +734,9 @@ class TranscriptAnalyzer:
         return profile
 
     @staticmethod
-    def _map_plan_to_tier(plan: str) -> str:
+    def _map_plan_to_tier(
+        plan: Annotated[str, Doc("Raw plan name string (case-insensitive).")],
+    ) -> str:
         """Map a plan to a tier.
 
         Args:
@@ -629,7 +758,15 @@ class TranscriptAnalyzer:
             return "BASIC"
         return "STANDARD"
 
-    def _extract_customer_name(self, turns: list[Turn]) -> Optional[str]:
+    def _extract_customer_name(
+        self,
+        turns: Annotated[
+            list[Turn],
+            Doc(
+                "All conversation turns; first 3 agent turns and entity fields are examined."
+            ),
+        ],
+    ) -> Optional[str]:
         """Extract the customer's name from the conversation.
 
         Args:
@@ -676,9 +813,26 @@ class TranscriptAnalyzer:
         return None
 
     def _extract_issues(
-        self, turns: list[Turn], call_type: str = "SUPPORT"
+        self,
+        turns: Annotated[
+            list[Turn],
+            Doc(
+                "All conversation turns; customer turns are scanned first, agent turns as fallback."
+            ),
+        ],
+        call_type: Annotated[
+            str,
+            Doc("Call type label used to suppress billing disputes in SALES contexts."),
+        ] = "SUPPORT",
     ) -> list[Issue]:
         """Extract issues from a list of turns.
+
+        Customer turns are scanned first; agent turns are used as a fallback when
+        no issue type is found in customer text.
+
+        Monetary context guardrail: in a SALES context, amounts are pricing information,
+        not billing disputes. Billing dispute requires unexpected charge language plus
+        refund context — money alone is not a billing issue.
 
         Args:
             turns: List of turns in the conversation.
@@ -700,7 +854,6 @@ class TranscriptAnalyzer:
         ).lower()
         issue_type = self._get_issue_type(customer_text)
 
-        # Fallback: if no issue found from customer turns, try agent turns
         if not issue_type:
             agent_text = " ".join(t.text for t in turns if t.speaker == "agent").lower()
             issue_type = self._get_issue_type(agent_text)
@@ -708,9 +861,6 @@ class TranscriptAnalyzer:
         if not issue_type:
             return []
 
-        # Monetary context guardrail: in a SALES context, amounts are pricing information,
-        # not billing disputes. Billing dispute requires unexpected charge language + refund
-        # context — money alone is not a billing issue.
         _BILLING_ISSUE_TYPES = {"BILLING_DISPUTE", "UNEXPECTED_CHARGE"}
         if call_type == "SALES" and issue_type in _BILLING_ISSUE_TYPES:
             issue_type = None
@@ -750,13 +900,28 @@ class TranscriptAnalyzer:
             )
         ]
 
-    def _get_issue_type(self, text: str) -> Optional[str]:
+    def _get_issue_type(
+        self,
+        text: Annotated[
+            str, Doc("Lowercased combined text from customer or agent turns.")
+        ],
+    ) -> Optional[str]:
         return self._lookup_category(text, self._issue_type_index)
 
-    def _detect_severity(self, text: str) -> str:
+    def _detect_severity(
+        self,
+        text: Annotated[
+            str, Doc("Lowercased customer text to classify severity from.")
+        ],
+    ) -> str:
         return self._lookup_category(text.lower(), self._severity_index) or "LOW"
 
-    def _extract_disputed_amounts(self, turns: list[Turn]) -> list[str]:
+    def _extract_disputed_amounts(
+        self,
+        turns: Annotated[
+            list[Turn], Doc("All conversation turns; only customer turns are scanned.")
+        ],
+    ) -> list[str]:
         """Extract disputed amounts from customer turns.
 
         Args:
@@ -780,8 +945,22 @@ class TranscriptAnalyzer:
         re.I,
     )
 
-    def _extract_all_amounts(self, turns: list[Turn]) -> list[MonetaryAmount]:
-        """Extract all monetary amounts from all turns with their reason."""
+    def _extract_all_amounts(
+        self,
+        turns: Annotated[
+            list[Turn],
+            Doc("All conversation turns; every turn is scanned for monetary amounts."),
+        ],
+    ) -> list[MonetaryAmount]:
+        """Extract all monetary amounts from all turns with their reason.
+
+        A secondary pass uses a narrow 30-character suffix window to detect billing
+        period indicators (MONTH/YEAR). A wide context window causes adjacent prices
+        (e.g. "$49 a month, or $480 annual") to share keywords; the suffix-only
+        window resolves the ambiguity.
+
+        Amounts without any recognized context keyword are skipped.
+        """
         amount_reason_map = self.patterns.amount_reason_context or []
         billing_period_map = self.patterns.billing_period_context or []
         seen: set[tuple[str, Optional[str], str]] = set()
@@ -802,10 +981,6 @@ class TranscriptAnalyzer:
                         reason = r
                         break
 
-                # Secondary pass: narrow 30-char suffix window for billing period
-                # indicators (MONTH/YEAR).  A wide context window causes adjacent
-                # prices ("$49 a month, or $480 annual") to share keywords; the
-                # suffix-only window resolves the ambiguity.
                 if not reason and billing_period_map:
                     suffix = text[end : min(len(text), end + 30)].lower()
                     for keyword, r in billing_period_map:
@@ -830,7 +1005,15 @@ class TranscriptAnalyzer:
 
         return results
 
-    def _extract_redacted_fields(self, turns: list[Turn]) -> list[str]:
+    def _extract_redacted_fields(
+        self,
+        turns: Annotated[
+            list[Turn],
+            Doc(
+                "All conversation turns; every turn is scanned for redacted field markers."
+            ),
+        ],
+    ) -> list[str]:
         """Detect redacted field tokens from all turns using configured redaction_pattern."""
         redacted_field_context = self.patterns.redacted_field_context or []
         pattern = re.compile(self._redaction_pattern, re.I)
@@ -858,7 +1041,13 @@ class TranscriptAnalyzer:
         return results
 
     def _detect_billing_cause(
-        self, turns: list[Turn]
+        self,
+        turns: Annotated[
+            list[Turn],
+            Doc(
+                "All conversation turns; only agent turns are examined for billing cause keywords."
+            ),
+        ],
     ) -> tuple[Optional[str], Optional[str]]:
         for t in (t for t in turns if t.speaker == "agent"):
             text = t.text.lower()
@@ -873,7 +1062,19 @@ class TranscriptAnalyzer:
                 return cause, plan_change
         return None, None
 
-    def _extract_call_info(self, turns: list[Turn], metadata: dict) -> CallInfo:
+    def _extract_call_info(
+        self,
+        turns: Annotated[
+            list[Turn],
+            Doc("All conversation turns used to infer call type from combined text."),
+        ],
+        metadata: Annotated[
+            dict,
+            Doc(
+                "Call metadata dict; may contain 'call_id', 'channel', and 'agent' keys."
+            ),
+        ],
+    ) -> CallInfo:
         """
         Extracts call information from the thread_encoder.
 
@@ -903,7 +1104,6 @@ class TranscriptAnalyzer:
             agent=agent_name,
         )
 
-    # Common words that should not be extracted as agent names
     _NAME_BLACKLIST = {
         "sorry",
         "happy",
@@ -926,7 +1126,13 @@ class TranscriptAnalyzer:
         "thrilled",
     }
 
-    def _detect_agent_name(self, turns: list[Turn]) -> Optional[str]:
+    def _detect_agent_name(
+        self,
+        turns: Annotated[
+            list[Turn],
+            Doc("All conversation turns; only the first 3 agent turns are checked."),
+        ],
+    ) -> Optional[str]:
         """Detects the agent's name from the thread_encoder.
         We will find the agent's name by looking for a PERSON entity
         in the text or by matching a pattern.
@@ -960,7 +1166,19 @@ class TranscriptAnalyzer:
         return None
 
     def _extract_resolution_state(
-        self, turns: list[Turn], resolution: Resolution
+        self,
+        turns: Annotated[
+            list[Turn],
+            Doc(
+                "All conversation turns split into agent and customer sub-lists internally."
+            ),
+        ],
+        resolution: Annotated[
+            Resolution,
+            Doc(
+                "Resolution extracted from agent turns; its type drives the state machine."
+            ),
+        ],
     ) -> ResolutionState:
         """Extract enhanced resolution state with granularity."""
         agent_turns = [t for t in turns if t.speaker == "agent"]
@@ -981,7 +1199,15 @@ class TranscriptAnalyzer:
             follow_up_reason=follow_up_reason,
         )
 
-    def _detect_resolution_completeness(self, agent_turns: list[Turn]) -> Optional[str]:
+    def _detect_resolution_completeness(
+        self,
+        agent_turns: Annotated[
+            list[Turn],
+            Doc(
+                "Agent-only turns; the last 5 are joined and scanned for resolution state tokens."
+            ),
+        ],
+    ) -> Optional[str]:
         """Detect if resolution was full, partial, or none."""
         recent = agent_turns[-5:] if agent_turns else []
         text = " ".join(t.text.lower() for t in recent)
@@ -998,7 +1224,13 @@ class TranscriptAnalyzer:
         return None
 
     def _derive_customer_satisfaction(
-        self, customer_turns: list[Turn]
+        self,
+        customer_turns: Annotated[
+            list[Turn],
+            Doc(
+                "Customer-only turns; the last 3 are joined and scanned for satisfaction tokens."
+            ),
+        ],
     ) -> Optional[str]:
         """Derive satisfaction from final customer turns."""
         if not customer_turns:
@@ -1025,7 +1257,13 @@ class TranscriptAnalyzer:
         return "NEUTRAL"
 
     def _detect_follow_up_needed(
-        self, agent_turns: list[Turn]
+        self,
+        agent_turns: Annotated[
+            list[Turn],
+            Doc(
+                "Agent-only turns; the last 3 are joined and scanned for follow-up tokens."
+            ),
+        ],
     ) -> tuple[bool, Optional[str]]:
         """Detect if follow-up is needed and why."""
         recent = agent_turns[-3:] if agent_turns else []
@@ -1042,12 +1280,32 @@ class TranscriptAnalyzer:
 
     @staticmethod
     def _map_resolution_to_state(
-        resolution_type: str,
-        completeness: Optional[str],
-        follow_up_needed: bool,
-        customer_satisfaction: Optional[str] = None,
+        resolution_type: Annotated[
+            str,
+            Doc(
+                "Resolution type string, e.g. 'RESOLVED', 'PENDING', 'ESCALATED', or 'UNKNOWN'."
+            ),
+        ],
+        completeness: Annotated[
+            Optional[str],
+            Doc("Completeness label ('FULL' or 'PARTIAL'), or None if undetermined."),
+        ],
+        follow_up_needed: Annotated[
+            bool, Doc("Whether a follow-up action was detected.")
+        ],
+        customer_satisfaction: Annotated[
+            Optional[str],
+            Doc(
+                "Customer satisfaction label used to infer resolution when type is UNKNOWN."
+            ),
+        ] = None,
     ) -> str:
-        """Map resolution to granular state, considering customer satisfaction."""
+        """Map resolution to granular state, considering customer satisfaction.
+
+        When resolution type is UNKNOWN, customer satisfaction is used to infer
+        the resolution: SATISFIED maps to FULLY_RESOLVED or RESOLVED, NEUTRAL maps
+        to RESOLVED_PENDING_VERIFICATION, and anything else maps to UNRESOLVED.
+        """
         if resolution_type == "RESOLVED":
             if completeness == "FULL" and not follow_up_needed:
                 return "FULLY_RESOLVED"
@@ -1060,7 +1318,6 @@ class TranscriptAnalyzer:
         elif resolution_type == "ESCALATED":
             return "ESCALATED"
         else:
-            # If resolution is UNKNOWN but customer is satisfied, infer resolution
             if customer_satisfaction == "SATISFIED":
                 if completeness == "FULL":
                     return "FULLY_RESOLVED"
@@ -1070,9 +1327,30 @@ class TranscriptAnalyzer:
             return "UNRESOLVED"
 
     def _extract_refund_reference(
-        self, turns: list[Turn], issues: list[Issue], actions: list[Action]
+        self,
+        turns: Annotated[
+            list[Turn],
+            Doc(
+                "All conversation turns; only agent turns are scanned for refund details."
+            ),
+        ],
+        issues: Annotated[
+            list[Issue],
+            Doc("Extracted issues used to determine whether this is a refund case."),
+        ],
+        actions: Annotated[
+            list[Action],
+            Doc(
+                "Extracted actions used as fallback source for reference number, amount, and method."
+            ),
+        ],
     ) -> Optional[RefundReference]:
-        """Extract refund details for billing/refund cases (case-dependent)."""
+        """Extract refund details for billing/refund cases (case-dependent).
+
+        Also pulls reference number, amount, and method from matching action
+        attributes when not already found in turn text.  Returns None when no
+        meaningful data (reference number, amount, or status) was found.
+        """
         issue_types = [i.type for i in issues]
         is_refund_case = any(
             it in issue_types
@@ -1117,7 +1395,6 @@ class TranscriptAnalyzer:
             if not refund.timeline:
                 refund.timeline = self._extract_timeline(text_lower)
 
-        # Also pull from action attributes
         for action in actions:
             if "REFUND" in action.type or "CREDIT" in action.type:
                 if not refund.reference_number and "reference" in action.attributes:
@@ -1127,13 +1404,11 @@ class TranscriptAnalyzer:
                 if not refund.method and action.payment_method:
                     refund.method = action.payment_method
 
-        # Only return if we have meaningful data
         if any([refund.reference_number, refund.amount, refund.status]):
             return refund
 
         return None
 
-    # Prefixes that identify non-refund reference IDs (escalation, ticket, incident, etc.)
     _NON_REFUND_PREFIXES = frozenset(
         {
             "ESC",
@@ -1149,14 +1424,24 @@ class TranscriptAnalyzer:
     )
 
     @classmethod
-    def _extract_refund_reference_number(cls, text: str) -> Optional[str]:
+    def _extract_refund_reference_number(
+        cls,
+        text: Annotated[
+            str, Doc("Raw agent turn text to scan for refund reference numbers.")
+        ],
+    ) -> Optional[str]:
         """Extract refund-specific reference numbers.
 
         Prefers known refund prefixes (RFD, REF, CRD, BCR) and explicitly
         excludes known non-refund prefixes (ESC, TKT, INC, TEC, ...) from the
         generic PREFIX-DIGITS fallback pattern.
+
+        Tries in order:
+        1. Known refund-specific prefixes (most reliable): RFD, REF, CRD, BCR.
+        2. "refund reference/number/id" followed by an alphanumeric code.
+        3. Generic PREFIX-DIGITS pattern — only if prefix is not a known
+           non-refund identifier type (e.g. ESC-, TKT-, INC-).
         """
-        # 1. Known refund-specific prefixes (most reliable)
         for pattern in (
             r"\bRFD-?\d{5,10}\b",
             r"\bREF-?\d{5,10}\b",
@@ -1166,7 +1451,6 @@ class TranscriptAnalyzer:
             if match := re.search(pattern, text, re.I):
                 return match.group(0)
 
-        # 2. "refund reference/number/id" followed by an alphanumeric code
         if match := re.search(
             r"refund\s*(?:reference\s*)?(?:number|id|#)?\s*[:=—–-]?\s*([A-Z0-9-]*\d[A-Z0-9-]{3,14})",
             text,
@@ -1174,8 +1458,6 @@ class TranscriptAnalyzer:
         ):
             return match.group(1)
 
-        # 3. Generic PREFIX-DIGITS pattern — only if prefix is not a known
-        #    non-refund identifier type (e.g. ESC-, TKT-, INC-).
         if match := re.search(r"\b([A-Z]{2,5})-(\d{3,})\b", text):
             prefix = match.group(1).upper()
             if prefix not in cls._NON_REFUND_PREFIXES:
@@ -1183,7 +1465,12 @@ class TranscriptAnalyzer:
 
         return None
 
-    def _detect_refund_method(self, text: str) -> Optional[str]:
+    def _detect_refund_method(
+        self,
+        text: Annotated[
+            str, Doc("Lowercased turn text to match against refund method tokens.")
+        ],
+    ) -> Optional[str]:
         """Detect refund method from text."""
         tokens = self.patterns.refund_method_tokens or self.vocab.REFUND_METHOD_TOKENS
         for method, keywords in tokens.items():
@@ -1191,7 +1478,12 @@ class TranscriptAnalyzer:
                 return method
         return None
 
-    def _detect_refund_status(self, text: str) -> Optional[str]:
+    def _detect_refund_status(
+        self,
+        text: Annotated[
+            str, Doc("Lowercased turn text to match against refund status tokens.")
+        ],
+    ) -> Optional[str]:
         """Detect refund status from text."""
         tokens = self.patterns.refund_status_tokens or self.vocab.REFUND_STATUS_TOKENS
         for status, keywords in tokens.items():
@@ -1199,7 +1491,13 @@ class TranscriptAnalyzer:
                 return status
         return None
 
-    def _extract_conversation_timeline(self, turns: list[Turn]) -> ConversationTimeline:
+    def _extract_conversation_timeline(
+        self,
+        turns: Annotated[
+            list[Turn],
+            Doc("All conversation turns iterated to build the event sequence."),
+        ],
+    ) -> ConversationTimeline:
         """Extract conversation timeline with key events."""
         events = []
         first_issue_turn = None
@@ -1249,14 +1547,29 @@ class TranscriptAnalyzer:
             time_to_resolution=time_to_resolution,
         )
 
-    def _detect_timeline_event_type(self, text: str, speaker: str) -> Optional[str]:
-        """Detect timeline event type from turn text."""
+    def _detect_timeline_event_type(
+        self,
+        text: Annotated[
+            str, Doc("Lowercased turn text to match against timeline event tokens.")
+        ],
+        speaker: Annotated[
+            str,
+            Doc(
+                "Turn speaker role ('customer' or 'agent'); gates which event types are eligible."
+            ),
+        ],
+    ) -> Optional[str]:
+        """Detect timeline event type from turn text.
+
+        ISSUE_RAISED events are expected from the customer speaker.
+        ACTION_TAKEN, RESOLUTION_PROPOSED, and INVESTIGATION_STARTED events are
+        expected from the agent speaker; turns from other speakers are skipped
+        for those event types.
+        """
         tokens = self.patterns.timeline_event_tokens or self.vocab.TIMELINE_EVENT_TOKENS
         for event_type, keywords in tokens.items():
-            # Issue raised typically by customer
             if event_type == "ISSUE_RAISED" and speaker != "customer":
                 continue
-            # Most other events by agent
             if (
                 event_type
                 in ["ACTION_TAKEN", "RESOLUTION_PROPOSED", "INVESTIGATION_STARTED"]
@@ -1270,17 +1583,36 @@ class TranscriptAnalyzer:
         return None
 
     @staticmethod
-    def _summarize_event(text: str, event_type: str) -> str:
+    def _summarize_event(
+        text: Annotated[str, Doc("Raw turn text to summarize.")],
+        event_type: Annotated[
+            str,
+            Doc(
+                "Event type label (currently unused; reserved for future specialization)."
+            ),
+        ],
+    ) -> str:
         """Create brief summary of event."""
         sentences = text.split(".")
         summary = sentences[0] if sentences else text
         return summary[:100].strip()
 
-    def _extract_promises(self, turns: list[Turn]) -> list[PromiseCommitment]:
-        """Extract agent promises and commitments (case-dependent)."""
+    def _extract_promises(
+        self,
+        turns: Annotated[
+            list[Turn],
+            Doc(
+                "All conversation turns; only agent turns are scanned for promise indicators."
+            ),
+        ],
+    ) -> list[PromiseCommitment]:
+        """Extract agent promises and commitments (case-dependent).
+
+        For each agent turn, scans promise_commitment_tokens first, then checks
+        language-specific extra_commitment_patterns separately.
+        """
         promises = []
 
-        # Additional commitment patterns checked separately (language-specific)
         extra_commitment_patterns = self.patterns.extra_commitment_patterns or {}
 
         for idx, turn in enumerate(turns):
@@ -1322,7 +1654,6 @@ class TranscriptAnalyzer:
                     )
                     promises.append(promise)
 
-            # Check extra commitment patterns
             for commit_type, phrases in extra_commitment_patterns.items():
                 matching = next((p for p in phrases if p in text_lower), None)
                 if matching:
@@ -1341,13 +1672,21 @@ class TranscriptAnalyzer:
 
         return self._dedupe_promises(promises)
 
-    def _extract_promise_timeline(self, text: str) -> Optional[str]:
-        """Extract timeline from promise text."""
+    def _extract_promise_timeline(
+        self,
+        text: Annotated[
+            str, Doc("Lowercased agent turn text to extract a timeline from.")
+        ],
+    ) -> Optional[str]:
+        """Extract timeline from promise text.
+
+        Tries the generic timeline extractor first, then falls back to
+        language-specific promise timeline patterns (format-string based).
+        """
         timeline = self._extract_timeline(text)
         if timeline:
             return timeline
 
-        # Language-specific promise timeline patterns (format-string based)
         for regex, fmt in self.patterns.promise_timeline_patterns:
             if match := re.search(regex, text, re.I):
                 groups = match.groups()
@@ -1356,7 +1695,21 @@ class TranscriptAnalyzer:
 
         return None
 
-    def _calculate_promise_confidence(self, text: str, promise_type: str) -> float:
+    def _calculate_promise_confidence(
+        self,
+        text: Annotated[
+            str,
+            Doc(
+                "Lowercased agent turn text used to look for confidence-boosting indicators."
+            ),
+        ],
+        promise_type: Annotated[
+            str,
+            Doc(
+                "Promise type label; financial types get an extra boost when a monetary amount is present."
+            ),
+        ],
+    ) -> float:
         """Calculate confidence in promise detection."""
         confidence = 0.6
 
@@ -1378,7 +1731,15 @@ class TranscriptAnalyzer:
         return min(confidence, 1.0)
 
     @staticmethod
-    def _extract_promise_description(text: str, keyword: str) -> str:
+    def _extract_promise_description(
+        text: Annotated[
+            str,
+            Doc("Raw agent turn text from which the relevant sentence is extracted."),
+        ],
+        keyword: Annotated[
+            str, Doc("The matched promise keyword used to locate the sentence.")
+        ],
+    ) -> str:
         """Extract the promise description around the keyword."""
         sentences = text.split(".")
         for sentence in sentences:
@@ -1386,26 +1747,37 @@ class TranscriptAnalyzer:
                 return sentence.strip()[:150]
         return text[:150]
 
-    # Promise types where only the first detected instance is kept (no timeline variants).
-    # These promises describe a single outcome whose timeline is set on first mention;
-    # a later agent turn referencing the same promise with a different timeline
-    # (e.g. "later today" vs "3-5 business days") would otherwise emit a conflicting token.
     _SINGLE_INSTANCE_PROMISE_TYPES = {"REFUND_PROMISE", "CREDIT_PROMISE"}
+    """Promise types where only the first detected instance is kept (no timeline variants).
+
+    These promises describe a single outcome whose timeline is set on first mention;
+    a later agent turn referencing the same promise with a different timeline
+    (e.g. "later today" vs "3-5 business days") would otherwise emit a conflicting token.
+    """
 
     @staticmethod
-    def _dedupe_promises(promises: list[PromiseCommitment]) -> list[PromiseCommitment]:
+    def _dedupe_promises(
+        promises: Annotated[
+            list[PromiseCommitment],
+            Doc(
+                "Raw list of detected promises, potentially containing duplicates of the same type."
+            ),
+        ],
+    ) -> list[PromiseCommitment]:
         """Remove duplicate promises of the same type.
 
         For REFUND_PROMISE and CREDIT_PROMISE, only one instance per type is kept.
-        When multiple instances exist, the one with an amount is preferred (more
-        informative), since the same promise may be detected by both the primary
-        token loop (with amount extraction) and the extra patterns loop (without).
-        This prevents semantic duplicates like CREDIT_24H_20 and CREDIT_24H.
+        The amount-bearing representative is preferred (more informative), since
+        the same promise may be detected by both the primary token loop (with amount
+        extraction) and the extra patterns loop (without). This prevents semantic
+        duplicates like CREDIT_24H_20 and CREDIT_24H.
+
+        For single-instance types, picks the best (amount-bearing) representative
+        first before emitting.
         """
         seen_keys: set = set()
         unique = []
 
-        # For single-instance types, pick the best (amount-bearing) representative first
         single_best: dict = {}
         for p in promises:
             if p.type in TranscriptAnalyzer._SINGLE_INSTANCE_PROMISE_TYPES:
@@ -1427,21 +1799,35 @@ class TranscriptAnalyzer:
         return unique
 
     @classmethod
-    def _extract_domain(cls, call_info: CallInfo, issues: list[Issue]) -> Optional[str]:
+    def _extract_domain(
+        cls,
+        call_info: Annotated[
+            CallInfo,
+            Doc("Call metadata; its `type` field is used as fallback domain signal."),
+        ],
+        issues: Annotated[
+            list[Issue],
+            Doc(
+                "Extracted issues; the first issue's type drives primary domain lookup."
+            ),
+        ],
+    ) -> Optional[str]:
         """Extract v2 DOMAIN from issues and call info.
 
         Issue-derived domain takes priority, except when the call type provides
-        stronger signal (e.g. a SALES call should not resolve to FULFILLMENT).
-        Falls back to call_info.type when no issue maps to a domain.
+        stronger signal (e.g. a SALES call should not resolve to FULFILLMENT —
+        shipment keywords may have matched incidentally, such as "analytics tracking").
+        In that case remaining issues are tried for a better match before falling
+        back to the call-type-derived domain.
+
+        Falls back to call_info.type only for call types that carry specific domain
+        signal (not the generic SUPPORT type). Returns "UNCLASSIFIED" when no
+        domain can be determined.
         """
         if issues:
             issue_type = issues[0].type
             if issue_type in ISSUE_TO_DOMAIN:
                 domain = ISSUE_TO_DOMAIN[issue_type]
-                # A SALES call should not resolve to FULFILLMENT — the shipment
-                # keywords likely matched incidentally (e.g. "analytics tracking").
-                # Try remaining issues for a better match first, then fall back to
-                # the call-type-derived domain.
                 if call_info.type == "SALES" and domain == "FULFILLMENT":
                     for issue in issues[1:]:
                         alt = ISSUE_TO_DOMAIN.get(issue.type)
@@ -1450,8 +1836,6 @@ class TranscriptAnalyzer:
                     return CALL_TYPE_TO_DOMAIN.get(call_info.type, "PRODUCT")
                 return domain
 
-        # Fallback: derive domain from the detected call type, but only for
-        # call types that carry specific domain signal (not the generic SUPPORT type).
         _INFORMATIVE_CALL_TYPES = {
             "BILLING",
             "TECHNICAL",
@@ -1469,7 +1853,21 @@ class TranscriptAnalyzer:
         return "UNCLASSIFIED"
 
     @classmethod
-    def _extract_service(cls, issues: list[Issue], turns: list[Turn]) -> Optional[str]:
+    def _extract_service(
+        cls,
+        issues: Annotated[
+            list[Issue],
+            Doc(
+                "Extracted issues; the first issue's type is mapped to a service label."
+            ),
+        ],
+        turns: Annotated[
+            list[Turn],
+            Doc(
+                "Conversation turns (currently unused; reserved for future service extraction)."
+            ),
+        ],
+    ) -> Optional[str]:
         """Extract v2 SERVICE from issues."""
         if issues:
             issue_type = issues[0].type
@@ -1479,15 +1877,34 @@ class TranscriptAnalyzer:
 
     def _extract_customer_intent(
         self,
-        issues: list[Issue],
-        turns: list[Turn],
-        actions: Optional[list[Action]] = None,
+        issues: Annotated[
+            list[Issue],
+            Doc(
+                "Extracted issues; used as fallback when no intent is found in turn text."
+            ),
+        ],
+        turns: Annotated[
+            list[Turn],
+            Doc(
+                "All conversation turns; customer turns are scanned first, agent turns as fallback."
+            ),
+        ],
+        actions: Annotated[
+            Optional[list[Action]],
+            Doc(
+                "Extracted actions used to refine or infer the intent when keyword matching yields a generic result."
+            ),
+        ] = None,
     ) -> tuple[Optional[str], Optional[str]]:
         """Extract v2 CUSTOMER_INTENT from customer turns using direct keyword matching.
 
-        Scans customer turns only using CUSTOMER_INTENT_KEYWORDS (longest match first).
-        Falls back to ISSUE_TO_INTENT only if direct keyword match fails.
-        Applies context-based narrowing when generic intents are detected.
+        Resolution order:
+        1. Scan customer turns using CUSTOMER_INTENT_KEYWORDS (longest match first).
+        2. Fallback 1: try agent turns (agents often restate the issue).
+        3. Fallback 2: derive from issue type via ISSUE_TO_INTENT.
+        4. Context-based narrowing: refine REPORT_BILLING_ISSUE using actions/issues.
+        5. Fallback 3: agent-action-based inference (if agent issued a refund,
+           the customer wanted one).
 
         Returns (primary_intent, secondary_intent).
         """
@@ -1495,7 +1912,6 @@ class TranscriptAnalyzer:
         secondary = None
         actions = actions or []
 
-        # Primary: scan customer turns with direct keyword matching
         customer_text = " ".join(
             t.text.lower() for t in turns if t.speaker == "customer"
         )
@@ -1508,7 +1924,6 @@ class TranscriptAnalyzer:
             if len(intents) > 1:
                 secondary = intents[1]
 
-        # Fallback 1: try agent turns (agents often restate the issue)
         if not primary:
             agent_text = " ".join(t.text.lower() for t in turns if t.speaker == "agent")
             intents = self._lookup_all_categories(
@@ -1519,13 +1934,11 @@ class TranscriptAnalyzer:
                 if len(intents) > 1:
                     secondary = intents[1]
 
-        # Fallback 2: derive from issue type
         if not primary and issues:
             primary = ISSUE_TO_INTENT.get(issues[0].type)
             if len(issues) > 1 and not secondary:
                 secondary = ISSUE_TO_INTENT.get(issues[1].type)
 
-        # Context-based narrowing: refine generic intents using actions and issues
         if primary == "REPORT_BILLING_ISSUE":
             action_types = {a.type for a in actions}
             issue_types = {i.type for i in issues}
@@ -1536,7 +1949,6 @@ class TranscriptAnalyzer:
             elif "UNEXPECTED_CHARGE" in issue_types:
                 primary = "REPORT_UNEXPECTED_CHARGE"
 
-        # Fallback 3: agent-action-based inference (if agent did refund, customer wanted refund)
         if not primary and actions:
             action_types = {a.type for a in actions}
             if "REFUND_INITIATED" in action_types or "CREDIT_APPLIED" in action_types:
@@ -1545,16 +1957,41 @@ class TranscriptAnalyzer:
         return primary, secondary
 
     def _extract_context_provided(
-        self, turns: list[Turn], call_info: Optional[CallInfo] = None
+        self,
+        turns: Annotated[
+            list[Turn],
+            Doc(
+                "All conversation turns; only customer turns are scanned for context tokens."
+            ),
+        ],
+        call_info: Annotated[
+            Optional[CallInfo],
+            Doc(
+                "Call metadata; the agent name is extracted to prevent it from triggering NAME_PROVIDED."
+            ),
+        ] = None,
     ) -> list[str]:
         """Extract v2 CONTEXT tokens indicating what information the customer provided.
 
-        Returns fact-of-information without leaking PII.
+        Returns fact-of-information tokens without leaking PII. Agent names are
+        collected first so that NAME_PROVIDED is not emitted when a customer thanks
+        the agent by name.
+
+        NAME_PROVIDED is emitted when a spaCy PERSON entity is found in a customer
+        turn (excluding the agent's name) or when a name introduction pattern matches.
+
+        OLD_NAME_PROVIDED and NEW_NAME_PROVIDED are emitted together when a
+        "change X to Y" name-change pattern is detected.
+
+        DELAY_N_DAYS is emitted when the customer mentions a number of days alongside
+        delay context words (e.g. "waiting", "been", "ago", "since").
+
+        Typographic apostrophes (U+2019) in trigger keywords are normalized to
+        straight apostrophes so patterns like "hasn't" and "aren't" match correctly.
         """
         context = []
         seen = set()
 
-        # Collect known agent names to exclude from NAME_PROVIDED
         agent_names = set()
         if call_info and call_info.agent:
             agent_names.add(call_info.agent.lower())
@@ -1603,8 +2040,6 @@ class TranscriptAnalyzer:
             if ents.get("verification_codes"):
                 _add("VERIFICATION_CODE_PROVIDED")
 
-            # NAME_PROVIDED — detect via spaCy PERSON entity in customer turns
-            # Exclude the agent's name (customer may thank them by name)
             doc = getattr(turn, "doc", None)
             if doc:
                 for ent in doc.ents:
@@ -1614,14 +2049,12 @@ class TranscriptAnalyzer:
                             _add("NAME_PROVIDED")
                             break
 
-            # Detect name introduction patterns
             intro_patterns = self.patterns.name_intro_patterns or [
                 r"(?:my name is|i'?m|this is)\s+([A-Z][a-z]+)"
             ]
             if any(re.search(pat, text_lower) for pat in intro_patterns):
                 _add("NAME_PROVIDED")
 
-            # OLD_NAME_PROVIDED / NEW_NAME_PROVIDED — detect "change X to Y" patterns
             name_change_patterns = self.patterns.name_change_patterns or [
                 r"\b(?:change|update)\s+(?:my\s+)?(?:name\s+)?(?:from\s+)?\w+\s+to\s+\w+"
             ]
@@ -1629,7 +2062,6 @@ class TranscriptAnalyzer:
                 _add("OLD_NAME_PROVIDED")
                 _add("NEW_NAME_PROVIDED")
 
-            # DELAY_N_DAYS — customer mentions a duration of waiting
             delay_match = re.search(r"\b(\d+)\s*days?\b", text_lower)
             delay_context = self.patterns.delay_context_words or [
                 "waiting",
@@ -1643,13 +2075,22 @@ class TranscriptAnalyzer:
 
         return context
 
-    def _extract_trigger_cause(self, turns: list[Turn]) -> Optional[str]:
+    def _extract_trigger_cause(
+        self,
+        turns: Annotated[
+            list[Turn],
+            Doc("All conversation turns; only the first 3 customer turns are scanned."),
+        ],
+    ) -> Optional[str]:
         """Extract the trigger cause — why the customer contacted support.
 
         Scans only the first 3 customer turns for causal indicators (locked fields,
         missing delivery, price increases, etc.) using TRIGGER_CAUSE_KEYWORDS sorted
         longest-first. The trigger is the first actionable customer request and is
         locked after extraction — it is not inferred from the outcome.
+
+        Typographic apostrophes (U+2019) are normalized to straight apostrophes so
+        keywords like "hasn't" and "aren't" match transcript text correctly.
         """
         trigger_index = sorted(
             [
@@ -1661,11 +2102,8 @@ class TranscriptAnalyzer:
             reverse=True,
         )
 
-        # Limit to the first 3 customer turns (workflow activation event)
         early_customer_turns = [t for t in turns if t.speaker == "customer"][:3]
         customer_text = " ".join(t.text.lower() for t in early_customer_turns)
-        # Normalize typographic apostrophes (U+2019 ' → ') so keywords with
-        # straight apostrophes ("hasn't", "aren't") match transcript text.
         customer_text = customer_text.replace("\u2019", "'")
 
         for kw, cause in trigger_index:
@@ -1675,7 +2113,15 @@ class TranscriptAnalyzer:
         return None
 
     @classmethod
-    def _extract_system_actions(cls, turns: list[Turn]) -> list[str]:
+    def _extract_system_actions(
+        cls,
+        turns: Annotated[
+            list[Turn],
+            Doc(
+                "All conversation turns; system and agent turns are combined and scanned for system action keywords."
+            ),
+        ],
+    ) -> list[str]:
         """Extract v2 SYSTEM_ACTIONS from system turns and agent references."""
         actions = []
         seen = set()

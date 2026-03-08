@@ -1,5 +1,6 @@
-from typing import Optional
+from typing import Optional, Annotated
 
+from annotated_doc import Doc
 
 from ._schemas import Intent, Target, ExtractionField, Context, OutputSchema
 
@@ -9,13 +10,40 @@ class CLLMTokenizer:
 
     @staticmethod
     def build_sequence(
-        intent: Intent,
-        target: Target,
-        extractions: Optional[ExtractionField],
-        contexts: list[Context],
-        output_format: Optional[OutputSchema],
-        quantifier: Optional[tuple[str, int]] = None,
-        specifications=None,
+        intent: Annotated[
+            Intent,
+            Doc("The detected intent (REQ token) to encode first in the sequence."),
+        ],
+        target: Annotated[
+            Target,
+            Doc("The extracted target (TARGET token) to encode after the intent."),
+        ],
+        extractions: Annotated[
+            Optional[ExtractionField],
+            Doc(
+                "Optional extraction fields (EXTRACT token); omitted if None or empty."
+            ),
+        ],
+        contexts: Annotated[
+            list[Context],
+            Doc("List of context aspects (CTX tokens) to append after extractions."),
+        ],
+        output_format: Annotated[
+            Optional[OutputSchema],
+            Doc("Optional output schema (OUT token) to append at the end."),
+        ],
+        quantifier: Annotated[
+            Optional[tuple[str, int]],
+            Doc(
+                "Optional (token_label, numeric_value) quantifier; not yet emitted but reserved for future use."
+            ),
+        ] = None,
+        specifications: Annotated[
+            Optional[dict],
+            Doc(
+                "Optional specification dict; not yet emitted but reserved for future use."
+            ),
+        ] = None,
     ) -> str:
         tokens = []
 

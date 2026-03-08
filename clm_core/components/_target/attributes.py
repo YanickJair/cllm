@@ -1,5 +1,7 @@
 import re
-from typing import Optional
+from typing import Optional, Annotated
+
+from annotated_doc import Doc as _Doc
 from spacy import Language
 from spacy.tokens import Doc
 
@@ -21,7 +23,16 @@ class AttributeEnhancer:
     """
 
     def __init__(
-        self, *, nlp: Language, vocab: BaseVocabulary, rules: BaseRules
+        self,
+        *,
+        nlp: Annotated[
+            Language,
+            _Doc("spaCy language model used for domain and language detection."),
+        ],
+        vocab: Annotated[
+            BaseVocabulary, _Doc("Vocabulary instance for the target language.")
+        ],
+        rules: Annotated[BaseRules, _Doc("Language-specific parsing rules.")],
     ) -> None:
         self.nlp = nlp
         self._vocab = vocab
@@ -33,7 +44,21 @@ class AttributeEnhancer:
         self.domain_detector = DomainDetector(nlp=nlp, vocab=vocab, rules=rules)
         self.language_detector = LanguageDetector(vocab=vocab, rules=rules)
 
-    def enhance(self, target_token: str, text: str, doc: Doc) -> dict[str, str]:
+    def enhance(
+        self,
+        target_token: Annotated[
+            str,
+            _Doc(
+                "Canonical target token string (e.g. 'CONCEPT', 'CODE') that determines which attribute types to extract."
+            ),
+        ],
+        text: Annotated[
+            str, _Doc("Original input text used for attribute and domain detection.")
+        ],
+        doc: Annotated[
+            Doc, _Doc("Pre-computed spaCy Doc for domain and language detection.")
+        ],
+    ) -> dict[str, str]:
         attributes = {}
 
         if target_token in ["CONCEPT", "PROCEDURE", "ANSWER", "FACT"]:
@@ -70,12 +95,44 @@ class AttributeEnhancer:
 class TopicExtractor:
     """Extracts TOPIC attribute using centralized rules."""
 
-    def __init__(self, nlp, vocab: BaseVocabulary, rules: BaseRules):
+    def __init__(
+        self,
+        nlp: Annotated[
+            Language, _Doc("spaCy language model for noun chunk iteration.")
+        ],
+        vocab: Annotated[
+            BaseVocabulary,
+            _Doc(
+                "Vocabulary instance providing STOPWORDS, DEMONSTRATIVES, PRONOUNS, MODALS, and ACTION_VERBS."
+            ),
+        ],
+        rules: Annotated[
+            BaseRules,
+            _Doc(
+                "Language-specific rules for question/explain/concept/procedure pattern matching."
+            ),
+        ],
+    ):
         self.nlp = nlp
         self._vocab = vocab
         self._rules = rules
 
-    def extract(self, text: str, target: str, doc: Doc) -> Optional[str]:
+    def extract(
+        self,
+        text: Annotated[str, _Doc("Input text to extract a TOPIC value from.")],
+        target: Annotated[
+            str,
+            _Doc(
+                "The target token type (e.g. 'CONCEPT', 'PROCEDURE') providing context for topic extraction."
+            ),
+        ],
+        doc: Annotated[
+            Doc,
+            _Doc(
+                "Pre-computed spaCy Doc providing noun chunks for fallback topic detection."
+            ),
+        ],
+    ) -> Optional[str]:
         text_lower = text.lower()
 
         if m := self._rules.extract_question_subject(text_lower):
@@ -122,17 +179,38 @@ class TopicExtractor:
                         return valid
         return None
 
-    def _format_topic(self, topic: str) -> str:
+    def _format_topic(
+        self,
+        topic: Annotated[
+            str, _Doc("Raw topic string to uppercase and underscore-delimit.")
+        ],
+    ) -> str:
         return topic.replace(" ", "_").replace("'", "").upper()
 
-    def _validate_topic(self, topic: str) -> Optional[str]:
+    def _validate_topic(
+        self,
+        topic: Annotated[
+            str,
+            _Doc(
+                "Formatted topic string to validate; rejected if too short or purely non-alphabetic."
+            ),
+        ],
+    ) -> Optional[str]:
         if not topic or len(topic) < 2:
             return None
         if re.match(r"^[\d\W_]+$", topic):
             return None
         return topic
 
-    def _clean_topic(self, topic: str) -> Optional[str]:
+    def _clean_topic(
+        self,
+        topic: Annotated[
+            str,
+            _Doc(
+                "Raw topic string to strip of pronouns, demonstratives, modals, articles, and trailing action verbs."
+            ),
+        ],
+    ) -> Optional[str]:
         if not topic:
             return None
 
@@ -158,10 +236,21 @@ class TopicExtractor:
 class SubjectDetector:
     """Detect SUBJECT attribute using Rules.SUBJECT_PATTERNS."""
 
-    def __init__(self, rules: BaseRules) -> None:
+    def __init__(
+        self,
+        rules: Annotated[
+            BaseRules,
+            _Doc(
+                "Language-specific rules providing compiled SUBJECT_PATTERNS for matching."
+            ),
+        ],
+    ) -> None:
         self._rules = rules
 
-    def detect(self, text: str) -> Optional[str]:
+    def detect(
+        self,
+        text: Annotated[str, _Doc("Input text to match against subject patterns.")],
+    ) -> Optional[str]:
         text_lower = text.lower()
         if label := self._rules.match_subject_pattern(text_lower):
             return label
@@ -172,10 +261,27 @@ class SubjectDetector:
 class RichAttributeExtractor:
     """Extracts TYPE, CONTEXT, ISSUE, DURATION etc. using centralized rules."""
 
-    def __init__(self, rules: BaseRules):
+    def __init__(
+        self,
+        rules: Annotated[
+            BaseRules,
+            _Doc(
+                "Language-specific rules providing DURATION_PATTERNS, TYPE_MAP, CONTEXT_MAP, and issue pattern matching."
+            ),
+        ],
+    ):
         self.rules = rules
 
-    def extract(self, text: str, target_type: str) -> dict[str, str]:
+    def extract(
+        self,
+        text: Annotated[str, _Doc("Input text to extract rich attributes from.")],
+        target_type: Annotated[
+            str,
+            _Doc(
+                "The target token type (e.g. 'TRANSCRIPT', 'TICKET') that determines which attribute types are extracted."
+            ),
+        ],
+    ) -> dict[str, str]:
         attrs = {}
         text_lower = text.lower()
 
@@ -207,11 +313,31 @@ class RichAttributeExtractor:
 class LanguageDetector:
     """Detects programming language using centralized Rules."""
 
-    def __init__(self, *, vocab: BaseVocabulary, rules: BaseRules):
+    def __init__(
+        self,
+        *,
+        vocab: Annotated[
+            BaseVocabulary,
+            _Doc(
+                "Vocabulary providing CODE_INDICATORS to gate programming language detection."
+            ),
+        ],
+        rules: Annotated[
+            BaseRules,
+            _Doc(
+                "Language-specific rules with compiled PROGRAMMING_LANGUAGE_PATTERN entries."
+            ),
+        ],
+    ):
         self._vocab = vocab
         self._rules = rules
 
-    def detect(self, text: str) -> Optional[str]:
+    def detect(
+        self,
+        text: Annotated[
+            str, _Doc("Input text to scan for programming language indicators.")
+        ],
+    ) -> Optional[str]:
         text_lower = text.lower()
 
         if not any(ind in text_lower for ind in self._vocab.CODE_INDICATORS):

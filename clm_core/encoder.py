@@ -1,7 +1,8 @@
-from typing import Any, Optional
+from typing import Any, Optional, Annotated
 
 import spacy
 
+from annotated_doc import Doc
 from clm_core.components.ds_compression import SDEncoder, SDEncoderV2
 from clm_core.components.sys_prompt.encoder import SysPromptEncoder
 from clm_core.components.thread_encoder.encoder import ThreadEncoder
@@ -11,10 +12,17 @@ from clm_core.types import CLMOutput
 
 
 class CLMEncoder:
-    def __init__(self, *, cfg: CLMConfig):
-        """
-        Initialize encode
-        """
+    def __init__(
+        self,
+        *,
+        cfg: Annotated[
+            CLMConfig,
+            Doc(
+                "The CLM configuration object that controls language, compression settings, and component options."
+            ),
+        ],
+    ):
+        """Initialize the encoder with the given configuration."""
         self._cfg = cfg
         self._ds_encoder = SDEncoderV2(config=self._cfg.ds_config)
         self._classifier = DataClassifier()
@@ -54,7 +62,23 @@ class CLMEncoder:
         return self._lazy_sys_prompt_encoder
 
     def encode(
-        self, input_: Any, verbose: bool = False, metadata: Optional[dict] = None
+        self,
+        input_: Annotated[
+            Any,
+            Doc(
+                "The input data to encode. May be a string (transcript or system prompt), dict, or list of dicts (structured data)."
+            ),
+        ],
+        verbose: Annotated[
+            bool,
+            Doc("When True, prints classification and compression details to stdout."),
+        ] = False,
+        metadata: Annotated[
+            Optional[dict],
+            Doc(
+                "Optional metadata dict to attach to the output (passed through to the thread encoder)."
+            ),
+        ] = None,
     ) -> CLMOutput:
         class_ = self._classifier.classifier(input_=input_)
 
@@ -70,10 +94,19 @@ class CLMEncoder:
 
         if class_ == DataTypes.TRANSCRIPT:
             return self._ts_encoder.encode(
-                transcript=input_, verbose=verbose, metadata=metadata
+                thread=input_, verbose=verbose, metadata=metadata
             )
         return self._sys_prompt_encoder.compress(input_, verbose)
 
-    def bind(self, out: CLMOutput, **kwargs):
-        """Called during runtime to bind values for configuration prompt placeholders"""
+    def bind(
+        self,
+        out: Annotated[
+            CLMOutput,
+            Doc(
+                "The CLMOutput produced by a prior encode() call for a CONFIGURATION-mode system prompt."
+            ),
+        ],
+        **kwargs,
+    ):
+        """Called during runtime to bind values for configuration prompt placeholders."""
         return self._sys_prompt_encoder.bind(out=out, **kwargs)

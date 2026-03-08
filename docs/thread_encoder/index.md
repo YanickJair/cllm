@@ -98,15 +98,21 @@ print(result.compressed)
 
 ## Encoding Modes
 
-Thread Encoder currently supports one encoding mode:
+Thread Encoder supports two encoding modes, selected automatically via format detection or set explicitly with the `transcript_format` parameter:
 
 | Mode | Description | Typical Content |
 |------|-------------|-----------------|
-| **Transcript** | Two-sided support conversations | Voice calls, live chat, email support |
+| **Transcript** | Two-sided conversations with labeled speaker turns | Voice calls, live chat, email support with `Agent:` / `Customer:` prefixes |
+| **Free-Form** | Unstructured prose without consistent speaker labels | Emails, Slack threads, SMS, raw case notes |
 
-The encoder is triggered automatically when `CLMEncoder.encode()` receives a string that looks like a conversation transcript (detected by the internal `DataClassifier`).
+The encoder detects the format automatically: if at least 50% of non-empty lines carry a recognized speaker prefix the input is treated as `"turns"`, otherwise as `"free_form"`. You can also override detection explicitly:
 
-See [Transcript Encoder](transcript_encoder.md) for the complete reference.
+```python
+result = encoder.encode(input_=text, metadata={...}, transcript_format="free_form")
+```
+
+- See [Transcript Encoder](transcript_encoder.md) for the labeled-turn format reference.
+- See [Free-Form Encoder](free_form_encoder.md) for emails, threads, and unstructured text.
 
 ---
 
@@ -317,6 +323,7 @@ print(analysis.resolution_state.customer_satisfaction)
 ## Next Steps
 
 - **[Transcript Encoder](transcript_encoder.md)** — Complete reference: token schema, examples, use cases, best practices
+- **[Free-Form Encoder](free_form_encoder.md)** — Encoding emails, Slack threads, and unstructured prose
 - **[Advanced: Token Hierarchy](../advanced/clm_tokenization.md)** — Token structure deep-dive
 - **[Advanced: CLM Dictionary](../advanced/clm_dictionary.md)** — Language-specific vocabularies
 - **[CLM Output](../advanced/clm_output.md)** — `CLMOutput` / `ThreadOutput` reference

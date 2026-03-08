@@ -1,7 +1,9 @@
 from __future__ import annotations
 import json
 import re
-from typing import Any, Union, Optional
+from typing import Any, Union, Optional, Annotated
+
+from annotated_doc import Doc
 
 from clm_core import SysPromptConfig
 from clm_core.components.sys_prompt._schemas import (
@@ -69,7 +71,14 @@ FIELD_LINE_PATTERNS = [
 ]
 
 
-def normalize_text(text: str) -> str:
+def normalize_text(
+    text: Annotated[
+        str,
+        Doc(
+            "Raw output specification text to normalize: Unicode arrows → ASCII, bullets to one-per-line, whitespace collapse, en/em dashes to hyphen."
+        ),
+    ],
+) -> str:
     """
     Normalize incoming specification:
     - Convert common Unicode arrows to ASCII
@@ -86,30 +95,32 @@ def normalize_text(text: str) -> str:
 
     text = text.replace("\r\n", "\n").replace("\r", "\n")
 
-    # Ensure bullets on their own lines (convert "• key — desc" style by splitting)
     for pat in BULLET_PATTERNS:
         text = re.sub(r"\n\s*" + pat, "\n- ", text)
         text = re.sub(r"^" + pat, "- ", text, flags=re.MULTILINE)
 
-    # Make sure each bullet begins on new line
     text = re.sub(r"\s*\n\s*-\s*", "\n- ", text.strip())
 
-    # Collapse multiple blank lines somewhat
     text = re.sub(r"\n{3,}", "\n\n", text)
 
     return text.strip()
 
 
-def contains_json_block(text: str) -> bool:
-    """Look for an explicit JSON block inside the text and verify parseable"""
-    # first look for codeblock-style or brace occurrences
+def contains_json_block(
+    text: Annotated[
+        str,
+        Doc(
+            "Text to search for an explicit JSON block (code-fenced or bare braces). Returns True only if the found block is parseable JSON."
+        ),
+    ],
+) -> bool:
+    """Look for an explicit JSON block inside the text and verify parseable."""
     json_like = re.search(
         r"```(?:json)?\s*(\{[\s\S]*?\})\s*```", text, flags=re.IGNORECASE
     )
     if json_like:
         content = json_like.group(1)
     else:
-        # fallback: look for first { ... } that is reasonably sized
         brace_match = re.search(r"(\{[\s\S]{10,2000}\})", text)
         content = brace_match.group(1) if brace_match else None
 
@@ -122,12 +133,17 @@ def contains_json_block(text: str) -> bool:
     return False
 
 
-def detect_format_from_text(text: str) -> str:
+def detect_format_from_text(
+    text: Annotated[
+        str,
+        Doc(
+            "Input text to classify as JSON, LIST, YAML, or STRUCTURED based on keyword and structural heuristics."
+        ),
+    ],
+) -> str:
     tl = text.lower()
-    # explicit JSON snippet
     if contains_json_block(text):
         return "JSON"
-    # strong phrase matches
     for key, phrases in FORMAT_HINTS.items():
         for p in phrases:
             if p in tl:
@@ -139,13 +155,19 @@ def detect_format_from_text(text: str) -> str:
                     return "JSON"
                 if key == "yaml":
                     return "YAML"
-    # fallback: if text contains "keys:" or "fields:" then structured list-like
     if re.search(r"\bkeys?\b|\bfields?\b|\bcontains\b|\bshould include\b", tl):
         return "LIST"
     return "STRUCTURED"
 
 
-def split_into_candidate_lines(text: str) -> list[str]:
+def split_into_candidate_lines(
+    text: Annotated[
+        str,
+        Doc(
+            "Normalized text to split into candidate lines for field parsing. Comma-separated lists after 'fields are:' or 'keys:' are expanded into individual lines."
+        ),
+    ],
+) -> list[str]:
     """
     Break normalized text into useful candidate lines/phrases to parse.
     Also attempt to expand enumerations like 'The fields are: a, b, c' into separate lines.
@@ -159,7 +181,6 @@ def split_into_candidate_lines(text: str) -> list[str]:
         m = re.search(r"(fields?|keys?)\s*(are|:)\s*(.+)", s, flags=re.IGNORECASE)
         if m:
             remainder = m.group(3)
-            # split on commas but ignore commas inside quotes
             parts = re.split(r',\s*(?=(?:[^"]*"[^"]*")*[^"]*$)', remainder)
             for p in parts:
                 p = p.strip()
@@ -171,7 +192,14 @@ def split_into_candidate_lines(text: str) -> list[str]:
     return lines
 
 
-def parse_fields_from_lines(lines: list[str]) -> list[OutputField]:
+def parse_fields_from_lines(
+    lines: Annotated[
+        list[str],
+        Doc(
+            "Candidate lines produced by split_into_candidate_lines(); each line is matched against micro-grammar patterns to extract OutputField objects."
+        ),
+    ],
+) -> list[OutputField]:
     """
     Apply micro-grammar patterns and heuristics to extract fields.
     Return list of OutputField (flat). Nested detection happens later.
@@ -180,7 +208,6 @@ def parse_fields_from_lines(lines: list[str]) -> list[OutputField]:
 
     for line in lines:
         matched = False
-        # try each grammar pattern
         for pat in FIELD_LINE_PATTERNS:
             m = pat.search(line)
             if m:
@@ -188,7 +215,6 @@ def parse_fields_from_lines(lines: list[str]) -> list[OutputField]:
                 desc = m.groupdict().get("desc")
                 if desc:
                     desc = desc.strip().strip('"').strip("'").rstrip(".;")
-                # Normalize key to snake-like
                 normalized_key = re.sub(r"\s+", "_", key.strip()).lower()
                 if normalized_key not in extracted:
                     extracted[normalized_key] = OutputField(
@@ -198,7 +224,6 @@ def parse_fields_from_lines(lines: list[str]) -> list[OutputField]:
                 break
 
         if not matched:
-            # fallback: if the line itself is a single word/phrase probably meaning a key
             single = re.match(r'^\-?\s*["\']?(?P<w>[\w\-\_ ]{1,60})["\']?\s*$', line)
             if single:
                 key = single.group("w").strip()
@@ -207,7 +232,6 @@ def parse_fields_from_lines(lines: list[str]) -> list[OutputField]:
                     extracted[normalized_key] = OutputField(name=normalized_key)
                 continue
 
-            # fallback: try splitting "name - description" with any hyphen
             m2 = re.match(r"(?P<key>[\w\-\_ ]{1,80})\s*[-–—]\s*(?P<desc>.+)", line)
             if m2:
                 key = m2.group("key").strip()
@@ -223,7 +247,18 @@ def parse_fields_from_lines(lines: list[str]) -> list[OutputField]:
 
 
 def extract_fields_from_dict(
-    schema: dict[str, Any], prefix: str = ""
+    schema: Annotated[
+        dict[str, Any],
+        Doc(
+            "Structured schema dict to recurse into and extract OutputField objects from. Nested dicts become object fields; lists of dicts become array<object> fields."
+        ),
+    ],
+    prefix: Annotated[
+        str,
+        Doc(
+            "Dot-separated key prefix accumulated during recursion; used to track nesting depth."
+        ),
+    ] = "",
 ) -> list[OutputField]:
     """
     Recursively extract fields from a dict (structured schema).
@@ -234,7 +269,6 @@ def extract_fields_from_dict(
             nested = extract_fields_from_dict(val, prefix=f"{prefix}{key}.")
             fields.append(OutputField(name=key, type="object", nested=nested))
         elif isinstance(val, list):
-            # if first element is dict, treat as array of objects
             if len(val) > 0 and isinstance(val[0], dict):
                 nested = extract_fields_from_dict(val[0], prefix=f"{prefix}{key}.")
                 fields.append(
@@ -249,7 +283,20 @@ def extract_fields_from_dict(
     return fields
 
 
-def detect_nested_from_text(text: str, fields: list[OutputField]) -> bool:
+def detect_nested_from_text(
+    text: Annotated[
+        str,
+        Doc(
+            "Normalized output specification text to inspect for nesting signals (keywords, indentation, JSON structures)."
+        ),
+    ],
+    fields: Annotated[
+        list[OutputField],
+        Doc(
+            "Already-extracted OutputField objects; if any have nested children, returns True."
+        ),
+    ],
+) -> bool:
     """
     Decide whether schema is nested based on:
     - presence of JSON/dict structures
@@ -286,7 +333,26 @@ class SchemaOutputCompressor:
     """
 
     def __init__(
-        self, *, infer_types: bool, add_attributes: bool, add_examples: bool
+        self,
+        *,
+        infer_types: Annotated[
+            bool,
+            Doc(
+                "When True, emit type labels (STR, INT, FLOAT, etc.) for primitive schema values."
+            ),
+        ],
+        add_attributes: Annotated[
+            bool,
+            Doc(
+                "When True, extract and attach ENUMS, CONSTRAINTS, and SPECS attributes from extra_text."
+            ),
+        ],
+        add_examples: Annotated[
+            bool,
+            Doc(
+                "When True, extract SPECS attributes from the extra_text alongside the schema."
+            ),
+        ],
     ) -> None:
         self._add_attributes: bool = add_attributes
         self._infer_types: bool = infer_types
@@ -297,7 +363,16 @@ class SchemaOutputCompressor:
         flags=re.IGNORECASE,
     )
 
-    def compress_schema(self, schema: dict, extra_text: str = "") -> OutputSchema:
+    def compress_schema(
+        self,
+        schema: Annotated[dict, Doc("Structured schema dict to encode compactly.")],
+        extra_text: Annotated[
+            str,
+            Doc(
+                "Optional supplementary text used to extract ENUMS, CONSTRAINTS, and SPECS attributes."
+            ),
+        ] = "",
+    ) -> OutputSchema:
         schema_encoded = self._encode_schema(schema)
         attributes = {"schema": schema_encoded}
 
@@ -666,7 +741,15 @@ class SysPromptOutputFormat:
         r"\bformat(ting)? only\b",
     ]
 
-    def __init__(self, config: SysPromptConfig):
+    def __init__(
+        self,
+        config: Annotated[
+            SysPromptConfig,
+            Doc(
+                "Configuration controlling type inference, attribute extraction, and example inclusion for the compressor."
+            ),
+        ],
+    ):
         self.struct_compressor = SchemaOutputCompressor(
             infer_types=config.infer_types,
             add_attributes=config.add_attrs,
@@ -674,7 +757,14 @@ class SysPromptOutputFormat:
         )
 
     @staticmethod
-    def should_emit_out_json(prompt: str) -> bool:
+    def should_emit_out_json(
+        prompt: Annotated[
+            str,
+            Doc(
+                "Prompt text to inspect; returns True if it contains a JSON block or resolves to STRUCTURED format."
+            ),
+        ],
+    ) -> bool:
         return any(
             [
                 contains_json_block(prompt),
@@ -683,13 +773,20 @@ class SysPromptOutputFormat:
         )
 
     @classmethod
-    def determine_text_output(cls, prompt: str) -> str:
+    def determine_text_output(
+        cls,
+        prompt: Annotated[
+            str,
+            Doc(
+                "Prompt text to scan for plain-text-only patterns; returns 'TEXT' if matched, otherwise empty string."
+            ),
+        ],
+    ) -> str:
         for pat in cls.PLAIN_TEXT_ONLY_PATTERNS:
             if re.search(pat, prompt, re.IGNORECASE):
                 return "TEXT"
         return ""
 
-    # Pattern to match XML-style output format tags
     OUTPUT_XML_TAG_PATTERN = re.compile(
         r"<output_format>\s*.*?\s*</output_format>", re.IGNORECASE | re.DOTALL
     )
@@ -705,7 +802,6 @@ class SysPromptOutputFormat:
         2. Section with header like "OUTPUT FORMAT:" followed by content
         3. Standalone JSON blocks that define output schema
         """
-        # First, try to find XML-style output_format tags
         xml_match = cls.OUTPUT_XML_TAG_PATTERN.search(text)
         if xml_match:
             remaining = text[: xml_match.start()] + text[xml_match.end() :]
@@ -720,7 +816,6 @@ class SysPromptOutputFormat:
                 break
 
         if header_idx is not None:
-            # Find the end of this section (next non-empty section header or end of text)
             end_idx = len(lines)
             brace_depth = 0
             in_json_block = False
@@ -728,7 +823,6 @@ class SysPromptOutputFormat:
             for i in range(header_idx + 1, len(lines)):
                 line = lines[i].strip()
 
-                # Track JSON block depth
                 if line.startswith("{"):
                     in_json_block = True
                     brace_depth += line.count("{") - line.count("}")
@@ -738,7 +832,6 @@ class SysPromptOutputFormat:
                         end_idx = i + 1
                         break
 
-                # Check for next section header (ALL CAPS followed by colon)
                 if not in_json_block and line and re.match(r"^[A-Z][A-Z\s]+:$", line):
                     end_idx = i
                     break
@@ -747,8 +840,6 @@ class SysPromptOutputFormat:
             remaining = "\n".join(lines[:header_idx] + lines[end_idx:])
             return remaining.strip(), extracted.strip()
 
-        # Fallback: look for standalone JSON blocks that look like output schemas
-        # Match code-fenced JSON
         code_fence_match = re.search(
             r"```(?:json)?\s*(\{[\s\S]*?\})\s*```", text, flags=re.IGNORECASE
         )
@@ -762,12 +853,10 @@ class SysPromptOutputFormat:
             except Exception:
                 pass
 
-        # Match bare JSON blocks (only if they look like schema definitions)
         brace_match = re.search(r"(\{[\s\S]{10,2000}\})", text)
         if brace_match:
             try:
                 parsed = json.loads(brace_match.group(1))
-                # Only remove if it looks like a schema (has string placeholder values)
                 if isinstance(parsed, dict) and all(
                     isinstance(v, (str, list, dict, int, float))
                     for v in parsed.values()
@@ -779,7 +868,21 @@ class SysPromptOutputFormat:
 
         return text, ""
 
-    def compress(self, output_spec: Any, is_structured=None) -> OutputSchema:
+    def compress(
+        self,
+        output_spec: Annotated[
+            Any,
+            Doc(
+                "The output specification to compress; may be a natural language string or a structured dict."
+            ),
+        ],
+        is_structured: Annotated[
+            Optional[bool],
+            Doc(
+                "Override for structured-vs-NL detection; if None, inferred from isinstance(output_spec, dict)."
+            ),
+        ] = None,
+    ) -> OutputSchema:
         if is_structured is None:
             is_structured = isinstance(output_spec, dict)
 
@@ -798,7 +901,19 @@ class SysPromptOutputFormat:
         )
 
     def compress_with_schema(
-        self, output_spec: Union[str, dict], return_schema: bool = False
+        self,
+        output_spec: Annotated[
+            Union[str, dict],
+            Doc(
+                "Output specification as a natural language string or a structured dict."
+            ),
+        ],
+        return_schema: Annotated[
+            bool,
+            Doc(
+                "When True, return both the token string and the OutputSchema object; otherwise return only the token string."
+            ),
+        ] = False,
     ) -> tuple[str, OutputSchema] | str:
         is_structured = isinstance(output_spec, dict)
         if is_structured:

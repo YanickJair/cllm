@@ -1,6 +1,7 @@
 import re
-from typing import Optional
+from typing import Optional, Annotated
 
+from annotated_doc import Doc
 from clm_core import CLMOutput
 from spacy.language import Language
 
@@ -30,10 +31,14 @@ _PLACEHOLDER_PATTERN = re.compile(r"\{\{([^}]+)\}\}")
 class ConfigurationPromptEncoder(BasePromptEncoder):
     def __init__(
         self,
-        nlp: Language,
-        vocab: BaseVocabulary,
-        rules: BaseRules,
-        config: SysPromptConfig = SysPromptConfig(),
+        nlp: Annotated[Language, Doc("spaCy language model used for NLP processing.")],
+        vocab: Annotated[
+            BaseVocabulary, Doc("Vocabulary instance for the target language.")
+        ],
+        rules: Annotated[BaseRules, Doc("Language-specific parsing rules.")],
+        config: Annotated[
+            SysPromptConfig, Doc("Configuration for the prompt encoder.")
+        ] = SysPromptConfig(),
     ):
         self._template_validator = PromptTemplateValidator()
         self._config = config
@@ -42,19 +47,14 @@ class ConfigurationPromptEncoder(BasePromptEncoder):
         )
         self._minimizer = ConfigurationPromptMinimizer(nlp=nlp, config=config)
 
-    def bind(self, out: CLMOutput, **runtime_values: Optional[dict]) -> str:
-        """
-        compose CL + NL
-        Args:
-        out (CLMOutput)
-        runtime_values (dict)
-        ----------
-        runtime_values
-
-        Returns
-        -------
-
-        """
+    def bind(
+        self,
+        out: Annotated[
+            CLMOutput, Doc("The CLMOutput object produced by a prior compress() call.")
+        ],
+        **runtime_values: Optional[dict],
+    ) -> str:
+        """Compose CL + NL by binding runtime values into the compressed template."""
         if out.metadata.get("prompt_mode") != "CONFIGURATION":
             return out.compressed
 
@@ -89,7 +89,13 @@ class ConfigurationPromptEncoder(BasePromptEncoder):
             return original_text.format(**runtime_values)
         return result
 
-    def compress(self, prompt: str, verbose: bool = False) -> CLMOutput:
+    def compress(
+        self,
+        prompt: Annotated[str, Doc("Raw configuration prompt to compress.")],
+        verbose: Annotated[
+            bool, Doc("Unused; kept for interface compatibility.")
+        ] = False,
+    ) -> CLMOutput:
         template = self._build_template(prompt)
         validation_issues = self._template_validator.validate(template)
 
@@ -109,11 +115,20 @@ class ConfigurationPromptEncoder(BasePromptEncoder):
         )
 
     def compress_batch(
-        self, prompts: list[str], verbose: bool = False
+        self,
+        prompts: Annotated[
+            list[str], Doc("List of raw configuration prompts to compress.")
+        ],
+        verbose: Annotated[
+            bool, Doc("Unused; kept for interface compatibility.")
+        ] = False,
     ) -> list[CLMOutput]:
         return [self.compress(p, verbose=verbose) for p in prompts]
 
-    def _build_template(self, prompt: str) -> PromptTemplate:
+    def _build_template(
+        self,
+        prompt: Annotated[str, Doc("Raw prompt text to parse into a PromptTemplate.")],
+    ) -> PromptTemplate:
         role = None
         rules = {
             "basic": False,

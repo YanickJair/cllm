@@ -1,3 +1,7 @@
+from typing import Annotated
+
+from annotated_doc import Doc
+
 from core.compressors.statistical.pattern_db import PatternDatabase
 from core.compressors.statistical.pattern_miner import PatternMiner
 
@@ -7,29 +11,43 @@ class StatisticalTrainer:
 
     def __init__(
         self,
-        pattern_db: PatternDatabase,
-        min_frequency: int = 10,
-        min_compression_gain: float = 2.0,
+        pattern_db: Annotated[
+            PatternDatabase,
+            Doc("Pattern database where discovered patterns will be stored."),
+        ],
+        min_frequency: Annotated[
+            int,
+            Doc(
+                "Minimum number of corpus occurrences required to keep a mined pattern."
+            ),
+        ] = 10,
+        min_compression_gain: Annotated[
+            float,
+            Doc(
+                "Minimum token compression gain a pattern must achieve to be added to the database."
+            ),
+        ] = 2.0,
     ) -> None:
         self.pattern_db = pattern_db
         self.pattern_miner = PatternMiner(min_frequency=min_frequency)
         self.min_compression_gain = min_compression_gain
 
-    def train(self, compressed_corpus: list[str], original_corpus: list[str]) -> dict:
-        """
-        Train on a corpus of compressed prompts
-
-        Args:
-            compressed_corpus: Semantic encode outputs
-            original_corpus: Original prompts (for examples)
-
-        Returns:
-            Training statistics
-        """
-        # Step 1: Mine patterns
+    def train(
+        self,
+        compressed_corpus: Annotated[
+            list[str],
+            Doc("List of semantic encoder outputs used as the training corpus."),
+        ],
+        original_corpus: Annotated[
+            list[str],
+            Doc(
+                "List of original prompts aligned with compressed_corpus, used for pattern examples."
+            ),
+        ],
+    ) -> dict:
+        """Train on a corpus of compressed prompts and return training statistics."""
         patterns = self.pattern_miner.mine_patterns(compressed_corpus, original_corpus)
 
-        # Step 2: Filter by compression gain
         valuable_patterns = [
             p for p in patterns if p.compression_gain >= self.min_compression_gain
         ]

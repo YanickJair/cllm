@@ -1,13 +1,31 @@
-from typing import Optional
+from typing import Optional, Annotated
 
+from annotated_doc import Doc
 from .._schemas import SentimentTrajectory, Turn
 
 
 class SentimentAnalyzer:
-    def __init__(self, emotion_keywords: dict = None):
+    def __init__(
+        self,
+        emotion_keywords: Annotated[
+            dict,
+            Doc(
+                "Mapping of emotion label to config dict with 'keywords' (list of trigger strings) and 'intensity' (float sentiment score). Defaults to empty dict."
+            ),
+        ] = None,
+    ):
         self._emotion_keywords = emotion_keywords or {}
 
-    def analyze_turn(self, text: str, speaker: str) -> tuple[Optional[str], float]:
+    def analyze_turn(
+        self,
+        text: Annotated[str, Doc("The turn text to analyze for emotional content.")],
+        speaker: Annotated[
+            str,
+            Doc(
+                "The speaker role, e.g. 'customer' or 'agent'. Currently informational only."
+            ),
+        ],
+    ) -> tuple[Optional[str], float]:
         """
         Analyze sentiment of a turn
 
@@ -33,7 +51,15 @@ class SentimentAnalyzer:
         detected_emotions.sort(key=lambda x: x[1], reverse=True)
         return detected_emotions[0]
 
-    def track_trajectory(self, turns: list[Turn]) -> SentimentTrajectory:
+    def track_trajectory(
+        self,
+        turns: Annotated[
+            list[Turn],
+            Doc(
+                "Ordered list of conversation Turn objects. Only customer turns are analysed."
+            ),
+        ],
+    ) -> SentimentTrajectory:
         """Track sentiment changes across conversation
         Args:
             turns (list[Turn]): List of turns in the conversation

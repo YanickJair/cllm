@@ -7,6 +7,7 @@ from ._schemas import (
     OPTIONAL_FIELDS,
     CRITICAL_FIELDS,
     FIELD_SCHEMA,
+    PerplexityConfig,
 )
 from .kolmogorov import KolmogorovAnalyzer
 from .perplexity import PerplexityAnalyzer
@@ -26,4 +27,5 @@ __all__ = [
     "OPTIONAL_FIELDS",
     "ConditionalEntropyAnalyzer",
     "CompressionQualityGate",
+    "PerplexityConfig",
 ]

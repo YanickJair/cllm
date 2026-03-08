@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Annotated
+
+from annotated_doc import Doc
 
 
 class BaseVocabulary(ABC):
@@ -128,13 +130,13 @@ class BaseVocabulary(ABC):
 
     @property
     def rank_triggers(self) -> set:
-        # Rank triggers with token counts
+        """Rank triggers with token counts."""
         raise NotImplementedError("Subclasses must implement rank_triggers")
 
     @property
     @abstractmethod
     def REQ_TOKENS(self) -> dict[str, list[str]]:
-        # REQ tokens with trigger words
+        """REQ tokens with trigger words."""
         raise NotImplementedError("Subclasses must implement REQ_TOKENS")
 
     @property
@@ -208,7 +210,14 @@ class BaseVocabulary(ABC):
         """Optional - can have empty default"""
         raise NotImplementedError("Subclasses must implement ARTICLES")
 
-    def get_req_token(self, word: str, context: str = "") -> Optional[str]:
+    def get_req_token(
+        self,
+        word: Annotated[str, Doc("The verb or trigger word to look up in REQ_TOKENS.")],
+        context: Annotated[
+            str,
+            Doc("Optional surrounding text used to filter context-dependent words."),
+        ] = "",
+    ) -> Optional[str]:
         """
         Get REQ token for a word, considering context.
         Returns None if word is noise or filtered by context.
@@ -229,7 +238,12 @@ class BaseVocabulary(ABC):
 
         return None
 
-    def get_target_token(self, word: str) -> Optional[str]:
+    def get_target_token(
+        self,
+        word: Annotated[
+            str, Doc("The noun or trigger word to look up in TARGET_TOKENS.")
+        ],
+    ) -> Optional[str]:
         """Get TARGET token for a word."""
         word_lower = word.lower()
         for token, synonyms in self.TARGET_TOKENS.items():
@@ -237,7 +251,12 @@ class BaseVocabulary(ABC):
                 return token
         return None
 
-    def get_output_format(self, text: str) -> Optional[str]:
+    def get_output_format(
+        self,
+        text: Annotated[
+            str, Doc("Input text to scan for output format trigger words.")
+        ],
+    ) -> Optional[str]:
         """Detect output format from text."""
         text_lower = text.lower()
         for format_type, triggers in self.OUTPUT_FORMATS.items():
@@ -245,7 +264,12 @@ class BaseVocabulary(ABC):
                 return format_type
         return None
 
-    def detect_imperative_pattern(self, text: str) -> Optional[tuple[str, str]]:
+    def detect_imperative_pattern(
+        self,
+        text: Annotated[
+            str, Doc("Input text to check for a leading imperative trigger word.")
+        ],
+    ) -> Optional[tuple[str, str]]:
         """
         Detect imperative sentence patterns.
         Returns (req_token, target_token) or None.
@@ -258,7 +282,12 @@ class BaseVocabulary(ABC):
                     return req_token, target_token
         return None
 
-    def get_question_req(self, text: str) -> Optional[str]:
+    def get_question_req(
+        self,
+        text: Annotated[
+            str, Doc("Input text to check for a question pattern ending with '?'.")
+        ],
+    ) -> Optional[str]:
         """
         Detect if text is a question and return appropriate REQ token.
         Returns "QUERY" for question patterns, None otherwise.

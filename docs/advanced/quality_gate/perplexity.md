@@ -6,9 +6,9 @@
 
 **Core question:** Does the compressed token string give an LLM the same information as the original?
 
-**Method:** Send both the original and compressed input to an LLM (Claude Haiku by default, or any OpenAI-compatible model) with a fixed structured extraction task, then compare the responses across three dimensions.
+**Method:** Send both the original and compressed input to an LLM (Anthropic or OpenAI) with a fixed structured extraction task, then compare the responses across three dimensions.
 
-This check carries a 25% weight in the final retention score. It supports Anthropic and OpenAI backends, and falls back to heuristic scoring when no API client can be initialized.
+This check carries a 25% weight in the final retention score. It supports Anthropic and OpenAI backends, and falls back to heuristic scoring when no API client is configured.
 
 ---
 
@@ -16,14 +16,14 @@ This check carries a 25% weight in the final retention score. It supports Anthro
 
 ### API Mode
 
-1. Send `original + EVALUATION_TASK` to the configured LLM (Anthropic or OpenAI)
+1. Send `original + EVALUATION_TASK` to the configured LLM
 2. Send `compressed + EVALUATION_TASK` to the same LLM
 3. Parse both responses as JSON
 4. Compare across three dimensions
 
 ### Evaluation Task
 
-Both prompts use the same structured JSON extraction task:
+Both prompts use the same structured JSON extraction task by default:
 
 ```json
 {
@@ -34,6 +34,8 @@ Both prompts use the same structured JSON extraction task:
   "key_facts": ["<fact1>", "<fact2>", "<fact3>"]
 }
 ```
+
+You can override this with a custom `perplexity_task` argument in `gate.analyze()` or by subclassing — see [Tuning the evaluation task](#tuning-the-evaluation-task).
 
 ### Scoring Dimensions
 
@@ -55,7 +57,7 @@ comprehension_score = fact_score × 0.4
 
 ## Heuristic Fallback (Offline Mode)
 
-When the LLM client cannot be initialized (missing or invalid API key, missing package), the analyzer falls back to token overlap scoring:
+When no `llm_client` is configured, or the API key cannot be loaded, the analyzer falls back to token overlap scoring:
 
 ```
 orig_tokens = set of uppercase tokens (3+ chars) in original
@@ -67,25 +69,40 @@ comprehension_score = coverage
 
 This is a rough proxy that measures how much of the original's vocabulary is present in the compressed output. It is intentionally conservative — token overlap undercounts semantic preservation — and is suitable for CI/CD gating where you want to catch obvious failures without API calls.
 
-**Enable offline mode:**
+**Skip perplexity entirely (synthetic perfect score):**
 
 ```python
 report = gate.analyze(
     original=transcript,
     compressed=compressed,
     structured=structured,
-    run_perplexity=False,  # synthetic perfect score, no API call
+    run_perplexity=False,  # perplexity result is a synthetic pass, no scoring done
 )
 ```
 
-Or use `PerplexityAnalyzer` directly without a valid API key — the constructor will catch the failure and switch to heuristic mode automatically:
+---
+
+## PerplexityConfig
+
+`PerplexityConfig` holds the LLM connection settings passed to both `PerplexityAnalyzer` and `CompressionQualityGate`.
 
 ```python
-from clm_core import PerplexityAnalyzer
+from clm_core import PerplexityConfig
 
-analyzer = PerplexityAnalyzer()  # ANTHROPIC_API_KEY not set → heuristic mode
-result = analyzer.analyze(original, compressed)
+cfg = PerplexityConfig(
+    llm_model="claude-haiku-4-5-20251001",
+    api_key="sk-ant-...",
+    host_url="https://api.anthropic.com",
+    temperature=0.0,  # optional, default 0.0
+)
 ```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `llm_model` | `str` | — | Model identifier passed to the API |
+| `api_key` | `str` | — | API key for the chosen provider |
+| `host_url` | `str` | — | Base URL for the API endpoint |
+| `temperature` | `float` | `0.0` | Sampling temperature |
 
 ---
 
@@ -110,14 +127,18 @@ class PerplexityResult(BaseModel):
 
 ## Standalone Usage
 
-### With Anthropic (default)
-
-Set `ANTHROPIC_API_KEY` in your environment, then:
+### With Anthropic
 
 ```python
-from clm_core import PerplexityAnalyzer
+from clm_core import PerplexityAnalyzer, PerplexityConfig
 
-analyzer = PerplexityAnalyzer()  # llm_client="anthropic" by default
+cfg = PerplexityConfig(
+    llm_model="claude-haiku-4-5-20251001",
+    api_key="sk-ant-...",
+    host_url="https://api.anthropic.com",
+)
+
+analyzer = PerplexityAnalyzer(llm_client="anthropic", cfg=cfg)
 
 result = analyzer.analyze(
     original=transcript_text,
@@ -136,16 +157,39 @@ print(f"Passed:               {result.passed}")
 
 ### With OpenAI
 
-Set `OPENAI_CLIENT_KEY` in your environment, then:
-
 ```python
-from clm_core import PerplexityAnalyzer
+from clm_core import PerplexityAnalyzer, PerplexityConfig
 
-analyzer = PerplexityAnalyzer(llm_client="openai")
+cfg = PerplexityConfig(
+    llm_model="gpt-4o-mini",
+    api_key="sk-...",
+    host_url="https://api.openai.com/v1",
+)
+
+analyzer = PerplexityAnalyzer(llm_client="openai", cfg=cfg)
 
 result = analyzer.analyze(
     original=transcript_text,
     compressed=clm_token_string,
+)
+```
+
+### With a custom task
+
+```python
+result = analyzer.analyze(
+    original=transcript_text,
+    compressed=clm_token_string,
+    task="""
+    Given the above context, respond with a JSON object containing:
+    {
+      "billing_issue": "<the specific billing problem>",
+      "refund_amount": "<amount if applicable>",
+      "resolution_status": "<resolved|pending|escalated>",
+      "key_facts": ["<fact1>", "<fact2>", "<fact3>"]
+    }
+    Respond ONLY with the JSON object.
+    """,
 )
 ```
 
@@ -190,44 +234,44 @@ If perplexity consistently fails for a given compression pattern, investigate wh
 
 ## Configuration
 
-### Environment variables
+### Default models
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ANTHROPIC_API_KEY` | — | Anthropic API key (required when `llm_client="anthropic"`) |
-| `OPENAI_CLIENT_KEY` | — | OpenAI API key (required when `llm_client="openai"`) |
-| `ANTHROPIC_MODEL` | `claude-haiku-4-5-20251001` | Anthropic model used for evaluation |
-| `OPENAI_MODEL` | `gpt-5-nano-2025-08-07` | OpenAI model used for evaluation |
-| `LLM_CLIENT_BASE_URL` | `None` | Custom base URL for either client (useful for proxies or OpenAI-compatible endpoints) |
+| Client | Default model |
+|--------|--------------|
+| `anthropic` | `claude-haiku-4-5-20251001` |
+| `openai` | `gpt-5-nano-2025-08-07` |
 
-### Changing the evaluation model
+Pass a different model via `PerplexityConfig.llm_model`.
 
-#### Via environment variable (recommended)
+### Tuning the evaluation task
 
-```bash
-# Use a stronger Anthropic model
-export ANTHROPIC_MODEL="claude-sonnet-4-6"
+The `EVALUATION_TASK` prompt is designed for general customer service transcripts. For domain-specific validation, pass a custom task via `perplexity_task` at call time (no subclassing needed):
 
-# Use a different OpenAI model
-export OPENAI_MODEL="gpt-4o-mini"
+```python
+report = gate.analyze(
+    original=transcript,
+    compressed=compressed,
+    structured=structured,
+    run_perplexity=True,
+    perplexity_task="""
+    Given the above context, respond with a JSON object containing:
+    {
+      "billing_issue": "<the specific billing problem>",
+      "refund_amount": "<amount if applicable>",
+      "refund_reference": "<reference number if applicable>",
+      "resolution_status": "<resolved|pending|escalated>",
+      "key_facts": ["<fact1>", "<fact2>", "<fact3>"]
+    }
+    Respond ONLY with the JSON object.
+    """,
+)
 ```
 
-#### Via subclass
+Or override the class constant via subclass for a permanent change:
 
 ```python
 from clm_core import PerplexityAnalyzer
 
-class StrictPerplexityAnalyzer(PerplexityAnalyzer):
-    ANTHROPIC_MODEL = "claude-sonnet-4-6"
-    OPENAI_MODEL = "gpt-4o"
-    COMPREHENSION_THRESHOLD = 0.90
-```
-
-### Tuning the evaluation task
-
-The `EVALUATION_TASK` prompt is designed for general customer service transcripts. For domain-specific validation, subclass and override it:
-
-```python
 class BillingPerplexityAnalyzer(PerplexityAnalyzer):
     EVALUATION_TASK = """
     Given the above context, respond with a JSON object containing:
@@ -240,45 +284,33 @@ class BillingPerplexityAnalyzer(PerplexityAnalyzer):
     }
     Respond ONLY with the JSON object.
     """
+    COMPREHENSION_THRESHOLD = 0.90
 ```
 
 ---
 
 ## CI/CD Integration
 
-For pipelines without API access, use heuristic mode:
+For pipelines without API access, gate on Kolmogorov and Conditional Entropy only:
 
 ```python
 from clm_core import CompressionQualityGate
 
-gate = CompressionQualityGate()  # no API key set → heuristic fallback
+gate = CompressionQualityGate()  # no llm_client → heuristic fallback for perplexity
 
 report = gate.analyze(
     original=transcript,
     compressed=compressed,
     structured=structured,
-    run_perplexity=False,   # skip API entirely — perplexity gets synthetic perfect score
+    run_perplexity=False,   # skip perplexity entirely — gets synthetic perfect score
 )
 
-# Gate on conditional entropy only
+# Gate on the two deterministic checks
 if report.conditional.passed and report.kolmogorov.passed:
     print("Quality gate passed (offline mode)")
 else:
     print(f"Quality gate failed: {report.verdict}")
     exit(1)
-```
-
-Or allow the heuristic to run:
-
-```python
-# No API key set → heuristic token overlap scoring
-gate = CompressionQualityGate()
-report = gate.analyze(
-    original=transcript,
-    compressed=compressed,
-    structured=structured,
-    run_perplexity=True,    # heuristic runs, no API call needed
-)
 ```
 
 ---
