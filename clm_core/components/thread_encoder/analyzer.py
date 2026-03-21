@@ -202,6 +202,19 @@ class TranscriptAnalyzer:
         if turns is None:
             turns = self._parse_turns(transcript)
 
+        # Normalize Unicode quotation marks/apostrophes to ASCII equivalents so
+        # pattern matching works regardless of whether the input uses curly quotes.
+        turns = [
+            t.model_copy(update={
+                "text": t.text
+                    .replace("\u2019", "'")
+                    .replace("\u2018", "'")
+                    .replace("\u201c", '"')
+                    .replace("\u201d", '"')
+            })
+            for t in turns
+        ]
+
         has_roles = any(t.speaker in ("agent", "customer") for t in turns)
         if not has_roles:
             turns = [t.model_copy(update={"speaker": "customer"}) for t in turns]
@@ -228,7 +241,14 @@ class TranscriptAnalyzer:
         refund_reference = self._extract_refund_reference(turns, issues, actions)
         timeline = self._extract_conversation_timeline(turns)
         promises = self._extract_promises(turns)
+        promises = self._infer_implicit_commitments(promises, actions, turns)
         domain = self._extract_domain(call_info, issues)
+
+        # Override UNCLASSIFIED when a profile/identity action was detected
+        if domain == "UNCLASSIFIED":
+            action_types = {a.type for a in actions}
+            if action_types & {"PROFILE_UPDATED", "IDENTITY_VERIFIED", "ACCOUNT_VERIFIED"}:
+                domain = "ACCOUNT"
         service = self._extract_service(issues, turns)
         customer_intent, secondary_intent = self._extract_customer_intent(
             issues, turns, actions
@@ -389,8 +409,12 @@ class TranscriptAnalyzer:
         """
         actions: dict[str, Action] = {}
 
+        # Free-form threads have no agent labels (all turns are "customer").
+        # Fall back to scanning every turn so action patterns are not silently skipped.
+        agent_turns_exist = any(t.speaker == "agent" for t in turns)
+
         for turn in turns:
-            if turn.speaker != "agent":
+            if agent_turns_exist and turn.speaker != "agent":
                 continue
 
             text = turn.text
@@ -1616,8 +1640,11 @@ class TranscriptAnalyzer:
 
         extra_commitment_patterns = self.patterns.extra_commitment_patterns or {}
 
+        # Free-form threads have no agent labels; scan all turns for promise indicators.
+        agent_turns_exist = any(t.speaker == "agent" for t in turns)
+
         for idx, turn in enumerate(turns):
-            if turn.speaker != "agent":
+            if agent_turns_exist and turn.speaker != "agent":
                 continue
 
             text = turn.text
@@ -1798,6 +1825,39 @@ class TranscriptAnalyzer:
                     seen_keys.add(key)
                     unique.append(p)
         return unique
+
+    def _infer_implicit_commitments(
+        self,
+        promises: list[PromiseCommitment],
+        actions: list[Action],
+        turns: list[Turn],
+    ) -> list[PromiseCommitment]:
+        """Infer commitments from action context when no explicit promise keyword was found.
+
+        If REFUND_INITIATED is in the detected actions but no REFUND_PROMISE was
+        produced by keyword matching, scan all turns for a timeline. A timeline-only
+        phrase like "within 3-5 business days" is a strong refund commitment signal.
+        """
+        action_types = {a.type for a in actions}
+        has_refund_promise = any(p.type == "REFUND_PROMISE" for p in promises)
+
+        if "REFUND_INITIATED" in action_types and not has_refund_promise:
+            for idx, turn in enumerate(turns):
+                timeline = self._extract_promise_timeline(turn.text.lower())
+                if timeline:
+                    promises = list(promises) + [
+                        PromiseCommitment(
+                            type="REFUND_PROMISE",
+                            description=turn.text,
+                            timeline=timeline,
+                            amount=None,
+                            turn_index=idx,
+                            confidence=0.8,
+                        )
+                    ]
+                    break
+
+        return promises
 
     @classmethod
     def _extract_domain(

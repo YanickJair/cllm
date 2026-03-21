@@ -29,6 +29,14 @@ from ...utils.vocabulary import BaseVocabulary
 COMPONENT = "THREAD_ENCODER"
 CLM_SCHEMA_VERSION = "2.0"
 
+# Generic diagnostic actions that do not change system state and add no signal.
+# These are excluded from the AGENT_ACTIONS token to reduce noise and token overhead.
+_INFORMATIONAL_ACTIONS = frozenset({
+    "TROUBLESHOOT",
+    "DIAGNOSTIC_PERFORMED",
+    "TROUBLESHOOTING_PERFORMED",
+})
+
 
 class ThreadEncoder(metaclass=SingletonMeta):
     """
@@ -204,8 +212,11 @@ class ThreadEncoder(metaclass=SingletonMeta):
             if verbose:
                 print(f"Redacted: {r_token}")
 
-        if self.analysis.actions:
-            agent_actions_token = self._encode_agent_actions(self.analysis.actions)
+        state_changing_actions = [
+            a for a in self.analysis.actions if a.type not in _INFORMATIONAL_ACTIONS
+        ]
+        if state_changing_actions:
+            agent_actions_token = self._encode_agent_actions(state_changing_actions)
             tokens.append(agent_actions_token)
             if verbose:
                 print(f"Agent Actions: {agent_actions_token}")
@@ -629,7 +640,11 @@ class ThreadEncoder(metaclass=SingletonMeta):
             label = _TYPE_MAP.get(p.type, p.type)
             parts = [label]
             if p.timeline and p.type not in _NO_TIMELINE_TYPES:
-                timeline_str = _TIMELINE_MAP.get(p.timeline, p.timeline)
+                timeline_norm = p.timeline.lower()
+                # Try original case first (for "TODAY", "TOMORROW"), then lowercase
+                timeline_str = _TIMELINE_MAP.get(
+                    p.timeline, _TIMELINE_MAP.get(timeline_norm, timeline_norm)
+                )
                 # Expand compact shorthands: "5d" → "5_DAYS", "3h" → "3_HOURS"
                 if re.match(r"^\d+d$", timeline_str):
                     timeline_str = f"{timeline_str[:-1]}_DAYS"

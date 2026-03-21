@@ -1532,6 +1532,10 @@ class TranscriptVocabulary(BaseVocabulary):
                 "money back",
                 "issue a refund",
                 "refund will be processed",
+                "you'll receive it",
+                "you will receive it",
+                "receive it in",
+                "business days",
             ],
             "DELIVERY_PROMISE": [
                 "will be delivered",

@@ -8,6 +8,7 @@ def load_threads():
     return threads
 
 if __name__ == "__main__":
+    input_ = """Hi support team, I noticed my account was charged twice this month — one on the 2nd and another on the 3rd. Can you please look into this? My account email is melissa.jordan@example.com. Thanks, Melissa --- Hi Melissa, Thanks for reaching out. I can confirm the duplicate charge — it was caused by a payment retry that fired after the first transaction already succeeded. I've initiated a full refund on the second charge. You'll see it within 3–5 business days. Your reference number is RFD-908712. Best, Raj – Support Team▋"""
     cfg=CLMConfig(
         lang="en",
         thread_config=ThreadConfig(
@@ -18,31 +19,6 @@ if __name__ == "__main__":
     encoder = CLMEncoder(
         cfg=cfg
     )
-    threads = load_threads()
+    encoded = encoder.encode(input_=input_, data_type=DataTypes.FREE_FORM, metadata={"channel": "email"})
+    print(encoded.n_tokens, encoded.c_tokens, encoded.compressed, encoded.to_dict(), encoded.compression_ratio)
 
-    results = []
-    for thread in threads:
-        metdata = {
-            "id": thread.get("thread_id"),
-            "channel": thread.get("channel"),
-            "author": thread.get("author"),
-        }
-        message = ""
-        for m in thread.get("messages", []):
-            message += m.get("text")
-        encoded = encoder.encode(
-            input_=message,
-            metadata=metdata,
-            data_type=DataTypes.FREE_FORM
-        )
-
-        structured = encoded.to_dict()
-        results.append({
-            "original": message,
-            "structured": structured,
-            "compressed": encoded.compressed,
-            "summary": encoded.summary(cfg.thread_config.default_summary_template)
-        })
-
-    with open("thread_free_form.json", "w") as f:
-        json.dump(results, f)

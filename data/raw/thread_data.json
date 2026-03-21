@@ -1,0 +1,100 @@
+{
+  "threads": [
+    {
+      "id": "THR-001",
+      "channel": "EMAIL",
+      "messages": [
+        {"from": "customer", "text": "Hi, I was charged twice this month for my subscription. Can you check?"},
+        {"from": "agent", "text": "Sorry about that. Could you confirm your account email?"},
+        {"from": "customer", "text": "john.doe@example.com"},
+        {"from": "agent", "text": "Thanks. I see two charges on March 2nd and 3rd. This was due to a retry issue. I’ll refund the duplicate."},
+        {"from": "customer", "text": "Great, thanks. When will I get it?"},
+        {"from": "agent", "text": "Within 3-5 business days. I’ve sent confirmation REF-8821."}
+      ]
+    },
+    {
+      "id": "THR-002",
+      "channel": "SLACK",
+      "messages": [
+        {"from": "customer", "text": "hey team, internet has been dropping all morning"},
+        {"from": "agent", "text": "Thanks for flagging. Are you seeing any red lights on the router?"},
+        {"from": "customer", "text": "yeah broadband blinking red"},
+        {"from": "agent", "text": "Got it — looks like an outage in your area. Engineers are on it."},
+        {"from": "customer", "text": "any ETA?"},
+        {"from": "agent", "text": "Should be resolved by tonight. I’ll keep you posted."}
+      ]
+    },
+    {
+      "id": "THR-003",
+      "channel": "EMAIL",
+      "messages": [
+        {"from": "customer", "text": "Hi, I want to upgrade to Business Pro. Does it include analytics?"},
+        {"from": "agent", "text": "Yes, it includes advanced analytics dashboards and exports."},
+        {"from": "customer", "text": "Is there a trial for predictive features?"},
+        {"from": "agent", "text": "Yes, 14-day trial. I can activate it."},
+        {"from": "customer", "text": "Please do."},
+        {"from": "agent", "text": "Done. You’ll get a confirmation email shortly."}
+      ]
+    },
+    {
+      "id": "THR-004",
+      "channel": "SLACK",
+      "messages": [
+        {"from": "customer", "text": "I tried updating my name but the field is locked."},
+        {"from": "agent", "text": "We can help. Please confirm your email."},
+        {"from": "customer", "text": "emily.reed@example.com"},
+        {"from": "agent", "text": "Sending verification code."},
+        {"from": "customer", "text": "Got it: 993821"},
+        {"from": "agent", "text": "Verified. Name updated. Changes may take 30 minutes."}
+      ]
+    },
+    {
+      "id": "THR-005",
+      "channel": "EMAIL",
+      "messages": [
+        {"from": "customer", "text": "This is my third email. My refund still hasn’t arrived."},
+        {"from": "agent", "text": "Apologies. Let me check."},
+        {"from": "agent", "text": "It’s stuck in review. I’ll escalate this."},
+        {"from": "customer", "text": "I need this resolved today."},
+        {"from": "agent", "text": "Escalated under case ESC-9002. You’ll get confirmation today."}
+      ]
+    },
+    {
+      "id": "THR-006",
+      "channel": "SLACK",
+      "messages": [
+        {"from": "customer", "text": "thinking of cancelling, not using the product much"},
+        {"from": "agent", "text": "We can pause your subscription instead — no charges."},
+        {"from": "customer", "text": "that might work"},
+        {"from": "agent", "text": "Done. Paused for 3 months. Reminder will be sent before restart."}
+      ]
+    }
+  ],
+
+  "transcripts": [
+    {
+      "id": "TRX-001",
+      "text": "Customer: I see an extra charge on my card. Agent: Let me check. Yes, duplicate payment due to retry. I’ll refund it. Customer: Thanks. Agent: You’ll receive it in 3-5 days. Reference RFD-1123."
+    },
+    {
+      "id": "TRX-002",
+      "text": "Customer: My internet keeps dropping. Agent: I see outages in your area. Engineers are working on it. Customer: When will it be fixed? Agent: By tonight."
+    },
+    {
+      "id": "TRX-003",
+      "text": "Customer: I want to upgrade my plan. Agent: Business Pro includes analytics and integrations. Customer: Is there a trial? Agent: Yes, 14 days. I’ll activate it."
+    },
+    {
+      "id": "TRX-004",
+      "text": "Customer: I changed my last name but can’t update it. Agent: I’ll verify your account. Code sent. Customer: 552199. Agent: Verified. Name updated."
+    },
+    {
+      "id": "TRX-005",
+      "text": "Customer: My refund hasn’t come through. Agent: It’s pending review. I’ll escalate. Customer: Please do. Agent: Escalation ID ESC-3321 created."
+    },
+    {
+      "id": "TRX-006",
+      "text": "Customer: Someone logged into my account. Agent: I’ll lock it and reset your password. Customer: Done. Agent: 2FA enabled. You’ll get confirmation email."
+    }
+  ]
+}
