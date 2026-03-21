@@ -1,7 +1,8 @@
 import re
 from typing import Optional, Annotated
 from datetime import datetime
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, model_validator
+from typing import Self
 from spacy.tokens import Doc
 from annotated_doc import Doc as ParamDoc
 from jinja2 import Environment, FileSystemLoader
@@ -351,6 +352,21 @@ class TemporalPattern(BaseModel):
 
 
 class ThreadOutput(CLMOutput):
+    @model_validator(mode="after")
+    def _restore_structured_tokens(self) -> Self:
+        """Keep the structured token form even when it's longer than the original.
+
+        The parent fallback replaces compressed with raw text when c_tokens > n_tokens,
+        but for thread encoder output the token form is always more valuable than raw text
+        regardless of length. The token string is preserved in metadata["compressed_tokens"]
+        and restored here if the parent validator overwrote it.
+        """
+        token_str = self.metadata.get("compressed_tokens")
+        if token_str and self.compressed != token_str:
+            self.compressed = token_str
+            self.metadata.pop("description", None)
+        return self
+
     @staticmethod
     def _parse_commitment(
         commitment_str: Annotated[
@@ -391,7 +407,13 @@ class ThreadOutput(CLMOutput):
                 break
         result: dict = {"type": commitment_type}
         if timeline_str is not None:
-            result["etaDays"] = _TIMELINE_TO_DAYS.get(timeline_str)
+            eta_days = _TIMELINE_TO_DAYS.get(timeline_str)
+            if eta_days is None:
+                # Handle "N_DAYS" patterns from compact timeline expansion (e.g. "5_DAYS")
+                m = re.match(r"^(\d+)_DAYS?$", timeline_str, re.I)
+                if m:
+                    eta_days = int(m.group(1))
+            result["etaDays"] = eta_days
         return result
 
     def to_dict(self) -> dict:

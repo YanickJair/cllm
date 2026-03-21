@@ -32,6 +32,9 @@ EXPLICIT_ACTION_PHRASES = {
         "escalating this to",
         "escalate this directly",
         "open escalation case",
+        "i escalated",
+        "escalated under case",
+        "escalated this",
     },
     "REPLACEMENT_ORDERED": {
         "ship replacement",
@@ -64,6 +67,10 @@ EXPLICIT_ACTION_PHRASES = {
         "activate that trial",
         "activated the trial",
         "trial is now active for you",
+        "i'll activate it",
+        "i will activate it",
+        "i can activate it",
+        "i'll activate that",
     },
     "APPOINTMENT_SCHEDULED": {
         "i've scheduled an appointment",
@@ -99,6 +106,10 @@ EXPLICIT_ACTION_PHRASES = {
         "refund will be processed",
         "refund of",
         "issue a refund",
+        "i'll refund",
+        "i will refund",
+        "refund the",
+        "refunding the",
     },
 }
 TECHNICAL_ISSUE_MAP = {
@@ -198,6 +209,7 @@ EXPLICIT_AGENT_ACTION_PHRASES = {
         "name has been updated",
         "profile has been updated",
         "updated your name",
+        "name updated",
     ],
     "PRIORITY_DISPATCH_FLAGGED": [
         "flagged for same-day",
@@ -244,6 +256,10 @@ EXPLICIT_AGENT_ACTION_PHRASES = {
         "submitted a refund",
         "process a refund",
         "i'll process a refund",
+        "i'll refund",
+        "i will refund",
+        "refund the",
+        "refunding the",
     ],
     "PASSWORD_RESET": [
         "reset your password",
@@ -275,6 +291,8 @@ EXPLICIT_AGENT_ACTION_PHRASES = {
         "pause your subscription",
         "pausing your subscription",
         "subscription will be paused",
+        "paused for",
+        "paused your account for",
     ],
     "SERVICE_CANCELLED": {
         "cancelled your subscription",
@@ -369,6 +387,19 @@ EXPLICIT_AGENT_ACTION_PHRASES = {
         "the price is",
         "monthly fee is",
         "costs per month",
+    ],
+    "TRIAL_ACTIVATED": [
+        "i'll activate it",
+        "i will activate it",
+        "i can activate it",
+        "i'll activate that",
+    ],
+    "ESCALATION_CREATED": [
+        "i'll escalate",
+        "i will escalate",
+        "i escalated",
+        "escalated under case",
+        "escalated this",
     ],
 }
 ISSUE_CONFIRMATION_MAP = {
