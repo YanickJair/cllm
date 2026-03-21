@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [1.0.9] - 2026-03-21
+
+### Fixed
+
+- **Thread compression fallback eliminated** — `ThreadOutput` now always emits structured tokens even when the token form is longer than the original input. Previously, short transcripts (30–50 tokens) fell back to raw text (`c_ratio=0.0`), losing all structured signal. Token form is preserved in `metadata["compressed_tokens"]` and restored via a `model_validator` override in `ThreadOutput`.
+- **TRANSCRIPT type compression** — 5 of 6 test transcripts previously produced raw-text fallback; all now emit structured CLM tokens.
+- **Free-form action extraction** — agent actions and commitments were never extracted from free-form threads (emails, Slack) because the analyzer normalized all turns to `"customer"` speaker, skipping the agent-only extraction paths. Fixed: `_extract_actions` and `_extract_promises` now scan all turns when no agent-labeled turns exist.
+- **Unicode apostrophe normalization** — patterns containing `'ll`, `'ve`, etc. failed to match raw input using curly quotes (`\u2018`/`\u2019`). Added normalization of Unicode quotation marks to ASCII equivalents at the start of `analyze()`.
+- **Action inflation** — `TROUBLESHOOT`, `DIAGNOSTIC_PERFORMED`, and `TROUBLESHOOTING_PERFORMED` appeared in nearly every interaction, adding token overhead with no decision-relevant signal. These are now filtered from the `[AGENT_ACTIONS:...]` token via `_INFORMATIONAL_ACTIONS` in the encoder (resolution and state inference retain full action context).
+- **Domain UNCLASSIFIED for profile/identity flows** — name-change and account-update threads produced `UNCLASSIFIED` domain because no issue keyword was detected. Domain is now overridden to `ACCOUNT` when `PROFILE_UPDATED`, `IDENTITY_VERIFIED`, or `ACCOUNT_VERIFIED` is in the detected actions.
+- **Commitment extraction for refund timelines** — phrases like "within 3–5 business days" and "you'll receive it in 3–5 days" were not triggering `REFUND_PROMISE` commitments. Fixed via new vocabulary keywords and `_infer_implicit_commitments()` which auto-generates a `REFUND_PROMISE` when `REFUND_INITIATED` is detected but no explicit promise keyword fired.
+- **Timeline case normalization** — `_extract_timeline` returns uppercase formats (e.g. `"5D"`) that the commitment encoder did not expand. Fixed with case-insensitive TIMELINE_MAP lookup and regex. `_parse_commitment` now also handles `N_DAYS` patterns for correct `etaDays` output.
+
+### Added
+
+- `_infer_implicit_commitments()` method on `TranscriptAnalyzer` — infers refund commitments from action+timeline context when no direct keyword match is found.
+- `_INFORMATIONAL_ACTIONS` constant in `ThreadEncoder` — defines the set of diagnostic/observational actions excluded from the `AGENT_ACTIONS` token.
+- New phrases in `EXPLICIT_ACTION_PHRASES` and `EXPLICIT_AGENT_ACTION_PHRASES` (EN): `"i'll refund"`, `"i will refund"`, `"refund the"`, `"i'll activate it"`, `"i'll escalate"`, `"i escalated"`, `"escalated under case"`, `"paused for"`, `"name updated"`, and related short-form agent confirmations.
+- `"you'll receive it"`, `"receive it in"`, `"business days"` added to `PROMISE_COMMITMENT_TOKENS["REFUND_PROMISE"]` in `TranscriptVocabulary`.
+
 ## [1.0.8] - 2026-03-08
 
 ### Added
