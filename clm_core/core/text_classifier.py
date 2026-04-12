@@ -7,12 +7,11 @@ from annotated_doc import Doc
 
 class DataTypes(Enum):
     """Data types to start the CLM encoding process"""
-
-    SYSTEM_PROMPT = 0
-    TRANSCRIPT = 1
-    STRUCTURED_DATA = 2
-    FREE_FORM = 3
-    UNK = -1
+    SYSTEM_PROMPT = "PROMPT"
+    TRANSCRIPT = "THREAD_TRANSCRIPT"
+    STRUCTURED_DATA = "STRUCTURED_DATA"
+    FREE_FORM = "THREAD_FREE_FORM"
+    UNK = "UNKNOWN"
 
 
 class DataClassifier:
