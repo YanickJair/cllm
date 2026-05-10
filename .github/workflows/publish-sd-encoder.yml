@@ -6,10 +6,6 @@ on:
       - main
     tags:
       - "sd_encoder-v*"
-    paths:
-      - "sd_encoder/sd_encoder/**"
-      - "sd_encoder/README.md"
-      - ".github/workflows/publish-sd-encoder.yml"
   pull_request:
     paths:
       - "sd_encoder/sd_encoder/**"
