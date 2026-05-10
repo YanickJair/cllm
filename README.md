@@ -159,6 +159,43 @@ Based on a dataset test across 5,000+ samples:
 
 ---
 
+## Release
+
+This repository publishes two independent Python packages from one main branch:
+
+| Package | Source | Workflow | PyPI trigger |
+|---------|--------|----------|--------------|
+| `thread-encoder` | `thread_encoder/` | `.github/workflows/publish.yml` | `thread_encoder-v*` tags |
+| `sd_encoder` | `sd_encoder/sd_encoder/` | `.github/workflows/publish-sd-encoder.yml` | `sd_encoder-v*` tags |
+
+Use package-specific tags instead of release branches.
+
+### Release `thread-encoder`
+
+1. Update `thread_encoder/__version__.py`.
+2. Commit and push the change to `main`.
+3. Create and push a matching tag:
+
+```bash
+git tag thread_encoder-v1.0.9
+git push origin thread_encoder-v1.0.9
+```
+
+### Release `sd_encoder`
+
+1. Update the version in `sd_encoder/sd_encoder/Cargo.toml`.
+2. Commit and push the change to `main`.
+3. Create and push a matching tag:
+
+```bash
+git tag sd_encoder-v0.1.0
+git push origin sd_encoder-v0.1.0
+```
+
+Pushes to `main` publish changed packages to TestPyPI. Release tags publish the matching package to PyPI. Both workflows also support manual dispatch with `none`, `testpypi`, or `pypi`.
+
+---
+
 ## License
 
 Dual-licensed:

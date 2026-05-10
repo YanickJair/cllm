@@ -280,14 +280,14 @@ print(result.compressed)
 Thread Encoder behaviour is configurable via `ThreadConfig` — enable `include_ctx_values` to surface extracted entity values, `include_summary` to generate a human-readable summary from the compressed output, `estimate_thread_duration` to infer duration from content, and `redaction_pattern` to control PII placeholder detection:
 
 ```python
-from clm_core.types import ThreadConfig
+from thread_encoder.types import ThreadConfig
 
 cfg = CLMConfig(
-    lang="en",
-    thread_config=ThreadConfig(
-        include_ctx_values=True,
-        include_summary=True,
-    )
+  lang="en",
+  thread_config=ThreadConfig(
+    include_ctx_values=True,
+    include_summary=True,
+  )
 )
 ```
 

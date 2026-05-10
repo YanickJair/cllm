@@ -20,8 +20,8 @@ import os
 import sys
 from typing import Optional
 
-from clm_core.components.ds_compression import SDEncoder
-from clm_core.types import SDCompressionConfig
+from thread_encoder.components.ds_compression import SDEncoder
+from thread_encoder.types import SDCompressionConfig
 
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

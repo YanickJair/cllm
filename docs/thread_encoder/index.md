@@ -206,7 +206,7 @@ Thread Encoder behaviour is controlled via `ThreadConfig`, passed as `thread_con
 
 ```python
 from clm_core import CLMConfig
-from clm_core.types import ThreadConfig
+from thread_encoder.types import ThreadConfig
 
 # Minimal — uses all defaults
 cfg = CLMConfig(lang="en")
@@ -219,7 +219,7 @@ cfg = CLMConfig(
         include_ctx_values=True,
         estimate_thread_duration=True,
         include_summary=True,
-        custom_summary_template=None,              # Uses built-in template when None
+        custom_summary_template=None,  # Uses built-in template when None
         redaction_pattern=r"\[.*?REDACTED.*?\]",
     )
 )
@@ -245,7 +245,7 @@ cfg = CLMConfig(
 When a transcript contains redacted PII (e.g. `[*REDACTED*]`, `***`, `[PHONE_NUMBER]`), Thread Encoder detects the surrounding context and emits `CONTEXT:FIELD_REDACTED` tokens instead of silently dropping the information.
 
 ```python
-from clm_core.types import ThreadConfig
+from thread_encoder.types import ThreadConfig
 
 # Default pattern covers common redaction styles
 cfg = CLMConfig(lang="en")
@@ -290,7 +290,7 @@ When `include_summary=True`, CLM generates a natural-language summary from the c
 **Example with a custom template:**
 
 ```python
-from clm_core.types import ThreadConfig
+from thread_encoder.types import ThreadConfig
 
 template = """
 Support {{ CHANNEL | lower }} – {{ DOMAIN | lower }}: {{ CUSTOMER_INTENT | lower }}.
@@ -332,22 +332,22 @@ Each language ships its own dictionary (`clm_core/dictionary/{lang}/`) with:
 All models are exported from `clm_core.components.thread_encoder`:
 
 ```python
-from clm_core.components.thread_encoder import (
-    TranscriptAnalysis,   # Complete analysis result
-    ThreadOutput,         # Compressed output (returned by encode)
-    CallInfo,             # Call/session metadata
-    Turn,                 # Single conversation turn
-    Issue,                # Customer issue
-    Action,               # Agent action
-    Resolution,           # How the conversation resolved
+from thread_encoder.components.thread_encoder import (
+    TranscriptAnalysis,  # Complete analysis result
+    ThreadOutput,  # Compressed output (returned by encode)
+    CallInfo,  # Call/session metadata
+    Turn,  # Single conversation turn
+    Issue,  # Customer issue
+    Action,  # Agent action
+    Resolution,  # How the conversation resolved
     SentimentTrajectory,  # Sentiment across the call
-    ResolutionState,      # Granular resolution state
-    RefundReference,      # Billing/refund case details
-    PromiseCommitment,    # Agent commitments
-    MonetaryAmount,       # Extracted monetary values
-    ConversationTimeline, # Timeline of key events
-    TimelineEvent,        # Single timeline event
-    TemporalPattern,      # Extracted temporal expressions
+    ResolutionState,  # Granular resolution state
+    RefundReference,  # Billing/refund case details
+    PromiseCommitment,  # Agent commitments
+    MonetaryAmount,  # Extracted monetary values
+    ConversationTimeline,  # Timeline of key events
+    TimelineEvent,  # Single timeline event
+    TemporalPattern,  # Extracted temporal expressions
 )
 ```
 

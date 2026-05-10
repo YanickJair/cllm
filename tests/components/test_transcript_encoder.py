@@ -1,11 +1,9 @@
 import pytest
-from unittest.mock import MagicMock, patch
 
-from clm_core.components.thread_encoder.encoder import ThreadEncoder
-from clm_core.components.thread_encoder import (
+from thread_encoder.components.thread_encoder.encoder import ThreadEncoder
+from thread_encoder.components.thread_encoder import (
     CallInfo,
     CustomerProfile,
-    Issue,
     Action,
     Resolution,
     SentimentTrajectory,
@@ -15,7 +13,7 @@ from clm_core.components.thread_encoder import (
     RefundReference,
     PromiseCommitment,
 )
-from clm_core.types import CLMOutput, ThreadConfig
+from thread_encoder.types import CLMOutput, ThreadConfig
 
 
 @pytest.fixture
@@ -31,21 +29,21 @@ def nlp():
 @pytest.fixture
 def vocab():
     """Mock vocabulary"""
-    from clm_core.dictionary.en.vocabulary import ENVocabulary
+    from thread_encoder.dictionary.en.vocabulary import ENVocabulary
     return ENVocabulary()
 
 
 @pytest.fixture
 def rules():
     """Mock rules"""
-    from clm_core.dictionary.en.rules import ENRules
+    from thread_encoder.dictionary.en.rules import ENRules
     return ENRules()
 
 
 @pytest.fixture
 def patterns():
     """English thread_encoder patterns"""
-    from clm_core.dictionary import patterns_map
+    from thread_encoder.dictionary import patterns_map
     return patterns_map["en"]
 
 

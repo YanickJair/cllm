@@ -1,0 +1,30 @@
+[build-system]
+requires = ["maturin>=1.7,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "sd_encoder"
+description = "Core functionality for Pydantic validation and serialization"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+authors = [
+    { name = "Yanick Andrade", email = "yanick.jair.ta@gmail.com" },
+]
+keywords = [
+  "Natural Language Compression",
+  "LLM Compressor",
+  "Compressed Language Model",
+  "CLM",
+  "NLP",
+  "Text Compression",
+  "Structure Data Compression",
+  "SDEncoder"
+]
+dynamic = ["version", "readme"]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
