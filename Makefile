@@ -2,6 +2,7 @@ PY := python3
 VENV := .venv
 VENV_PY := $(VENV)/bin/python
 VENV_PIP := $(VENV)/bin/pip
+MATURIN := $(VENV)/bin/maturin
 
 .PHONY: help venv install-dev lint format typecheck test coverage build dist smoke-install \
         publish-testpypi publish-pypi clean

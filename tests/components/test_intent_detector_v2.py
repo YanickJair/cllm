@@ -1,9 +1,9 @@
 import pytest
 from pytest_mock import MockerFixture
 
-from clm_core.components.intent_detector_v2 import IntentDetectorV2
-from clm_core.components.sys_prompt import Intent, REQ, Signal
-from clm_core.utils.vocabulary import BaseVocabulary
+from thread_encoder.components import IntentDetectorV2
+from thread_encoder.components.sys_prompt import Intent, REQ
+from thread_encoder.utils.vocabulary import BaseVocabulary
 from spacy import Language
 
 

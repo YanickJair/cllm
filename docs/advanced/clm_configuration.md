@@ -19,13 +19,13 @@ The `CLMConfig` object is the central configuration system for CLM compression. 
 
 ```python
 from clm_core import CLMConfig, SDCompressionConfig, SysPromptConfig
-from clm_core.types import ThreadConfig
+from thread_encoder.types import ThreadConfig
 
 config = CLMConfig(
-    lang="en",                              # Language selection
-    ds_config=SDCompressionConfig(...),     # Structured data config
-    sys_prompt_config=SysPromptConfig(...), # System prompt config
-    thread_config=ThreadConfig(...),        # Thread Encoder config
+  lang="en",  # Language selection
+  ds_config=SDCompressionConfig(...),  # Structured data config
+  sys_prompt_config=SysPromptConfig(...),  # System prompt config
+  thread_config=ThreadConfig(...),  # Thread Encoder config
 )
 ```
 
@@ -93,18 +93,19 @@ config = CLMConfig(lang="en")  # Uses default ThreadConfig
 ```
 
 **Custom configuration:**
+
 ```python
 from clm_core import CLMConfig
-from clm_core.types import ThreadConfig
+from thread_encoder.types import ThreadConfig
 
 config = CLMConfig(
-    lang="en",
-    thread_config=ThreadConfig(
-        detect_lang=True,
-        include_ctx_values=True,
-        estimate_thread_duration=True,
-        include_summary=True,
-    )
+  lang="en",
+  thread_config=ThreadConfig(
+    detect_lang=True,
+    include_ctx_values=True,
+    estimate_thread_duration=True,
+    include_summary=True,
+  )
 )
 ```
 
@@ -555,29 +556,29 @@ for lang in languages:
 
 ```python
 from clm_core import CLMConfig, SDCompressionConfig, SysPromptConfig
-from clm_core.types import ThreadConfig
+from thread_encoder.types import ThreadConfig
 
 # Complete configuration with all options
 config = CLMConfig(
-    lang="en",
-    ds_config=SDCompressionConfig(
-        auto_detect=True,
-        required_fields=["id", "name"],
-        importance_threshold=0.6,
-        max_truncation_length=150,
-        preserve_structure=True
-    ),
-    sys_prompt_config=SysPromptConfig(
-        infer_types=True,
-        add_attrs=True
-    ),
-    thread_config=ThreadConfig(
-        detect_lang=True,
-        include_ctx_values=True,
-        estimate_thread_duration=False,
-        include_summary=True,
-        redaction_pattern=r"\[.*?REDACTED.*?\]",
-    )
+  lang="en",
+  ds_config=SDCompressionConfig(
+    auto_detect=True,
+    required_fields=["id", "name"],
+    importance_threshold=0.6,
+    max_truncation_length=150,
+    preserve_structure=True
+  ),
+  sys_prompt_config=SysPromptConfig(
+    infer_types=True,
+    add_attrs=True
+  ),
+  thread_config=ThreadConfig(
+    detect_lang=True,
+    include_ctx_values=True,
+    estimate_thread_duration=False,
+    include_summary=True,
+    redaction_pattern=r"\[.*?REDACTED.*?\]",
+  )
 )
 
 # Use configuration
@@ -640,31 +641,31 @@ config = CLMConfig(lang="de")  # Beta
 ### 2. Configure Based on Use Case
 
 ```python
-from clm_core.types import ThreadConfig
+from thread_encoder.types import ThreadConfig
 
 # Thread (transcript / free-form) compression
 config = CLMConfig(
-    lang="en",
-    thread_config=ThreadConfig(
-        include_ctx_values=True,   # Surface extracted entity values
-        include_summary=True,      # Generate a human-readable summary
-    )
+  lang="en",
+  thread_config=ThreadConfig(
+    include_ctx_values=True,  # Surface extracted entity values
+    include_summary=True,  # Generate a human-readable summary
+  )
 )
 
 # Structured data
 config = CLMConfig(
-    lang="en",
-    ds_config=SDCompressionConfig(
-        importance_threshold=0.7
-    )
+  lang="en",
+  ds_config=SDCompressionConfig(
+    importance_threshold=0.7
+  )
 )
 
 # System prompts
 config = CLMConfig(
-    lang="en",
-    sys_prompt_config=SysPromptConfig(
-        infer_types=True  # If you need type hints
-    )
+  lang="en",
+  sys_prompt_config=SysPromptConfig(
+    infer_types=True  # If you need type hints
+  )
 )
 ```
 

@@ -288,7 +288,7 @@ class TrainingDataGenerator:
         }
 
         # Load vocabulary from your encode
-        from utils.vocabulary import Vocabulary
+        from thread_encoder.utils.vocabulary import Vocabulary
 
         v = Vocabulary()
 

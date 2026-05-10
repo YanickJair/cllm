@@ -15,13 +15,13 @@ Tests the main target extraction orchestrator and its component extractors:
 import pytest
 import spacy
 
-from clm_core.components.target_extractor import TargetExtractor
-from clm_core.components.sys_prompt import Target
-from clm_core.components._target.extractors import FallbackExtractor
-from clm_core.components._target.target_normalizer import TargetNormalizer
-from clm_core.components._target.attributes import AttributeEnhancer
-from clm_core.dictionary.en.vocabulary import ENVocabulary
-from clm_core.dictionary.en.rules import ENRules
+from thread_encoder.components.target_extractor import TargetExtractor
+from thread_encoder.components.sys_prompt import Target
+from thread_encoder.components._target.extractors import FallbackExtractor
+from thread_encoder.components._target.target_normalizer import TargetNormalizer
+from thread_encoder.components._target.attributes import AttributeEnhancer
+from thread_encoder.dictionary.en.vocabulary import ENVocabulary
+from thread_encoder.dictionary.en.rules import ENRules
 
 @pytest.fixture(scope="module")
 def nlp():

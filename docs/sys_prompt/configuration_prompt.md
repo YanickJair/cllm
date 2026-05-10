@@ -179,7 +179,7 @@ The `ConfigurationPromptMinimizer` removes redundant natural language:
 
 ```python
 from clm_core import CLMConfig, CLMEncoder
-from clm_core.components.sys_prompt import (
+from thread_encoder.components.sys_prompt import (
     ConfigurationPromptEncoder,
     ConfigurationPromptMinimizer,
     SysPromptConfig
@@ -226,12 +226,12 @@ print(result.metadata)
 ### Configuration Options
 
 ```python
-from clm_core.components.sys_prompt import SysPromptConfig
+from thread_encoder.components.sys_prompt import SysPromptConfig
 
 config = SysPromptConfig(
     use_structured_output_abstraction=True,  # Compress output format to CL tokens
-    infer_types=True,                        # Add type annotations to output schema
-    add_attrs=False                          # Include enums/constraints in output
+    infer_types=True,  # Add type annotations to output schema
+    add_attrs=False  # Include enums/constraints in output
 )
 ```
 
@@ -247,7 +247,7 @@ config = SysPromptConfig(
 The `ConfigurationPromptMinimizer` can be used independently to reduce NL prompt size:
 
 ```python
-from clm_core.components.sys_prompt import ConfigurationPromptMinimizer
+from thread_encoder.components.sys_prompt import ConfigurationPromptMinimizer
 
 prompt = """
 <role>You are a helpful assistant</role>
@@ -324,7 +324,7 @@ and maintain a professional style throughout your responses.
 Templates are validated for common issues:
 
 ```python
-from clm_core.components.sys_prompt import (
+from thread_encoder.components.sys_prompt import (
     PromptTemplateValidator,
     BoundPromptValidator,
     ValidationLevel

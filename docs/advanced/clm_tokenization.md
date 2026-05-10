@@ -589,8 +589,9 @@ The complete trigger phrase vocabularies are defined in language-specific vocabu
    - `CONTEXT_MAP` - Domain context mappings
 
 **Example usage:**
+
 ```python
-from clm_core.dictionary.en.vocabulary import ENVocabulary
+from thread_encoder.dictionary.en.vocabulary import ENVocabulary
 
 vocab = ENVocabulary()
 
