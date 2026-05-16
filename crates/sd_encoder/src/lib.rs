@@ -15,7 +15,7 @@ use py::{
 };
 
 #[pymodule]
-fn sd_encoder(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn _sd_encoder(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyFieldImportance>()?;
     m.add_class::<PyCLMOutput>()?;
     m.add_class::<PySDCompressionConfig>()?;
