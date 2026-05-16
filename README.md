@@ -183,7 +183,7 @@ git push origin thread_encoder-v1.0.9
 
 ### Release `sd_encoder`
 
-1. Update the version in `sd_encoder/sd_encoder/Cargo.toml`.
+1. Update the version in `crates/sd_encoder/Cargo.toml`.
 2. Commit and push the change to `main`.
 3. Create and push a matching tag:
 

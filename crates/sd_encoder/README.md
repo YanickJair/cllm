@@ -2,8 +2,8 @@
   <img width="320" height="190" src="https://raw.githubusercontent.com/YanickJair/cllm/main/docs/img/cllm_logo_mythological.svg" alt="CLM Encoder">
 </p>
 
-<h1 align="center">sd-encoder</h1>
-<h3 align="center">Rust-Accelerated Structured Data Encoder for LLMs</h3>
+<h1 align="center">Structured Data Encoder</h1>
+<h3 align="center">Rust-Accelerated SDE for LLMs</h3>
 
 <p align="center">
   <a href="https://github.com/YanickJair/cllm/actions"><img src="https://github.com/YanickJar/cllm/workflows/Test%20Suite/badge.svg" alt="Test Suite"></a>
@@ -102,7 +102,6 @@ config = SDCompressionConfig(
 ```python
 from sd_encoder import FieldImportance
 
-FieldImportance.NEVER    # always drop
 FieldImportance.LOW      # drop when filtering
 FieldImportance.MEDIUM   # include by default
 FieldImportance.HIGH     # always include unless explicitly excluded
@@ -122,7 +121,6 @@ Auto-detection applies heuristics to field names and values when `auto_detect=Tr
 | `description`, `type`, `channel` | `MEDIUM` |
 | `source`, `version`, `metadata` | `LOW` |
 | `_*`, `*_at`, `*_date` | `NEVER` |
-| Empty or very short values | `NEVER` |
 
 ---
 
@@ -147,6 +145,31 @@ result.validate_compressed()         # strip redundant whitespace
 ```
 
 Use `encode` directly when you want to inspect the output before deciding whether to validate.
+
+---
+
+## Benchmarks
+
+Run the Rust load benchmarks with:
+
+```bash
+make bench
+```
+
+The `load` benchmark measures:
+
+- `encode_payload_size`: latency and rows/sec for catalog-style table payloads and nested ticket payloads at 10, 100, 1,000, and 5,000 rows.
+- `encode_parallel_load`: aggregate throughput with 1, 2, 4, and 8 concurrent workers encoding 100-row payloads.
+
+Criterion writes detailed reports under `target/criterion/`. Use the `thrpt` line for capacity estimates and the time interval for latency bounds on the tested machine.
+
+For a compact table that answers "how long does compression take and what ratio do I get?", run:
+
+```bash
+make profile-load
+```
+
+This prints average latency, p95 latency, estimated original/compressed tokens, compression ratio, and compressed bytes for flat records, catalog tables, nested ticket bundles, and API-style responses.
 
 ---
 

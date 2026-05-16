@@ -1,9 +1,9 @@
 [package]
 name = "sd_encoder"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 license = "MIT"
-homepage = "https://yanickjair.github.io/cllm/sd_encoder/"
+homepage = "https://yanickjair.github.io/cllm/crates/sd_encoder/"
 repository = "https://github.com/YanickJair/cllm.git"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -20,4 +20,11 @@ serde_json = {version = "1.0.149", features = ["preserve_order"]}
 tracing = "0.1.44"
 pythonize = "0.28.0"
 pyo3-ffi = "0.28.3"
-pyo3 = {version = "0.28.3", features = ["extension-module"] }
+pyo3 = "0.28.3"
+
+[dev-dependencies]
+criterion = "0.8.2"
+
+[[bench]]
+name = "load"
+harness = false

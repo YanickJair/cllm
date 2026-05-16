@@ -28,7 +28,7 @@ impl PySDEncoderV2 {
         }
     }
 
-    pub fn encodee(&self, data: &Bound<'_, PyAny>) -> PyResult<PyCLMOutput> {
+    pub fn encode(&self, data: &Bound<'_, PyAny>) -> PyResult<PyCLMOutput> {
         let value = depythonize(data).map_err(Self::convert_error)?;
         Ok(PyCLMOutput::from(self.inner.encode(&value)))
     }

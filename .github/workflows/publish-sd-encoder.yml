@@ -8,7 +8,7 @@ on:
       - "sd_encoder-v*"
   pull_request:
     paths:
-      - "sd_encoder/sd_encoder/**"
+      - "crates/sd_encoder/**"
       - "sd_encoder/README.md"
       - ".github/workflows/publish-sd-encoder.yml"
   workflow_dispatch:
@@ -43,7 +43,7 @@ jobs:
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
-          working-directory: sd_encoder/sd_encoder
+          working-directory: crates/sd_encoder
           target: ${{ matrix.target }}
           args: --release --out dist --find-interpreter
           manylinux: auto
@@ -75,7 +75,7 @@ jobs:
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
-          working-directory: sd_encoder/sd_encoder
+          working-directory: crates/sd_encoder
           target: ${{ matrix.target }}
           args: --release --out dist --find-interpreter
           sccache: "true"
@@ -84,7 +84,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sd-encoder-macos-${{ matrix.target }}
-          path: sd_encoder/sd_encoder/dist
+          path: crates/sd_encoder/dist
 
   windows:
     name: Build Windows wheels
@@ -103,7 +103,7 @@ jobs:
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
-          working-directory: sd_encoder/sd_encoder
+          working-directory: crates/sd_encoder
           target: ${{ matrix.target }}
           args: --release --out dist --find-interpreter
           sccache: "true"
@@ -112,7 +112,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sd-encoder-windows-${{ matrix.target }}
-          path: sd_encoder/sd_encoder/dist
+          path: crates/sd_encoder/dist
 
   sdist:
     name: Build source distribution
@@ -123,7 +123,7 @@ jobs:
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
-          working-directory: sd_encoder/sd_encoder
+          working-directory: crates/sd_encoder
           command: sdist
           args: --out dist
 
@@ -131,7 +131,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sd-encoder-sdist
-          path: sd_encoder/sd_encoder/dist
+          path: crates/sd_encoder/dist
 
   publish:
     name: Publish SD Encoder

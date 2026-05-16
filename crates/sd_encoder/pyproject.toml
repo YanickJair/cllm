@@ -26,9 +26,12 @@ keywords = [
 ]
 readme = "README.md"
 dynamic = ["version"]
-dependencies = [
-    "twine>=6.1.0",
-]
+
+[dependency-groups]
+dev = ["twine>=6.1.0"]
 
 [tool.maturin]
-features = ["pyo3/extension-module"]
+python-source = "python"
+module-name = "sd_encoder._sd_encoder"
+bindings = 'pyo3'
+editable-profile = 'dev'
