@@ -28,7 +28,7 @@ gate = CompressionQualityGate()
 report = gate.analyze(
     original=transcript_text,
     compressed=clm_token_string,
-    structured=thread_encoder_output_dict,  # optional but recommended
+    structured=python_output_dict,  # optional but recommended
     run_perplexity=False,                   # skip LLM call — perplexity gets synthetic perfect score
 )
 
@@ -53,7 +53,7 @@ gate = CompressionQualityGate(llm_client="anthropic", perplexity_cfg=cfg)
 report = gate.analyze(
     original=transcript_text,
     compressed=clm_token_string,
-    structured=thread_encoder_output_dict,
+    structured=python_output_dict,
     run_perplexity=True,
 )
 

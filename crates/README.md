@@ -2,12 +2,12 @@
   <img width="320" height="190" src="https://raw.githubusercontent.com/YanickJair/cllm/main/docs/img/cllm_logo_mythological.svg" alt="CLM Encoder">
 </p>
 
-<h1 align="center">clm-encoder</h1>
-<h3 align="center">Rust-Accelerated Structured Data Encoder for LLMs</h3>
+<h1 align="center">Structured Data Encoder</h1>
+<h3 align="center">Rust-Accelerated SDE for LLMs</h3>
 
 <p align="center">
   <a href="https://github.com/YanickJair/cllm/actions"><img src="https://github.com/YanickJar/cllm/workflows/Test%20Suite/badge.svg" alt="Test Suite"></a>
-  <a href="https://pypi.org/project/clm-encoder/"><img src="https://img.shields.io/pypi/v/clm-encoder.svg" alt="PyPI"></a>
+  <a href="https://pypi.org/project/sd-encoder/"><img src="https://img.shields.io/pypi/v/sd-encoder.svg" alt="PyPI"></a>
   <a href="https://github.com/YanickJar/cllm/blob/main/LICENSE-AGPL"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="License"></a>
 </p>
 
@@ -31,7 +31,7 @@ Install it on its own if you only need structured data encoding — no spaCy, no
 ## Installation
 
 ```bash
-pip install clm-encoder
+pip install sd-encoder
 ```
 
 No additional downloads required. Pre-built wheels are available for Linux (x86_64, aarch64), macOS (Intel, Apple Silicon), and Windows.
@@ -102,7 +102,6 @@ config = SDCompressionConfig(
 ```python
 from sd_encoder import FieldImportance
 
-FieldImportance.NEVER    # always drop
 FieldImportance.LOW      # drop when filtering
 FieldImportance.MEDIUM   # include by default
 FieldImportance.HIGH     # always include unless explicitly excluded
@@ -122,7 +121,6 @@ Auto-detection applies heuristics to field names and values when `auto_detect=Tr
 | `description`, `type`, `channel` | `MEDIUM` |
 | `source`, `version`, `metadata` | `LOW` |
 | `_*`, `*_at`, `*_date` | `NEVER` |
-| Empty or very short values | `NEVER` |
 
 ---
 
@@ -147,6 +145,31 @@ result.validate_compressed()         # strip redundant whitespace
 ```
 
 Use `encode` directly when you want to inspect the output before deciding whether to validate.
+
+---
+
+## Benchmarks
+
+Run the Rust load benchmarks with:
+
+```bash
+make bench
+```
+
+The `load` benchmark measures:
+
+- `encode_payload_size`: latency and rows/sec for catalog-style table payloads and nested ticket payloads at 10, 100, 1,000, and 5,000 rows.
+- `encode_parallel_load`: aggregate throughput with 1, 2, 4, and 8 concurrent workers encoding 100-row payloads.
+
+Criterion writes detailed reports under `target/criterion/`. Use the `thrpt` line for capacity estimates and the time interval for latency bounds on the tested machine.
+
+For a compact table that answers "how long does compression take and what ratio do I get?", run:
+
+```bash
+make profile-load
+```
+
+This prints average latency, p95 latency, estimated original/compressed tokens, compression ratio, and compressed bytes for flat records, catalog tables, nested ticket bundles, and API-style responses.
 
 ---
 
@@ -191,13 +214,13 @@ encoder.encode_validated({"id": 1, "title": "Test", "internal_log": "...", "raw"
 
 ## Relationship to CLM
 
-`clm-encoder` is the engine behind the Structured Data encoder in [CLM](https://pypi.org/project/clm-core/). If you need thread or system prompt encoding alongside structured data, install the full library instead:
+`sd-encoder` is the engine behind the Structured Data encoder in [CLM](https://pypi.org/project/clm-core/). If you need thread or system prompt encoding alongside structured data, install the full library with the `sd_encoder` extra:
 
 ```bash
-pip install clm-core
+pip install "clm-core[sd_encoder]"
 ```
 
-`clm-encoder` is the right choice when:
+`sd-encoder` is the right choice when:
 - You only need structured data encoding
 - You want to avoid the spaCy dependency
 - You're deploying in a constrained environment
@@ -207,10 +230,8 @@ pip install clm-core
 
 ## License
 
-Dual-licensed:
-
-- **AGPL-3.0** — free for open source use ([LICENSE-AGPL](LICENSE-AGPL))
-- **Commercial** — for proprietary products and SaaS ([contact](mailto:yanick.jair.ta@gmail.com))
+- **MIT License** — License © 2025-PRESENT 
+[Yanick Andrade](https://github.com/YanickJair)
 
 ---
 

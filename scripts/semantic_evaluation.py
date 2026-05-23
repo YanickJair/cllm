@@ -38,7 +38,7 @@ class SemanticPreservationEvaluator:
             ),
             "has_code_reference": any(
                 word in prompt.lower()
-                for word in ["code", "function", "script", "python", "javascript"]
+                for word in ["code", "function", "script", "clm_core", "javascript"]
             ),
             "has_data_reference": any(
                 word in prompt.lower() for word in ["data", "dataset", "csv", "file"]

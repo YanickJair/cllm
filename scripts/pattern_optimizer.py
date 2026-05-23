@@ -218,7 +218,7 @@ def main():
 
     print("\n✅ Pattern discovery complete!")
     print("\n📋 Next steps:")
-    print("   1. Run: python test_statistical_compression.py")
+    print("   1. Run: clm_core test_statistical_compression.py")
     print("   2. Check for improved compression results")
     print()
 

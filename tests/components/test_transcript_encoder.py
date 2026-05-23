@@ -1,7 +1,7 @@
 import pytest
 
-from thread_encoder.components.thread_encoder.encoder import ThreadEncoder
-from thread_encoder.components.thread_encoder import (
+from clm_core.components.thread_encoder.encoder import ThreadEncoder
+from clm_core.components.thread_encoder import (
     CallInfo,
     CustomerProfile,
     Action,
@@ -13,7 +13,7 @@ from thread_encoder.components.thread_encoder import (
     RefundReference,
     PromiseCommitment,
 )
-from thread_encoder.types import CLMOutput, ThreadConfig
+from clm_core.types import CLMOutput, ThreadConfig
 
 
 @pytest.fixture
@@ -29,21 +29,21 @@ def nlp():
 @pytest.fixture
 def vocab():
     """Mock vocabulary"""
-    from thread_encoder.dictionary.en.vocabulary import ENVocabulary
+    from clm_core.dictionary.en.vocabulary import ENVocabulary
     return ENVocabulary()
 
 
 @pytest.fixture
 def rules():
     """Mock rules"""
-    from thread_encoder.dictionary.en.rules import ENRules
+    from clm_core.dictionary.en.rules import ENRules
     return ENRules()
 
 
 @pytest.fixture
 def patterns():
-    """English thread_encoder patterns"""
-    from thread_encoder.dictionary import patterns_map
+    """English clm_core patterns"""
+    from clm_core.dictionary import patterns_map
     return patterns_map["en"]
 
 
@@ -386,7 +386,7 @@ Agent: I see. Let me look into that for you."""
         result = encoder.encode(thread=transcript, metadata=metadata, verbose=False)
 
         assert isinstance(result, CLMOutput)
-        assert result.component == "THREAD_ENCODER"
+        assert result.component == "clm_core"
         assert result.original == transcript
         assert len(result.compressed) > 0
 
@@ -492,7 +492,7 @@ Customer: Thanks."""
 
 
 class TestTranscriptEncoderIntegration:
-    """Full integration tests for thread_encoder encoding"""
+    """Full integration tests for clm_core encoding"""
 
     def test_billing_dispute_transcript(self, encoder):
         transcript = """Customer: Hi, I noticed a duplicate charge on my account.

@@ -20,8 +20,7 @@ import os
 import sys
 from typing import Optional
 
-from thread_encoder.components.ds_compression import SDEncoder
-from thread_encoder.types import SDCompressionConfig
+from clm_core.types import SDCompressionConfig
 
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -36,7 +35,7 @@ except ImportError:
 SYSTEM_PROMPT = """You are an NBA (Next Best Action) recommendation system for customer service agents.
 
 TASK:
-Analyze the customer service thread_encoder and recommend the top 2 most relevant NBAs from the provided catalog.
+Analyze the customer service clm_core and recommend the top 2 most relevant NBAs from the provided catalog.
 
 ANALYSIS CRITERIA:
 - Customer's primary issue and intent
@@ -159,7 +158,7 @@ class RunGPTCLMBenchmark:
             required_fields=["id", "title", "description", "category"],
             auto_detect=False,
         )
-        compressor = SDEncoder(config=config, catalog_name="kb")
+        compressor = None # TODO: call sd_encoder
         return compressor.encode(nbas)
 
     def calculate_cost(
@@ -192,7 +191,7 @@ class RunGPTCLMBenchmark:
 
         Args:
             max_transcripts: Maximum number of transcripts to test
-            specific_index: Test only specific thread_encoder index (for debugging)
+            specific_index: Test only specific clm_core index (for debugging)
             models_to_test: List of model names to test (None = test all)
         """
         print(f"\n{'=' * 70}")
@@ -207,7 +206,7 @@ class RunGPTCLMBenchmark:
         # CLM system prompt (compressed)
         clm_system_prompt = """You are an NBA recommendation system for customer service agents.
 
-Analyze the thread_encoder and recommend the top 2 most relevant NBAs.
+Analyze the clm_core and recommend the top 2 most relevant NBAs.
 
 Consider these factors:
 - Primary issue and customer intent
@@ -289,14 +288,14 @@ Prioritize:
                                 {"role": "system", "content": clm_system_prompt},
                                 {
                                     "role": "user",
-                                    "content": f"""Analyze the following call thread_encoder:
+                                    "content": f"""Analyze the following call clm_core:
 
                                     TRANSCRIPT:
                                     {tc}
-                                    
+
                                     NBA CATALOG:
                                     {compressed_nbas}
-                                    
+
                                     Recommend the top 2 most relevant NBAs.""",
                                 },
                             ],
@@ -349,14 +348,14 @@ Prioritize:
                                 {"role": "system", "content": SYSTEM_PROMPT},
                                 {
                                     "role": "user",
-                                    "content": f"""Analyze the following call thread_encoder:
+                                    "content": f"""Analyze the following call clm_core:
 
                                     TRANSCRIPT:
                                     {to}
-                                    
+
                                     NBA CATALOG:
                                     {json.dumps(nbas)}
-                                    
+
                                     Recommend the top 2 most relevant NBAs.""",
                                 },
                             ],
@@ -483,7 +482,7 @@ def main():
         "--index",
         type=int,
         default=None,
-        help="Test only specific thread_encoder index (for debugging)",
+        help="Test only specific clm_core index (for debugging)",
     )
     parser.add_argument(
         "--models",

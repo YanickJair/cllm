@@ -53,7 +53,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sd-encoder-linux-${{ matrix.target }}
-          path: sd_encoder/sd_encoder/dist
+          path: crates/sd_encoder/dist
 
   macos:
     name: Build macOS wheels

@@ -3,7 +3,7 @@ CLLM Encoder - Test Suite
 Validates encode performance on diverse prompts
 
 Usage:
-    python test_encoder.py
+    clm_core test_encoder.py
 """
 
 import sys
@@ -52,7 +52,7 @@ class EncoderTester:
             # CUSTOMER SUPPORT PROMPTS
             # ============================================================
             {
-                "prompt": "Analyze this customer support thread_encoder and extract the main issue, sentiment, and action items. Format as JSON.",
+                "prompt": "Analyze this customer support clm_core and extract the main issue, sentiment, and action items. Format as JSON.",
                 "expected": "[REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=SUPPORT] [EXTRACT:ISSUE+SENTIMENT+ACTIONS] [OUT:JSON]",
                 "category": "customer_support",
                 "priority": "high",
@@ -70,7 +70,7 @@ class EncoderTester:
                 "priority": "medium",
             },
             {
-                "prompt": "Summarize this 30-minute customer call thread_encoder briefly.",
+                "prompt": "Summarize this 30-minute customer call clm_core briefly.",
                 "expected": "[REQ:SUMMARIZE:BRIEF] [TARGET:TRANSCRIPT:TYPE=CALL:DURATION=30]",
                 "category": "customer_support",
                 "priority": "medium",
@@ -172,7 +172,7 @@ class EncoderTester:
             # TRANSFORMATION PROMPTS
             # ============================================================
             {
-                "prompt": "Convert this meeting thread_encoder into a structured action items list with owners.",
+                "prompt": "Convert this meeting clm_core into a structured action items list with owners.",
                 "expected": "[REQ:TRANSFORM] [TARGET:TRANSCRIPT:TYPE=MEETING] [EXTRACT:ACTION_ITEMS+OWNERS] [OUT:LIST:STRUCTURED]",
                 "category": "transformation",
                 "priority": "high",

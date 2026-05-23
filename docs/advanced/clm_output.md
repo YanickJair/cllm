@@ -90,7 +90,7 @@ result = encoder.encode(content)
 if result.component == "System Prompt":
     print("This is a compressed system prompt")
 elif result.component == "Transcript":
-    print("This is a compressed thread_encoder")
+    print("This is a compressed clm_core")
 elif result.component == "SD":
     print("This is compressed structured data")
 ```
@@ -331,7 +331,7 @@ from clm_core import CLMEncoder, CLMConfig
 config = CLMConfig(lang="en")
 encoder = CLMEncoder(cfg=config)
 
-# Original thread_encoder
+# Original clm_core
 transcript = """Agent Raj: Thank you for calling. How can I help you?
 
 Customer: Hi, I was charged twice for my subscription this month.

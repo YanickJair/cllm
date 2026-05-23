@@ -254,11 +254,11 @@ cfg = CLMConfig(
 The two free-form utilities are importable directly from the `free_form` subpackage:
 
 ```python
-from thread_encoder.components.thread_encoder.free_form.splitter import (
+from clm_core.components.thread_encoder.free_form.splitter import (
     detect_format,
     split_free_form,
 )
-from thread_encoder.components.thread_encoder.patterns import TranscriptPatterns
+from clm_core.components.thread_encoder.patterns import TranscriptPatterns
 
 patterns = TranscriptPatterns(...)  # or load from dictionary
 

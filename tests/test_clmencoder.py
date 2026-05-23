@@ -1,10 +1,10 @@
 import pytest
 from pytest_mock import MockerFixture
 
-from thread_encoder.encoder import CLMEncoder
-from thread_encoder import CLMConfig
-from thread_encoder.text_classifier import DataTypes
-from thread_encoder.types import CLMOutput
+from clm_core.encoder import CLMEncoder
+from clm_core import CLMConfig
+from clm_core.text_classifier import DataTypes
+from clm_core.types import CLMOutput
 
 
 @pytest.fixture
@@ -61,7 +61,7 @@ def test_encode_transcript_routes_with_metadata_and_verbose(mocker: MockerFixtur
         metadata={}
     )
     mocked_ts_encode = mocker.patch(
-        "thread_encoder.components.thread_encoder.encoder.ThreadEncoder.encode",
+        "clm_core.components.thread_encoder.encoder.ThreadEncoder.encode",
         return_value=mocked_output
     )
 
@@ -86,7 +86,7 @@ def test_encode_system_prompt_routes_to_syspromptencoder(mocker: MockerFixture, 
         metadata={}
     )
     mocked_sys_compress = mocker.patch(
-        "thread_encoder.components.sys_prompt.encoder.SysPromptEncoder.compress",
+        "clm_core.components.sys_prompt.encoder.SysPromptEncoder.compress",
         return_value=mocked_output
     )
 
@@ -138,7 +138,7 @@ def test_encode_transcript_handles_none_metadata(mocker: MockerFixture, cfg: CLM
         metadata={}
     )
     mocked_ts_encode = mocker.patch(
-        "thread_encoder.components.thread_encoder.encoder.ThreadEncoder.encode",
+        "clm_core.components.thread_encoder.encoder.ThreadEncoder.encode",
         return_value=mocked_output
     )
 
@@ -165,10 +165,10 @@ def test_constructor_uses_clmconfig_dependencies(mocker: MockerFixture, cfg: CLM
 def test_encode_propagates_verbose_flag_to_encoder(mocker: MockerFixture, cfg: CLMConfig):
     encoder = CLMEncoder(cfg=cfg)
 
-    # Test for thread_encoder path with verbose True propagation
+    # Test for clm_core path with verbose True propagation
     mocker.patch.object(encoder._classifier, "classifier", return_value=DataTypes.TRANSCRIPT)
     mocked_ts_encode = mocker.patch(
-        "thread_encoder.components.thread_encoder.encoder.ThreadEncoder.encode",
+        "clm_core.components.thread_encoder.encoder.ThreadEncoder.encode",
         return_value=CLMOutput(
             original="Agent: Hello\nCustomer: Hi",
             component="TRANSCRIPT",

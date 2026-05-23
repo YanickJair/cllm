@@ -591,7 +591,7 @@ The complete trigger phrase vocabularies are defined in language-specific vocabu
 **Example usage:**
 
 ```python
-from thread_encoder.dictionary.en.vocabulary import ENVocabulary
+from clm_core.dictionary.en.vocabulary import ENVocabulary
 
 vocab = ENVocabulary()
 

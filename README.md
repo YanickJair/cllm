@@ -42,6 +42,12 @@ python -m spacy download es_core_news_sm  # Spanish
 python -m spacy download fr_core_news_sm  # French
 ```
 
+If you want the structured-data encoder as part of the same install, add the extra:
+
+```bash
+pip install "clm-core[sd_encoder]"
+```
+
 ---
 
 ## Usage
@@ -81,7 +87,9 @@ data = result.to_dict()
 #  "state": "PENDING_CUSTOMER", "agentActions": [...], "commitments": [...], ...}
 ```
 
-### Structured Data Encoder
+### Structured Data Encoder (SDE)
+
+SDE was moved to a standalone sub-library. You can find more about it [here](./crates/sd_encoder/README.md)
 
 ```python
 catalog = [{"article_id": "KB-001", "title": "Reset Password", "content": "...", "tags": ["security"]}]
@@ -165,20 +173,20 @@ This repository publishes two independent Python packages from one main branch:
 
 | Package | Source | Workflow | PyPI trigger |
 |---------|--------|----------|--------------|
-| `thread-encoder` | `thread_encoder/` | `.github/workflows/publish.yml` | `thread_encoder-v*` tags |
-| `sd_encoder` | `sd_encoder/sd_encoder/` | `.github/workflows/publish-sd-encoder.yml` | `sd_encoder-v*` tags |
+| `clm-core` | `clm_core/` | `.github/workflows/publish.yml` | `clm_core-v*` tags |
+| `sd_encoder` | `crates/sd_encoder/python/` | `.github/workflows/publish-sd-encoder.yml` | `sd_encoder-v*` tags |
 
 Use package-specific tags instead of release branches.
 
-### Release `thread-encoder`
+### Release `clm-core`
 
-1. Update `thread_encoder/__version__.py`.
+1. Update `clm_core/__version__.py`.
 2. Commit and push the change to `main`.
 3. Create and push a matching tag:
 
 ```bash
-git tag thread_encoder-v1.0.9
-git push origin thread_encoder-v1.0.9
+git tag clm_core-v1.0.9
+git push origin clm_core-v1.0.9
 ```
 
 ### Release `sd_encoder`
@@ -195,7 +203,17 @@ git push origin sd_encoder-v0.1.0
 Pushes to `main` publish changed packages to TestPyPI. Release tags publish the matching package to PyPI. Both workflows also support manual dispatch with `none`, `testpypi`, or `pypi`.
 
 ---
+## Star History
 
+<a href="https://www.star-history.com/?repos=YanickJair%cllm&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=YanickJair/cllm&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=YanickJair/cllm&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=YanickJair/cllm&type=date&legend=top-left" />
+ </picture>
+</a>
+
+---
 ## License
 
 Dual-licensed:

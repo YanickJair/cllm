@@ -2,7 +2,7 @@ import json
 import pytest
 from unittest.mock import MagicMock, patch
 
-from thread_encoder.quality_gate import (
+from clm_core.quality_gate import (
     KolmogorovAnalyzer,
     KolmogorovModel,
     ConditionalEntropyAnalyzer,
@@ -658,7 +658,7 @@ class TestCompressionQualityGateAnalyze:
     @pytest.fixture
     def gate(self):
         """Gate with all sub-analyzers mocked to avoid API calls and the init bug."""
-        with patch("thread_encoder.quality_gate.gate.PerplexityAnalyzer") as MockPerplexity:
+        with patch("clm_core.quality_gate.gate.PerplexityAnalyzer") as MockPerplexity:
             MockPerplexity.return_value = MagicMock()
             g = CompressionQualityGate.__new__(CompressionQualityGate)
             g.kolmogorov = KolmogorovAnalyzer()

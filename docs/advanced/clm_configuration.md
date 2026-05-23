@@ -19,7 +19,7 @@ The `CLMConfig` object is the central configuration system for CLM compression. 
 
 ```python
 from clm_core import CLMConfig, SDCompressionConfig, SysPromptConfig
-from thread_encoder.types import ThreadConfig
+from clm_core.types import ThreadConfig
 
 config = CLMConfig(
   lang="en",  # Language selection
@@ -96,7 +96,7 @@ config = CLMConfig(lang="en")  # Uses default ThreadConfig
 
 ```python
 from clm_core import CLMConfig
-from thread_encoder.types import ThreadConfig
+from clm_core.types import ThreadConfig
 
 config = CLMConfig(
   lang="en",
@@ -230,7 +230,7 @@ Each vocabulary defines mappings from natural language to semantic tokens:
     "diagnose": "DIAGNOSE",
     
     # TARGET tokens
-    "thread_encoder": "TRANSCRIPT",
+    "clm_core": "TRANSCRIPT",
     "document": "DOCUMENT",
     "invoice": "INVOICE",
     
@@ -556,7 +556,7 @@ for lang in languages:
 
 ```python
 from clm_core import CLMConfig, SDCompressionConfig, SysPromptConfig
-from thread_encoder.types import ThreadConfig
+from clm_core.types import ThreadConfig
 
 # Complete configuration with all options
 config = CLMConfig(
@@ -641,7 +641,7 @@ config = CLMConfig(lang="de")  # Beta
 ### 2. Configure Based on Use Case
 
 ```python
-from thread_encoder.types import ThreadConfig
+from clm_core.types import ThreadConfig
 
 # Thread (transcript / free-form) compression
 config = CLMConfig(

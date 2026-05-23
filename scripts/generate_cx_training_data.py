@@ -174,7 +174,7 @@ class CXTrainingDataGenerator:
         }
 
     def generate_transcript(self, issue_category: str) -> str:
-        """Generate realistic customer support thread_encoder"""
+        """Generate realistic customer support clm_core"""
 
         issue = random.choice(self.customer_issues[issue_category])
 
@@ -205,7 +205,7 @@ class CXTrainingDataGenerator:
         # Agent resolution
         agent_resolution = random.choice(self.agent_responses["resolution"])
 
-        # Build thread_encoder
+        # Build clm_core
         transcript = f"""{customer_start}
 Agent: {agent_empathy} {agent_investigation}
 {customer_followup}
@@ -336,7 +336,7 @@ Priority: {"URGENT" if issue_category in ["complaint", "technical"] else "HIGH" 
         issue_category = random.choice(list(self.customer_issues.keys()))
         issue = random.choice(self.customer_issues[issue_category])
 
-        # Just the customer message (not full thread_encoder)
+        # Just the customer message (not full clm_core)
         customer_message = f"Customer: {issue}"
 
         instruction = random.choice(
@@ -523,7 +523,7 @@ NEXT STEPS:
 
         print("\nAverage Character Lengths:")
         print(f"  Compressed Instruction:  {avg_instruction:.0f} chars")
-        print(f"  Input (thread_encoder):      {avg_input:.0f} chars")
+        print(f"  Input (clm_core):      {avg_input:.0f} chars")
         print(f"  Expected Output:         {avg_output:.0f} chars")
 
         # Compression stats
@@ -588,7 +588,7 @@ def main():
     print("\nNext steps:")
     print("  1. Review sample examples above")
     print("  2. Optionally: Enhance with GPT-4 for better responses")
-    print("  3. Proceed to model training: python train_cllm_model.py")
+    print("  3. Proceed to model training: clm_core train_cllm_model.py")
     print("\nThis data is ready for demo to your CX company! 🎯\n")
 
 
