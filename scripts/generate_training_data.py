@@ -288,7 +288,7 @@ class TrainingDataGenerator:
         }
 
         # Load vocabulary from your encode
-        from thread_encoder.utils.vocabulary import Vocabulary
+        from clm_core.utils.vocabulary import Vocabulary
 
         v = Vocabulary()
 

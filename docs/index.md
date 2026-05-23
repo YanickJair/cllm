@@ -107,7 +107,7 @@ sys_prompt = """
 You are a Call QA & Compliance Scoring System for customer service operations.
 
 TASK:
-Analyze the thread_encoder and score the agent's compliance across required QA categories.
+Analyze the clm_core and score the agent's compliance across required QA categories.
 
 ANALYSIS CRITERIA:
 - Mandatory disclosures and verification steps
@@ -280,7 +280,7 @@ print(result.compressed)
 Thread Encoder behaviour is configurable via `ThreadConfig` — enable `include_ctx_values` to surface extracted entity values, `include_summary` to generate a human-readable summary from the compressed output, `estimate_thread_duration` to infer duration from content, and `redaction_pattern` to control PII placeholder detection:
 
 ```python
-from thread_encoder.types import ThreadConfig
+from clm_core.types import ThreadConfig
 
 cfg = CLMConfig(
   lang="en",

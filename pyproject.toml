@@ -3,7 +3,7 @@ requires = ["hatchling", "hatch-fancy-pypi-readme"]
 build-backend = "hatchling.build"
 
 [project]
-name = "thread-encoder"
+name = "clm-core"
 dynamic = ["version", "readme"]
 description = "Thread and prompt encoder components for Compressed Language Model workflows."
 license = "BSD-3-Clause"
@@ -50,19 +50,22 @@ dependencies = [
     "annotated-doc>=0.0.4",
 ]
 
+[project.optional-dependencies]
+sd_encoder = ["sd_encoder>=0.1.2"]
+
 [tool.hatch.version]
-path = "thread_encoder/__version__.py"
+path = "clm_core/__version__.py"
 
 [tool.hatch.build.targets.sdist]
 include = [
     "/README.md",
     "/CHANGELOG.md",
-    "/thread_encoder",
+    "/clm_core",
     "/tests",
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["thread_encoder"]
+packages = ["clm_core"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
@@ -113,4 +116,4 @@ markers = [
 
 [tool.coverage.run]
 omit = ["venv/*", ".venv/*", "scripts/*"]
-include = ["thread_encoder/*", "tests/*"]
+include = ["clm_core/*", "tests/*"]

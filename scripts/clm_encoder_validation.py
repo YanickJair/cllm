@@ -3,7 +3,7 @@ CLLM Encoder - Full Validation Suite
 Tests encode on 100 diverse prompts to validate production readiness
 
 Usage:
-    python validate_full.py
+    clm_core validate_full.py
 """
 
 import json

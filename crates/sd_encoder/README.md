@@ -214,10 +214,10 @@ encoder.encode_validated({"id": 1, "title": "Test", "internal_log": "...", "raw"
 
 ## Relationship to CLM
 
-`sd-encoder` is the engine behind the Structured Data encoder in [CLM](https://pypi.org/project/clm-core/). If you need thread or system prompt encoding alongside structured data, install the full library instead:
+`sd-encoder` is the engine behind the Structured Data encoder in [CLM](https://pypi.org/project/clm-core/). If you need thread or system prompt encoding alongside structured data, install the full library with the `sd_encoder` extra:
 
 ```bash
-pip install clm-core
+pip install "clm-core[sd_encoder]"
 ```
 
 `sd-encoder` is the right choice when:
@@ -230,10 +230,8 @@ pip install clm-core
 
 ## License
 
-Dual-licensed:
-
-- **AGPL-3.0** — free for open source use ([LICENSE-AGPL](LICENSE-AGPL))
-- **Commercial** — for proprietary products and SaaS ([contact](mailto:yanick.jair.ta@gmail.com))
+- **MIT License** — License © 2025-PRESENT ([MIT License](LMIT License))
+(mailto:yanick.jair.ta@gmail.com))
 
 ---
 

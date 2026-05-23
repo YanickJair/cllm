@@ -2,7 +2,7 @@ import json
 import time
 
 from clm_core import CLMEncoder, CLMConfig
-from thread_encoder.types import SDCompressionConfig
+from clm_core.types import SDCompressionConfig
 
 
 def load_sample_catalog() -> list[dict]:

@@ -1,4 +1,4 @@
-from thread_encoder.types import CLMOutput, FieldImportance, SDCompressionConfig
+from clm_core.types import CLMOutput, FieldImportance, SDCompressionConfig
 
 
 class TestFieldImportance:

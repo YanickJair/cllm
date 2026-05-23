@@ -15,13 +15,13 @@ Tests the main target extraction orchestrator and its component extractors:
 import pytest
 import spacy
 
-from thread_encoder.components.target_extractor import TargetExtractor
-from thread_encoder.components.sys_prompt import Target
-from thread_encoder.components._target.extractors import FallbackExtractor
-from thread_encoder.components._target.target_normalizer import TargetNormalizer
-from thread_encoder.components._target.attributes import AttributeEnhancer
-from thread_encoder.dictionary.en.vocabulary import ENVocabulary
-from thread_encoder.dictionary.en.rules import ENRules
+from clm_core.components.target_extractor import TargetExtractor
+from clm_core.components.sys_prompt import Target
+from clm_core.components._target.extractors import FallbackExtractor
+from clm_core.components._target.target_normalizer import TargetNormalizer
+from clm_core.components._target.attributes import AttributeEnhancer
+from clm_core.dictionary.en.vocabulary import ENVocabulary
+from clm_core.dictionary.en.rules import ENRules
 
 @pytest.fixture(scope="module")
 def nlp():
@@ -69,8 +69,8 @@ class TestImperativeExtractor:
         assert result.token == "DATA"
 
     def test_summarize_transcript(self, target_extractor, nlp):
-        """Test SUMMARIZE with thread_encoder"""
-        text = "Summarize this customer call thread_encoder"
+        """Test SUMMARIZE with clm_core"""
+        text = "Summarize this customer call clm_core"
         result = target_extractor.extract(text)
 
         assert result is not None
@@ -280,21 +280,21 @@ class TestTargetNormalizer:
     def test_normalize_single_target(self):
         """Test normalizing a single target"""
         normalizer = TargetNormalizer()
-        target = Target(token="code", domain="technical", attributes={"lang": "python"})
+        target = Target(token="code", domain="technical", attributes={"lang": "clm_core"})
 
         result = normalizer.normalize(target)
 
         assert result.token == "CODE"
         assert result.domain == "TECHNICAL"
         # Normalizer uppercases keys but not values
-        assert result.attributes.get("LANG") == "python"
+        assert result.attributes.get("LANG") == "clm_core"
 
     def test_normalize_many_picks_priority(self):
         """Test that normalize_many picks highest priority target"""
         normalizer = TargetNormalizer()
         targets = [
             Target(token="ANSWER", attributes={}),
-            Target(token="CODE", attributes={"LANG": "python"}),
+            Target(token="CODE", attributes={"LANG": "clm_core"}),
             Target(token="TRANSCRIPT", attributes={"DURATION": "30"}),
         ]
 
@@ -310,7 +310,7 @@ class TestTargetNormalizer:
         normalizer = TargetNormalizer()
         target = Target(
             token="CODE",
-            attributes={"LANG": "python", "CONTEXT": "test", "RAW": "data"}
+            attributes={"LANG": "clm_core", "CONTEXT": "test", "RAW": "data"}
         )
 
         result = normalizer.normalize(target)
@@ -324,7 +324,7 @@ class TestTargetNormalizer:
         normalizer = TargetNormalizer()
         target = Target(
             token="ANSWER",
-            attributes={"LANG": "python", "FORMAT": "json"}
+            attributes={"LANG": "clm_core", "FORMAT": "json"}
         )
 
         result = normalizer.normalize(target)
@@ -431,7 +431,7 @@ class TestTargetExtractorIntegration:
 
     def test_full_pipeline_with_req_tokens(self, target_extractor):
         """Test pipeline with detected req tokens"""
-        text = "Summarize this 30-minute customer call thread_encoder"
+        text = "Summarize this 30-minute customer call clm_core"
         detected_req_tokens = ["SUMMARIZE"]
 
         result = target_extractor.extract(text, detected_req_tokens)
@@ -534,7 +534,7 @@ class TestEdgeCases:
     def test_list_generation_prefers_items(self, target_extractor):
         """Fallback should map GENERATE + list indicators to ITEMS"""
         text = "Generate a bullet list of items"
-        result = target_extractor.extract(text, detected_req_tokens=["GENERATE"]) 
+        result = target_extractor.extract(text, detected_req_tokens=["GENERATE"])
 
         assert result is not None
         assert result.token in ["ITEMS", "CONTENT"]
@@ -575,7 +575,7 @@ class TestPerformance:
         prompts = [
             "Analyze this code",
             "What is DNS?",
-            "Summarize this thread_encoder",
+            "Summarize this clm_core",
             "Generate a report",
             "Debug this function",
         ]

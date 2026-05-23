@@ -3,7 +3,7 @@ from clm_core import CLMEncoder, CLMConfig, DataTypes, ThreadConfig
 
 
 def load_threads():
-    with open("./data/raw/thread_encoder_dataset.json", "r") as f:
+    with open("./data/raw/python_dataset.json", "r") as f:
         threads = json.load(f)
     return threads
 
@@ -21,4 +21,3 @@ if __name__ == "__main__":
     )
     encoded = encoder.encode(input_=input_, data_type=DataTypes.FREE_FORM, metadata={"channel": "email"})
     print(encoded.n_tokens, encoded.c_tokens, encoded.compressed, encoded.to_dict(), encoded.compression_ratio)
-

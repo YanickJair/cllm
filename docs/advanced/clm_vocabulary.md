@@ -183,8 +183,8 @@ COMPOUND_PHRASES = {
     "support ticket": "TICKET",
     "help desk": "TICKET",
     
-    "chat thread_encoder": "TRANSCRIPT",
-    "conversation thread_encoder": "TRANSCRIPT",
+    "chat clm_core": "TRANSCRIPT",
+    "conversation clm_core": "TRANSCRIPT",
     
     "source code": "CODE",
     "code review": "CODE",
@@ -236,7 +236,7 @@ TYPE_MAP = {
     "report": "REPORT",
     "document": "DOCUMENT",
     "article": "ARTICLE",
-    "thread_encoder": "TRANSCRIPT",
+    "clm_core": "TRANSCRIPT",
     "ticket": "TICKET",
     "case": "TICKET",
     "complaint": "COMPLAINT",
@@ -323,7 +323,7 @@ Output: [REQ:ANALYZE] [TARGET:TICKET:DOMAIN=TECHNICAL,SUPPORT]
 
 **DOCUMENT:**
 ```python
-"document", "article", "manual", "guide", "thread_encoder",
+"document", "article", "manual", "guide", "clm_core",
 "notes", "summary", "instructions"
 ```
 
@@ -481,7 +481,7 @@ Output: [REQ:SUMMARIZE,EXTRACT] [TARGET:DOCUMENT] [EXTRACT:ENTITIES]
 "DOCUMENT": ["document", "doc", "file", "report"],
 "EMAIL": ["email", "message", "correspondence"],
 "REPORT": ["report", "analysis", "findings"],
-"TRANSCRIPT": ["thread_encoder", "conversation", "chat log"]
+"TRANSCRIPT": ["clm_core", "conversation", "chat log"]
 ```
 
 **Customer Service:**
@@ -851,7 +851,7 @@ config = CLMConfig(lang="en")
 # Check if vocabulary handles your domain
 test_phrases = [
     "analyze customer support ticket",
-    "extract sentiment from thread_encoder",
+    "extract sentiment from clm_core",
     "generate next best action"
 ]
 

@@ -150,7 +150,7 @@ print(result.compressed)
 
 ```python
 from clm_core import CLMConfig, CLMEncoder
-from thread_encoder.components.sys_prompt import ConfigurationPromptEncoder
+from clm_core.components.sys_prompt import ConfigurationPromptEncoder
 
 cfg = CLMConfig(lang="en")
 encoder = CLMEncoder(cfg=cfg)

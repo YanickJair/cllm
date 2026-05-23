@@ -1,0 +1,335 @@
+import logging
+from enum import Enum
+from typing import Optional, Annotated, Any
+from annotated_doc import Doc
+from pydantic import BaseModel, Field
+
+from clm_core.components.sys_prompt.errors import TemplateBindingError
+
+DEFAULT_DOMAIN_MAP = {
+    "CALL": "SUPPORT",
+    "TICKET": "SUPPORT",
+}
+
+_logger = logging.Logger(__name__)
+_logger.setLevel(logging.INFO)
+
+
+class PromptMode(str, Enum):
+    TASK = "TASK"
+    CONFIGURATION = "CONFIGURATION"
+
+
+class PromptTemplate(BaseModel):
+    raw_template: str = Field(
+        ..., description="Raw configuration template (placeholders intact)"
+    )
+    placeholders: list[str] = Field(
+        ..., description="Runtime placeholders (symbolic, unresolved)"
+    )
+    role: Optional[str] = Field(default=None, description="System Prompt Agent's role")
+    rules: dict = Field(default_factory=lambda x: {}, description="Agent's rule(s)")
+    priority: Optional[str] = Field(
+        default=None, description="Agent priority definition"
+    )
+    compressed: str = Field(..., description="Deterministic compressed representation")
+    output_format: Optional[str] = Field(
+        default=None, description="Output defined in prompt after compressing"
+    )
+
+    def bind(
+        self,
+        **values: Annotated[
+            Any,
+            Doc(
+                "Runtime values keyed by placeholder name to substitute into the template."
+            ),
+        ],
+    ) -> str:
+        """
+        Bind runtime values into the template.
+        Returns a concrete system prompt string.
+        """
+        missing = [p for p in self.placeholders if p not in values]
+        if missing:
+            raise TemplateBindingError(f"Missing values for placeholders: {missing}")
+
+        extra = [k for k in values if k not in self.placeholders]
+
+        if extra:
+            _logger.warning(f"Extra values provided not used in template: {extra}")
+
+        bound = self.raw_template
+        for key, val in values.items():
+            bound = bound.replace(f"{{{{{key}}}}}", str(val))
+        return bound
+
+
+class REQ(str, Enum):
+    ANALYZE = "ANALYZE"
+    GENERATE = "GENERATE"
+    PREDICT = "PREDICT"
+    RECOMMEND = "RECOMMEND"
+    EXTRACT = "EXTRACT"
+    TRANSFORM = "TRANSFORM"
+    FORMAT = "FORMAT"
+    SUMMARIZE = "SUMMARIZE"
+    CLASSIFY = "CLASSIFY"
+    VALIDATE = "VALIDATE"
+    RANK = "RANK"
+    DEBUG = "DEBUG"
+    SEARCH = "SEARCH"
+    EXECUTE = "EXECUTE"
+
+
+class Signal(str, Enum):
+    ANALYSIS = "ANALYSIS"
+    GENERATION = "GENERATION"
+    PREDICTION = "PREDICTION"
+    EXTRACTION = "EXTRACTION"
+    TRANSFORMATION = "TRANSFORMATION"
+    FORMATTING = "FORMATTING"
+    VALIDATION = "VALIDATION"
+    RANKING = "RANKING"
+    DEBUGGING = "DEBUGGING"
+    SEARCH = "SEARCH"
+    EXECUTION = "EXECUTION"
+
+
+class Artifact(str, Enum):
+    TEXT = "TEXT"
+    LIST = "LIST"
+    STRUCTURED = "STRUCTURED"
+    PROBABILITY = "PROBABILITY"
+    VALIDATION = "VALIDATION"
+    DECISION = "DECISION"
+
+
+VOCAB_SIGNAL_MAP = {
+    "ANALYZE": Signal.ANALYSIS,
+    "ASSESS": Signal.ANALYSIS,
+    "REVIEW": Signal.ANALYSIS,
+    "CALCULATE": Signal.PREDICTION,
+    "PREDICT": Signal.PREDICTION,
+    "GENERATE": Signal.GENERATION,
+    "EXTRACT": Signal.EXTRACTION,
+    "TRANSFORM": Signal.TRANSFORMATION,
+    "FORMAT": Signal.FORMATTING,
+    "VALIDATE": Signal.VALIDATION,
+    "RANK": Signal.RANKING,
+    "DEBUG": Signal.DEBUGGING,
+    "SEARCH": Signal.SEARCH,
+    "EXECUTE": Signal.EXECUTION,
+    "SUMMARIZE": Signal.GENERATION,
+    "LIST": Signal.GENERATION,
+}
+
+
+class Intent(BaseModel):
+    """Represents a detected intent (REQ token)"""
+
+    token: Annotated[
+        REQ | str,
+        Field(..., description="Represents the user’s primary task objective"),
+    ]
+    specs: list[str] = Field(
+        default_factory=lambda l: [],
+        description="specialization refines what is being generated / predicted / extracted",
+    )
+    confidence: Annotated[float, Field(default=0.0, description="Confidence score")]
+    trigger_word: Annotated[str, Field(default="", description="Trigger word")]
+    modifier: Annotated[
+        Optional[str],
+        Field(default=None, description="Modifier (optional) DEEP,SURFACE"),
+    ]
+    qualifiers: dict[str, str] = Field(default_factory=lambda d: {}, description="")
+    unmatched_verbs: list[str] = Field(
+        default_factory=list, description="Verbs that didn't map to REQ"
+    )
+
+    def build_token(self) -> str:
+        specs = "SPECS:" + "_".join(self.specs) if len(self.specs) > 0 else ""
+        req = f"REQ:{self.token.value}"
+        if specs:
+            return f"{req}:{specs}"
+        return f"{req}"
+
+
+class Target(BaseModel):
+    token: str
+    domain: Optional[str] = None
+    attributes: Optional[dict[str, str]] = Field(default_factory=lambda d: {})
+    unmatched_nouns: list[str] = Field(default_factory=list)
+
+    def __post_init__(self):
+        if self.attributes is None:
+            self.attributes = {}
+
+    def build_token(self) -> str:
+        """
+        Produces clean CLLM TARGET token:
+        [TARGET:<TOKEN>:DOMAIN=...:ATTR=...]
+        """
+
+        token = str(self.token).upper()
+        parts = [f"TARGET:{token}"]
+
+        domain = None
+        if self.domain:
+            domain = self.domain.upper()
+
+        attrs = dict(self.attributes or {})
+        if "DOMAIN" in attrs:
+            if domain is None:
+                domain = str(attrs["DOMAIN"])
+            attrs.pop("DOMAIN")
+
+        if domain:
+            parts.append(f"DOMAIN={domain}")
+
+        clean_attrs = {}
+        for k, v in attrs.items():
+            ck = str(k)
+            cv = str(v)
+            clean_attrs[ck] = cv
+
+        for k in sorted(clean_attrs.keys()):
+            parts.append(f"{k}={clean_attrs[k]}")
+
+        return "[" + ":".join(parts) + "]"
+
+
+class ExtractionField(BaseModel):
+    """Represents fields to extract"""
+
+    fields: list[str] = Field(
+        ...,
+        description="Fields that represent what to extract from the input (i.e. ISSUE, SENTIMENT, ACTIONS)",
+    )
+    attributes: Optional[dict[str, str]] = Field(default_factory=lambda d: {})
+
+    def __post_init__(self):
+        if self.attributes is None:
+            self.attributes = {}
+
+    def build_token(self) -> str | None:
+        """
+        Format the extraction field as a semantic token.
+        Examples:
+        - [EXTRACT:NAMES,DATES]
+        - [EXTRACT:VERIFICATION,POLICY:DOMAIN=QA]
+        """
+        if not self.fields:
+            return None
+
+        result = f"[EXTRACT:{','.join(self.fields)}"
+
+        if self.attributes:
+            attr_parts = [f"{k}={v}" for k, v in self.attributes.items()]
+            result += f":{','.join(attr_parts)}"
+
+        result += "]"
+        return result
+
+
+class Context(BaseModel):
+    """Represents context constraints (CTX token)"""
+
+    aspect: str = Field(
+        ...,
+        description="Some aspect presented in prompt for context aware (e.g., TONE, STYLE, AUDIENCE)",
+    )
+    value: str = Field(
+        ...,
+        description="Value of the aspect presented in prompt for context aware (PROFESSIONAL, SIMPLE)",
+    )
+
+
+class OutputFormat(BaseModel):
+    """Represents output format (OUT token)"""
+
+    format_type: str
+    attributes: Optional[dict[str, str]] = Field(default_factory=lambda d: {})
+
+    def __post_init__(self):
+        if self.attributes is None:
+            self.attributes = {}
+
+
+class OutputField(BaseModel):
+    """Represents a single field in output schema"""
+
+    name: str = Field(..., description="Name of the field")
+    type: Optional[str] = Field(None, description="Type of the field")
+    description: Optional[str] = Field(None, description="Description of the field")
+    required: Optional[bool] = Field(True, description="Whether the field is required")
+    nested: Optional[list["OutputField"]] = Field(None, description="Nested fields")
+
+
+class OutputSchema(BaseModel):
+    """Extracted schema from NL or structured definition"""
+
+    format_type: str = Field(..., description="Format type of the schema")
+    fields: Optional[list[OutputField]] = Field(
+        default=None, description="Fields of the schema"
+    )
+    attributes: Optional[dict[str, Any]] = Field(
+        default=None, description="Attributes of the schema"
+    )
+    raw_schema: Optional[dict | str] = Field(None, description="Raw schema")
+    format_hint: Optional[str] = Field(None, description="Format hint")
+
+    def build_token(self) -> str:
+        """
+        Build token in the canonical format:
+
+            [OUT_<FORMAT> : <SCHEMA> : key=value : key=value]
+
+        - SCHEMA always comes first.
+        - Other attributes (ENUMS, SPECS, KEYS, etc.) follow.
+        - Order of attributes is stable: SCHEMA → KEYS → ENUMS → SPECS → others.
+        """
+        if self.format_type == "TEXT":
+            return "[OUTPUT:TEXT]"
+
+        if self.attributes is None:
+            fmt = (self.format_hint or self.format_type or "STRUCTURED").upper()
+            return f"[OUT_{fmt}]"
+
+        fmt = (self.format_hint or self.format_type or "STRUCTURED").upper()
+        schema = self.attributes.get("schema", "")
+        parts = [f"OUT_{fmt}", f"{schema}"]
+        ordered_keys = []
+
+        if "KEYS" in self.attributes:
+            ordered_keys.append("KEYS")
+        if "ENUMS" in self.attributes:
+            ordered_keys.append("ENUMS")
+        if "CONSTRAINTS" in self.attributes:
+            ordered_keys.append("CONSTRAINTS")
+
+        for k in sorted(self.attributes.keys()):
+            if k not in ["schema", "KEYS", "ENUMS", "SPECS", "CONSTRAINTS"]:
+                ordered_keys.append(k)
+
+        for k in ordered_keys:
+            parts.append(f"{k}={self.attributes[k]}")
+
+        return "[" + ":".join(parts) + "]"
+
+
+class DetectedField(BaseModel):
+    name: str = Field(..., description="Name of the detected field")
+    span: tuple[int, int] = Field(..., description="Span of the detected field")
+    source: str = Field(..., description="Source of the detected field")
+    confidence: float = Field(..., description="Confidence of the detected field")
+
+
+class ValidationLevel(str, Enum):
+    ERROR = "ERROR"
+    WARNING = "WARNING"
+
+
+class ValidationIssue(BaseModel):
+    level: ValidationLevel
+    message: str
