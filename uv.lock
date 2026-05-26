@@ -167,6 +167,7 @@ name = "clm-core"
 source = { editable = "." }
 dependencies = [
     { name = "annotated-doc" },
+    { name = "click" },
     { name = "langdetect" },
     { name = "pip" },
     { name = "pydantic" },
@@ -182,6 +183,7 @@ sd-encoder = [
 [package.metadata]
 requires-dist = [
     { name = "annotated-doc", specifier = ">=0.0.4" },
+    { name = "click", specifier = ">=8.3.1" },
     { name = "langdetect", specifier = ">=1.0.9" },
     { name = "pip", specifier = ">=26.0.1" },
     { name = "pydantic", specifier = ">=2.12.5" },
