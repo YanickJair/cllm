@@ -3,12 +3,13 @@ from typing import Annotated
 from annotated_doc import Doc
 from spacy.language import Language
 
+from clm_core.types import CLMOutput, SysPromptConfig
 from clm_core.utils.parser_rules import BaseRules
 from clm_core.utils.vocabulary import BaseVocabulary
+
 from ._configuration_prompt_encoder import ConfigurationPromptEncoder
 from ._schemas import PromptMode
 from ._task_prompt_encoder import TaskPromptEncoder
-from clm_core.types import CLMOutput, SysPromptConfig
 
 COMPONENT = "SYSTEM_PROMPT"
 
@@ -30,6 +31,7 @@ class SysPromptEncoder:
         self._task_prompt = TaskPromptEncoder(
             nlp=nlp, config=config, rules=rules, vocab=vocab
         )
+        self._config = config
         self._configuration_prompt = ConfigurationPromptEncoder(
             nlp=nlp, vocab=vocab, rules=rules, config=config
         )
@@ -78,7 +80,11 @@ class SysPromptEncoder:
         ] = False,
     ) -> CLMOutput:
         """Compress a natural language prompt into CLLM format."""
-        mode = self._detect_prompt_mode(prompt)
+        mode = (
+            self._config.prompt_mode
+            if self._config.prompt_mode
+            else self._detect_prompt_mode(prompt)
+        )
         if mode == PromptMode.TASK:
             self._task_prompt.compress(prompt=prompt, verbose=verbose)
         return self._configuration_prompt.compress(prompt=prompt)

@@ -1,368 +1,84 @@
 # Configuration Prompt Encoding
 
-## Overview
+Configuration prompts are system prompts that define persistent behavior.
 
-Configuration prompts are **template-based system instructions** that define an agent's persistent behavior and can be parameterized at runtime. Unlike task prompts that focus on a specific action, configuration prompts establish the agent's identity, rules, and behavioral patterns.
+Use this format when the prompt describes:
 
-**Key characteristics:**
-- Define agent role and persona
-- Contain basic and custom behavioral rules
-- Support runtime placeholders for dynamic values
-- Include priority definitions for rule conflicts
-- Often include structured output requirements
+- the assistant's role
+- the rules it should follow
+- how to resolve conflicts between rules
+- runtime values that should be filled in later
+- an output shape or response schema
 
-**Typical compression:** 60-80% token reduction (CL tokens + NL minimization)
-
----
-
-## Anatomy of a Configuration Prompt
-
-Configuration prompts typically contain these elements:
-
-### 1. Role Definition
-Establishes the agent's identity:
-```xml
-<role>You are a helpful customer support agent</role>
-```
-or:
-```text
-You are a professional technical writer.
-```
-
-### 2. Basic Rules
-Standard behavioral guidelines:
-```xml
-<basic_rules>
-- Detect input language automatically
-- Apply appropriate grammar and style
-- Improve clarity and readability
-- Output only the enhanced text
-</basic_rules>
-```
-
-### 3. Custom Rules
-User-specific or context-specific instructions:
-```xml
-<custom_rules>
-Always address the customer by name: {{customer_name}}
-Use formal language when dealing with enterprise clients.
-</custom_rules>
-```
-
-### 4. Priority Definition
-How to handle rule conflicts:
-```text
-Custom instructions are paramount. If there are conflicts between
-basic rules and custom instructions, prioritize custom instructions.
-```
-
-### 5. Placeholders
-Runtime variables for dynamic behavior:
-```text
-{{user_name}}, {{context}}, {{language}}, {{tone}}
-```
-
-### 6. Output Format
-Structured output requirements (optional):
-```text
-Return your response as JSON:
-{
-    "response": "your message",
-    "sentiment": "positive|neutral|negative"
-}
-```
+If you want a quick overview of the system prompt encoder first, see [System Prompt Encoder](index.md).
 
 ---
 
-## Example: Configuration Prompt Structure
+## What Makes a Prompt "Configuration"?
 
-### Full Configuration Prompt
+A configuration prompt usually has two parts:
+
+1. A stable instruction set, such as role and rules
+2. One or more placeholders that change at runtime
+
+Example:
 
 ```text
 <role>You are a helpful customer support agent</role>
 
 <basic_rules>
-Core capabilities and standard guidelines:
-- Detect input language automatically
-- Apply appropriate grammar and style
-- Improve clarity and readability
-- Output only the enhanced text
+Be polite and professional.
 </basic_rules>
 
 <custom_rules>
-Context-specific instructions:
-- Always greet the customer by name: {{customer_name}}
-- Reference their account type: {{account_type}}
-- Use {{tone}} tone throughout the conversation
+Always address the customer as {{customer_name}}.
+Use {{tone}} tone.
 </custom_rules>
 
-<general_prompt>
-Follow the basic rules as a foundation. If there are conflicts between
-basic rules and custom instructions, prioritize custom instructions.
 Custom instructions are paramount.
-</general_prompt>
-
-OUTPUT FORMAT:
-Return your response as:
-{
-    "greeting": "personalized greeting",
-    "response": "main response content",
-    "next_steps": ["action1", "action2"]
-}
 ```
 
-**Token count:** ~180 tokens
+CLM detects the role, rules, priority language, and placeholders, then stores them in the compressed output metadata.
 
-### Compressed Representation
-
-**CL (Compressed Language) Token:**
-```text
-[PROMPT_MODE:CONFIGURATION][ROLE:CUSTOMER_SUPPORT_AGENT][RULES:BASIC,CUSTOM][PRIORITY:CUSTOM_OVER_BASIC][OUT_JSON:{greeting:STR,response:STR,next_steps:[STR]}]
-```
-
-**Minimized NL (Natural Language):**
-```text
-<basic_rules>
-- Detect input language automatically
-- Apply appropriate grammar and style
-- Improve clarity and readability
-- Output only the enhanced text
-</basic_rules>
-
-<custom_rules>
-- Always greet the customer by name: {{customer_name}}
-- Reference their account type: {{account_type}}
-- Use {{tone}} tone throughout the conversation
-</custom_rules>
-```
-
-**Combined compression:** ~65% reduction
+The minimizer is part of the internal compression flow. You normally do not call it yourself. CLM uses it after the structured CL token has already captured role, rules, priority, or output-format information, so the natural-language prompt can be trimmed without losing meaning.
 
 ---
 
-## How Configuration Prompt Compression Works
+## The Two Things the Encoder Does
 
-CLM uses a two-phase approach for configuration prompts:
+When you call `encoder.encode(...)` on a configuration prompt, CLM does two things:
 
-### Phase 1: CL Token Generation
+1. It creates a compact CL token representation.
+2. It keeps a minimized version of the original prompt text.
 
-The `ConfigurationPromptEncoder` extracts semantic elements and generates compressed tokens:
+The minimizer exists so the final prompt is not redundant. If the CL token already captures the role, rules, or priority statement, the repeated natural-language explanation can be trimmed down.
 
-1. **Role Detection**: Identifies agent role from `<role>` tags or "You are..." patterns
-2. **Rules Extraction**: Detects basic and custom rule blocks
-3. **Priority Analysis**: Identifies priority/conflict resolution statements
-4. **Placeholder Discovery**: Finds all `{{placeholder}}` patterns
-5. **Output Format Parsing**: Extracts structured output requirements
+That means:
 
-**Result:** A deterministic CL token like:
-```text
-[PROMPT_MODE:CONFIGURATION][ROLE:ASSISTANT][RULES:BASIC,CUSTOM][PRIORITY:CUSTOM_OVER_BASIC]
-```
+- the CL token carries the structured meaning
+- the minimized NL keeps only the parts that still need to be read as text
 
-### Phase 2: NL Minimization
-
-The `ConfigurationPromptMinimizer` removes redundant natural language:
-
-1. **Meta-instruction Removal**: Removes statements about following/prioritizing rules
-2. **Priority Explanation Suppression**: Removes conflict resolution explanations (encoded in CL)
-3. **Role Block Suppression**: Removes `<role>` blocks when role is encoded
-4. **Output Block Extraction**: Removes output format descriptions when encoded
-5. **Basic Rules Trimming**: Condenses verbose rule explanations
-
-**Result:** A minimized NL prompt containing only essential content.
+You usually do not call the minimizer directly unless you are debugging prompt cleanup or comparing the raw prompt with the minimized form.
 
 ---
 
-## Configuration
-
-### Basic Usage
+## Quick Start
 
 ```python
-from clm_core import CLMConfig, CLMEncoder
-from clm_core.components.sys_prompt import (
-    ConfigurationPromptEncoder,
-    ConfigurationPromptMinimizer,
-    SysPromptConfig
-)
+from clm_core import CLMConfig, CLMEncoder, PromptMode, SysPromptConfig
 
 cfg = CLMConfig(
     lang="en",
     sys_prompt_config=SysPromptConfig(
-        use_structured_output_abstraction=True  # Enable output format compression
-    )
+        infer_types=False,
+        add_attrs=False,
+        prompt_mode=PromptMode.CONFIGURATION,
+        use_structured_output_abstraction=True,
+    ),
 )
-
 encoder = CLMEncoder(cfg=cfg)
 
 config_prompt = """
-<role>You are a helpful assistant</role>
-
-<basic_rules>
-Be polite and professional at all times.
-</basic_rules>
-
-<custom_rules>
-Always address the user as {{user_name}}.
-</custom_rules>
-
-Custom instructions are paramount.
-"""
-
-result = encoder.encode(config_prompt)
-print(result.compressed)
-# [PROMPT_MODE:CONFIGURATION][ROLE:HELPFUL_ASSISTANT][RULES:BASIC,CUSTOM][PRIORITY:CUSTOM_OVER_BASIC]
-
-print(result.metadata)
-# {
-#     "prompt_mode": "CONFIGURATION",
-#     "role": "HELPFUL_ASSISTANT",
-#     "rules": {"basic": True, "custom": True},
-#     "priority": "CUSTOM_OVER_BASIC",
-#     "placeholders": ["user_name"],
-#     "output_format": None
-# }
-```
-
-### Configuration Options
-
-```python
-from clm_core.components.sys_prompt import SysPromptConfig
-
-config = SysPromptConfig(
-    use_structured_output_abstraction=True,  # Compress output format to CL tokens
-    infer_types=True,  # Add type annotations to output schema
-    add_attrs=False  # Include enums/constraints in output
-)
-```
-
-**`use_structured_output_abstraction` (boolean)**
-- When `True`: Output format is compressed into CL tokens
-- When `False`: Output format remains in natural language
-- Default: `True`
-
----
-
-## Using the Minimizer
-
-The `ConfigurationPromptMinimizer` can be used independently to reduce NL prompt size:
-
-```python
-from clm_core.components.sys_prompt import ConfigurationPromptMinimizer
-
-prompt = """
-<role>You are a helpful assistant</role>
-
-Follow the basic rules as a foundation. If there are conflicts between
-basic rules and custom instructions, prioritize custom instructions.
-Custom instructions are paramount.
-
-<basic_rules>
-Core capabilities:
-- Be helpful and accurate
-- Respond clearly
-</basic_rules>
-
-Remember: Custom instructions override basic rules when there are conflicts.
-"""
-
-# Basic minimization (no CL metadata)
-minimized = ConfigurationPromptMinimizer.minimize(prompt)
-print(minimized)
-
-# CL-aware minimization (suppresses content encoded in CL)
-cl_metadata = {
-    "role": "HELPFUL_ASSISTANT",
-    "priority": "CUSTOM_OVER_BASIC",
-    "rules": {"basic": True, "custom": False}
-}
-minimized_with_cl = ConfigurationPromptMinimizer.minimize(prompt, cl_metadata)
-print(minimized_with_cl)
-```
-
-### Minimization Features
-
-**Meta-instruction Removal:**
-```text
-# Before
-"Follow the basic rules. If there are conflicts, prioritize custom instructions."
-
-# After
-(removed - encoded as [PRIORITY:CUSTOM_OVER_BASIC])
-```
-
-**Priority Statement Suppression:**
-```text
-# Before
-"Remember: Custom instructions are paramount."
-
-# After
-(removed - encoded in CL token)
-```
-
-**Basic Rules Trimming:**
-```text
-# Before (verbose)
-<basic_rules>
-You should always detect the input language automatically and respond
-in the same language. Make sure to apply appropriate grammar rules
-and maintain a professional style throughout your responses.
-</basic_rules>
-
-# After (condensed)
-<basic_rules>
-- Detect input language automatically
-- Apply appropriate grammar and style
-- Improve clarity and readability
-- Output only the enhanced text
-</basic_rules>
-```
-
----
-
-### Validation
-
-Templates are validated for common issues:
-
-```python
-from clm_core.components.sys_prompt import (
-    PromptTemplateValidator,
-    BoundPromptValidator,
-    ValidationLevel
-)
-
-# Validate template structure
-template_issues = PromptTemplateValidator.validate(template)
-for issue in template_issues:
-    if issue.level == ValidationLevel.ERROR:
-        print(f"ERROR: {issue.message}")
-    else:
-        print(f"WARNING: {issue.message}")
-
-# Validate bound prompt (after placeholder substitution)
-bound_prompt = template.bind(customer_name="John", account_type="Basic", tone="formal")
-bound_issues = BoundPromptValidator.validate(bound_prompt)
-```
-
-**Validation Rules:**
-
-| Rule | Level | Description |
-|------|-------|-------------|
-| Empty placeholder | ERROR | Placeholder name is empty |
-| Invalid placeholder name | WARNING | Non-alphanumeric characters in placeholder |
-| Duplicate placeholders | ERROR | Same placeholder appears multiple times |
-| Priority without rules | WARNING | Priority defined but no rules detected |
-| Missing role | WARNING | No role detected in configuration prompt |
-| Unresolved placeholders | ERROR | Placeholders remain after binding |
-| Empty bound prompt | ERROR | Bound prompt is empty |
-
----
-
-## Examples
-
-### Example 1: Customer Support Agent
-
-**Original:**
-```text
 <role>You are a friendly customer support agent for TechCorp</role>
 
 <basic_rules>
@@ -380,9 +96,73 @@ Customer-specific instructions:
 - Preferred language: {{language}}
 </custom_rules>
 
-Follow the basic rules as your foundation. If there are any conflicts
-between basic rules and custom instructions, always prioritize the
-custom instructions. Custom instructions are paramount.
+Custom instructions are paramount.
+"""
+
+result = encoder.encode(config_prompt)
+print(result.compressed)
+print(result.metadata["placeholders"])
+```
+
+Example output:
+
+```text
+[PROMPT_MODE:CONFIGURATION][ROLE:FRIENDLY_CUSTOMER_SUPPORT_AGENT][RULES:BASIC,CUSTOM][PRIORITY:CUSTOM_OVER_BASIC][OUT_STRUCTURED]
+```
+
+Metadata will include the placeholders that were found:
+
+```python
+["account_tier", "customer_name", "language"]
+```
+
+---
+
+## Binding Runtime Values
+
+After compression, call `bind()` to fill the placeholders with runtime values.
+
+`bind()` does not take a special `attributes=` object. It accepts keyword arguments whose names must match the placeholder names in the prompt.
+
+```python
+bound_prompt = encoder.bind(
+    result,
+    customer_name="Yanick",
+    account_tier="premium",
+    language="en",
+)
+```
+
+Use the exact placeholder names from the template:
+
+- `{{customer_name}}` becomes `customer_name="Yanick"`
+- `{{account_tier}}` becomes `account_tier="premium"`
+- `{{language}}` becomes `language="en"`
+
+If you omit a placeholder, binding fails.
+If you provide extra keyword arguments, CLM ignores the unused ones and logs a warning.
+
+### Final result
+
+After binding, the prompt becomes runtime-ready. The compressed CL token stays at the top, followed by the minimized natural-language prompt with values filled in:
+
+```text
+[PROMPT_MODE:CONFIGURATION][ROLE:FRIENDLY_CUSTOMER_SUPPORT_AGENT][RULES:BASIC,CUSTOM][PRIORITY:CUSTOM_OVER_BASIC][OUT_STRUCTURED]
+
+<basic_rules>
+Standard support guidelines:
+- Always be polite and professional
+- Verify customer identity before discussing account details
+- Escalate complex issues to tier 2 support
+- Document all interactions
+</basic_rules>
+
+<custom_rules>
+Customer-specific instructions:
+- Address customer as: Yanick
+- Account tier: premium
+- Preferred language: en
+</custom_rules>
 
 OUTPUT:
 {
@@ -392,279 +172,200 @@ OUTPUT:
 }
 ```
 
-**Compressed CL Token:**
-```text
-[PROMPT_MODE:CONFIGURATION][ROLE:CUSTOMER_SUPPORT_AGENT][RULES:BASIC,CUSTOM][PRIORITY:CUSTOM_OVER_BASIC][OUT_JSON:{response:STR,internal_notes:STR,escalate:BOOL}]
-```
-
-**Minimized NL:**
-```text
-<basic_rules>
-- Always be polite and professional
-- Verify customer identity before discussing account details
-- Escalate complex issues to tier 2 support
-- Document all interactions
-</basic_rules>
-
-<custom_rules>
-- Address customer as: {{customer_name}}
-- Account tier: {{account_tier}}
-- Preferred language: {{language}}
-</custom_rules>
-```
-
-**Metrics:**
-- Original: ~180 tokens
-- CL + Minimized NL: ~70 tokens
-- Reduction: ~61%
+Metrics:
+- `n_tokens`: 224
+- `c_tokens`: 158
+- `ratio`: 29.5%
 
 ---
 
-### Example 2: Content Moderator
+## Output Format And Attributes
 
-**Original:**
+If your configuration prompt includes an output format, CLM can capture that too when structured output abstraction is enabled in `SysPromptConfig`.
+
+Example:
+
 ```text
-You are a content moderation assistant. Your role is to review user-generated
-content and flag potentially harmful material.
-
-<basic_rules>
-Core moderation guidelines:
-- Flag content containing hate speech, violence, or explicit material
-- Consider context before flagging
-- Err on the side of caution for edge cases
-- Provide clear reasoning for all decisions
-</basic_rules>
-
-<custom_rules>
-Platform-specific rules for {{platform_name}}:
-- Strictness level: {{strictness}}
-- Allow political content: {{allow_political}}
-- Age rating: {{age_rating}}
-</custom_rules>
-
-Custom instructions override basic rules when applicable.
-
-Return your assessment as:
+Return your response as JSON:
 {
-    "flagged": true/false,
-    "category": "hate_speech|violence|explicit|spam|safe",
-    "confidence": 0.0-1.0,
-    "reasoning": "explanation"
+  "response": "your message",
+  "sentiment": "positive|neutral|negative"
 }
 ```
 
-**Compressed:**
-```text
-[PROMPT_MODE:CONFIGURATION][ROLE:CONTENT_MODERATION_ASSISTANT][RULES:BASIC,CUSTOM][PRIORITY:CUSTOM_OVER_BASIC][OUT_JSON:{flagged:BOOL,category:STR,confidence:FLOAT,reasoning:STR}:ENUMS={"category":["hate_speech","violence","explicit","spam","safe"]}]
+The encoder can store this in metadata as `output_format`, and the compressed token may include an `OUT_JSON` style representation.
+
+If you are using structured output and you also have placeholders inside the prompt, bind the placeholders the same way:
+
+```python
+bound_prompt = encoder.bind(
+    result,
+    customer_name="Melissa",
+    account_type="Premium",
+)
 ```
+
+There is no separate placeholder-attribute API. The runtime values are just keyword arguments that match the template placeholders.
 
 ---
 
-### Example 3: Translation Assistant
+## Minimization Behavior
 
-**Original:**
+The minimizer removes text that is already represented by CL tokens.
+
+### What it removes
+
+- repeated priority statements like "Custom instructions are paramount"
+- role text when the role is already encoded
+- rule-following reminders when the rules are already encoded
+- verbose output-format explanations when the output schema is already encoded
+
+### What it keeps
+
+- actual instruction content that still matters to the prompt
+- placeholder-driven text that must remain visible
+- the core rule blocks, when they are still needed in the minimized prompt
+
+### Example
+
+Before minimization:
+
 ```text
-<role>You are a professional translator</role>
+<role>You are a helpful assistant</role>
 
 <basic_rules>
-Translation best practices:
-- Preserve meaning over literal translation
-- Maintain tone and style of original
-- Handle idioms appropriately
-- Flag untranslatable terms
+Be clear and accurate.
 </basic_rules>
 
 <custom_rules>
-Translation context:
-- Source language: {{source_lang}}
-- Target language: {{target_lang}}
-- Domain: {{domain}}
-- Formality: {{formality}}
+Always address the user as {{user_name}}.
 </custom_rules>
 
-Basic rules provide the foundation. Custom instructions take precedence
-when there are conflicts.
+Custom instructions are paramount.
 ```
 
-**Compressed:**
-```text
-[PROMPT_MODE:CONFIGURATION][ROLE:PROFESSIONAL_TRANSLATOR][RULES:BASIC,CUSTOM][PRIORITY:CUSTOM_OVER_BASIC]
-```
-
-**Placeholders detected:** `source_lang`, `target_lang`, `domain`, `formality`
-
----
-
-## Token Structure for Configuration Prompts
-
-### PROMPT_MODE Token
-Identifies the prompt type:
-```text
-[PROMPT_MODE:CONFIGURATION]
-[PROMPT_MODE:TASK]
-```
-
-### ROLE Token
-Specifies agent identity:
-```text
-[ROLE:CUSTOMER_SUPPORT_AGENT]
-[ROLE:CONTENT_MODERATOR]
-[ROLE:PROFESSIONAL_TRANSLATOR]
-```
-
-### RULES Token
-Indicates active rule sets:
-```text
-[RULES:BASIC]
-[RULES:CUSTOM]
-[RULES:BASIC,CUSTOM]
-```
-
-### PRIORITY Token
-Defines rule conflict resolution:
-```text
-[PRIORITY:CUSTOM_OVER_BASIC]
-```
-
-### OUT Token
-Defines output format (when `use_structured_output_abstraction=True`):
-```text
-[OUT_JSON:{field1:TYPE,field2:TYPE}]
-[OUT_JSON:{field:STR}:ENUMS={"field":["a","b","c"]}]
-```
-
----
-
-## Best Practices
-
-### 1. Use Consistent Tag Structure
-
-```xml
-<!-- Good: Clear, consistent tags -->
-<role>You are a helpful assistant</role>
-<basic_rules>...</basic_rules>
-<custom_rules>...</custom_rules>
-
-<!-- Avoid: Inconsistent formatting -->
-You are a helpful assistant.
-Basic rules: ...
-CUSTOM RULES: ...
-```
-
-### 2. Keep Placeholders Descriptive
+After CL-aware minimization:
 
 ```text
-<!-- Good: Clear placeholder names -->
-{{customer_name}}, {{account_tier}}, {{preferred_language}}
-
-<!-- Avoid: Ambiguous names -->
-{{name}}, {{tier}}, {{lang}}
-```
-
-### 3. Separate Static and Dynamic Content
-
-```text
-<!-- Good: Clear separation -->
 <basic_rules>
-Static rules that never change
+Be clear and accurate.
 </basic_rules>
 
 <custom_rules>
-Dynamic rules with {{placeholders}}
+Always address the user as {{user_name}}.
 </custom_rules>
-
-<!-- Avoid: Mixed content -->
-<rules>
-Be polite. Address user as {{name}}. Follow guidelines.
-</rules>
 ```
 
-### 4. Let CL Handle Meta-Instructions
+That is why the minimizer exists: it keeps the prompt readable after the structured meaning has already been captured in CL.
 
-Since CL tokens encode priority and rule information, you can remove verbose explanations:
+### Compressed, minimized, and bound example
+
+This is the shape you get after compression, internal minimization, and binding runtime values.
+
+#### Stage 1: Compressed CL token
 
 ```text
-<!-- Before (verbose) -->
-Follow the basic rules as your foundation. However, if there are any
-conflicts between the basic rules and custom instructions, you should
-always prioritize the custom instructions. Remember that custom
-instructions are paramount and should override basic rules.
-
-<!-- After (CL handles this) -->
-[PRIORITY:CUSTOM_OVER_BASIC]
+[PROMPT_MODE:CONFIGURATION][ROLE:FRIENDLY_CUSTOMER_SUPPORT_AGENT][RULES:BASIC,CUSTOM][PRIORITY:CUSTOM_OVER_BASIC][OUT_STRUCTURED]
 ```
 
-### 5. Validate Before Deployment
+#### Stage 2: Minimized prompt
+
+```text
+<basic_rules>• Detect input language automatically • Apply appropriate grammar and style • Improve clarity and readability • Output only the enhanced text</basic_rules>
+<custom_rules>
+Customer-specific instructions:
+    - Address customer as: Yanick
+    - Account tier: premium
+    - Preferred language: en
+</custom_rules>
+
+Follow the basic rules as your foundation.
+
+OUTPUT:
+{
+  "response": "your message to the customer",
+  "internal_notes": "notes for support team",
+  "escalate": true/false
+}
+```
+
+Metrics:
+- `n_tokens`: 224
+- `c_tokens`: 158
+- `ratio`: 29.5%
+
+#### Stage 3: Bound runtime prompt
+
+If you want the same prompt with placeholders filled, bind first and let `encoder.bind(...)` fill them:
 
 ```python
-# Always validate templates before production use
-issues = PromptTemplateValidator.validate(template)
-errors = [i for i in issues if i.level == ValidationLevel.ERROR]
-if errors:
-    raise ValueError(f"Template validation failed: {errors}")
+bound_prompt = encoder.bind(
+    result,
+    customer_name="Yanick",
+    account_tier="premium",
+    language="en",
+)
 ```
+
+The bound prompt is the runtime-ready version. The CL token stays the same; only the natural-language part changes when placeholders are filled.
 
 ---
 
-## Troubleshooting
+## Validation And Safety Checks
 
-### Issue: Role Not Detected
+The configuration prompt pipeline validates templates and bound prompts.
 
-**Symptom:** `role` is `None` in metadata
+Template validation checks for things like:
 
-**Possible causes:**
-1. Role not in recognized format
-2. Missing `<role>` tags or "You are..." pattern
+- missing role text
+- duplicate or empty placeholders
+- priority statements without supporting rules
 
-**Solutions:**
-```text
-# Use recognized patterns:
-<role>You are a helpful assistant</role>
-# or
-You are a helpful assistant.
-# or
-Your role is an assistant.
-```
+Bound-prompt validation checks for:
 
-### Issue: Placeholders Not Binding
+- missing runtime values
+- unresolved placeholders
+- empty bound prompts
 
-**Symptom:** `TemplateBindingError` when calling `bind()`
+If you want the prompt to stay valid after binding, make sure every placeholder is supplied with a matching keyword argument.
 
-**Possible causes:**
-1. Missing required placeholder values
-2. Extra values not in template
+### Forcing the mode explicitly
 
-**Solutions:**
+The `scripts/system_prompt.py:single_prompt()` example shows the explicit path:
+
 ```python
-# Check required placeholders
-print(template.placeholders)  # ['name', 'tier']
+from clm_core import CLMConfig, CLMEncoder, PromptMode, SysPromptConfig
 
-# Provide exact matches
-bound = template.bind(name="John", tier="Premium")  # Correct
-bound = template.bind(name="John")  # Error: missing 'tier'
-bound = template.bind(name="John", tier="Premium", extra="x")  # Error: extra value
+cfg = CLMConfig(
+    lang="en",
+    sys_prompt_config=SysPromptConfig(
+        prompt_mode=PromptMode.CONFIGURATION,
+        infer_types=False,
+        add_attrs=False,
+        use_structured_output_abstraction=True,
+    ),
+)
+encoder = CLMEncoder(cfg=cfg)
 ```
 
-### Issue: Priority Not Detected
+Setting `prompt_mode=PromptMode.CONFIGURATION` tells CLM to skip detection and treat the prompt as configuration content.
 
-**Symptom:** `priority` is `None` despite having priority statements
+---
 
-**Possible causes:**
-1. Non-standard priority phrasing
-2. Missing keywords
+## When To Use This Encoder Directly
 
-**Solutions:**
-```text
-# Use recognized patterns:
-"Custom instructions are paramount"
-"custom instructions override basic rules"
-"prioritize custom instructions"
-```
+Use the configuration prompt encoder when:
+
+- the prompt is clearly role-based or rule-based
+- you need runtime substitution with placeholders
+- you want the compressed CL token plus a minimized natural-language prompt
+
+Use the higher-level `CLMEncoder` when you want automatic prompt-type detection.
 
 ---
 
 ## Next Steps
 
-- **[Task Prompt Encoding](task_prompt.md)** - Learn about action-oriented compression
-- **[Advanced: Token Hierarchy](../advanced/clm_tokenization.md)** - Deep dive into semantic tokens
-- **[Advanced: CLM Dictionary](../advanced/clm_vocabulary.md)** - Language-specific vocabularies
+- Read [Task Prompt](task_prompt.md) for action-oriented prompts.
+- Review [System Prompt Encoder](index.md) for the full flow.
+- Review [CLM Output](../advanced/clm_output.md) for metadata details.

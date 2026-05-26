@@ -15,6 +15,7 @@ from pydantic import (
     model_validator,
 )
 
+from clm_core.components.sys_prompt._schemas import PromptMode
 from clm_core.dictionary import patterns_map, rules_map, vocab_map
 from clm_core.utils.parser_rules import BaseRules
 from clm_core.utils.vocabulary import BaseVocabulary
@@ -238,6 +239,10 @@ class SysPromptConfig(BaseModel):
         default=True,
         description="Add extra attributes from input prompt. "
         "This can be specifications found in prompt, enums/constraints values defined",
+    )
+    prompt_mode: PromptMode | None = Field(
+        default=None,
+        description="If not set, CLM will try to infer the mode (TASK or CONFIGURATION)",
     )
 
 

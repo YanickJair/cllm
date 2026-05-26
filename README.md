@@ -100,12 +100,42 @@ print(result.compressed)
 
 ### System Prompt Encoder
 
+System prompts are encoded through the same `CLMEncoder` interface used for the other components. CLM usually classifies the prompt for you, but it helps to think of them as either task prompts or configuration prompts.
+
 ```python
-result = encoder.encode(system_prompt)
+cfg = CLMConfig(lang="en")
+encoder = CLMEncoder(cfg=cfg)
+
+task_prompt = """
+You are a customer service quality analyst.
+Analyze call transcripts for compliance issues and sentiment problems.
+Return the result as JSON.
+"""
+
+task_result = encoder.encode(task_prompt)
+print(task_result.metadata["prompt_mode"])
+print(task_result.compressed)
+```
+
+If you need the step-by-step guide, start with [docs/sys_prompt/index.md](docs/sys_prompt/index.md).
+
+Task prompts are usually compressed into a single CL token sequence. Configuration prompts can also be bound after compression:
+
+```python
+config_prompt = """
+<role>You are a helpful support agent</role>
+
+<custom_rules>
+Always greet the customer as {{customer_name}}.
+</custom_rules>
+"""
+
+result = encoder.encode(config_prompt)
+bound_prompt = encoder.bind(result, customer_name="Melissa")
+
+print(result.metadata["prompt_mode"])
 print(result.compressed)
-# [REQ:ANALYZE] [TARGET:TRANSCRIPT:DOMAIN=QA]
-# [EXTRACT:COMPLIANCE,DISCLOSURES,SOFT_SKILLS,SENTIMENT]
-# [OUT_JSON:{summary,qa_scores,violations,recommendations}]
+print(bound_prompt)
 ```
 
 ---

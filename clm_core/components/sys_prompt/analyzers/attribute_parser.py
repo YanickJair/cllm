@@ -1,19 +1,20 @@
 import re
+from typing import Annotated, Any, Optional
 
-from typing import Optional, Any, Annotated
 from annotated_doc import Doc as _Doc
 from spacy import Language
 from spacy.tokens import Doc
 
-from clm_core.utils.vocabulary import BaseVocabulary
-from clm_core.utils.parser_rules import BaseRules
 from clm_core.components.sys_prompt.analyzers.extraction_field import (
     ExtractionFieldParser,
 )
 from clm_core.components.sys_prompt.analyzers.output_format import SysPromptOutputFormat
-from .context_parser import ContextParser
-from .._schemas import ExtractionField, Context, OutputSchema
 from clm_core.types import SysPromptConfig
+from clm_core.utils.parser_rules import BaseRules
+from clm_core.utils.vocabulary import BaseVocabulary
+
+from .._schemas import Context, ExtractionField, OutputSchema
+from .context_parser import ContextParser
 
 
 class AttributeParser:
@@ -149,7 +150,7 @@ class AttributeParser:
                 "Input text or output specification string to infer the output format (JSON, LIST, STRUCTURED, TEXT) from."
             ),
         ],
-    ) -> Optional[OutputSchema]:
+    ) -> OutputSchema:
         """Use vocabulary helper to determine output format (keeps compatibility)."""
         parser = SysPromptOutputFormat(config=self._config)
         return parser.compress(text)
