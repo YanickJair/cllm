@@ -9,20 +9,57 @@ from clm_core.text_classifier import DataClassifier, DataTypes
 from clm_core.types import CLMConfig, CLMOutput
 
 try:
-    from sd_encoder import SDEncoderV2 as _SDEncoderV2
+    from sd_encoder import SDCompressionConfig as _SDCompressionConfig
+    from sd_encoder import FieldImportance as _SDFieldImportance
 except ImportError:  # pragma: no cover - exercised when the extra is missing.
-    class _SDEncoderV2:
-        def __init__(self, *_args, **_kwargs):
-            self._missing_message = (
-                "Structured data encoding requires the 'sd_encoder' extra. "
-                "Install with: pip install \"clm-core[sd_encoder]\""
-            )
+    _SDCompressionConfig = None
+    _SDFieldImportance = None
 
-        def encode(self, *_args, **_kwargs):
-            raise ImportError(self._missing_message)
 
-        def encode_validated(self, *_args, **_kwargs):
-            raise ImportError(self._missing_message)
+class _SDEncoderV2:
+    def __init__(self, *_args, **_kwargs):
+        self._missing_message = (
+            "Structured data encoding requires the 'sd_encoder' extra. "
+            "Install with: pip install \"clm-core[sd_encoder]\""
+        )
+
+    def encode(self, *_args, **_kwargs):
+        raise ImportError(self._missing_message)
+
+    def encode_validated(self, *_args, **_kwargs):
+        raise ImportError(self._missing_message)
+
+
+class _StructuredDataEncoderAdapter:
+    """Thin Python wrapper around the optional structured-data encoder.
+
+    The native `sd_encoder` implementation exposes methods that are awkward to
+    monkeypatch in tests. Wrapping it keeps runtime behavior unchanged while
+    preserving a patchable Python attribute surface.
+    """
+
+    def __init__(self, config):
+        self._inner = self._build_inner(config)
+
+    @staticmethod
+    def _build_inner(config):
+        try:
+            from sd_encoder import SDEncoderV2 as NativeSDEncoderV2
+            from sd_encoder import SDCompressionConfig as NativeSDCompressionConfig
+        except ImportError:
+            return _SDEncoderV2(config=config)
+
+        if isinstance(config, NativeSDCompressionConfig):
+            native_config = config
+        else:
+            native_config = NativeSDCompressionConfig(**config)
+        return NativeSDEncoderV2(native_config)
+
+    def encode(self, *args, **kwargs):
+        return self._inner.encode(*args, **kwargs)
+
+    def encode_validated(self, *args, **kwargs):
+        return self._inner.encode_validated(*args, **kwargs)
 
 
 class CLMEncoder:
@@ -39,10 +76,59 @@ class CLMEncoder:
         """Initialize the encoder with the given configuration."""
         self._cfg = cfg
         self._classifier = DataClassifier()
-        self._ds_encoder = _SDEncoderV2(config=self._cfg.ds_config)
+        self._ds_encoder = _StructuredDataEncoderAdapter(self._build_sd_config())
         self._lazy_nlp: Optional[spacy.Language] = None
         self._lazy_ts_encoder: Optional[ThreadEncoder] = None
         self._lazy_sys_prompt_encoder: Optional[SysPromptEncoder] = None
+
+    def _build_sd_config(self):
+        """
+        Convert the internal Pydantic SD config into the native sd_encoder config.
+
+        The optional dependency uses its own config class, so we must pass a native
+        instance rather than the CLM-side Pydantic model.
+        """
+        if _SDCompressionConfig is None:
+            return self._cfg.ds_config
+
+        ds_config = self._cfg.ds_config.model_dump(
+            mode="json",
+            exclude={
+                "default_fields_importance",
+                "simple_fields",
+                "default_fields_order",
+            },
+        )
+        ds_config["importance_threshold"] = self._to_native_importance(
+            ds_config.get("importance_threshold")
+        )
+        if ds_config.get("field_importance"):
+            ds_config["field_importance"] = {
+                k: self._to_native_importance(v)
+                for k, v in ds_config["field_importance"].items()
+            }
+        return _SDCompressionConfig(**ds_config)
+
+    @staticmethod
+    def _to_native_importance(value):
+        if _SDFieldImportance is None or value is None:
+            return value
+
+        if isinstance(value, _SDFieldImportance):
+            return value
+
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return value
+
+        if numeric <= 0.2:
+            return _SDFieldImportance.LOW
+        if numeric <= 0.5:
+            return _SDFieldImportance.MEDIUM
+        if numeric <= 0.8:
+            return _SDFieldImportance.HIGH
+        return _SDFieldImportance.CRITICAL
 
     @property
     def _nlp(self) -> spacy.Language:

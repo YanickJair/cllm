@@ -1,5 +1,5 @@
 import re
-from typing import Optional, Literal, Annotated
+from typing import Annotated, Literal, Optional
 
 from annotated_doc import Doc
 from spacy import Language

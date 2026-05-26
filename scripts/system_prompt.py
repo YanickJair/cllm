@@ -1,6 +1,6 @@
 import json
 
-from clm_core import CLMEncoder, SysPromptConfig
+from clm_core import CLMEncoder, PromptMode, SysPromptConfig
 from clm_core import CLMConfig
 
 
@@ -11,24 +11,50 @@ def load_prompts() -> list[dict[str, str]]:
     return data
 
 def single_prompt():
-    nl_spec = """
-    You are an AI assistant specialized in {{domain}} operations.\n\nYour role is to help users with {{task_type}} tasks while maintaining high standards of accuracy and professionalism.\n\nCore Capabilities:\n- Process and analyze {{domain}} data\n- Generate reports and recommendations\n- Answer questions about {{domain}} policies\n- Maintain compliance with industry standards\n\nGuidelines:\n- Always verify information before providing answers\n- Ask clarifying questions when requirements are ambiguous\n- Provide sources and references when applicable\n- Maintain confidentiality of sensitive information\n\nOutput should be clear, structured, and actionable.
+    prompt = """
+    <role>You are a friendly customer support agent for TechCorp</role>
+
+    <basic_rules>
+    Standard support guidelines:
+    - Always be polite and professional
+    - Verify customer identity before discussing account details
+    - Escalate complex issues to tier 2 support
+    - Document all interactions
+    </basic_rules>
+
+    <custom_rules>
+    Customer-specific instructions:
+    - Address customer as: {{customer_name}}
+    - Account tier: {{account_tier}}
+    - Preferred language: {{language}}
+    </custom_rules>
+
+    Follow the basic rules as your foundation. If there are any conflicts
+    between basic rules and custom instructions, always prioritize the
+    custom instructions. Custom instructions are paramount.
+
+    OUTPUT:
+    {
+        "response": "your message to the customer",
+        "internal_notes": "notes for support team",
+        "escalate": true/false
+    }
     """
     cfg = CLMConfig(
         lang="en",
         sys_prompt_config=SysPromptConfig(
             infer_types=False,
             add_attrs=False,
+            prompt_mode=PromptMode.CONFIGURATION,
             use_structured_output_abstraction=True
         )
     )
     encoder = CLMEncoder(cfg=cfg)
-    compressed_1 = encoder.encode(nl_spec, verbose=False)
+    compressed = encoder.encode(prompt, verbose=False)
 
-    compressed_1.compressed = encoder.bind(
-        out=compressed_1, domain='language', task_type='user_instruction'
-    )
-    print(compressed_1.compressed, compressed_1.n_tokens, compressed_1.c_tokens, compressed_1.compression_ratio)
+    if compressed:
+        compressed.compressed = encoder.bind(out=compressed, **{"account_tier": "premium", "customer_name": "Yanick", "language": "en"})
+        print(compressed.compressed, compressed.n_tokens, compressed.c_tokens, compressed.compression_ratio)
 
 def main(prompts):
     cfg = CLMConfig(
@@ -55,5 +81,5 @@ def main(prompts):
         json.dump(results, f)
 
 if __name__ == "__main__":
-    main(load_prompts())
-    # single_prompt()
+    # main(load_prompts())
+    single_prompt()

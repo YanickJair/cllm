@@ -1,161 +1,89 @@
 # System Prompt Encoder
 
-## Overview
+The System Prompt Encoder compresses verbose system instructions into a compact CLM representation.
 
-System Prompts (also called **System Instructions**) are processed by LLM models before they begin processing user input. They define the **model's identity**, **task**, and **behavior** - essentially establishing who the AI should be and what it should do.
+Use it when your input is a prompt that tells the model:
 
-**Key characteristics:**
-- Processed before every user interaction
-- Define model behavior and constraints
-- Often repeated thousands of times per day
-- Can be 500-5,000+ tokens
-- Critical for consistent model performance
+- who it is
+- what it should do
+- what rules it should follow
+- what format it should return
 
-The more detailed a system prompt, the better the model understands and performs its intended task. However, detailed prompts are token-intensive and costly at scale.
-
-**Typical compression:** 75-90% token reduction
+This section is the fastest way to get started. If you need deeper details, use the dedicated pages for [Task Prompt](task_prompt.md) and [Configuration Prompt](configuration_prompt.md).
 
 ---
 
-## Prompt Modes
+## Start Here
 
-CLM recognizes two distinct types of system prompts, each with specialized compression strategies:
+The easiest way to use the encoder is through `CLMEncoder`. It detects the prompt type for you.
 
-### Task Prompts
+If you want to skip detection, set `prompt_mode` directly in `SysPromptConfig`. That forces CLM to use the mode you chose instead of guessing from the text.
 
-Task prompts are **action-oriented instructions** that tell the model what to do for a specific task. They typically include:
+### 1. Create a config
 
-- **Intent**: The primary action (analyze, extract, generate, summarize)
-- **Target**: What to operate on (transcript, document, data)
-- **Output Format**: Expected response structure (JSON, text, table)
-- **Constraints**: Rules, validations, and boundaries
+```python
+from clm_core import CLMConfig, CLMEncoder, PromptMode, SysPromptConfig
 
-**Example:**
-```text
-You are a Betting Analysis system. Analyze soccer matches and provide betting odds.
-Return your analysis as: {"win": 0.45, "draw": 0.30, "lose": 0.25}
+cfg = CLMConfig(
+    lang="en",
+    sys_prompt_config=SysPromptConfig(prompt_mode=PromptMode.CONFIGURATION),
+)
+encoder = CLMEncoder(cfg=cfg)
 ```
 
-**Compressed:**
+### 2. Pass in your system prompt
+
+```python
+system_prompt = """
+You are a customer service quality analyst.
+Analyze call transcripts for compliance issues and sentiment problems.
+Return the result as JSON.
+"""
+
+result = encoder.encode(system_prompt)
+```
+
+### 3. Read the compressed output
+
+```python
+print(result.compressed)
+print(result.compression_ratio)
+print(result.metadata)
+```
+
+`result.compressed` is the CLM token sequence. `result.metadata` contains the parsed prompt details.
+
+The configuration prompt example above mirrors `scripts/system_prompt.py:single_prompt()`: the prompt mode is forced to `CONFIGURATION`, then the prompt is compressed and bound with runtime values.
+
+---
+
+## Which Prompt Type Is This?
+
+CLM treats system prompts as one of two shapes:
+
+| Prompt type | What it looks like | Typical goal |
+|-------------|--------------------|--------------|
+| Task prompt | "Analyze...", "Generate...", "Extract..." | Perform a specific action |
+| Configuration prompt | "You are...", `<role>`, `<basic_rules>` | Define persistent behavior |
+
+If your prompt begins with role or rule language, CLM will usually classify it as a configuration prompt.
+
+### Task Prompt Example
+
+```text
+You are a betting analysis system.
+Analyze soccer matches and return win, draw, and lose probabilities.
+```
+
+Compressed form:
+
 ```text
 [REQ:PREDICT:SPECS:BETTING_ODDS][TARGET:REPORT:DOMAIN=BUSINESS][OUT_JSON:{win:FLOAT,draw:FLOAT,lose:FLOAT}]
 ```
 
-[Learn more about Task Prompts](task_prompt.md)
+### Configuration Prompt Example
 
----
-
-### Configuration Prompts
-
-Configuration prompts are **template-based instructions** that define persistent behavior and can be parameterized at runtime. They typically include:
-
-- **Role**: The assistant's identity and persona
-- **Rules**: Basic and custom behavioral rules
-- **Priority**: How to handle rule conflicts
-- **Placeholders**: Runtime variables (e.g., `{{user_name}}`, `{{context}}`)
-- **Output Format**: Structured output requirements
-
-**Example:**
 ```text
-<role>You are a helpful assistant</role>
-
-<basic_rules>
-Follow standard guidelines for clarity and accuracy.
-</basic_rules>
-
-<custom_rules>
-Always greet the user by name: {{user_name}}
-</custom_rules>
-
-Custom instructions are paramount. If there are conflicts, prioritize custom rules.
-```
-
-**Compressed:**
-```text
-[PROMPT_MODE:CONFIGURATION][ROLE:HELPFUL_ASSISTANT][RULES:BASIC,CUSTOM][PRIORITY:CUSTOM_OVER_BASIC]
-```
-
-[Learn more about Configuration Prompts](configuration_prompt.md)
-
----
-
-## When to Use Each Mode
-
-| Aspect | Task Prompt | Configuration Prompt |
-|--------|-------------|---------------------|
-| **Purpose** | Execute a specific task | Define persistent model behavior |
-| **Structure** | Action + Target + Output | Role + Rules + Placeholders |
-| **Runtime** | Static per request | Parameterized with runtime values |
-| **Use Case** | Data extraction, analysis, generation | Chatbots, assistants, configurable systems |
-| **Compression Focus** | Intent, extraction fields, output schema | Role, rules, meta-instructions |
-
----
-
-## Why Compress System Prompts?
-
-### The Scale Problem
-
-In production environments, system prompts create significant overhead:
-
-| Scenario | Details                                       | Impact |
-|----------|-----------------------------------------------|--------|
-| **Contact Center** | 1,000 users x 20,000 calls/day                | 20M prompt tokens/day |
-| **Chatbot Service** | 10,000 concurrent users x 50 interactions/day | 500K prompt tokens/day |
-| **Enterprise Tool** | 500 employees x 100 queries/day               | 50K prompt tokens/day |
-
-### Benefits of Compression
-
-**Cost Reduction**
-- 75-90% fewer tokens = 75-90% cost savings on system prompts
-- At scale, this translates to significant monthly savings
-
-**Faster Processing**
-- Smaller prompts = faster inference
-- Reduced latency by 30-73%
-- Better user experience
-
-**Higher Context Window Utilization**
-- More room for actual conversation
-- Longer context histories
-- More examples in few-shot learning
-
-**Better Scalability**
-- Handle more concurrent requests
-- Lower infrastructure requirements
-- Smoother peak load handling
-
----
-
-## Quick Start
-
-### Task Prompt Compression
-
-```python
-from clm_core import CLMConfig, CLMEncoder
-
-cfg = CLMConfig(lang="en")
-encoder = CLMEncoder(cfg=cfg)
-
-task_prompt = """
-You are a customer service quality analyst. Analyze call transcripts
-for compliance violations and sentiment issues.
-"""
-
-result = encoder.encode(task_prompt)
-print(result.compressed)
-# [REQ:ANALYZE][TARGET:TRANSCRIPT:DOMAIN=QA][EXTRACT:COMPLIANCE,SENTIMENT,ISSUE]
-```
-
-### Configuration Prompt Compression
-
-```python
-from clm_core import CLMConfig, CLMEncoder
-from clm_core.components.sys_prompt import ConfigurationPromptEncoder
-
-cfg = CLMConfig(lang="en")
-encoder = CLMEncoder(cfg=cfg)
-
-config_prompt = """
 <role>You are a helpful customer support agent</role>
 
 <basic_rules>
@@ -167,19 +95,131 @@ Always address the customer as {{customer_name}}.
 </custom_rules>
 
 Custom instructions are paramount.
+```
+
+Compressed form:
+
+```text
+[PROMPT_MODE:CONFIGURATION][ROLE:CUSTOMER_SUPPORT_AGENT][RULES:BASIC,CUSTOM][PRIORITY:CUSTOM_OVER_BASIC]
+```
+
+The minimizer is not something you call directly in normal usage. It runs internally after CL tokens capture the structured parts of a configuration prompt, so the returned prompt stays shorter and less repetitive.
+
+### End-to-end example
+
+This is the full flow for a configuration prompt with placeholders:
+
+#### Stage 1: Compressed CL token
+
+```text
+[PROMPT_MODE:CONFIGURATION][ROLE:FRIENDLY_CUSTOMER_SUPPORT_AGENT][RULES:BASIC,CUSTOM][PRIORITY:CUSTOM_OVER_BASIC][OUT_STRUCTURED]
+```
+
+#### Stage 2: Minimized prompt
+
+```text
+<basic_rules>• Detect input language automatically • Apply appropriate grammar and style • Improve clarity and readability • Output only the enhanced text</basic_rules>
+<custom_rules>
+Customer-specific instructions:
+    - Address customer as: Yanick
+    - Account tier: premium
+    - Preferred language: en
+</custom_rules>
+
+Follow the basic rules as your foundation.
+
+OUTPUT:
+{
+  "response": "your message to the customer",
+  "internal_notes": "notes for support team",
+  "escalate": true/false
+}
+```
+
+Metrics:
+- `n_tokens`: 224
+- `c_tokens`: 158
+- `ratio`: 29.5%
+
+#### Stage 3: Bound runtime prompt
+
+In code, that comes from compressing the prompt first and then binding runtime values:
+
+```python
+from clm_core import CLMConfig, CLMEncoder, PromptMode, SysPromptConfig
+
+cfg = CLMConfig(
+    lang="en",
+    sys_prompt_config=SysPromptConfig(prompt_mode=PromptMode.CONFIGURATION),
+)
+encoder = CLMEncoder(cfg=cfg)
+
+result = encoder.encode(config_prompt)
+bound_prompt = encoder.bind(
+    result,
+    customer_name="Yanick",
+    account_tier="premium",
+    language="en",
+)
+```
+
+---
+
+## What You Get Back
+
+`encoder.encode(...)` returns a `CLMOutput` object.
+
+Useful fields:
+
+- `compressed`: the CLM token sequence
+- `original`: the original prompt
+- `compression_ratio`: estimated token reduction
+- `metadata`: parsed details such as role, rules, placeholders, and output format
+
+Example:
+
+```python
+print(result.compressed)
+print(result.original)
+print(result.compression_ratio)
+print(result.metadata["prompt_mode"])
+```
+
+---
+
+## Configuration Prompts With Placeholders
+
+If your prompt includes placeholders like `{{customer_name}}`, compress it first and bind values later.
+
+```python
+config_prompt = """
+<role>You are a helpful support agent</role>
+
+<custom_rules>
+Always greet the customer by name: {{customer_name}}
+</custom_rules>
 """
 
-# The encoder automatically detects configuration prompts
 result = encoder.encode(config_prompt)
-print(result.compressed)
-# [PROMPT_MODE:CONFIGURATION][ROLE:CUSTOMER_SUPPORT_AGENT][RULES:BASIC,CUSTOM][PRIORITY:CUSTOM_OVER_BASIC]
+bound_prompt = encoder.bind(result, customer_name="Melissa")
 ```
+
+Use `bind()` only for configuration prompts. It fills placeholders and returns a prompt ready for runtime use.
+
+---
+
+## Practical Rules
+
+- Put the important role, task, or rule language near the top of the prompt.
+- Keep placeholders in the `{{name}}` format.
+- Use `CLMEncoder` unless you specifically need the lower-level system prompt classes.
+- If you want explicit control over prompt mode, set `prompt_mode` in `SysPromptConfig`.
 
 ---
 
 ## Next Steps
 
-- **[Task Prompt Encoding](task_prompt.md)** - Deep dive into task-oriented compression
-- **[Configuration Prompt Encoding](configuration_prompt.md)** - Learn about template-based compression
-- **[Advanced: Token Hierarchy](../advanced/clm_tokenization.md)** - Understand semantic tokens
-- **[Advanced: CLM Dictionary](../advanced/clm_vocabulary.md)** - Language-specific vocabularies
+- Read [Task Prompt](task_prompt.md) for action-oriented prompts.
+- Read [Configuration Prompt](configuration_prompt.md) for role- and rule-based prompts.
+- Review [CLM Output](../advanced/clm_output.md) for metadata and output fields.
+- Review [CLM Tokenization](../advanced/clm_tokenization.md) for the underlying token vocabulary.

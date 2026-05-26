@@ -1,10 +1,11 @@
 import logging
 from enum import Enum
-from typing import Optional, Annotated, Any
+from typing import Annotated, Any, Optional
+
 from annotated_doc import Doc
 from pydantic import BaseModel, Field
 
-from clm_core.components.sys_prompt.errors import TemplateBindingError
+from .errors import TemplateBindingError
 
 DEFAULT_DOMAIN_MAP = {
     "CALL": "SUPPORT",

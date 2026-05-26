@@ -1,22 +1,22 @@
 import re
-from typing import Optional, Annotated
+from typing import Annotated, Optional
 
 from annotated_doc import Doc
-from clm_core.types import CLMOutput, SysPromptConfig
 from spacy.language import Language
 
+from clm_core.components.sys_prompt._prompt_template_validator import (
+    BoundPromptValidator,
+    PromptTemplateValidator,
+)
+from clm_core.components.sys_prompt._schemas import PromptTemplate
+from clm_core.components.sys_prompt.base_encoder import BasePromptEncoder
+from clm_core.types import CLMOutput, SysPromptConfig
 from clm_core.utils.parser_rules import BaseRules
 from clm_core.utils.vocabulary import BaseVocabulary
-from . import ConfigurationPromptMinimizer
-from ._schemas import ValidationLevel, PromptMode
-from .analyzers.attribute_parser import AttributeParser
 
-from clm_core.components.sys_prompt.base_encoder import BasePromptEncoder
-from clm_core.components.sys_prompt._schemas import PromptTemplate
-from clm_core.components.sys_prompt._prompt_template_validator import (
-    PromptTemplateValidator,
-    BoundPromptValidator,
-)
+from . import ConfigurationPromptMinimizer
+from ._schemas import PromptMode, ValidationLevel
+from .analyzers.attribute_parser import AttributeParser
 
 _ROLE_PATTERN = re.compile(
     r"(you are|your role is)\s+(?:an?|the)?\s*"
