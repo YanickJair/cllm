@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 from typing import Optional, Annotated
-import spacy
+from spacy.language import Language
 from spacy.matcher import Matcher
 from spacy.tokens import Doc
 from annotated_doc import Doc as ParamDoc
@@ -26,7 +26,7 @@ class TemporalAnalyzer:
     def __init__(
         self,
         nlp: Annotated[
-            spacy.Language,
+            Language,
             ParamDoc(
                 "A loaded spaCy Language instance. A sentencizer pipe is added automatically if not present."
             ),

@@ -5,6 +5,7 @@ from clm_core.components.thread_encoder import (
     TranscriptAnalysis,
     TranscriptCompressionResult,
 )
+from clm_core.components.thread_encoder.turn_classifier.classifier import TurnClassifier
 from clm_core.encoder import CLMEncoder
 from clm_core.quality_gate import (
     CompressionQualityGate,
@@ -23,6 +24,7 @@ from clm_core.types import (
     SDCompressionConfig,
     SysPromptConfig,
     ThreadConfig,
+    TurnType,
 )
 
 from .components.thread_encoder import ThreadEncoder
@@ -52,6 +54,8 @@ __all__ = [
     "KolmogorovAnalyzer",
     "PerplexityAnalyzer",
     "CompressionQualityGate",
+    "TurnClassifier",
+    "TurnType",
 ]
 
 __locals = locals()

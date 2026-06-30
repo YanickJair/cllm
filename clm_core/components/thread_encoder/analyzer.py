@@ -1,7 +1,7 @@
 import re
 from typing import Annotated, Optional
 
-import spacy
+from spacy.language import Language
 from annotated_doc import Doc
 
 from clm_core.components.intent_detector import IntentDetector
@@ -49,7 +49,7 @@ class TranscriptAnalyzer:
     def __init__(
         self,
         nlp: Annotated[
-            spacy.Language, Doc("Loaded spaCy language model used for NLP processing.")
+            Language, Doc("Loaded spaCy language model used for NLP processing.")
         ],
         vocab: Annotated[
             BaseVocabulary,

@@ -1,9 +1,10 @@
 import json
 import re
 from enum import Enum
-from typing import Annotated, Literal, Optional, Self, TypeAlias, Union
+from typing import Annotated, Literal, Optional, Self, TypeAlias
 
 import spacy
+from spacy.language import Language
 from annotated_doc import Doc
 from pydantic import (
     BaseModel,
@@ -31,7 +32,7 @@ class CLMOutput(BaseModel):
     component: str = Field(
         ..., description="Component's name (i.e. Transcript, SD, System Prompt)"
     )
-    compressed: str = Field(..., description="Compressed output.")
+    compressed: str | None = Field(default=None, description="Compressed output.")
     metadata: dict = Field(
         ...,
         description="Metadata of the compressing input. It can include specific things from each component",
@@ -56,11 +57,13 @@ class CLMOutput(BaseModel):
     def validate_compressed(
         cls,
         c: Annotated[
-            str, Doc("Raw compressed string value to normalize before assignment.")
+            str | None, Doc("Raw compressed string value to normalize before assignment.")
         ],
     ) -> str:
         """Normalize whitespace: collapse all whitespace (tabs, newlines, spaces) to single spaces."""
-        return re.sub(r"\s+", " ", c).strip()
+        if c:
+            return re.sub(r"\s+", " ", c).strip()
+        return ""
 
     @staticmethod
     def _estimate_tokens(
@@ -88,7 +91,9 @@ class CLMOutput(BaseModel):
     @property
     def c_tokens(self) -> int:
         """Estimated compressed token count."""
-        return self._estimate_tokens(self.compressed)
+        if self.compressed:
+            return self._estimate_tokens(self.compressed)
+        return 0
 
     @computed_field
     @property
@@ -293,6 +298,10 @@ class ThreadConfig(BaseModel):
         default=r"\[\*+REDACTED\*+\]|\*{3,}|\[REDACTED\]|<redacted>|XXX+|\[PII\]",
         description="Regex pattern to detect redacted fields in thread input",
     )
+    turn_classifier_threshold: float | None = Field(
+        default=0.6,
+        description="When classifiying a turn, use this threshold to decide if it's valid or not",
+    )
 
     @computed_field
     def default_summary_template(self) -> str:
@@ -364,7 +373,7 @@ class CLMConfig(BaseModel):
         default_factory=lambda: ThreadConfig(),
         description="Configuration for CLM Thread Encoder",
     )
-    _nlp_cache: Optional[spacy.Language] = PrivateAttr(default=None)
+    _nlp_cache: Optional[Language] = PrivateAttr(default=None)
 
     @computed_field
     @property
@@ -373,7 +382,7 @@ class CLMConfig(BaseModel):
 
     @computed_field
     @property
-    def nlp_model(self) -> spacy.Language:
+    def nlp_model(self) -> Language:
         """
         Load spaCy model for the configured language.
         Cached at instance level to avoid repeated loading.
@@ -407,3 +416,61 @@ class CLMConfig(BaseModel):
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
     )
+
+
+class TurnType(str, Enum):
+    """
+    Pragmatic turn classification for contact center conversations.
+    Classifies what a turn is *doing* in the conversation, not just its grammatical form.
+    """
+
+    CONFIRMATION = "CONFIRMATION"  # "yes that's correct", "exactly"
+    ACCEPTANCE = "ACCEPTANCE"  # "okay that works", "sounds good"
+    REJECTION = "REJECTION"  # "no that's not right", "that's not what I said"
+    ACKNOWLEDGMENT = "ACKNOWLEDGMENT"  # "I understand", "I see"
+
+    COMPLAINT = "COMPLAINT"  # "this is unacceptable", "I'm very unhappy"
+    THREAT = "THREAT"  # "I'll cancel", "I want to speak to a manager"
+    REPETITION = "REPETITION"  # "as I said before", "I already told you"
+    CONTRADICTION = (
+        "CONTRADICTION"  # "but you just said...", "that's not what I was told"
+    )
+
+    CLARIFICATION = "CLARIFICATION"  # "what I mean is...", "to be more specific"
+    ELABORATION = "ELABORATION"  # expanding on previous turn
+    CORRECTION = "CORRECTION"  # "actually it was the 3rd", "no the amount was..."
+
+    REQUEST = "REQUEST"  # "can you...", "could you please..."
+    DEMAND = "DEMAND"  # "I need you to...", "you have to..."
+    INQUIRY = "INQUIRY"  # "do you know if...", "what is..."
+
+    GREETING = "GREETING"  # "hello", "hi there", "good morning"
+    COMPLIMENT = "COMPLIMENT"  # "you've been very helpful", "thank you so much"
+    CLOSING = "CLOSING"  # "that's all", "goodbye", "have a good day"
+
+    STATEMENT = "STATEMENT"  # generic informational turn
+    NEUTRAL = "NEUTRAL"  # unclassified, LLM fallback candidate
+    PROBLEM_DESCRIPTION = "PROBLEM_DESCRIPTION"
+    GUIDE = "GUIDE"
+    DOUBT = "DOUBT"
+    EVALUATING = "EVALUATING"
+    PURCHASE_INTENT = "PURCHASE_INTENT"
+    PRICE_CONCERN = "PRICE_CONCERN"
+    OBJECTION = "OBJECTION"
+    COMPARISON = "COMPARISON"
+    EXPANSION = "EXPANSION"
+    RETENTION_RISK = "RETENTION_RISK"
+    CHURN = "CHURN"
+    ONBOARDING = "ONBOARDING"
+    DECISION = "DECISION"
+    DEFERMENT = "DEFERMENT"
+    UNCERTAINTY = "UNCERTAINTY"
+
+    # --- Customer-primary ---
+    CONFUSION = "CONFUSION"          # "I don't understand", "that doesn't make sense"
+
+    # --- Agent-acknowledged (secondary; used for Layer-3 completion detection) ---
+    APOLOGY = "APOLOGY"              # "I'm sorry", "I apologize"
+    EMPATHY = "EMPATHY"              # "I understand how frustrating this must be"
+    RESOLUTION_OFFER = "RESOLUTION_OFFER"   # "what I can do for you is...", "I'll take care of that"
+    VERIFICATION_REQUEST = "VERIFICATION_REQUEST"  # "can you confirm your date of birth?"

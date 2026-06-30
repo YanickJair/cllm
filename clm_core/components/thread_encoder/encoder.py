@@ -2,17 +2,17 @@ import re
 from typing import Annotated, Literal, Optional
 
 from annotated_doc import Doc
-from spacy import Language
-
+from spacy.language import Language
+from pretty_loguru import EnhancedLogger
 from clm_core.components.thread_encoder.analyzer import TranscriptAnalyzer
 from clm_core.components.thread_encoder.free_form.splitter import (
     detect_format,
     split_free_form,
 )
 from clm_core.components.thread_encoder.patterns import TranscriptPatterns
-from clm_core.types import ThreadConfig
+from clm_core.types import ThreadConfig, TurnType
 from clm_core.utils.singleton import SingletonMeta
-
+from .turn_classifier.classifier import TurnClassifier
 from ...utils.parser_rules import BaseRules
 from ...utils.vocabulary import BaseVocabulary
 from . import (
@@ -71,6 +71,7 @@ class ThreadEncoder(metaclass=SingletonMeta):
         rules: BaseRules,
         patterns: TranscriptPatterns,
         config: ThreadConfig,
+        logger: EnhancedLogger,
         lang: str = "en",
     ):
         self._patterns = patterns
@@ -83,7 +84,9 @@ class ThreadEncoder(metaclass=SingletonMeta):
             redaction_pattern=config.redaction_pattern,
         )
         self._config = config
+        self._turn_classifier = TurnClassifier(nlp)
         self.analysis: TranscriptAnalysis | None = None
+        self._logger = logger
 
     def encode(
         self,
@@ -96,11 +99,11 @@ class ThreadEncoder(metaclass=SingletonMeta):
             """),
         ],
         metadata: Annotated[
-            dict,
+            dict | None,
             Doc("""
             Thread's metadata. It can include channel, Id, etc.
             """),
-        ],
+        ] = None,
         verbose: Annotated[
             bool,
             Doc("""
@@ -126,6 +129,14 @@ class ThreadEncoder(metaclass=SingletonMeta):
             The resolved value is stored in `result.metadata["transcript_format"]`.
             """),
         ] = "auto",
+        is_turn: Annotated[
+            bool,
+            Doc("""
+            Sometimes we might want to send a turn instead of a all thread. A turn can be a sentence or it can be a full paragraph.
+            If it's enabled, we skip the parts where we handle thread split or transcript split.
+            The turn classification feature is going to be enabled automatically.
+            """)
+        ] = False
     ) -> ThreadOutput:
         """
         Encode clm_core analysis to CLM Thread Schema v2 format.
@@ -139,7 +150,7 @@ class ThreadEncoder(metaclass=SingletonMeta):
         resolved_format = thread_format
         if thread_format == "auto":
             resolved_format = self._detect_format(thread)
-            print(f"Resolved format: {resolved_format}")
+            self._logger.info(f"Resolved format: {resolved_format}")
 
         pre_built_turns = None
         if resolved_format == "free_form":
@@ -152,32 +163,32 @@ class ThreadEncoder(metaclass=SingletonMeta):
         interaction_token = self._encode_interaction(self.analysis.call_info)
         tokens.append(interaction_token)
         if verbose:
-            print(f"Interaction: {interaction_token}")
+            self._logger.info(f"Interaction: {interaction_token}")
 
         if self._config.estimate_thread_duration:
             duration_token = self._encode_duration(self.analysis.call_info)
             if duration_token:
                 tokens.append(duration_token)
                 if verbose:
-                    print(f"Duration: {duration_token}")
+                    self._logger.info(f"Duration: {duration_token}")
 
         if self._config.detect_lang:
             lang_token = self._encode_lang(self._lang)
             tokens.append(lang_token)
             if verbose:
-                print(f"Lang: {lang_token}")
+                self._logger.info(f"Lang: {lang_token}")
 
         if self.analysis.domain:
             domain_token = f"[DOMAIN:{self.analysis.domain}]"
             tokens.append(domain_token)
             if verbose:
-                print(f"Domain: {domain_token}")
+                self._logger.info(f"Domain: {domain_token}")
 
         if self.analysis.service:
             service_token = f"[SERVICE:{self.analysis.service}]"
             tokens.append(service_token)
             if verbose:
-                print(f"Service: {service_token}")
+                self._logger.info(f"Service: {service_token}")
 
         if self.analysis.customer_intent and self.analysis.secondary_intent:
             intent_token = (
@@ -186,18 +197,18 @@ class ThreadEncoder(metaclass=SingletonMeta):
             )
             tokens.append(intent_token)
             if verbose:
-                print(f"Customer Intents: {intent_token}")
+                self._logger.info(f"Customer Intents: {intent_token}")
         elif self.analysis.customer_intent:
             intent_token = f"[CUSTOMER_INTENT:{self.analysis.customer_intent}]"
             tokens.append(intent_token)
             if verbose:
-                print(f"Customer Intent: {intent_token}")
+                self._logger.info(f"Customer Intent: {intent_token}")
 
         if self.analysis.trigger_cause:
             trigger_token = f"[INTERACTION_TRIGGER:{self.analysis.trigger_cause}]"
             tokens.append(trigger_token)
             if verbose:
-                print(f"Trigger: {trigger_token}")
+                self._logger.info(f"Trigger: {trigger_token}")
 
         for ctx in self.analysis.context_provided:
             if self._config.include_ctx_values:
@@ -207,13 +218,13 @@ class ThreadEncoder(metaclass=SingletonMeta):
                 ctx_token = f"[CONTEXT:{ctx}]"
             tokens.append(ctx_token)
             if verbose:
-                print(f"Context: {ctx_token}")
+                self._logger.info(f"Context: {ctx_token}")
 
         for redacted in self.analysis.redacted_fields:
             r_token = f"[CONTEXT:{redacted}]"
             tokens.append(r_token)
             if verbose:
-                print(f"Redacted: {r_token}")
+                self._logger.info(f"Redacted: {r_token}")
 
         state_changing_actions = [
             a for a in self.analysis.actions if a.type not in _INFORMATIONAL_ACTIONS
@@ -222,13 +233,13 @@ class ThreadEncoder(metaclass=SingletonMeta):
             agent_actions_token = self._encode_agent_actions(state_changing_actions)
             tokens.append(agent_actions_token)
             if verbose:
-                print(f"Agent Actions: {agent_actions_token}")
+                self._logger.info(f"Agent Actions: {agent_actions_token}")
 
         if self.analysis.system_actions:
             sys_token = self._encode_system_actions(self.analysis.system_actions)
             tokens.append(sys_token)
             if verbose:
-                print(f"System Actions: {sys_token}")
+                self._logger.info(f"System Actions: {sys_token}")
 
         resolution_token = self._encode_resolution(
             self.analysis.resolution, self.analysis.actions
@@ -236,7 +247,7 @@ class ThreadEncoder(metaclass=SingletonMeta):
         if resolution_token:
             tokens.append(resolution_token)
             if verbose:
-                print(f"Resolution: {resolution_token}")
+                self._logger.info(f"Resolution: {resolution_token}")
 
         state_token = self._encode_state(
             self.analysis.resolution,
@@ -247,24 +258,24 @@ class ThreadEncoder(metaclass=SingletonMeta):
         )
         tokens.append(state_token)
         if verbose:
-            print(f"State: {state_token}")
+            self._logger.info(f"State: {state_token}")
 
         if self.analysis.promises:
             for commitment_token in self._encode_commitments(self.analysis.promises):
                 tokens.append(commitment_token)
                 if verbose:
-                    print(f"Commitment: {commitment_token}")
+                    self._logger.info(f"Commitment: {commitment_token}")
 
         artifact_tokens = self._encode_artifacts(self.analysis)
         for artifact_token in artifact_tokens:
             tokens.append(artifact_token)
             if verbose:
-                print(f"Artifact: {artifact_token}")
+                self._logger.info(f"Artifact: {artifact_token}")
 
         sentiment_token = self._encode_sentiment(self.analysis.sentiment_trajectory)
         tokens.append(sentiment_token)
         if verbose:
-            print(f"Sentiment: {sentiment_token}")
+            self._logger.info(f"Sentiment: {sentiment_token}")
 
         compressed = " ".join(tokens)
 
@@ -275,12 +286,22 @@ class ThreadEncoder(metaclass=SingletonMeta):
                 verbs.extend(token.lemma_ for token in turn.doc if token.pos_ == "VERB")
                 noun_chunks.extend(chunk.text for chunk in turn.doc.noun_chunks)
 
-        return ThreadOutput(
+        turn_confidence = 0.0
+        turn_type = None
+        if is_turn:
+            turn_type, turn_confidence = self._turn_classifier.classify(text=thread)
+            threshold = self._config.turn_classifier_threshold
+            if threshold is not None and turn_confidence < threshold:
+                turn_type = TurnType.NEUTRAL
+                turn_confidence = 0.0
+
+        out = ThreadOutput(
             compressed=compressed,
             original=thread,
             component=COMPONENT,
+            turn_confidence=turn_confidence,
+            turn_type=turn_type,
             metadata={
-                **metadata,
                 "analysis": self.analysis.to_dict(),
                 "compressed_tokens": compressed,
                 "original_length": len(thread),
@@ -294,6 +315,9 @@ class ThreadEncoder(metaclass=SingletonMeta):
                 "transcript_format": resolved_format,
             },
         )
+        if metadata:
+            out.metadata.update(**metadata)
+        return out
 
     def _detect_format(self, transcript: str) -> str:
         """Return 'turns' if >=50% of non-empty lines have a recognized speaker prefix."""

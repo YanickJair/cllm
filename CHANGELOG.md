@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.2.1] - 2026-06-30
+
+### Added
+
+- **Turn classification** — new `TurnClassifier` component (`clm_core.components.thread_encoder.turn_classifier`) classifies individual turns/utterances into pragmatic categories via the new `TurnType` enum (`CONFIRMATION`, `COMPLAINT`, `THREAT`, `REQUEST`, `CLARIFICATION`, `CORRECTION`, `GREETING`, `CLOSING`, and more), using spaCy `Matcher` patterns. Both `TurnClassifier` and `TurnType` are now exported from the top-level `clm_core` package.
+  - `ThreadEncoder.encode(..., is_turn=True)` runs classification against the input and attaches `turn_type`/`turn_confidence` to the returned `ThreadOutput`. Confidence below `ThreadConfig.turn_classifier_threshold` (default `0.6`) falls back to `TurnType.NEUTRAL`.
+  - `ThreadOutput.to_dict()` includes a `turn_classification` block (`type`, `confidence`) when a turn type was classified.
+- New `ThreadConfig.turn_classifier_threshold` field to tune the turn-classification confidence cutoff.
+- `scripts/action_matcher.py` — deterministic action-catalog matcher that scores candidate actions against CLM-encoded turn signal (domain, intent, trigger, service, turn type) without an LLM call. Added companion example scripts `scripts/turn_classifier.py` and `scripts/thread_turn.py`.
+- `ThreadEncoder` and `CLMEncoder` now log through a structured `pretty-loguru` logger instead of `print()`.
+
+### Changed
+
+- `ThreadEncoder.__init__` now requires a `logger: EnhancedLogger` argument. `CLMEncoder` constructs and passes this logger automatically, so existing `CLMEncoder`/`encode()` usage is unaffected — only code that instantiates `ThreadEncoder` directly needs to pass a logger.
+- `CLMEncoder._ts_encoder` property renamed to public `CLMEncoder.ts_encoder`.
+- `CLMOutput.compressed` is now `str | None` (previously a required `str`), to support components that may have no compressed output.
+
+### Fixed
+
+- Fixed a crash in `CLMEncoder.encode()` for unsupported input types (e.g. `int`, arbitrary objects): classifying as `DataTypes.UNK` attempted to build a `CLMOutput` with a non-str/dict/list `original` value, raising a `pydantic.ValidationError` instead of safely returning `None`.
+
 ## [1.0.9] - 2026-03-21
 
 ### Fixed

@@ -1,12 +1,13 @@
 from typing import Annotated, Any, Optional
 
-import spacy
+from spacy.language import Language
 from annotated_doc import Doc
 
 from clm_core.components.sys_prompt.encoder import SysPromptEncoder
 from clm_core.components.thread_encoder.encoder import ThreadEncoder
 from clm_core.text_classifier import DataClassifier, DataTypes
 from clm_core.types import CLMConfig, CLMOutput
+from pretty_loguru import create_logger
 
 try:
     from sd_encoder import SDCompressionConfig as _SDCompressionConfig
@@ -20,7 +21,7 @@ class _SDEncoderV2:
     def __init__(self, *_args, **_kwargs):
         self._missing_message = (
             "Structured data encoding requires the 'sd_encoder' extra. "
-            "Install with: pip install \"clm-core[sd_encoder]\""
+            'Install with: pip install "clm-core[sd_encoder]"'
         )
 
     def encode(self, *_args, **_kwargs):
@@ -77,9 +78,15 @@ class CLMEncoder:
         self._cfg = cfg
         self._classifier = DataClassifier()
         self._ds_encoder = _StructuredDataEncoderAdapter(self._build_sd_config())
-        self._lazy_nlp: Optional[spacy.Language] = None
+        self._lazy_nlp: Optional[Language] = None
         self._lazy_ts_encoder: Optional[ThreadEncoder] = None
         self._lazy_sys_prompt_encoder: Optional[SysPromptEncoder] = None
+
+        self._logger = create_logger(
+            name="quick_start_demo",
+            log_path="quick_start_logs",
+            level="DEBUG"
+        )
 
     def _build_sd_config(self):
         """
@@ -131,16 +138,17 @@ class CLMEncoder:
         return _SDFieldImportance.CRITICAL
 
     @property
-    def _nlp(self) -> spacy.Language:
+    def _nlp(self) -> Language:
         if self._lazy_nlp is None:
             self._lazy_nlp = self._cfg.nlp_model
         print("NLP Model Loaded", self._cfg.nlp_model)
         return self._lazy_nlp
 
     @property
-    def _ts_encoder(self) -> ThreadEncoder:
+    def ts_encoder(self) -> ThreadEncoder:
         if self._lazy_ts_encoder is None:
             self._lazy_ts_encoder = ThreadEncoder(
+                logger=self._logger,
                 nlp=self._nlp,
                 vocab=self._cfg.vocab,
                 rules=self._cfg.rules,
@@ -188,10 +196,10 @@ class CLMEncoder:
             data_type = self._classifier.classifier(input_=input_)
 
         if verbose:
-            print(f"Data Type Classified as - {data_type}")
+            self._logger.info(f"Data Type Classified as - {data_type}")
 
         if data_type == DataTypes.UNK:
-            print("Unknown Data Type. Can't compress")
+            self._logger.info("Unknown Data Type. Can't compress")
             return None
 
         if data_type == DataTypes.STRUCTURED_DATA:
@@ -208,7 +216,7 @@ class CLMEncoder:
             )
 
         if data_type == DataTypes.TRANSCRIPT or data_type == DataTypes.FREE_FORM:
-            return self._ts_encoder.encode(
+            return self.ts_encoder.encode(
                 thread=input_, verbose=verbose, metadata=metadata
             )
         return self._sys_prompt_encoder.compress(input_, verbose)

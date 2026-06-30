@@ -48,17 +48,24 @@ def patterns():
 
 
 @pytest.fixture
-def encoder(nlp, vocab, rules, patterns):
+def logger():
+    """Logger for tests"""
+    from pretty_loguru import create_logger
+    return create_logger(name="test_transcript_encoder", level="DEBUG")
+
+
+@pytest.fixture
+def encoder(nlp, vocab, rules, patterns, logger):
     """Create encoder instance, clearing singleton"""
     # Clear singleton to allow fresh instance
     ThreadEncoder._instances = {}
-    return ThreadEncoder(nlp=nlp, vocab=vocab, rules=rules, patterns=patterns, config=ThreadConfig())
+    return ThreadEncoder(nlp=nlp, vocab=vocab, rules=rules, patterns=patterns, config=ThreadConfig(), logger=logger)
 
 
 class TestTranscriptEncoderInit:
-    def test_initialization(self, nlp, vocab, rules, patterns):
+    def test_initialization(self, nlp, vocab, rules, patterns, logger):
         ThreadEncoder._instances = {}
-        encoder = ThreadEncoder(nlp=nlp, vocab=vocab, rules=rules, patterns=patterns, config=ThreadConfig())
+        encoder = ThreadEncoder(nlp=nlp, vocab=vocab, rules=rules, patterns=patterns, config=ThreadConfig(), logger=logger)
         assert encoder._analyzer is not None
         assert encoder.analysis is None
 
