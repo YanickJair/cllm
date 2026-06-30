@@ -2,6 +2,7 @@ import re
 from typing import Annotated
 
 import spacy
+from spacy.language import Language
 from annotated_doc import Doc as ParamDoc
 from spacy.tokens import Doc
 
@@ -18,7 +19,7 @@ class EntityExtractor:
     def __init__(
         self,
         nlp: Annotated[
-            spacy.Language | None,
+            Language | None,
             ParamDoc(
                 "An existing spaCy Language instance to reuse. If None, a new model is loaded using the model argument."
             ),

@@ -7,7 +7,7 @@ from jinja2 import Environment
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from spacy.tokens import Doc
 
-from clm_core.types import CLMOutput
+from clm_core.types import CLMOutput, TurnType
 from clm_core.components.sys_prompt import Intent, Target
 
 
@@ -352,6 +352,9 @@ class TemporalPattern(BaseModel):
 
 
 class ThreadOutput(CLMOutput):
+    turn_type: Annotated[TurnType | None, Field(default=None, description="Turn classification. Represented only on the dictionary object represantation of the output")]
+    turn_confidence: Annotated[float | None, Field(default=None)]
+
     @model_validator(mode="after")
     def _restore_structured_tokens(self) -> Self:
         """Keep the structured token form even when it's longer than the original.
@@ -441,6 +444,12 @@ class ThreadOutput(CLMOutput):
             "supportTrigger": None,
             "context": None,
         }
+
+        if self.turn_type is not None:
+            result["turn_classification"] = {
+                "type": self.turn_type,
+                "confidence": self.turn_confidence,
+            }
 
         context_list: list[str] = []
         artifacts_list: list[dict] = []

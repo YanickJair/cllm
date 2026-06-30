@@ -746,7 +746,6 @@ CUSTOMER_SPEAKER_LABELS = ["client", "cliente", "customer", "appelant"]
 TIMELINE_KEYWORDS = {
     "demain": "TOMORROW",
     "aujourd'hui": "TODAY",
-    "aujourd'hui": "TODAY",
 }
 
 TIMELINE_PATTERNS = [

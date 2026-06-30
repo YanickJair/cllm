@@ -49,6 +49,8 @@ dependencies = [
     "langdetect>=1.0.9",
     "annotated-doc>=0.0.4",
     "click>=8.3.1",
+    "ruff>=0.15.20",
+    "pretty-loguru>=1.2.0",
 ]
 
 [project.optional-dependencies]
