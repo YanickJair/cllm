@@ -191,7 +191,7 @@ class CLMEncoder:
                 "Optional metadata dict to attach to the output (passed through to the thread encoder)."
             ),
         ] = None,
-    ) -> CLMOutput:
+    ) -> CLMOutput | None:
         if data_type is None:
             data_type = self._classifier.classifier(input_=input_)
 
@@ -200,12 +200,7 @@ class CLMEncoder:
 
         if data_type == DataTypes.UNK:
             self._logger.info("Unknown Data Type. Can't compress")
-            return CLMOutput(
-                original=input_,
-                compressed=None,
-                component=DataTypes.UNK.name,
-                metadata=metadata or {}
-            )
+            return None
 
         if data_type == DataTypes.STRUCTURED_DATA:
             result = self._ds_encoder.encode(input_)

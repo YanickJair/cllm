@@ -98,16 +98,16 @@ def test_encode_system_prompt_routes_to_syspromptencoder(mocker: MockerFixture, 
     assert result is mocked_output
 
 
-def test_encode_unknown_type_returns_none(mocker: MockerFixture, cfg: CLMConfig, capsys):
+def test_encode_unknown_type_returns_none(mocker: MockerFixture, cfg: CLMConfig):
     encoder = CLMEncoder(cfg=cfg)
 
     mocker.patch.object(encoder._classifier, "classifier", return_value=DataTypes.UNK)
+    mocked_logger = mocker.patch.object(encoder, "_logger")
 
     result = encoder.encode("???", verbose=True)
-    captured = capsys.readouterr()
 
     assert result is None
-    assert "Unknown Data Type. Can't compress" in captured.out
+    mocked_logger.info.assert_any_call("Unknown Data Type. Can't compress")
 
 
 def test_encode_unsupported_input_types_safe_handling(mocker: MockerFixture, cfg: CLMConfig):
@@ -156,7 +156,7 @@ def test_constructor_uses_clmconfig_dependencies(mocker: MockerFixture, cfg: CLM
     assert encoder._nlp is cfg.nlp_model
     # Ensure component encoders are instantiated
     assert encoder._ds_encoder is not None
-    assert encoder._ts_encoder is not None
+    assert encoder.ts_encoder is not None
     assert encoder._sys_prompt_encoder is not None
     # Ensure classifier is instantiated
     assert encoder._classifier is not None
