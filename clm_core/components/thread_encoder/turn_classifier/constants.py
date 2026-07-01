@@ -184,6 +184,13 @@ TURN_PATTERNS = {
             [{"LEMMA": "nice"}, {"LEMMA": "to"}, {"LEMMA": {"IN": ["meet", "speak", "talk"]}}],
             [{"LEMMA": "hope"}, {"LEMMA": "you"}, {"LEMMA": {"IN": ["do", "be"]}}],
         ],
+        "INTRODUCTION": [
+            [{"LEMMA": "my"}, {"LEMMA": "name"}, {"LEMMA": "be"}],
+            [{"LEMMA": "this"}, {"LEMMA": "be"}, {"POS": "PROPN", "OP": "+"}, {"LEMMA": {"IN": ["call", "phone", "speak", "from"]}}],
+            [{"LEMMA": "let"}, {"LEMMA": "I"}, {"LEMMA": "introduce"}, {"LEMMA": "myself"}],
+            [{"LEMMA": "I"}, {"LEMMA": "be"}, {"LEMMA": "call"}, {"LEMMA": "from"}],
+            [{"LEMMA": "I"}, {"LEMMA": "be"}, {"LEMMA": "the"}, {"LEMMA": {"IN": ["account", "policy", "order"]}}, {"LEMMA": {"IN": ["holder", "owner"]}}],
+        ],
         "COMPLIMENT": [
             [{"LEMMA": "you"}, {"LEMMA": "have"}, {"LEMMA": "be"}, {"LEMMA": {"IN": ["helpful", "great", "wonderful", "fantastic", "amazing"]}}],
             [{"LEMMA": "thank"}, {"LEMMA": "you"}, {"LEMMA": {"IN": ["so", "very"]}}, {"LEMMA": "much"}],
@@ -200,6 +207,8 @@ TURN_PATTERNS = {
             [{"LEMMA": "I"}, {"LEMMA": "think"}, {"LEMMA": "that"}, {"LEMMA": "cover"}, {"LEMMA": "everything"}],
             [{"LEMMA": "no"}, {"LEMMA": {"IN": ["more", "other", "further"]}}, {"LEMMA": {"IN": ["question", "issue", "problem", "concern"]}}],
             [{"LEMMA": "that"}, {"LEMMA": "will"}, {"LEMMA": "be"}, {"LEMMA": "all"}],
+            [{"LEMMA": "take"}, {"LEMMA": "care"}],
+            [{"LEMMA": "talk"}, {"LEMMA": "to"}, {"LEMMA": "you"}, {"LEMMA": "later"}],
         ],
 
         # --- Neutral / Statement ---
@@ -468,6 +477,12 @@ TURN_PATTERNS = {
             [{"LEMMA": {"IN": ["bonjour", "bonsoir", "salut", "allô"]}}],
             [{"LEMMA": "comment"}, {"LEMMA": {"IN": ["aller", "être"]}}, {"LEMMA": "vous"}],
         ],
+        "INTRODUCTION": [
+            [{"LEMMA": "je"}, {"LEMMA": "m'appeler"}],
+            [{"LEMMA": "mon"}, {"LEMMA": "nom"}, {"LEMMA": "être"}],
+            [{"LEMMA": "je"}, {"LEMMA": "vous"}, {"LEMMA": "appeler"}, {"LEMMA": "de"}, {"LEMMA": "la"}, {"LEMMA": "part"}, {"LEMMA": "de"}],
+            [{"LEMMA": "permettez"}, {"LEMMA": "moi"}, {"LEMMA": "de"}, {"LEMMA": "me"}, {"LEMMA": "présenter"}],
+        ],
         "CLOSING": [
             [{"LEMMA": {"IN": ["aurevoir", "adieu", "bonne", "merci"]}}],
             [{"LEMMA": "c'est"}, {"LEMMA": "tout"}],
@@ -573,6 +588,12 @@ TURN_PATTERNS = {
             [{"LEMMA": {"IN": ["hola", "buenos", "buenas", "saludos"]}}],
             [{"LEMMA": "cómo"}, {"LEMMA": {"IN": ["estar", "ser"]}}, {"LEMMA": "usted"}],
         ],
+        "INTRODUCTION": [
+            [{"LEMMA": "me"}, {"LEMMA": "llamar"}],
+            [{"LEMMA": "mi"}, {"LEMMA": "nombre"}, {"LEMMA": "ser"}],
+            [{"LEMMA": "le"}, {"LEMMA": "hablar"}],
+            [{"LEMMA": "soy"}, {"LEMMA": "el"}, {"LEMMA": {"IN": ["titular", "dueño"]}}],
+        ],
         "CLOSING": [
             [{"LEMMA": {"IN": ["adiós", "hasta", "chao", "gracias"]}}],
             [{"LEMMA": "eso"}, {"LEMMA": "ser"}, {"LEMMA": "todo"}],
@@ -677,6 +698,12 @@ TURN_PATTERNS = {
         "GREETING": [
             [{"LEMMA": {"IN": ["olá", "oi", "bom", "boa", "saudações"]}}],
             [{"LEMMA": "como"}, {"LEMMA": {"IN": ["estar", "vai"]}}, {"LEMMA": "você"}],
+        ],
+        "INTRODUCTION": [
+            [{"LEMMA": "me"}, {"LEMMA": "chamar"}],
+            [{"LEMMA": "meu"}, {"LEMMA": "nome"}, {"LEMMA": "ser"}],
+            [{"LEMMA": "aqui"}, {"LEMMA": "ser"}, {"POS": "PROPN", "OP": "+"}],
+            [{"LEMMA": "sou"}, {"LEMMA": "o"}, {"LEMMA": {"IN": ["titular", "dono"]}}],
         ],
         "CLOSING": [
             [{"LEMMA": {"IN": ["tchau", "adeus", "até", "obrigado"]}}],

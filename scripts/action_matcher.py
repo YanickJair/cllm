@@ -382,6 +382,47 @@ SAMPLE_CATALOG: list[dict] = [
             "turnTypes": ["REQUEST", "DEMAND", "PROBLEM_DESCRIPTION"],
         },
     },
+    {
+        "id": "ACT-008",
+        "title": "Sales Opportunity Follow-up",
+        "description": "Engage a customer expressing interest in buying or upgrading a product; surface pricing/availability and route to sales for a next-best-action.",
+        "match": {
+            "domain": ["PRODUCT"],
+            "service": ["SALES", "CATALOG"],
+            "customerIntent": [
+                "EXPRESS_PURCHASE_INTEREST",
+                "REQUEST_TRIAL",
+                "REQUEST_PLAN_UPGRADE",
+                "EVALUATE_PLAN_UPGRADE",
+            ],
+            "supportTrigger": [],
+            "turnTypes": ["STATEMENT", "INQUIRY", "PURCHASE_INTENT"],
+        },
+    },
+    {
+        "id": "ACT-009",
+        "title": "Greet & Identify Caller",
+        "description": "Open the interaction: greet the caller back and ask for the information needed to verify who they are before proceeding.",
+        "match": {
+            "domain": [],
+            "service": [],
+            "customerIntent": [],
+            "supportTrigger": [],
+            "turnTypes": ["GREETING", "INTRODUCTION"],
+        },
+    },
+    {
+        "id": "ACT-010",
+        "title": "Wrap-up & Confirm Resolution",
+        "description": "Customer signaled they're ending the call; confirm everything is resolved, summarize the outcome, and close out courteously.",
+        "match": {
+            "domain": [],
+            "service": [],
+            "customerIntent": [],
+            "supportTrigger": [],
+            "turnTypes": ["CLOSING"],
+        },
+    },
 ]
 
 
@@ -406,6 +447,10 @@ if __name__ == "__main__":
         "I want to cancel my subscription right now, this service is terrible.",
         "Why can't I log into my account? I keep getting an error message.",
         "Your agent promised me a refund two weeks ago and I still haven't received anything.",
+        "I saw that thing online, the new iPhone. I was thinking about buying it maybe",
+        # Turn-type dominant: opening/closing pleasantries
+        "Hi, this is Sarah calling about my order.",
+        "Thanks so much for your help today, take care, goodbye!",
     ]
 
     print("\nCLM Action Matcher")

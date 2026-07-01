@@ -4,7 +4,6 @@ from enum import Enum
 from typing import Annotated, Literal, Optional, Self, TypeAlias
 
 import spacy
-from spacy.language import Language
 from annotated_doc import Doc
 from pydantic import (
     BaseModel,
@@ -15,6 +14,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from spacy.language import Language
 
 from clm_core.components.sys_prompt._schemas import PromptMode
 from clm_core.dictionary import patterns_map, rules_map, vocab_map
@@ -57,7 +57,8 @@ class CLMOutput(BaseModel):
     def validate_compressed(
         cls,
         c: Annotated[
-            str | None, Doc("Raw compressed string value to normalize before assignment.")
+            str | None,
+            Doc("Raw compressed string value to normalize before assignment."),
         ],
     ) -> str:
         """Normalize whitespace: collapse all whitespace (tabs, newlines, spaces) to single spaces."""
@@ -106,7 +107,7 @@ class CLMOutput(BaseModel):
     def to_dict(self) -> dict:
         raise NotImplementedError
 
-    def summary(self) -> str:
+    def summary(self, template: str) -> str:
         raise NotImplementedError("This method should be implemented in Thread Encoder")
 
 
@@ -445,6 +446,7 @@ class TurnType(str, Enum):
     INQUIRY = "INQUIRY"  # "do you know if...", "what is..."
 
     GREETING = "GREETING"  # "hello", "hi there", "good morning"
+    INTRODUCTION = "INTRODUCTION"  # "my name is...", "this is X calling"
     COMPLIMENT = "COMPLIMENT"  # "you've been very helpful", "thank you so much"
     CLOSING = "CLOSING"  # "that's all", "goodbye", "have a good day"
 
@@ -467,10 +469,14 @@ class TurnType(str, Enum):
     UNCERTAINTY = "UNCERTAINTY"
 
     # --- Customer-primary ---
-    CONFUSION = "CONFUSION"          # "I don't understand", "that doesn't make sense"
+    CONFUSION = "CONFUSION"  # "I don't understand", "that doesn't make sense"
 
     # --- Agent-acknowledged (secondary; used for Layer-3 completion detection) ---
-    APOLOGY = "APOLOGY"              # "I'm sorry", "I apologize"
-    EMPATHY = "EMPATHY"              # "I understand how frustrating this must be"
-    RESOLUTION_OFFER = "RESOLUTION_OFFER"   # "what I can do for you is...", "I'll take care of that"
-    VERIFICATION_REQUEST = "VERIFICATION_REQUEST"  # "can you confirm your date of birth?"
+    APOLOGY = "APOLOGY"  # "I'm sorry", "I apologize"
+    EMPATHY = "EMPATHY"  # "I understand how frustrating this must be"
+    RESOLUTION_OFFER = (
+        "RESOLUTION_OFFER"  # "what I can do for you is...", "I'll take care of that"
+    )
+    VERIFICATION_REQUEST = (
+        "VERIFICATION_REQUEST"  # "can you confirm your date of birth?"
+    )
