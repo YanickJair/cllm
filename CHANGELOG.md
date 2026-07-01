@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.1] - 2026-06-30
+## [1.3.0] - 2026-06-30
 
 ### Added
 
@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed a crash in `CLMEncoder.encode()` for unsupported input types (e.g. `int`, arbitrary objects): classifying as `DataTypes.UNK` attempted to build a `CLMOutput` with a non-str/dict/list `original` value, raising a `pydantic.ValidationError` instead of safely returning `None`.
+- Dev tooling (`ruff`, `pytest-mock`, `pip`) moved to a proper `[dependency-groups] dev` entry in `pyproject.toml` (the prior `dev-dependencies` key under `[project]` wasn't a recognized field and was silently ignored by `uv`/`pip`, causing dev deps to drop out of sync). CI (`.github/workflows/publish.yml`) now installs via `uv sync --group dev` instead of plain `pip install -e .`, fixing a `ModuleNotFoundError: No module named 'pytest_mock'` failure in the test job.
 
 ## [1.0.9] - 2026-03-21
 

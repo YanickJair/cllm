@@ -1631,6 +1631,19 @@ CUSTOMER_INTENT_KEYWORDS = {
         "billing issue",
         "incorrect charge",
     ],
+    "EXPRESS_PURCHASE_INTEREST": [
+        "thinking about buying",
+        "thinking of buying",
+        "was thinking about buying",
+        "interested in buying",
+        "want to buy",
+        "looking to buy",
+        "planning to buy",
+        "might buy",
+        "considering buying",
+        "thinking about getting",
+        "thinking of getting",
+    ],
 }
 
 ISSUE_TO_SERVICE = {
