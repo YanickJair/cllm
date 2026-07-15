@@ -18,8 +18,8 @@ CLM
 <a href="https://pypi.org/project/cllm/">
     <img src="https://img.shields.io/pypi/v/cllm.svg" alt="Package version">
 </a>
-<a href="https://github.com/YanickJar/cllm/blob/main/LICENSE-AGPL">
-    <img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="License">
+<a href="https://github.com/YanickJar/cllm/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
 </a>
 </p>
 
@@ -30,7 +30,7 @@ CLM
 
 ## Overview
 
-CLM is a patent-pending compression technology that reduces LLM token consumption through semantic encoding. Unlike simple abbreviation or character-level compression, CLM preserves the **meaning** of your content using structured token vocabularies.
+CLM is an open-source compression technology that reduces LLM token consumption through semantic encoding. Unlike simple abbreviation or character-level compression, CLM preserves the **meaning** of your content using structured token vocabularies.
 
 ### Three Core Compression Targets
 
@@ -346,12 +346,7 @@ Based on production testing with 5,000+ samples:
 
 ## License
 
-CLM is dual-licensed:
-
-- **AGPL-3.0** for open source projects ([details](https://github.com/YanickJar/cllm/blob/main/LICENSE-AGPL))
-- **Commercial License** for proprietary use ([contact us](mailto:yanick.jair.ta@gmail.com))
-
-See our [Licensing Guide](https://github.com/YanickJar/cllm/blob/main/LICENSING.md) for details.
+CLM is open source under the [MIT License](https://github.com/YanickJar/cllm/blob/main/LICENSE).
 
 ---
 

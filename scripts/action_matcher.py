@@ -9,6 +9,11 @@ The catalog schema mirrors what CLM already produces:
   domain, service, customerIntent, supportTrigger, turnTypes
 
 Callers own the catalog; CLM owns the signal extraction.
+
+The `__main__` demo simulates a live call: turns accumulate one at a time
+(customer and agent alternating), and CLM re-encodes the transcript so far
+after each new line — the same way a real-time agent-assist tool would see
+the conversation build up rather than analyzing isolated one-liners.
 """
 
 from __future__ import annotations
@@ -106,8 +111,25 @@ class TurnSignal:
 # ---------------------------------------------------------------------------
 # Core logic
 # ---------------------------------------------------------------------------
-def extract_signal(turn_text: str, encoder: CLMEncoder) -> TurnSignal:
-    out = encoder.ts_encoder.encode(thread=turn_text, is_turn=False, metadata={})
+def extract_signal(
+    transcript: str,
+    latest_turn_text: str,
+    encoder: CLMEncoder,
+) -> TurnSignal:
+    """Extract the CLM signal for a transcript-so-far in a live conversation.
+
+    `transcript` is the full "Speaker: text" history accumulated up to and
+    including the newest line — domain/service/intent/trigger are derived
+    from that whole context, matching how CLM behaves against a growing
+    call rather than an isolated sentence.
+
+    `latest_turn_text` (the newest line's raw text, no speaker prefix) is
+    classified separately for turn_type, since that signal describes what
+    is happening *right now* in the call, not the conversation as a whole.
+    """
+    out = encoder.ts_encoder.encode(
+        thread=transcript, is_turn=False, thread_format="turns", metadata={}
+    )
     d = out.to_dict()
 
     # Turn type: call the classifier directly so the encoder's conservative
@@ -117,7 +139,7 @@ def extract_signal(turn_text: str, encoder: CLMEncoder) -> TurnSignal:
     turn_type: TurnType | None = None
     turn_confidence = 0.0
     clf: TurnClassifier = encoder.ts_encoder._turn_classifier
-    raw_tt, raw_conf = clf.classify(turn_text)
+    raw_tt, raw_conf = clf.classify(latest_turn_text)
     if raw_tt != TurnType.NEUTRAL and raw_conf > 0.0:
         turn_type = raw_tt
         turn_confidence = raw_conf
@@ -193,13 +215,14 @@ def score_action(
 
 
 def match_actions(
-    turn_text: str,
+    transcript: str,
+    latest_turn_text: str,
     catalog: list[dict],
     encoder: CLMEncoder,
     threshold: int = DEFAULT_THRESHOLD,
     min_field_types: int = DEFAULT_MIN_FIELD_TYPES,
 ) -> tuple[TurnSignal, list[MatchResult]]:
-    signal = extract_signal(turn_text, encoder)
+    signal = extract_signal(transcript, latest_turn_text, encoder)
     results: list[MatchResult] = []
 
     for action in catalog:
@@ -220,20 +243,27 @@ def match_actions(
 # ---------------------------------------------------------------------------
 # Display
 # ---------------------------------------------------------------------------
-def display(turn_text: str, signal: TurnSignal, results: list[MatchResult]) -> None:
+def display(
+    step: int,
+    total: int,
+    speaker: str,
+    turn_text: str,
+    signal: TurnSignal,
+    results: list[MatchResult],
+) -> None:
     tt_str = (
         f"{signal.turn_type.value} ({signal.turn_confidence:.0%})"
         if signal.turn_type else "—"
     )
     print(f"\n{'─' * 72}")
-    print(f"  Turn   : {turn_text}")
+    print(f"  [{step}/{total}] {speaker:<8}: {turn_text}")
     print(
-        f"  CLM    : domain={signal.domain or '—'}  "
+        f"  CLM (so far) : domain={signal.domain or '—'}  "
         f"intent={signal.customer_intent or '—'}  "
         f"trigger={signal.support_trigger or '—'}  "
         f"service={signal.service or '—'}"
     )
-    print(f"  TurnType: {tt_str}")
+    print(f"  TurnType     : {tt_str}")
     print(f"{'─' * 72}")
 
     if not results:
@@ -427,8 +457,66 @@ SAMPLE_CATALOG: list[dict] = [
 
 
 # ---------------------------------------------------------------------------
-# Entry point
+# Sample live conversations
 # ---------------------------------------------------------------------------
+# Each scenario is a single call, turn by turn — (speaker, text) pairs. The
+# demo below feeds a scenario's turns in one at a time, re-encoding the
+# transcript accumulated so far after every line — mirroring how a live call
+# would be analyzed as it happens rather than as isolated one-off utterances.
+CONVERSATIONS: dict[str, list[tuple[str, str]]] = {
+    "Billing — Duplicate Charge": [
+        ("Customer", "Hi, this is Sarah calling about my account."),
+        ("Agent", "Hi Sarah, thanks for calling in. Can I get your account email to pull things up?"),
+        ("Customer", "Sure, it's sarah@example.com. I noticed my account was charged twice this month — one on the 2nd and another on the 3rd."),
+        ("Agent", "I'm sorry about that, let me take a look... yes, I can see the duplicate charge on the 3rd."),
+        ("Customer", "Okay good, because I need this fixed immediately, it's really frustrating."),
+        ("Agent", "Completely understandable. I've gone ahead and initiated a refund for the duplicate charge."),
+        ("Customer", "Thank you, how long will the refund take to show up?"),
+        ("Agent", "You should see it back on your card within 3-5 business days."),
+        ("Customer", "Great, thanks so much for your help today, take care, goodbye!"),
+    ],
+    "Technical Support — Service Outage": [
+        ("Customer", "Hi, I'm having a really frustrating problem with my internet connection."),
+        ("Agent", "Sorry to hear that, can you tell me more about what's happening?"),
+        ("Customer", "It's a complete outage, the service has been down since this morning."),
+        ("Agent", "I can see there's a reported outage in your area, let me check the status for you."),
+        ("Customer", "This is really impacting our work, when will it be fixed?"),
+        ("Agent", "Our engineers are already working on restoring connectivity."),
+        ("Customer", "Okay, thank you for the update."),
+    ],
+    "Account Security — Unauthorized Access": [
+        ("Customer", "Hi, this is Marcus, I need help with my account."),
+        ("Agent", "Sure Marcus, what's going on?"),
+        ("Customer", "I got an email saying someone signed into my account from a different location, and it wasn't me."),
+        ("Agent", "That's concerning, let's secure your account right away."),
+        ("Customer", "Okay, my email is marcus@example.com."),
+        ("Agent", "Thanks, I've verified your identity and locked down the account."),
+        ("Customer", "Great, thank you so much for catching that."),
+    ],
+    "Cancellation & Retention — Price Increase": [
+        ("Customer", "Hi, I want to cancel my subscription right now."),
+        ("Agent", "I'm sorry to hear that, can I ask what's prompting the cancellation?"),
+        ("Customer", "The price went up and honestly it's just not worth it anymore."),
+        ("Agent", "I understand. Before you go, I can offer you 20% off for the next six months."),
+        ("Customer", "Hmm, that's actually pretty good, let's do that instead."),
+        ("Agent", "Great, I've applied the discount and your subscription will continue."),
+    ],
+    "Onboarding — New Customer": [
+        ("Customer", "Hi, I just signed up and I have no idea how to get started."),
+        ("Agent", "Welcome aboard! I'd be happy to walk you through the setup."),
+        ("Customer", "That would be great, this is my first time using something like this."),
+        ("Agent", "No problem, let's start by setting up your profile."),
+        ("Customer", "Okay sounds good, thank you."),
+    ],
+    "Sales Opportunity — Plan Upgrade Interest": [
+        ("Customer", "Hi, I saw the new premium plan online and I'm thinking about upgrading."),
+        ("Agent", "That's great to hear! What features are you most interested in?"),
+        ("Customer", "I'm curious about the analytics features, what does the plan include?"),
+        ("Agent", "The premium plan includes advanced analytics, priority support, and more storage."),
+        ("Customer", "That sounds good, I might go ahead and upgrade."),
+    ],
+}
+
 if __name__ == "__main__":
     # Initialise encoder (loads NLP model, wires up pretty_loguru) silently.
     with _quiet():
@@ -457,7 +545,17 @@ if __name__ == "__main__":
     print(f"Threshold ≥ {DEFAULT_THRESHOLD}  |  Min field types: {DEFAULT_MIN_FIELD_TYPES}")
     print("Weights: domain/intent=3, trigger/service=2, turnType=1")
 
-    for turn in turns:
-        with _quiet():
-            signal, results = match_actions(turn, SAMPLE_CATALOG, encoder)
-        display(turn, signal, results)
+    for scenario, conversation in CONVERSATIONS.items():
+        print(f"\n{'=' * 72}")
+        print(f"  SCENARIO: {scenario}")
+        print(f"{'=' * 72}")
+
+        total = len(conversation)
+        lines: list[str] = []
+        for step, (speaker, text) in enumerate(conversation, start=1):
+            lines.append(f"{speaker}: {text}")
+            transcript_so_far = "\n".join(lines)
+
+            with _quiet():
+                signal, results = match_actions(transcript_so_far, text, SAMPLE_CATALOG, encoder)
+            display(step, total, speaker, text, signal, results)
