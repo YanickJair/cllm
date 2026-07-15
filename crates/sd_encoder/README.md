@@ -8,7 +8,7 @@
 <p align="center">
   <a href="https://github.com/YanickJair/cllm/actions"><img src="https://github.com/YanickJar/cllm/workflows/Test%20Suite/badge.svg" alt="Test Suite"></a>
   <a href="https://pypi.org/project/sd-encoder/"><img src="https://img.shields.io/pypi/v/sd-encoder.svg" alt="PyPI"></a>
-  <a href="https://github.com/YanickJar/cllm/blob/main/LICENSE-AGPL"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="License"></a>
+  <a href="https://github.com/YanickJar/cllm/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
 </p>
 
 <p align="center"><em>Compress structured data into compact token sequences — 40–85% fewer tokens, no model retraining, no heavy dependencies.</em></p>

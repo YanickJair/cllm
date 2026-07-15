@@ -8,14 +8,14 @@
 <p align="center">
   <a href="https://github.com/YanickJar/cllm/actions"><img src="https://github.com/YanickJar/cllm/workflows/Test%20Suite/badge.svg" alt="Test Suite"></a>
   <a href="https://pypi.org/project/clm-core/"><img src="https://img.shields.io/pypi/v/clm-core.svg" alt="PyPI"></a>
-  <a href="https://github.com/YanickJar/cllm/blob/main/LICENSE-AGPL"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="License"></a>
+  <a href="https://github.com/YanickJar/cllm/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
 </p>
 
 <p align="center"><em>Compress transcripts, structured data, and system prompts — 60–95% fewer tokens, no model retraining.</em></p>
 
 ---
 
-CLM is a patent-pending semantic compression library. It encodes verbose content into compact structured token sequences that LLMs interpret with equal or better accuracy, at a fraction of the token cost.
+CLM is an open-source semantic compression library. It encodes verbose content into compact structured token sequences that LLMs interpret with equal or better accuracy, at a fraction of the token cost.
 
 Three targets, one encoder:
 
@@ -246,10 +246,7 @@ Pushes to `main` publish changed packages to TestPyPI. Release tags publish the 
 ---
 ## License
 
-Dual-licensed:
-
-- **AGPL-3.0** — free for open source use ([LICENSE-AGPL](LICENSE-AGPL))
-- **Commercial** — for proprietary products and SaaS ([contact](mailto:yanick.jair.ta@gmail.com))
+MIT — see [LICENSE](LICENSE).
 
 ---
 
