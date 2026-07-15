@@ -524,7 +524,24 @@ if __name__ == "__main__":
         encoder = CLMEncoder(cfg=cfg)
         _ = encoder.ts_encoder
 
-    print("\nCLM Action Matcher — live conversation simulation")
+    turns = [
+        # Semantic signal dominant
+        "I noticed my account was charged twice this month — one on the 2nd and another on the 3rd.",
+        "I'm calling to complain about a duplicated charge on my account. I need this fixed immediately.",
+        # Classifier signal dominant (CLM can't classify domain/intent)
+        "I just signed up and I have no idea how to get started, can you walk me through it?",
+        "I'm thinking of leaving. This isn't really what I expected.",
+        # Mixed
+        "I want to cancel my subscription right now, this service is terrible.",
+        "Why can't I log into my account? I keep getting an error message.",
+        "Your agent promised me a refund two weeks ago and I still haven't received anything.",
+        "I saw that thing online, the new iPhone. I was thinking about buying it maybe",
+        # Turn-type dominant: opening/closing pleasantries
+        "Hi, this is Sarah calling about my order.",
+        "Thanks so much for your help today, take care, goodbye!",
+    ]
+
+    print("\nCLM Action Matcher")
     print(f"Threshold ≥ {DEFAULT_THRESHOLD}  |  Min field types: {DEFAULT_MIN_FIELD_TYPES}")
     print("Weights: domain/intent=3, trigger/service=2, turnType=1")
 
