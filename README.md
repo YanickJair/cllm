@@ -253,5 +253,5 @@ MIT — see [LICENSE](LICENSE).
 <p align="center">
   <a href="https://github.com/YanickJar/cllm/issues">Issues</a> ·
   <a href="https://github.com/YanickJar/cllm/discussions">Discussions</a> ·
-  <a href="mailto:yanick.jair.ta@gmail.com">Contact</a>
+  <a href="mailto:info@clm-lang.com">Contact</a>
 </p>

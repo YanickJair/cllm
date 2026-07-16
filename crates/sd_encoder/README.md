@@ -231,12 +231,12 @@ pip install "clm-core[sd_encoder]"
 ## License
 
 - **MIT License** — License © 2025-PRESENT ([MIT License](LMIT License))
-(mailto:yanick.jair.ta@gmail.com))
+(mailto:info@clm-lang.com))
 
 ---
 
 <p align="center">
   <a href="https://github.com/YanickJair/cllm/issues">Issues</a> ·
   <a href="https://github.com/YanickJair/cllm/discussions">Discussions</a> ·
-  <a href="mailto:yanick.jair.ta@gmail.com">Contact</a>
+  <a href="mailto:info@clm-lang.com">Contact</a>
 </p>
