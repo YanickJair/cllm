@@ -355,7 +355,7 @@ CLM is open source under the [MIT License](https://github.com/YanickJar/cllm/blo
 - 📖 **Documentation**: [docs.cllm.io](https://docs.cllm.io)
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/YanickJar/cllm/discussions)
 - 🐛 **Issues**: [GitHub Issues](https://github.com/YanickJar/cllm/issues)
-- 📧 **Email**: yanick.jair.ta@gmail.com
+- 📧 **Email**: info@clm-lang.com
 
 ---
 

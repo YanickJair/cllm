@@ -86,7 +86,7 @@ class SysPromptEncoder:
             else self._detect_prompt_mode(prompt)
         )
         if mode == PromptMode.TASK:
-            self._task_prompt.compress(prompt=prompt, verbose=verbose)
+            return self._task_prompt.compress(prompt=prompt, verbose=verbose)
         return self._configuration_prompt.compress(prompt=prompt)
 
     def compress_batch(
