@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2026-07-16
+
+### Fixed
+
+- **`SysPromptEncoder.compress()` ignored `PromptMode.TASK`** — when `prompt_mode` resolved to `TASK` (explicitly via `SysPromptConfig.prompt_mode` or via auto-detection), the task encoder's result was computed and then discarded; the configuration encoder's result was returned unconditionally instead. `TASK` mode now returns its own compression (`component: TASK_PROMPT`) rather than being silently treated as `CONFIGURATION`.
+
 ## [1.3.0] - 2026-06-30
 
 ### Added
