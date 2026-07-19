@@ -6,6 +6,8 @@ from spacy.language import Language
 
 from clm_core.utils.parser_rules import BaseRules
 from clm_core.utils.vocabulary import BaseVocabulary
+from . import ConfigurationPromptMinimizer
+from ._schemas import OutputMode
 from .analyzers.attribute_parser import AttributeParser
 from clm_core.components.intent_detector_v2 import IntentDetectorV2 as IntentDetector
 from clm_core.components.target_extractor import TargetExtractor
@@ -14,6 +16,16 @@ from .tokenizer import CLLMTokenizer
 from clm_core.types import CLMOutput, SysPromptConfig
 
 COMPONENT = "TASK_PROMPT"
+
+
+def _collect_schema_field_names(fields) -> set[str]:
+    """Recursively collect uppercased field names from an output schema (including nested objects)."""
+    names = set()
+    for f in fields:
+        names.add(f.name.upper())
+        if f.nested:
+            names.update(_collect_schema_field_names(f.nested))
+    return names
 
 
 class TaskPromptEncoder(BasePromptEncoder):
@@ -49,6 +61,7 @@ class TaskPromptEncoder(BasePromptEncoder):
             nlp=self.nlp, config=config, vocab=self._vocab, rules=rules
         )
         self.tokenizer = CLLMTokenizer()
+        self._minimizer = ConfigurationPromptMinimizer(nlp=self.nlp, config=config)
 
     def compress(
         self,
@@ -71,7 +84,27 @@ class TaskPromptEncoder(BasePromptEncoder):
         if verbose:
             print(f"2. Targets detected: {target.token}")
 
-        extractions = self.attribute_parser.parse_extraction_fields(prompt)
+        output_format = self.attribute_parser.parse_output_format(prompt)
+        if verbose and output_format:
+            print(f"5. Output format: {output_format.format_type}")
+
+        schema_field_names = (
+            _collect_schema_field_names(output_format.fields)
+            if output_format and output_format.fields
+            else None
+        )
+        extractions = self.attribute_parser.parse_extraction_fields(
+            prompt, schema_field_names=schema_field_names
+        )
+        if (
+            extractions
+            and extractions.attributes
+            and target
+            and target.domain
+            and extractions.attributes.get("DOMAIN", "").upper() == target.domain.upper()
+        ):
+            # Already surfaced via [TARGET:...:DOMAIN=...]; don't repeat it on EXTRACT.
+            extractions.attributes.pop("DOMAIN")
         quantifiers = self.attribute_parser.extract_quantifier(prompt)
         specifications = self.attribute_parser.extract_specifications(prompt)
         if verbose and extractions:
@@ -81,10 +114,6 @@ class TaskPromptEncoder(BasePromptEncoder):
         contexts = self.attribute_parser.parse_contexts(prompt)
         if verbose and contexts:
             print(f"4. Contexts: {[(c.aspect, c.value) for c in contexts]}")
-
-        output_format = self.attribute_parser.parse_output_format(prompt)
-        if verbose and output_format:
-            print(f"5. Output format: {output_format.format_type}")
 
         compressed = self.tokenizer.build_sequence(
             intent=intent,
@@ -99,6 +128,34 @@ class TaskPromptEncoder(BasePromptEncoder):
         doc = self.nlp(prompt)
         verbs = [token.lemma_ for token in doc if token.pos_ == "VERB"]
 
+        metadata = {
+            "original_length": len(prompt),
+            "compressed_length": len(compressed),
+            "num_intents": 1 if intent.token else 0,
+            "num_targets": 1 if target else 0,
+            "verbs": verbs,
+            "intents": intent.model_dump(),
+            "target": target,
+            "extractions": extractions,
+            "contexts": contexts,
+            "output_format": output_format,
+            "noun_chunks": [chunk.text for chunk in doc.noun_chunks],
+            "language": "en",
+            "has_numbers": bool(re.search(r"\d", prompt)),
+            "has_urls": bool(re.search(r"https?://", prompt)),
+            "has_code_indicators": any(
+                word in prompt.lower()
+                for word in ["clm_core", "javascript", "function", "class"]
+            ),
+        }
+
+        if self._config.output_mode == OutputMode.MINIMIZED:
+            minimized_nl = self._minimizer.minimize(
+                nl_prompt=prompt, cl_metadata=metadata
+            )
+            if minimized_nl:
+                compressed = f"{compressed}\n\n{minimized_nl}"
+
         if verbose:
             print(f"\n{'=' * 60}")
             print(f"Compressed: {compressed}")
@@ -108,26 +165,7 @@ class TaskPromptEncoder(BasePromptEncoder):
             original=prompt,
             compressed=compressed,
             component=COMPONENT,
-            metadata={
-                "original_length": len(prompt),
-                "compressed_length": len(compressed),
-                "num_intents": 1 if intent.token else 0,
-                "num_targets": 1 if target else 0,
-                "verbs": verbs,
-                "intents": intent.model_dump(),
-                "target": target,
-                "extractions": extractions,
-                "contexts": contexts,
-                "output_format": output_format,
-                "noun_chunks": [chunk.text for chunk in doc.noun_chunks],
-                "language": "en",
-                "has_numbers": bool(re.search(r"\d", prompt)),
-                "has_urls": bool(re.search(r"https?://", prompt)),
-                "has_code_indicators": any(
-                    word in prompt.lower()
-                    for word in ["clm_core", "javascript", "function", "class"]
-                ),
-            },
+            metadata=metadata,
         )
 
     def compress_batch(

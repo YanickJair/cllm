@@ -10,6 +10,7 @@ from ._schemas import (
     PromptTemplate,
     ValidationLevel,
     PromptMode,
+    OutputMode,
 )
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "ValidationLevel",
     "ConfigurationPromptMinimizer",
     "PromptMode",
+    "OutputMode",
 ]

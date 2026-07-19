@@ -57,6 +57,8 @@ dev = [
     "ruff>=0.15.20",
     "pip>=26.0.1",
     "pytest-mock>=3.15.1",
+    "tiktoken>=0.13.0",
+    "openai>=2.46.0",
 ]
 
 [tool.hatch.version]

@@ -195,10 +195,11 @@ class ESRules(BaseRules):
     def QA_CRITERIA(self) -> dict[str, str]:
         return {
             r"\b(verificación|verificar|verificado)\b": "VERIFICATION",
-            r"\b(política|políticas|adherencia a política)\b": "POLICY",
+            r"\b(política|políticas|adherencia a política)\b": "POLICY_ADHERENCE",
             r"\b(habilidades blandas|empatía|claridad|responsabilidad)\b": "SOFT_SKILLS",
             r"\b(precisión|preciso|exactitud)\b": "ACCURACY",
-            r"\b(cumplimiento|cumple|violaciones?)\b": "COMPLIANCE",
+            r"\b(violaciones?)\b": "VIOLATIONS",
+            r"\b(cumplimiento|cumple)\b": "COMPLIANCE",
             r"\b(sentimiento|emoción|estado de ánimo)\b": "SENTIMENT",
             r"\b(divulgaciones?|divulgaciones obligatorias?)\b": "DISCLOSURES",
         }

@@ -73,12 +73,20 @@ class AttributeParser:
         return matches
 
     def parse_extraction_fields(
-        self, text: Annotated[str, _Doc("Input text to parse extraction fields from.")]
+        self,
+        text: Annotated[str, _Doc("Input text to parse extraction fields from.")],
+        schema_field_names: Annotated[
+            Optional[set[str]],
+            _Doc(
+                "Uppercased output schema field names used to prune keyword-detected "
+                "fields down to ones that actually appear in the response shape."
+            ),
+        ] = None,
     ) -> Optional[ExtractionField]:
         extraction_field = ExtractionFieldParser(
             nlp=self.nlp, vocab=self.vocab, rules=self.rules
         )
-        return extraction_field.parse_extraction_fields(text)
+        return extraction_field.parse_extraction_fields(text, schema_field_names)
 
     def parse_contexts(
         self,

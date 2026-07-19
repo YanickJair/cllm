@@ -31,14 +31,14 @@ class TargetNormalizer:
     ]
 
     ALLOWED: Dict[str, Set[str]] = {
-        "CALL": {"DURATION", "LANG"},
-        "TRANSCRIPT": {"DURATION", "PARTICIPANTS"},
+        "CALL": {"DURATION", "LANG", "TOPIC"},
+        "TRANSCRIPT": {"DURATION", "PARTICIPANTS", "TOPIC"},
         "EMAIL": {"PRIORITY"},
         "DATA": {"FORMAT", "SIZE", "ROWS"},
         "CODE": {"LANG", "FILE_TYPE"},
         "DOCUMENT": {"SUBJECT"},
         "CONTENT": {"SUBJECT", "FORMAT"},
-        "TICKET": {"STATUS", "ISSUE", "PRIORITY"},
+        "TICKET": {"STATUS", "ISSUE", "PRIORITY", "TOPIC"},
         "CONCEPT": {"TOPIC"},
         "ANSWER": set(),
         "ITEMS": {"SUBJECT"},

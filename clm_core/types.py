@@ -16,7 +16,7 @@ from pydantic import (
 )
 from spacy.language import Language
 
-from clm_core.components.sys_prompt._schemas import PromptMode
+from clm_core.components.sys_prompt._schemas import OutputMode, PromptMode
 from clm_core.dictionary import patterns_map, rules_map, vocab_map
 from clm_core.utils.parser_rules import BaseRules
 from clm_core.utils.vocabulary import BaseVocabulary
@@ -249,6 +249,12 @@ class SysPromptConfig(BaseModel):
     prompt_mode: PromptMode | None = Field(
         default=None,
         description="If not set, CLM will try to infer the mode (TASK or CONFIGURATION)",
+    )
+    output_mode: OutputMode = Field(
+        default=OutputMode.FULL,
+        description="FULL returns only the compressed CL token. MINIMIZED also appends "
+        "a minimized natural-language remainder (redundant role/rules/output-format "
+        "content stripped) after the CL token.",
     )
 
 

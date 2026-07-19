@@ -963,7 +963,7 @@ COMPOUND_PHRASES = {
     "customer support": "TICKET",
     "support ticket": "TICKET",
     "email message": "EMAIL",
-    "chat clm_core": "TRANSCRIPT",
+    "chat transcript": "TRANSCRIPT",
     "phone call": "CALL",
     "source code": "CODE",
 }

@@ -196,10 +196,11 @@ class FRRules(BaseRules):
     def QA_CRITERIA(self) -> dict[str, str]:
         return {
             r"\b(vérification|vérifier|vérifié)\b": "VERIFICATION",
-            r"\b(politique|politiques|respect de la politique)\b": "POLICY",
+            r"\b(politique|politiques|respect de la politique)\b": "POLICY_ADHERENCE",
             r"\b(compétences relationnelles|empathie|clarté|responsabilité)\b": "SOFT_SKILLS",
             r"\b(précision|précis|exactitude)\b": "ACCURACY",
-            r"\b(conformité|conforme|violations?)\b": "COMPLIANCE",
+            r"\b(violations?)\b": "VIOLATIONS",
+            r"\b(conformité|conforme)\b": "COMPLIANCE",
             r"\b(sentiment|émotion|humeur)\b": "SENTIMENT",
             r"\b(divulgations?|divulgations obligatoires?)\b": "DISCLOSURES",
         }

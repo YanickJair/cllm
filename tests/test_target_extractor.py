@@ -69,8 +69,8 @@ class TestImperativeExtractor:
         assert result.token == "DATA"
 
     def test_summarize_transcript(self, target_extractor, nlp):
-        """Test SUMMARIZE with clm_core"""
-        text = "Summarize this customer call clm_core"
+        """Test SUMMARIZE with transcript"""
+        text = "Summarize this customer call transcript"
         result = target_extractor.extract(text)
 
         assert result is not None
@@ -431,7 +431,7 @@ class TestTargetExtractorIntegration:
 
     def test_full_pipeline_with_req_tokens(self, target_extractor):
         """Test pipeline with detected req tokens"""
-        text = "Summarize this 30-minute customer call clm_core"
+        text = "Summarize this 30-minute customer call transcript"
         detected_req_tokens = ["SUMMARIZE"]
 
         result = target_extractor.extract(text, detected_req_tokens)
@@ -575,7 +575,7 @@ class TestPerformance:
         prompts = [
             "Analyze this code",
             "What is DNS?",
-            "Summarize this clm_core",
+            "Summarize this transcript",
             "Generate a report",
             "Debug this function",
         ]

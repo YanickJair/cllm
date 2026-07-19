@@ -21,6 +21,13 @@ class PromptMode(str, Enum):
     CONFIGURATION = "CONFIGURATION"
 
 
+class OutputMode(str, Enum):
+    """Controls whether encode() returns the CL token alone or with a minimized NL remainder."""
+
+    FULL = "FULL"
+    MINIMIZED = "MINIMIZED"
+
+
 class PromptTemplate(BaseModel):
     raw_template: str = Field(
         ..., description="Raw configuration template (placeholders intact)"

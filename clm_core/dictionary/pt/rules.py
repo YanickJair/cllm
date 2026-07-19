@@ -196,10 +196,11 @@ class PTRules(BaseRules):
     def QA_CRITERIA(self) -> dict[str, str]:
         return {
             r"\b(verificação|verificar|verificado)\b": "VERIFICATION",
-            r"\b(política|políticas|aderência à política)\b": "POLICY",
+            r"\b(política|políticas|aderência à política)\b": "POLICY_ADHERENCE",
             r"\b(habilidades interpessoais|empatia|clareza|responsabilidade)\b": "SOFT_SKILLS",
             r"\b(precisão|preciso|exatidão)\b": "ACCURACY",
-            r"\b(conformidade|conforme|violações?)\b": "COMPLIANCE",
+            r"\b(violações?)\b": "VIOLATIONS",
+            r"\b(conformidade|conforme)\b": "COMPLIANCE",
             r"\b(sentimento|emoção|humor)\b": "SENTIMENT",
             r"\b(divulgações?|divulgações obrigatórias?)\b": "DISCLOSURES",
         }

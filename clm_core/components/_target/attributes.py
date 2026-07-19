@@ -61,7 +61,16 @@ class AttributeEnhancer:
     ) -> dict[str, str]:
         attributes = {}
 
-        if target_token in ["CONCEPT", "PROCEDURE", "ANSWER", "FACT"]:
+        if target_token in [
+            "CONCEPT",
+            "PROCEDURE",
+            "ANSWER",
+            "FACT",
+            "TRANSCRIPT",
+            "CALL",
+            "MEETING",
+            "TICKET",
+        ]:
             topic = self.topic_extractor.extract(text, target_token, doc)
             if topic:
                 attributes["TOPIC"] = topic
@@ -84,6 +93,14 @@ class AttributeEnhancer:
         domain, _ = self.domain_detector.detect(text, doc=doc)
         if domain:
             attributes["DOMAIN"] = domain
+            if "TOPIC" in attributes:
+                # Don't repeat the domain word inside TOPIC; it's already carried
+                # by the DOMAIN attribute.
+                segments = [
+                    s for s in attributes["TOPIC"].split("_") if s.upper() != domain.upper()
+                ]
+                if segments:
+                    attributes["TOPIC"] = "_".join(segments)
 
         lang = self.language_detector.detect(text)
         if lang:
@@ -185,7 +202,9 @@ class TopicExtractor:
             str, _Doc("Raw topic string to uppercase and underscore-delimit.")
         ],
     ) -> str:
-        return topic.replace(" ", "_").replace("'", "").upper()
+        topic = re.sub(r"[^\w\s]", "", topic)
+        topic = re.sub(r"\s+", "_", topic.strip())
+        return topic.upper()
 
     def _validate_topic(
         self,

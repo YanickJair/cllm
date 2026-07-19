@@ -15,7 +15,7 @@ from clm_core.utils.parser_rules import BaseRules
 from clm_core.utils.vocabulary import BaseVocabulary
 
 from . import ConfigurationPromptMinimizer
-from ._schemas import PromptMode, ValidationLevel
+from ._schemas import OutputMode, PromptMode, ValidationLevel
 from .analyzers.attribute_parser import AttributeParser
 
 _ROLE_PATTERN = re.compile(
@@ -73,7 +73,10 @@ class ConfigurationPromptEncoder(BasePromptEncoder):
         if errors:
             raise RuntimeError(f"Bound prompt invalid: {errors}")
 
-        if out.metadata["prompt_mode"] == PromptMode.CONFIGURATION:
+        if (
+            out.metadata["prompt_mode"] == PromptMode.CONFIGURATION
+            and self._config.output_mode == OutputMode.MINIMIZED
+        ):
             bound_nl = self._minimizer.minimize(bound_nl, cl_metadata=out.metadata)
 
         result = f"{out.compressed}\n\n{bound_nl}"

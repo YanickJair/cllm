@@ -157,6 +157,10 @@ class IntentDetectorV2:
         ],
     ) -> set[Signal]:
         text = text.lower()
+        # "output format" / "response format" are schema-section headings, not an
+        # instruction to format something - strip them so they don't spuriously
+        # trigger Signal.FORMATTING.
+        text = re.sub(r"\b(output|response)\s+format\b", "", text)
         signals = set()
 
         for req_key, phrases in vocab.items():
@@ -252,6 +256,16 @@ class IntentDetectorV2:
         if Signal.FORMATTING in signals:
             return REQ.FORMAT
 
+        # Explicit intent signals (an actual "analyze"/"rank" verb match) take
+        # precedence over incidental structural artifacts (a JSON block, a bullet
+        # list, or the mere word "analysis") - those artifacts are common in almost
+        # any structured-output prompt and shouldn't drown out the real verb.
+        if Signal.ANALYSIS in signals:
+            return REQ.ANALYZE
+
+        if Signal.RANKING in signals:
+            return REQ.RANK
+
         if Artifact.PROBABILITY in artifacts:
             if self._detect_epistemic_grounding(text):
                 return REQ.PREDICT
@@ -262,7 +276,7 @@ class IntentDetectorV2:
         ):
             return REQ.GENERATE
 
-        if Signal.RANKING in signals or Artifact.DECISION in artifacts:
+        if Artifact.DECISION in artifacts:
             return REQ.RANK
 
         if Signal.DEBUGGING in signals:

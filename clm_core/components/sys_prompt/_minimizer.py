@@ -108,7 +108,7 @@ class ConfigurationPromptMinimizer:
             ),
         ],
     ) -> str:
-        if cl_metadata.get("role"):
+        if cl_metadata.get("role") or cl_metadata.get("target") or cl_metadata.get("intents"):
             out = self.suppress_role(text=out, patterns=self.ROLE_BLOCK_PATTERN)
             out = self.ROLE_SENTENCE_PATTERN.sub("", out)
 

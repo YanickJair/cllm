@@ -1,5 +1,5 @@
 from clm_core.__version__ import __description__, __title__, __version__
-from clm_core.components.sys_prompt import PromptMode, PromptTemplate
+from clm_core.components.sys_prompt import OutputMode, PromptMode, PromptTemplate
 from clm_core.components.sys_prompt.encoder import SysPromptEncoder
 from clm_core.components.thread_encoder import (
     TranscriptAnalysis,
@@ -42,6 +42,7 @@ __all__ = [
     "SDCompressionConfig",
     "FieldImportance",
     "PromptMode",
+    "OutputMode",
     "PromptTemplate",
     "TranscriptCompressionResult",
     "TranscriptAnalysis",

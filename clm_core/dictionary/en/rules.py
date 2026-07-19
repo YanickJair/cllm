@@ -190,10 +190,11 @@ class ENRules(BaseRules):
     def QA_CRITERIA(self) -> dict[str, str]:
         return {
             r"\b(verification|verify|verified)\b": "VERIFICATION",
-            r"\b(policy|policies|policy adherence)\b": "POLICY",
+            r"\b(policy|policies|policy adherence)\b": "POLICY_ADHERENCE",
             r"\b(soft[- ]?skills?|empathy|clarity|ownership)\b": "SOFT_SKILLS",
             r"\b(accuracy|accurate|process accuracy)\b": "ACCURACY",
-            r"\b(compliance|compliant|violations?)\b": "COMPLIANCE",
+            r"\b(violations?)\b": "VIOLATIONS",
+            r"\b(compliance|compliant)\b": "COMPLIANCE",
             r"\b(sentiment|emotion|feeling|mood)\b": "SENTIMENT",
             r"\b(disclosures?|mandatory disclosures?)\b": "DISCLOSURES",
         }

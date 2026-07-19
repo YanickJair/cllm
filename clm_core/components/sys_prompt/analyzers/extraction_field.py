@@ -1,3 +1,4 @@
+import re
 from typing import Optional, Annotated
 
 from annotated_doc import Doc
@@ -161,6 +162,13 @@ class AttributeExtractor:
             self._list_indicators.update(
                 s.lower() for s in self._vocab.TARGET_TOKENS["ITEMS"]
             )
+        self._list_pattern = (
+            re.compile(
+                r"\b(?:" + "|".join(re.escape(i) for i in self._list_indicators) + r")\b"
+            )
+            if self._list_indicators
+            else None
+        )
 
     def extract(
         self,
@@ -190,7 +198,7 @@ class AttributeExtractor:
         text_lower = text.lower()
         attrs = {}
 
-        if any(indicator in text_lower for indicator in self._list_indicators):
+        if self._list_pattern and self._list_pattern.search(text_lower):
             attrs["TYPE"] = "LIST"
 
         found = {f.name for f in detected_fields}
@@ -223,11 +231,22 @@ class ExtractionFieldParser:
     def parse_extraction_fields(
         self,
         text: Annotated[str, Doc("The input text to parse extraction fields from.")],
+        schema_field_names: Annotated[
+            Optional[set[str]],
+            Doc(
+                "Uppercased field names from an already-parsed output schema. When "
+                "given and the detected fields overlap with it, detected fields "
+                "outside the schema (keyword noise not part of the actual output "
+                "shape) are dropped."
+            ),
+        ] = None,
     ) -> Optional[ExtractionField]:
         """Parse extraction fields from a given text.
 
         Args:
             text (str): The input text to parse.
+            schema_field_names (Optional[set[str]]): Uppercased output schema field
+                names used to prune keyword noise from the detected fields.
 
         Returns:
             Optional[ExtractionField]: The parsed extraction fields, or None if no fields are found.
@@ -252,6 +271,14 @@ class ExtractionFieldParser:
             if field_name not in seen:
                 seen.add(field_name)
                 fields_unique.append(field_name)
+
+        if schema_field_names:
+            overlap = [f for f in fields_unique if f in schema_field_names]
+            if overlap:
+                fields_unique = overlap
+                detected_sorted = [
+                    d for d in detected_sorted if d.name.upper() in schema_field_names
+                ]
 
         attrs = self.attr_extractor.extract(text, detected_sorted)
 
