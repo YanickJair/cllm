@@ -313,9 +313,9 @@ class ThreadConfig(BaseModel):
     @computed_field
     def default_summary_template(self) -> str:
         return """
-        Customer contacted {{ domain | lower }} support via {{ channel | lower }}
-        regarding {{ customerIntent | replace("_", " ") | lower }}
-        affecting their {{ service | lower }}.
+        Customer contacted{% if domain %} {{ domain | lower }}{% endif %} support{% if channel %} via {{ channel | lower }}{% endif %}{% if customerIntent %}
+        regarding {{ customerIntent | replace("_", " ") | lower }}{% endif %}{% if service %}
+        affecting their {{ service | lower }}{% endif %}.
 
         {% if agentActions %}
         Actions performed:
@@ -331,7 +331,11 @@ class ThreadConfig(BaseModel):
         {% endfor %}
         {% endif %}
 
-        Outcome: {{ resolution | replace("_", " ") | lower }} ({{ state | replace("_", " ") | lower }})
+        {% if resolution %}
+        Outcome: {{ resolution | replace("_", " ") | lower }}{% if state %} ({{ state | replace("_", " ") | lower }}){% endif %}
+        {% elif state %}
+        Outcome: {{ state | replace("_", " ") | lower }}
+        {% endif %}
 
         {% if commitments %}
         Commitments:

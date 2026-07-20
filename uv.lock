@@ -191,11 +191,9 @@ dependencies = [
     { name = "annotated-doc" },
     { name = "click" },
     { name = "langdetect" },
-    { name = "openai" },
     { name = "pretty-loguru" },
     { name = "pydantic" },
     { name = "spacy" },
-    { name = "tiktoken" },
 ]
 
 [package.optional-dependencies]
@@ -205,9 +203,11 @@ sd-encoder = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "openai" },
     { name = "pip" },
     { name = "pytest-mock" },
     { name = "ruff" },
+    { name = "tiktoken" },
 ]
 
 [package.metadata]
@@ -215,20 +215,20 @@ requires-dist = [
     { name = "annotated-doc", specifier = ">=0.0.4" },
     { name = "click", specifier = ">=8.3.1" },
     { name = "langdetect", specifier = ">=1.0.9" },
-    { name = "openai", specifier = ">=2.46.0" },
     { name = "pretty-loguru", specifier = ">=1.2.0" },
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "sd-encoder", marker = "extra == 'sd-encoder'", specifier = ">=0.1.2" },
     { name = "spacy", specifier = ">=3.8.7" },
-    { name = "tiktoken", specifier = ">=0.13.0" },
 ]
 provides-extras = ["sd-encoder"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "openai", specifier = ">=2.46.0" },
     { name = "pip", specifier = ">=26.0.1" },
     { name = "pytest-mock", specifier = ">=3.15.1" },
     { name = "ruff", specifier = ">=0.15.20" },
+    { name = "tiktoken", specifier = ">=0.13.0" },
 ]
 
 [[package]]
