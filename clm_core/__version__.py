@@ -1,3 +1,3 @@
 __title__ = "clm"
 __description__ = "Natural Language compressor"
-__version__ = "1.3.4"
+__version__ = "1.3.5"
