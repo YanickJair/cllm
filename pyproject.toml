@@ -50,7 +50,7 @@ dependencies = [
     "pretty-loguru>=1.2.0",
 ]
 [project.optional-dependencies]
-sd_encoder = ["sd_encoder>=0.1.3"]
+sd_encoder = ["sd_encoder>=0.1.4"]
 
 [dependency-groups]
 dev = [
